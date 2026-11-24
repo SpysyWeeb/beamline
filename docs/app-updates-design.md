@@ -1,7 +1,7 @@
 # App updates from GitHub (item 41) — design draft
 
 The owner, 2026-11-24: "Next we'll work on having app updates run like openpilot, pulling from
-GitHub when available." This is a draft for the owner's answers (section 7); nothing is built yet.
+GitHub when available." The owner answered section 7's questions on 2026-11-24; nothing is built yet.
 
 ## 1. What it does
 
@@ -68,3 +68,8 @@ version, delta updates, updates for the comma 3X software.
 3. **Channels**: one channel (every published release), or a second "test" channel for builds you
    try first, like openpilot's branches?
 4. **Releases**: publish a release after every batch you approve, or only when you say so?
+
+**The owner's answers (2026-11-24):** 1. silent when Android allows it, after the first update the
+user confirms (a short note "Updated to 0.1.25" afterwards); 2. install on a tap of the chip, or by
+itself when the user leaves the app and it is not guiding; 3. one channel; 4. a release is published
+after every batch the owner approves.
