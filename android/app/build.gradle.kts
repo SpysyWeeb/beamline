@@ -94,8 +94,8 @@ android {
         applicationId = appId
         minSdk = libs.versions.android.minSdk.get().toInt()
         targetSdk = libs.versions.android.targetSdk.get().toInt()
-        versionCode = 27
-        versionName = "0.1.24"
+        versionCode = 28
+        versionName = "0.1.25"
         manifestPlaceholders["appName"] = appName
         buildConfigField("String", "MAP_RENDERER", "\"$mapRenderer\"")
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"

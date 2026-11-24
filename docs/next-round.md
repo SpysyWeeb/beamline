@@ -778,7 +778,7 @@ not break across two lines in the banner; the results view shows at most the 20 
     G8 (`guidance.json` `lead`): the arrow is drawn ahead of the fix by speed x (the fix's age + the
     glide), never past a turn the car slows for, never from a slow or poor fix; arrivals and the
     turn-by-turn step still go by the fix itself. Lights are drawn from the car to the route's end
-    (zoomed out they still hide). *To tune on a drive:* `lead.extra_s` (0 now) if the arrow still
+    (zoomed out they still hide). *To tune on a drive:* `lead.extra_s` (0.5 since 0.1.25, after the owner's drive: "It still feels a little behind") if the arrow still
     trails, or is ahead, at a stop line.
 
 40. **Tell the user when a state has newer map data** (owner, 2026-11-24: "Does the app let the

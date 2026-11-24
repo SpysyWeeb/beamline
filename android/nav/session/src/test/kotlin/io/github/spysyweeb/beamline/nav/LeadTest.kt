@@ -13,7 +13,8 @@ import org.junit.jupiter.api.Test
  * was taken. These tests use the bundled rules (the other session tests turn the lead off).
  */
 class LeadTest {
-    private val withLead = GuidanceRules.bundled()
+    /** The bundled rules with extra_s 0, so the sums below are the fix's age and glide alone (extra_s has its own test). */
+    private val withLead = GuidanceRules.bundled().let { it.copy(lead = it.lead.copy(extraS = 0.0)) }
 
     @Test
     fun `G8 the arrow leads the fix by its speed times the fix's age and its glide`() = sessionTest(rules = withLead) { h ->
@@ -25,6 +26,16 @@ class LeadTest {
         assertEquals(m(1) - 1050.0, h.state.shown!!, 1.0, "the banner's distance is the arrow's")
         h.at(1050.0, ageMs = 500)
         assertEquals(1075.0, h.state.vehicleAlong(), 1.0, "0.5 s old and 0.5 s of glide: 25 m ahead")
+    }
+
+    @Test
+    fun `G8 extra_s adds the receiver's own delay`() = sessionTest(rules = GuidanceRules.bundled()) { h ->
+        val extra = GuidanceRules.bundled().lead.extraS
+        assertTrue(extra > 0.0, "tuned after the owner's drive (0.1.25)")
+        h.guideExit24()
+        h.at(1000.0)
+        h.at(1025.0)
+        assertEquals(1025.0 + 25.0 * (1.0 + extra), h.state.vehicleAlong(), 1.0, "speed x (glide + extra_s)")
     }
 
     @Test

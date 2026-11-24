@@ -20,7 +20,7 @@
   "notification": {"min_interval_s": 5},
   "lane_warning": {"lead_s": 18, "min_m": 150, "max_m": 600, "after_m": 5, "lookback_m": 500, "max_calls": 40,
                    "same_count_evidence_m": 300, "fork_angle_deg": 50},
-  "lead": {"min_speed_mps": 2.2, "max_accuracy_m": 30, "max_glide_s": 3, "extra_s": 0, "max_m": 60,
+  "lead": {"min_speed_mps": 2.2, "max_accuracy_m": 30, "max_glide_s": 3, "extra_s": 0.5, "max_m": 60,
            "stop_at": ["left", "right", "sharp_left", "sharp_right", "uturn_left", "uturn_right", "roundabout_enter",
                        "roundabout_exit", "ferry_enter", "destination", "destination_left", "destination_right"]},
   "tick_s": 1

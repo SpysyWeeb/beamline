@@ -1059,7 +1059,7 @@ data class LeadRules(
     val minSpeedMps: Double = 2.2,
     val maxAccuracyM: Double = 30.0,
     val maxGlideS: Double = 3.0,
-    val extraS: Double = 0.0,
+    val extraS: Double = 0.5,
     val maxM: Double = 60.0,
     val stopAt: Set<ManeuverType> = setOf(
         ManeuverType.LEFT, ManeuverType.RIGHT, ManeuverType.SHARP_LEFT, ManeuverType.SHARP_RIGHT,
@@ -2911,7 +2911,7 @@ the phone test, not a measurement.
   "notification": {"min_interval_s": 5},
   "lane_warning": {"lead_s": 18, "min_m": 150, "max_m": 600, "after_m": 5, "lookback_m": 500, "max_calls": 40,
                    "same_count_evidence_m": 300, "fork_angle_deg": 50},
-  "lead": {"min_speed_mps": 2.2, "max_accuracy_m": 30, "max_glide_s": 3, "extra_s": 0, "max_m": 60,
+  "lead": {"min_speed_mps": 2.2, "max_accuracy_m": 30, "max_glide_s": 3, "extra_s": 0.5, "max_m": 60,
            "stop_at": ["left", "right", "sharp_left", "sharp_right", "uturn_left", "uturn_right", "roundabout_enter",
                        "roundabout_exit", "ferry_enter", "destination", "destination_left", "destination_right"]},
   "tick_s": 1
@@ -2989,8 +2989,8 @@ Every rule id below needs at least one JVM test in `:nav:session` (N's definitio
   banner's distance, the lights and the travelled line follow the arrow; U's advance (B1, B2),
   off-route (O1-O5), arrival (A1: the banner's distance plus the lead), the lane notice's end (B9),
   the speed limit and a re-route's fallback origin go by the car. In WEAK (G3) the dead-reckoned
-  position leads the same way. `extra_s` (0, at most 2) is the receiver's own delay that the fix's
-  time does not show: tune it on a drive ("the arrow reaches the stop line before or after the
+  position leads the same way. `extra_s` (0.5 since 0.1.25: the owner, 2026-11-24, after a drive with the lead: "It still feels a
+  little behind"; at most 2) is the receiver's own delay that the fix's time does not show: tune it on a drive ("the arrow reaches the stop line before or after the
   car"). The simulated drive's fixes have no age, so there the arrow leads its fixes by one second,
   which is where the simulated car is.
 ### 3.2 Banner over a drive (B)

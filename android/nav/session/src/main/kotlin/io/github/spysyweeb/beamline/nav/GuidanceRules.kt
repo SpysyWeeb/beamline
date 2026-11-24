@@ -91,7 +91,7 @@ data class LeadRules(
     val minSpeedMps: Double = 2.2,
     val maxAccuracyM: Double = 30.0,
     val maxGlideS: Double = 3.0,
-    val extraS: Double = 0.0,
+    val extraS: Double = 0.5,
     val maxM: Double = 60.0,
     val stopAt: Set<ManeuverType> = setOf(
         ManeuverType.LEFT, ManeuverType.RIGHT, ManeuverType.SHARP_LEFT, ManeuverType.SHARP_RIGHT,
