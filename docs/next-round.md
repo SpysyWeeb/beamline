@@ -791,9 +791,9 @@ not break across two lines in the banner; the results view shows at most the 20 
     new map data", which opens States; opening States marks that pack version seen (`ui.json`
     `updates_seen`). Nothing downloads by itself.
 41. **App updates from GitHub, like openpilot** (owner, 2026-11-24: "Next we'll work on having app
-    updates run like openpilot, pulling from GitHub when available"). Not designed yet. The app
-    repository is private, so a phone cannot fetch its releases without a token: a public release
-    host is needed first (as for the packs).
+    updates run like openpilot, pulling from GitHub when available"). The repository is public since
+    2026-11-24, so the phone can read its releases without a login. Design draft with the owner's
+    questions: `docs/app-updates-design.md`.
 
 ## Later (not the next round)
 
