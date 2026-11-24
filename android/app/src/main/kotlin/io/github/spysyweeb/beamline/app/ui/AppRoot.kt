@@ -61,6 +61,7 @@ import io.github.spysyweeb.beamline.api.map.CameraTarget
 import io.github.spysyweeb.beamline.api.map.EdgeInsetsDp
 import io.github.spysyweeb.beamline.api.nav.END_UNDO_MS
 import io.github.spysyweeb.beamline.api.nav.Phase
+import io.github.spysyweeb.beamline.app.update.UpdateTexts
 import io.github.spysyweeb.beamline.app.AppGraph
 import io.github.spysyweeb.beamline.app.BuildConfig
 import io.github.spysyweeb.beamline.app.MapStyleState
@@ -135,6 +136,11 @@ fun AppRoot(g: AppGraph, flows: AppFlows, frameRate: FrameRateRequest, screenMax
         val showPicker by g.getPacks.showFirstRunPicker.collectAsState()
         val firstRunDecided by g.getPacks.firstRunDecided.collectAsState()
         val chip by g.getPacks.mapChip.collectAsState()
+        // Item 41: an app update ready to install, and the note after one
+        val appUpdate by g.appUpdates.state.collectAsState()
+        val appUpdateProblem by g.appUpdates.problem.collectAsState()
+        val updatedNote by g.appUpdates.updatedNote.collectAsState()
+        val activity = androidx.compose.ui.platform.LocalContext.current as? android.app.Activity
         val showOnMap by g.getPacks.showOnMap.collectAsState()
         val mapStyle by g.mapStyle.collectAsState()
         val now by produceState(System.currentTimeMillis()) {
@@ -225,6 +231,11 @@ fun AppRoot(g: AppGraph, flows: AppFlows, frameRate: FrameRateRequest, screenMax
                             chip?.let { c -> ChipButton(c, night) { flows.openStates() } }
                             // outside every installed state, zoomed in: say why the map is plain, one tap to States
                             if (chip == null && flows.noMapHere) ChipButton(NO_MAP_HERE, night) { flows.openStates() }
+                            // item 41: a downloaded update (a tap installs it; never while guiding), then "Updated to"
+                            (appUpdate as? io.github.spysyweeb.beamline.download.AppUpdater.State.Ready)?.takeIf { !driving }?.let { r ->
+                                ChipButton(UpdateTexts.readyChip(r.update.versionName), night) { g.appUpdates.install(activity, guiding = driving) }
+                            }
+                            updatedNote?.let { n -> ChipButton(io.github.spysyweeb.beamline.feature.states.MapChip(n, "$n. Tap to close"), night) { g.appUpdates.dismissUpdatedNote() } }
                         }
                         Gap(8)
                         Column(verticalArrangement = Arrangement.spacedBy(10.dp)) {
@@ -340,6 +351,10 @@ fun AppRoot(g: AppGraph, flows: AppFlows, frameRate: FrameRateRequest, screenMax
                         onOnline = { on -> g.updateOnline { if (on) it.allowOnline() else it.offlineOnly() } },
                         onContributeOsm = { on -> g.updateOnline { it.withContributeOsm(on) } },
                         onCheckMapUpdates = { on -> g.updateOnline { it.withCheckMapUpdates(on) } },
+                        appUpdates = g.appUpdates.available,
+                        onCheckAppUpdates = { on -> g.updateOnline { it.withCheckAppUpdates(on) } },
+                        appUpdateLine = UpdateTexts.line(appUpdate, appUpdateProblem),
+                        onCheckAppNow = { g.appUpdates.checkNow(g::guiding) },
                         reportsText = OnlineTexts.reportsCount(outboxItems),
                         accountName = account?.name,
                         signingIn = signingIn,

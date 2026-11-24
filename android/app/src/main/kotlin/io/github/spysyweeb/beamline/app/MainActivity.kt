@@ -207,6 +207,8 @@ class MainActivity : ComponentActivity(), Host {
             graph.getPacks.onAppVisible()
             // Item 40: the list of states at most once a day, when the user allows it (never a pack)
             if (graph.online.state.value.mapUpdatesAllowed) graph.getPacks.checkForUpdates()
+            // Item 41: the app's own update, at most once a day; downloads by itself on Wi-Fi only
+            graph.appUpdates.onAppVisible(graph.online.state.value.appUpdatesAllowed, graph::guiding)
         }
         // Batch O1 (docs/online-design.md 4.5): waiting notes go when the app is open and a network is
         // there; the callback answers at once with the current network and again when one appears.
@@ -235,6 +237,8 @@ class MainActivity : ComponentActivity(), Host {
             }
         }
         graph.puck.stop()
+        // Item 41: leaving the app installs a downloaded update when Android lets it be silent (never while guiding)
+        graph.appUpdates.install(null, graph.guiding())
         super.onStop()
     }
 

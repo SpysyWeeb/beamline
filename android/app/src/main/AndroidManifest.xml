@@ -21,6 +21,8 @@
     <!-- The guidance notification (Android 13+), asked once at the first Start unless the download
          flow asked already. -->
     <uses-permission android:name="android.permission.POST_NOTIFICATIONS" />
+    <!-- Item 41 (docs/app-updates-design.md 4): Beamline installs its own updates from its GitHub releases. -->
+    <uses-permission android:name="android.permission.REQUEST_INSTALL_PACKAGES" />
     <!-- The map works without any location hardware, so do not let stores filter on it. -->
     <uses-feature
         android:name="android.hardware.location"
@@ -72,5 +74,7 @@
             android:name=".guidance.GuidanceService"
             android:exported="false"
             android:foregroundServiceType="location" />
+        <!-- Item 41: the result of an update install (PackageInstaller). -->
+        <receiver android:name=".update.UpdateReceiver" android:exported="false" />
     </application>
 </manifest>

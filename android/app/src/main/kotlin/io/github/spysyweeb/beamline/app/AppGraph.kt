@@ -500,6 +500,12 @@ class AppGraph(context: Context, val dataDir: File, val locationLog: Boolean) {
         scope = scope,
     )
 
+    /** Item 41: the app's own updates from its GitHub releases (off in debug builds). */
+    val appUpdates = io.github.spysyweeb.beamline.app.update.AppUpdates(app, scope)
+
+    /** True while guiding (an app update never downloads or installs then). */
+    fun guiding(): Boolean = session.state.value.phase.let { it == io.github.spysyweeb.beamline.api.nav.Phase.GUIDING || it == io.github.spysyweeb.beamline.api.nav.Phase.REROUTING }
+
     init {
         // Item 40: the daily map-update check runs on each start (MainActivity.onStart) and also as soon
         // as the user turns it on; the first value is onStart's to act on.
@@ -507,6 +513,14 @@ class AppGraph(context: Context, val dataDir: File, val locationLog: Boolean) {
             var first = true
             online.state.map { it.mapUpdatesAllowed }.distinctUntilChanged().collect { allowed ->
                 if (!first && allowed) getPacks.checkForUpdates()
+                first = false
+            }
+        }
+        // Item 41: the same for app updates
+        scope.launch {
+            var first = true
+            online.state.map { it.appUpdatesAllowed }.distinctUntilChanged().collect { allowed ->
+                if (!first && allowed) appUpdates.onAppVisible(true, ::guiding)
                 first = false
             }
         }

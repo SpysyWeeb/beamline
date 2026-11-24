@@ -793,8 +793,9 @@ not break across two lines in the banner; the results view shows at most the 20 
 41. **App updates from GitHub, like openpilot** (owner, 2026-11-24: "Next we'll work on having app
     updates run like openpilot, pulling from GitHub when available"). The repository is public since
     2026-11-24, so the phone can read its releases without a login. Design with the owner's
-    answers: `docs/app-updates-design.md`. *Started 2026-11-24:* `tools/release.py`, `AppUpdate`; the app
-    side (check, download, install) is next.
+    answers: `docs/app-updates-design.md`. *Built 2026-11-24 (0.1.26):* `tools/release.py`, `AppUpdate`,
+    `AppUpdater`, `AppUpdates` (switch, daily check, Wi-Fi download, certificate check, install, chips);
+    the install is tried on the phone with the first two releases (design section 8).
 
 ## Later (not the next round)
 

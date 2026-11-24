@@ -30,6 +30,8 @@ data class OnlineSettings(
      * installed state has newer map data (GetPacks.checkForUpdates); a file without the key takes [online].
      */
     val checkMapUpdates: Boolean = false,
+    /** Item 41: once a day, ask the app's GitHub releases for a newer Beamline (AppUpdates); a file without the key takes [online]. */
+    val checkAppUpdates: Boolean = false,
 ) {
     /** OsmHttp may send (rule N4): the main switch and the feature's own. */
     val osmAllowed: Boolean get() = online && contributeOsm
@@ -37,8 +39,11 @@ data class OnlineSettings(
     /** The daily map-update check may run (item 40): the main switch and its own. */
     val mapUpdatesAllowed: Boolean get() = online && checkMapUpdates
 
+    /** The daily app-update check may run (item 41): the main switch and its own. */
+    val appUpdatesAllowed: Boolean get() = online && checkAppUpdates
+
     /** The first-run choice or the main switch turned on: every online feature on (the owner, 2026-11-20). */
-    fun allowOnline(): OnlineSettings = copy(choiceMade = true, online = true, contributeOsm = true, checkMapUpdates = true)
+    fun allowOnline(): OnlineSettings = copy(choiceMade = true, online = true, contributeOsm = true, checkMapUpdates = true, checkAppUpdates = true)
 
     /** "Offline only", or the main switch turned off: no online feature sends anything. */
     fun offlineOnly(): OnlineSettings = copy(choiceMade = true, online = false)
@@ -48,6 +53,9 @@ data class OnlineSettings(
 
     /** Item 40's own switch; only while the main switch is on. */
     fun withCheckMapUpdates(on: Boolean): OnlineSettings = if (online) copy(checkMapUpdates = on) else this
+
+    /** Item 41's own switch; only while the main switch is on. */
+    fun withCheckAppUpdates(on: Boolean): OnlineSettings = if (online) copy(checkAppUpdates = on) else this
 }
 
 /**
@@ -71,7 +79,8 @@ class OnlineSettingsStore(private val file: File) {
         fun bool(k: String) = (obj?.get(k) as? JsonPrimitive)?.takeIf { !it.isString }?.booleanOrNull ?: false
         OnlineSettings(bool(CHOICE_MADE), bool(ONLINE), bool(CONTRIBUTE_OSM), bool(NOTE_NOTICE_SEEN), bool(EDIT_NOTICE_SEEN),
             // item 40: a file from before the switch takes the main switch's value (on for who chose online)
-            if (obj?.containsKey(CHECK_MAP_UPDATES) == true) bool(CHECK_MAP_UPDATES) else bool(ONLINE))
+            if (obj?.containsKey(CHECK_MAP_UPDATES) == true) bool(CHECK_MAP_UPDATES) else bool(ONLINE),
+            if (obj?.containsKey(CHECK_APP_UPDATES) == true) bool(CHECK_APP_UPDATES) else bool(ONLINE))
     } catch (_: Exception) {
         OnlineSettings()
     }
@@ -82,6 +91,7 @@ class OnlineSettingsStore(private val file: File) {
                 CHOICE_MADE to JsonPrimitive(s.choiceMade), ONLINE to JsonPrimitive(s.online),
                 CONTRIBUTE_OSM to JsonPrimitive(s.contributeOsm), NOTE_NOTICE_SEEN to JsonPrimitive(s.noteNoticeSeen),
                 EDIT_NOTICE_SEEN to JsonPrimitive(s.editNoticeSeen), CHECK_MAP_UPDATES to JsonPrimitive(s.checkMapUpdates),
+                CHECK_APP_UPDATES to JsonPrimitive(s.checkAppUpdates),
             ),
         ).toString()
         file.parentFile?.mkdirs()
@@ -104,5 +114,6 @@ class OnlineSettingsStore(private val file: File) {
         const val NOTE_NOTICE_SEEN = "note_notice_seen"
         const val EDIT_NOTICE_SEEN = "edit_notice_seen"
         const val CHECK_MAP_UPDATES = "check_map_updates"
+        const val CHECK_APP_UPDATES = "check_app_updates"
     }
 }

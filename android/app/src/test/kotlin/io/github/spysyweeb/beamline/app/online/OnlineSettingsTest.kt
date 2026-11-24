@@ -54,6 +54,13 @@ class OnlineSettingsTest {
         assertFalse(OnlineSettingsStore(f).state.value.checkMapUpdates)
         f.writeText("""{"choice_made":true,"online":true,"contribute_osm":true,"check_map_updates":false}""")
         assertFalse(OnlineSettingsStore(f).state.value.mapUpdatesAllowed, "turned off stays off")
+        // item 41: the app-update switch the same way
+        assertTrue(on.appUpdatesAllowed)
+        assertFalse(on.withCheckAppUpdates(false).appUpdatesAllowed)
+        assertTrue(on.withCheckAppUpdates(false).mapUpdatesAllowed, "each switch alone")
+        assertFalse(on.offlineOnly().withCheckAppUpdates(true).appUpdatesAllowed)
+        f.writeText("""{"choice_made":true,"online":true,"contribute_osm":true,"check_map_updates":false}""")
+        assertTrue(OnlineSettingsStore(f).state.value.appUpdatesAllowed, "a file from before item 41 takes the main switch")
     }
 
     @Test
@@ -62,7 +69,7 @@ class OnlineSettingsTest {
         assertEquals(OnlineSettings(), OnlineSettingsStore(f).state.value, "no file: an update from an earlier version asks once")
         val store = OnlineSettingsStore(f)
         store.update { it.allowOnline().copy(noteNoticeSeen = true) }
-        assertEquals(OnlineSettings(choiceMade = true, online = true, contributeOsm = true, noteNoticeSeen = true, checkMapUpdates = true), OnlineSettingsStore(f).state.value)
+        assertEquals(OnlineSettings(choiceMade = true, online = true, contributeOsm = true, noteNoticeSeen = true, checkMapUpdates = true, checkAppUpdates = true), OnlineSettingsStore(f).state.value)
         f.writeText("[1,2")
         assertEquals(OnlineSettings(), OnlineSettingsStore(f).state.value)
         f.writeText("""{"choice_made":"true","online":1}""")

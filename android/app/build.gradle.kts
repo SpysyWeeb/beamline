@@ -42,6 +42,7 @@ val osmTestClientId = "kboFIWlThtxHpIJhBrXal-6iNmQVNTXoB6BmZZi0Mvc"
 // App updates (docs/app-updates-design.md 5): tools/release.py builds the universal APK and one
 // for each ABI with -Pbeamline.abi=arm64-v8a (only that ABI's native libraries).
 val releaseAbi: String? = providers.gradleProperty("beamline.abi").orNull?.trim()?.takeIf { it.isNotEmpty() }
+val publicUpdateUrl = "https://github.com/SpysyWeeb/beamline/releases/latest/download/update.json"
 val publicCatalogUrl = "https://github.com/SpysyWeeb/beamline-packs/releases/download/catalog/catalog.json"
 val localProperties = Properties().apply {
     providers.fileContents(rootProject.layout.projectDirectory.file("local.properties")).asText.orNull
@@ -97,8 +98,8 @@ android {
         applicationId = appId
         minSdk = libs.versions.android.minSdk.get().toInt()
         targetSdk = libs.versions.android.targetSdk.get().toInt()
-        versionCode = 28
-        versionName = "0.1.25"
+        versionCode = 29
+        versionName = "0.1.26"
         manifestPlaceholders["appName"] = appName
         buildConfigField("String", "MAP_RENDERER", "\"$mapRenderer\"")
         releaseAbi?.let { abi -> ndk { abiFilters.clear(); abiFilters += abi } }
@@ -141,6 +142,8 @@ android {
         debug {
             buildConfigField("boolean", "TEST_EXTRAS", "true")
             buildConfigField("String", "CATALOG_URL", "\"$catalogUrl\"")
+            // Item 41: debug builds do not update themselves.
+            buildConfigField("String", "UPDATE_URL", "\"\"")
             // Online features (docs/online-design.md 4.6): development builds talk only to OSM's test server.
             buildConfigField("String", "OSM_SERVER", "\"test\"")
             buildConfigField("String", "OSM_CLIENT_ID", "\"$osmTestClientId\"")
@@ -149,6 +152,8 @@ android {
             buildConfigField("boolean", "TEST_EXTRAS", releaseTestExtras.toString())
             // An http address never reaches a release build: it reads the public catalog instead.
             buildConfigField("String", "CATALOG_URL", "\"${if (catalogUri?.scheme == "https") catalogUrl else publicCatalogUrl}\"")
+            // Item 41 (docs/app-updates-design.md 2): the newest release's update file; a test-extras build is a test build.
+            buildConfigField("String", "UPDATE_URL", "\"${if (releaseTestExtras) "" else publicUpdateUrl}\"")
             // openstreetmap.org only in the plain release; a release built with test extras is a test build (4.6).
             buildConfigField("String", "OSM_SERVER", "\"${if (releaseTestExtras) "test" else "live"}\"")
             // Batch O2 (4.4): the app's public OAuth 2 client id on that server (no secret is kept in the app).

@@ -62,6 +62,11 @@ fun SettingsScreen(
     onContributeOsm: (Boolean) -> Unit,
     /** Item 40: "Check for map updates". */
     onCheckMapUpdates: (Boolean) -> Unit,
+    /** Item 41: this build can update itself; the switch, the state line and "Check now". */
+    appUpdates: Boolean,
+    onCheckAppUpdates: (Boolean) -> Unit,
+    appUpdateLine: String,
+    onCheckAppNow: () -> Unit,
     reportsText: String,
     /** Batch O2 (4.4): the OSM account line: the signed-in name, or null for "Sign in to OpenStreetMap". */
     accountName: String?,
@@ -125,6 +130,11 @@ fun SettingsScreen(
                 LinkRow(OnlineTexts.MY_REPORTS, if (driving) "Not while guiding" else reportsText, enabled = !driving, onClick = onReports)
                 SwitchRow(OnlineTexts.SETTINGS_MAP_UPDATES, OnlineTexts.SETTINGS_MAP_UPDATES_TEXT, online.mapUpdatesAllowed,
                     enabled = online.online, tag = "switch-map-updates", indent = true, onChange = onCheckMapUpdates)
+                if (appUpdates) {
+                    SwitchRow(OnlineTexts.SETTINGS_APP_UPDATES, OnlineTexts.SETTINGS_APP_UPDATES_TEXT, online.appUpdatesAllowed,
+                        enabled = online.online, tag = "switch-app-updates", indent = true, onChange = onCheckAppUpdates)
+                    LinkRow("Check for an update now", appUpdateLine, enabled = online.online && !driving, onClick = onCheckAppNow)
+                }
                 HorizontalDivider(Modifier.padding(top = 10.dp))
                 Heading("About")
                 LinkRow("About Beamline", "Version, map data, licenses and the driver notice", onClick = onAbout)

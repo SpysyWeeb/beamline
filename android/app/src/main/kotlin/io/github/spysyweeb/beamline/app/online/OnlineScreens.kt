@@ -62,6 +62,9 @@ object OnlineTexts {
     const val SETTINGS_OSM = "Contribute to OpenStreetMap"
     const val SETTINGS_OSM_TEXT = "Report map problems as public notes, fix places' details and add missing places on OpenStreetMap."
     /** Item 40. */
+    /** Item 41. */
+    const val SETTINGS_APP_UPDATES = "Check for app updates"
+    const val SETTINGS_APP_UPDATES_TEXT = "Once a day when you open Beamline, it looks for a newer version on GitHub, downloads it on Wi-Fi and installs it when you are not driving."
     const val SETTINGS_MAP_UPDATES = "Check for map updates"
     const val SETTINGS_MAP_UPDATES_TEXT = "Once a day when you open Beamline, it asks for the list of states (a few kilobytes) and tells you on the map when one of yours has newer map data. It never downloads a state by itself."
     const val SIGN_IN = "Sign in to OpenStreetMap"

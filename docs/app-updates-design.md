@@ -6,8 +6,14 @@ GitHub when available." The owner answered section 7's questions on 2026-11-24. 
 the `-Pbeamline.abi` build property, `AppUpdate` (`:core:download`: reads `update.json`, picks the
 phone's APK, never a downgrade) and `AppUpdater` (`:core:download`: the daily check and the download
 through `PackHttp`, so under its network rules, with the size and SHA-256 checked; tests against a local
-server). Still to build in the app: the switch, the Wi-Fi rule, the signing-certificate check, the
-install with `PackageInstaller`, the chip and the "Updated to" note (section 4).
+server), and in the app (0.1.26) `AppUpdates` (`app/update/`): Settings, Online features, "Check for app
+updates" (an online.json from before takes the main switch) and "Check for an update now"; the daily check
+on start; downloads by themselves on an unmetered network only; the chip "Beamline 0.1.x is ready ·
+Install" (hidden while guiding); before installing, the package name, a higher version code and the
+installed app's signing certificate; `PackageInstaller` with `USER_ACTION_NOT_REQUIRED` on Android 12+;
+leaving the app installs only when Beamline installed the current version itself (silent); the
+"Updated to" chip once after a newer version starts. Debug and test-extras builds have no update
+address. *Not yet tried on a phone:* the install and its dialogs need a published release (section 8).
 
 ## 1. What it does
 
@@ -79,3 +85,11 @@ version, delta updates, updates for the comma 3X software.
 user confirms (a short note "Updated to 0.1.25" afterwards); 2. install on a tap of the chip, or by
 itself when the user leaves the app and it is not guiding; 3. one channel; 4. a release is published
 after every batch the owner approves.
+
+## 8. Rollout
+
+1. 0.1.26 (the first with the updater) goes on the owner's phone over USB, the last time.
+2. When the owner approves it, `python tools/release.py --notes "..." --publish` makes release v0.1.26.
+3. The next approved batch (0.1.27) is the real test: the phone finds it, Android asks once to allow
+   "Install unknown apps" for Beamline and to confirm the install; later updates should be silent.
+   A test build installed over USB makes the shell the installer again, so the next update asks once more.

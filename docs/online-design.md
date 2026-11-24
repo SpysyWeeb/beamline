@@ -20,6 +20,7 @@ The online features this design covers:
 | **Fix a place's details** (item 21) | Changes a place's hours, phone, website or name in OSM | openstreetmap.org | the user's OSM login |
 | **Add a missing place** (item 21) | Adds a new point to OSM with its type, name and details | openstreetmap.org | the user's OSM login |
 | **Find places online** (item 7) | Finds an address or place whose state is not on the phone (the gap of item 6) | an address-lookup service (section 5) | none |
+| **Check for app updates** (item 41, 0.1.26) | Once a day when the app opens, fetches the app's `update.json` from its GitHub releases; downloads a newer APK on Wi-Fi (or on a tap) and installs it when not guiding | the app's releases on GitHub (`PackHttp`) | none |
 | **Check for map updates** (item 40, 0.1.24) | Once a day when the app opens, fetches the list of states (a few kilobytes, never a pack) and puts a chip on the map when an installed state has newer map data | the packs' catalog on GitHub (`PackHttp`) | none |
 
 Not in this design: online routing through areas that are not installed, traffic and closures.
@@ -290,7 +291,8 @@ and the switch as a condition:
     is off.
   - **One exception, by the user's own switch (item 40, the owner, 2026-11-24):** with "Check for
     map updates" on, `PackHttp` fetches the list of states when the app becomes visible and the last
-    fetch is a day old or more; never a pack, never while the app is closed.
+    fetch is a day old or more; never a pack, never while the app is closed. The same for "Check for
+    app updates" (item 41): the app's `update.json` once a day, its APK on an unmetered network only.
 - **N5 everything else offline**, unchanged: maps, routing and search never need the network.
 - **Proof:**
   - the source scan learns the new classes;
