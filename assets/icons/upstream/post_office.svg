@@ -1,0 +1,10 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="520.25 8.5 19 19">
+  <!-- Extracted from protomaps/basemaps sprites/refill.svg (commit 42ffaaa4) group '_post_office'. Derived from tangrams/icons, Copyright (c) 2017 Mapzen, MIT License; Protomaps visual design CC0-1.0. See assets/LICENSES.md. -->
+  <g>
+      <rect x="520.75" y="9" width="18" height="18" rx="4" ry="4" stroke-miterlimit="10" stroke="#3f3f3f" fill="#f4f4f4" />
+      <rect x="524.69" y="15" width="10.06" height="7" stroke="#3f3f3f" stroke-linecap="round" stroke-linejoin="round" fill="#d3d3d3" />
+      <path d="M534.69,15l-4.24,4.45c-.39,.4-.87,.39-1.33,0l-4.35-4.45h9.92Z" stroke="#3f3f3f" fill="none" stroke-linecap="round" stroke-linejoin="round" />
+      <line x1="527.88" y1="18.1" x2="525.03" y2="21.08" stroke="#3f3f3f" fill="none" stroke-linecap="round" stroke-linejoin="round" />
+      <line x1="531.67" y1="18.1" x2="534.57" y2="21.15" stroke="#3f3f3f" fill="none" stroke-linecap="round" stroke-linejoin="round" />
+   </g>
+</svg>

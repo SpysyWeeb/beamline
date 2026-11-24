@@ -1,0 +1,11 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="436.31 348.5 19 19">
+  <!-- Extracted from protomaps/basemaps sprites/refill.svg (commit 42ffaaa4) group '_bench'. Derived from tangrams/icons, Copyright (c) 2017 Mapzen, MIT License; Protomaps visual design CC0-1.0. See assets/LICENSES.md. -->
+  <g>
+      <rect x="436.81" y="349" width="18" height="18" rx="4" ry="4" stroke-miterlimit="10" stroke="#3f3f3f" fill="#f4f4f4" />
+      <line x1="442.31" y1="356" x2="449.31" y2="356" stroke-miterlimit="10" stroke="#3f3f3f" fill="none" />
+      <line x1="442.31" y1="358" x2="449.31" y2="358" stroke-miterlimit="10" stroke="#3f3f3f" fill="none" />
+      <line x1="441.31" y1="360" x2="450.31" y2="360" stroke-miterlimit="10" stroke="#3f3f3f" fill="none" />
+      <line x1="440.81" y1="358.5" x2="440.81" y2="361.5" stroke-miterlimit="10" stroke="#3f3f3f" fill="none" />
+      <line x1="450.81" y1="358.5" x2="450.81" y2="361.5" stroke-miterlimit="10" stroke="#3f3f3f" fill="none" />
+   </g>
+</svg>

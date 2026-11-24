@@ -1,0 +1,7303 @@
+{
+ "presets_format": "beamline-route-presets/2", 
+ "option_sets": {
+  "none": [], 
+  "highways": [
+   "avoid_highways"
+  ], 
+  "tolls": [
+   "avoid_tolls"
+  ], 
+  "both": [
+   "avoid_highways", 
+   "avoid_tolls"
+  ]
+ }, 
+ "plans": {
+  "fastest": {
+   "none": {
+    "U1": {
+     "time_s": 374.9, 
+     "length_km": 5.41, 
+     "legs": 1, 
+     "maneuvers": 4, 
+     "maneuvers_total": 6, 
+     "highway_km": 2.38, 
+     "toll_km": 0, 
+     "endpoint_gap_m": [
+      32, 
+      94
+     ], 
+     "ok": true, 
+     "has_toll": false, 
+     "has_highway": true, 
+     "tie_check": "kept", 
+     "end": "near", 
+     "end_point": [
+      40.4441, 
+      -79.950046
+     ]
+    }, 
+    "U2": {
+     "time_s": 176.3, 
+     "length_km": 2.123, 
+     "legs": 1, 
+     "maneuvers": 2, 
+     "maneuvers_total": 4, 
+     "highway_km": 0, 
+     "toll_km": 0, 
+     "endpoint_gap_m": [
+      80, 
+      75
+     ], 
+     "ok": true, 
+     "has_toll": false, 
+     "has_highway": false, 
+     "tie_check": "kept", 
+     "arrival_side": "asked", 
+     "end": "near", 
+     "end_point": [
+      39.95581, 
+      -75.183064
+     ]
+    }, 
+    "U3": {
+     "time_s": 531.6, 
+     "length_km": 7.855, 
+     "legs": 1, 
+     "maneuvers": 3, 
+     "maneuvers_total": 5, 
+     "highway_km": 0, 
+     "toll_km": 0, 
+     "endpoint_gap_m": [
+      2, 
+      173
+     ], 
+     "ok": true, 
+     "has_toll": false, 
+     "has_highway": false, 
+     "tie_check": "kept", 
+     "end": "near", 
+     "end_point": [
+      42.108774, 
+      -80.15529
+     ]
+    }, 
+    "U4": {
+     "time_s": 739.2, 
+     "length_km": 12.242, 
+     "legs": 1, 
+     "maneuvers": 9, 
+     "maneuvers_total": 11, 
+     "highway_km": 6.08, 
+     "toll_km": 0, 
+     "endpoint_gap_m": [
+      70, 
+      106
+     ], 
+     "ok": true, 
+     "has_toll": false, 
+     "has_highway": true, 
+     "tie_check": "kept", 
+     "end": "near", 
+     "end_point": [
+      41.507935, 
+      -81.610629
+     ]
+    }, 
+    "U5": {
+     "time_s": 310.7, 
+     "length_km": 3.768, 
+     "legs": 1, 
+     "maneuvers": 5, 
+     "maneuvers_total": 7, 
+     "highway_km": 0, 
+     "toll_km": 0, 
+     "endpoint_gap_m": [
+      104, 
+      35
+     ], 
+     "ok": true, 
+     "has_toll": false, 
+     "has_highway": false, 
+     "tie_check": "kept", 
+     "end": "near", 
+     "end_point": [
+      40.794721, 
+      -77.859699
+     ]
+    }, 
+    "R1": {
+     "time_s": 1214.8, 
+     "length_km": 23.135, 
+     "legs": 1, 
+     "maneuvers": 8, 
+     "maneuvers_total": 10, 
+     "highway_km": 20.71, 
+     "toll_km": 0, 
+     "endpoint_gap_m": [
+      73, 
+      156
+     ], 
+     "ok": true, 
+     "has_toll": false, 
+     "has_highway": true, 
+     "tie_check": "kept", 
+     "arrival_side": "asked", 
+     "end": "near", 
+     "end_point": [
+      40.288634, 
+      -76.652676
+     ]
+    }, 
+    "R2": {
+     "time_s": 4527.6, 
+     "length_km": 88.915, 
+     "legs": 1, 
+     "maneuvers": 12, 
+     "maneuvers_total": 14, 
+     "highway_km": 39.42, 
+     "toll_km": 0, 
+     "endpoint_gap_m": [
+      6, 
+      16
+     ], 
+     "ok": true, 
+     "has_toll": false, 
+     "has_highway": true, 
+     "tie_check": "kept", 
+     "arrival_side": "asked", 
+     "end": "near", 
+     "end_point": [
+      39.830805, 
+      -77.230964
+     ]
+    }, 
+    "I1": {
+     "time_s": 16950.0, 
+     "length_km": 478.506, 
+     "legs": 1, 
+     "maneuvers": 17, 
+     "maneuvers_total": 19, 
+     "highway_km": 456.05, 
+     "toll_km": 0, 
+     "endpoint_gap_m": [
+      2, 
+      137
+     ], 
+     "ok": true, 
+     "has_toll": false, 
+     "has_highway": true, 
+     "tie_check": "kept", 
+     "arrival_side": "asked", 
+     "end": "near", 
+     "end_point": [
+      40.264016, 
+      -76.884924
+     ]
+    }, 
+    "I2": {
+     "time_s": 16711.4, 
+     "length_km": 455.018, 
+     "legs": 1, 
+     "maneuvers": 16, 
+     "maneuvers_total": 18, 
+     "highway_km": 452.52, 
+     "toll_km": 0, 
+     "endpoint_gap_m": [
+      10, 
+      32
+     ], 
+     "ok": true, 
+     "has_toll": false, 
+     "has_highway": true, 
+     "tie_check": "kept", 
+     "end": "near", 
+     "end_point": [
+      40.440622, 
+      -80.002226
+     ]
+    }, 
+    "I3": {
+     "time_s": 7965.0, 
+     "length_km": 232.424, 
+     "legs": 1, 
+     "maneuvers": 14, 
+     "maneuvers_total": 16, 
+     "highway_km": 227.09, 
+     "toll_km": 0, 
+     "endpoint_gap_m": [
+      80, 
+      70
+     ], 
+     "ok": true, 
+     "has_toll": false, 
+     "has_highway": true, 
+     "tie_check": "kept", 
+     "arrival_side": "asked", 
+     "end": "near", 
+     "end_point": [
+      41.499163, 
+      -81.694408
+     ]
+    }, 
+    "I4": {
+     "time_s": 7660.1, 
+     "length_km": 186.253, 
+     "legs": 1, 
+     "maneuvers": 13, 
+     "maneuvers_total": 15, 
+     "highway_km": 111.96, 
+     "toll_km": 0, 
+     "endpoint_gap_m": [
+      1, 
+      2
+     ], 
+     "ok": true, 
+     "has_toll": false, 
+     "has_highway": true, 
+     "tie_check": "kept", 
+     "end": "near", 
+     "end_point": [
+      41.241209, 
+      -77.001082
+     ]
+    }, 
+    "T1": {
+     "time_s": 16609.0, 
+     "length_km": 491.193, 
+     "legs": 1, 
+     "maneuvers": 16, 
+     "maneuvers_total": 18, 
+     "highway_km": 486.71, 
+     "toll_km": 461.03, 
+     "endpoint_gap_m": [
+      80, 
+      32
+     ], 
+     "ok": true, 
+     "has_toll": true, 
+     "has_highway": true, 
+     "tie_check": "kept", 
+     "end": "near", 
+     "end_point": [
+      40.440622, 
+      -80.002226
+     ]
+    }, 
+    "T2": {
+     "time_s": 5873.4, 
+     "length_km": 171.721, 
+     "legs": 1, 
+     "maneuvers": 13, 
+     "maneuvers_total": 15, 
+     "highway_km": 163.8, 
+     "toll_km": 163.69, 
+     "endpoint_gap_m": [
+      9, 
+      253
+     ], 
+     "ok": true, 
+     "has_toll": true, 
+     "has_highway": true, 
+     "tie_check": "kept", 
+     "end": "near", 
+     "end_point": [
+      40.09067, 
+      -75.392714
+     ]
+    }, 
+    "X1": {
+     "time_s": 3266.2, 
+     "length_km": 72.519, 
+     "legs": 1, 
+     "maneuvers": 2, 
+     "maneuvers_total": 4, 
+     "highway_km": 0, 
+     "toll_km": 0, 
+     "endpoint_gap_m": [
+      16, 
+      23
+     ], 
+     "ok": true, 
+     "has_toll": false, 
+     "has_highway": false, 
+     "tie_check": "kept", 
+     "end": "near", 
+     "end_point": [
+      41.774814, 
+      -78.020978
+     ]
+    }, 
+    "X2": {
+     "time_s": 2618.6, 
+     "length_km": 51.992, 
+     "legs": 1, 
+     "maneuvers": 5, 
+     "maneuvers_total": 7, 
+     "highway_km": 0, 
+     "toll_km": 0, 
+     "endpoint_gap_m": [
+      62, 
+      11
+     ], 
+     "ok": true, 
+     "has_toll": false, 
+     "has_highway": false, 
+     "tie_check": "kept", 
+     "end": "near", 
+     "end_point": [
+      41.420745, 
+      -78.728484
+     ]
+    }, 
+    "X3": {
+     "time_s": 833.7, 
+     "length_km": 15.161, 
+     "legs": 1, 
+     "maneuvers": 4, 
+     "maneuvers_total": 6, 
+     "highway_km": 0, 
+     "toll_km": 0, 
+     "endpoint_gap_m": [
+      4, 
+      15
+     ], 
+     "ok": true, 
+     "has_toll": false, 
+     "has_highway": false, 
+     "tie_check": "kept", 
+     "end": "near", 
+     "end_point": [
+      39.983067, 
+      -76.18431
+     ]
+    }, 
+    "B1": {
+     "time_s": 5868.8, 
+     "length_km": 165.591, 
+     "legs": 1, 
+     "maneuvers": 15, 
+     "maneuvers_total": 17, 
+     "highway_km": 162.73, 
+     "toll_km": 0, 
+     "endpoint_gap_m": [
+      2, 
+      70
+     ], 
+     "ok": true, 
+     "has_toll": false, 
+     "has_highway": true, 
+     "tie_check": "kept", 
+     "arrival_side": "asked", 
+     "end": "near", 
+     "end_point": [
+      41.499163, 
+      -81.694408
+     ]
+    }, 
+    "B2": {
+     "time_s": 4169.9, 
+     "length_km": 109.605, 
+     "legs": 1, 
+     "maneuvers": 21, 
+     "maneuvers_total": 23, 
+     "highway_km": 105.68, 
+     "toll_km": 58.13, 
+     "endpoint_gap_m": [
+      29, 
+      32
+     ], 
+     "ok": true, 
+     "has_toll": true, 
+     "has_highway": true, 
+     "tie_check": "kept", 
+     "end": "near", 
+     "end_point": [
+      40.440622, 
+      -80.002226
+     ]
+    }, 
+    "B3": {
+     "time_s": 7693.9, 
+     "length_km": 216.767, 
+     "legs": 1, 
+     "maneuvers": 20, 
+     "maneuvers_total": 22, 
+     "highway_km": 210.01, 
+     "toll_km": 155.72, 
+     "endpoint_gap_m": [
+      70, 
+      32
+     ], 
+     "ok": true, 
+     "has_toll": true, 
+     "has_highway": true, 
+     "tie_check": "kept", 
+     "end": "near", 
+     "end_point": [
+      40.440622, 
+      -80.002226
+     ]
+    }, 
+    "B4": {
+     "time_s": 7369.3, 
+     "length_km": 203.9, 
+     "legs": 1, 
+     "maneuvers": 19, 
+     "maneuvers_total": 21, 
+     "highway_km": 200.01, 
+     "toll_km": 0, 
+     "endpoint_gap_m": [
+      17, 
+      2
+     ], 
+     "ok": true, 
+     "has_toll": false, 
+     "has_highway": true, 
+     "tie_check": "kept", 
+     "end": "near", 
+     "end_point": [
+      42.127016, 
+      -80.085211
+     ]
+    }, 
+    "B5": {
+     "time_s": 621.7, 
+     "length_km": 12.346, 
+     "legs": 1, 
+     "maneuvers": 5, 
+     "maneuvers_total": 7, 
+     "highway_km": 0, 
+     "toll_km": 0, 
+     "endpoint_gap_m": [
+      3, 
+      8
+     ], 
+     "ok": true, 
+     "has_toll": false, 
+     "has_highway": false, 
+     "tie_check": "kept", 
+     "end": "near", 
+     "end_point": [
+      41.156424, 
+      -80.569299
+     ]
+    }
+   }, 
+   "highways": {
+    "U1": {
+     "time_s": 418.1, 
+     "length_km": 5.173, 
+     "legs": 1, 
+     "maneuvers": 4, 
+     "maneuvers_total": 6, 
+     "highway_km": 0, 
+     "toll_km": 0, 
+     "endpoint_gap_m": [
+      32, 
+      94
+     ], 
+     "ok": true, 
+     "has_toll": false, 
+     "has_highway": false, 
+     "tie_check": "kept", 
+     "end": "near", 
+     "end_point": [
+      40.4441, 
+      -79.950046
+     ]
+    }, 
+    "U2": {
+     "time_s": 176.3, 
+     "length_km": 2.123, 
+     "legs": 1, 
+     "maneuvers": 2, 
+     "maneuvers_total": 4, 
+     "highway_km": 0, 
+     "toll_km": 0, 
+     "endpoint_gap_m": [
+      80, 
+      75
+     ], 
+     "ok": true, 
+     "has_toll": false, 
+     "has_highway": false, 
+     "tie_check": "kept", 
+     "arrival_side": "asked", 
+     "end": "near", 
+     "end_point": [
+      39.95581, 
+      -75.183064
+     ]
+    }, 
+    "U3": {
+     "time_s": 531.6, 
+     "length_km": 7.855, 
+     "legs": 1, 
+     "maneuvers": 3, 
+     "maneuvers_total": 5, 
+     "highway_km": 0, 
+     "toll_km": 0, 
+     "endpoint_gap_m": [
+      2, 
+      173
+     ], 
+     "ok": true, 
+     "has_toll": false, 
+     "has_highway": false, 
+     "tie_check": "kept", 
+     "end": "near", 
+     "end_point": [
+      42.108774, 
+      -80.15529
+     ]
+    }, 
+    "U4": {
+     "time_s": 731.1, 
+     "length_km": 8.635, 
+     "legs": 1, 
+     "maneuvers": 8, 
+     "maneuvers_total": 10, 
+     "highway_km": 0, 
+     "toll_km": 0, 
+     "endpoint_gap_m": [
+      70, 
+      106
+     ], 
+     "ok": true, 
+     "has_toll": false, 
+     "has_highway": false, 
+     "tie_check": "kept", 
+     "arrival_side": "side", 
+     "end": "near", 
+     "end_point": [
+      41.507935, 
+      -81.610629
+     ]
+    }, 
+    "U5": {
+     "time_s": 310.7, 
+     "length_km": 3.768, 
+     "legs": 1, 
+     "maneuvers": 5, 
+     "maneuvers_total": 7, 
+     "highway_km": 0, 
+     "toll_km": 0, 
+     "endpoint_gap_m": [
+      104, 
+      35
+     ], 
+     "ok": true, 
+     "has_toll": false, 
+     "has_highway": false, 
+     "tie_check": "kept", 
+     "end": "near", 
+     "end_point": [
+      40.794721, 
+      -77.859699
+     ]
+    }, 
+    "R1": {
+     "time_s": 1646.5, 
+     "length_km": 23.804, 
+     "legs": 1, 
+     "maneuvers": 14, 
+     "maneuvers_total": 16, 
+     "highway_km": 0, 
+     "toll_km": 0, 
+     "endpoint_gap_m": [
+      73, 
+      156
+     ], 
+     "ok": true, 
+     "has_toll": false, 
+     "has_highway": false, 
+     "tie_check": "kept", 
+     "end": "near", 
+     "end_point": [
+      40.288634, 
+      -76.652676
+     ]
+    }, 
+    "R2": {
+     "time_s": 5218.7, 
+     "length_km": 86.412, 
+     "legs": 1, 
+     "maneuvers": 14, 
+     "maneuvers_total": 16, 
+     "highway_km": 0, 
+     "toll_km": 0, 
+     "endpoint_gap_m": [
+      6, 
+      16
+     ], 
+     "ok": true, 
+     "has_toll": false, 
+     "has_highway": false, 
+     "tie_check": "kept", 
+     "arrival_side": "asked", 
+     "end": "near", 
+     "end_point": [
+      39.830805, 
+      -77.230964
+     ]
+    }, 
+    "I1": {
+     "time_s": 24454.2, 
+     "length_km": 513.882, 
+     "legs": 1, 
+     "maneuvers": 27, 
+     "maneuvers_total": 29, 
+     "highway_km": 0, 
+     "toll_km": 0, 
+     "endpoint_gap_m": [
+      2, 
+      137
+     ], 
+     "ok": true, 
+     "has_toll": false, 
+     "has_highway": false, 
+     "tie_check": "kept", 
+     "arrival_side": "side", 
+     "end": "near", 
+     "end_point": [
+      40.264016, 
+      -76.884924
+     ]
+    }, 
+    "I2": {
+     "time_s": 26028.6, 
+     "length_km": 515.787, 
+     "legs": 1, 
+     "maneuvers": 46, 
+     "maneuvers_total": 48, 
+     "highway_km": 0, 
+     "toll_km": 0, 
+     "endpoint_gap_m": [
+      10, 
+      32
+     ], 
+     "ok": true, 
+     "has_toll": false, 
+     "has_highway": false, 
+     "tie_check": "kept", 
+     "end": "near", 
+     "end_point": [
+      40.440622, 
+      -80.002226
+     ]
+    }, 
+    "I3": {
+     "time_s": 12290.4, 
+     "length_km": 232.333, 
+     "legs": 1, 
+     "maneuvers": 25, 
+     "maneuvers_total": 27, 
+     "highway_km": 0, 
+     "toll_km": 0, 
+     "endpoint_gap_m": [
+      80, 
+      70
+     ], 
+     "ok": true, 
+     "has_toll": false, 
+     "has_highway": false, 
+     "tie_check": "kept", 
+     "arrival_side": "asked", 
+     "end": "near", 
+     "end_point": [
+      41.499163, 
+      -81.694408
+     ]
+    }, 
+    "I4": {
+     "time_s": 9705.5, 
+     "length_km": 195.647, 
+     "legs": 1, 
+     "maneuvers": 20, 
+     "maneuvers_total": 22, 
+     "highway_km": 0, 
+     "toll_km": 0, 
+     "endpoint_gap_m": [
+      1, 
+      2
+     ], 
+     "ok": true, 
+     "has_toll": false, 
+     "has_highway": false, 
+     "tie_check": "kept", 
+     "end": "near", 
+     "end_point": [
+      41.241209, 
+      -77.001082
+     ]
+    }, 
+    "T1": {
+     "time_s": 25737.4, 
+     "length_km": 492.589, 
+     "legs": 1, 
+     "maneuvers": 43, 
+     "maneuvers_total": 45, 
+     "highway_km": 0, 
+     "toll_km": 0, 
+     "endpoint_gap_m": [
+      80, 
+      32
+     ], 
+     "ok": true, 
+     "has_toll": false, 
+     "has_highway": false, 
+     "tie_check": "kept", 
+     "end": "near", 
+     "end_point": [
+      40.440622, 
+      -80.002226
+     ]
+    }, 
+    "T2": {
+     "time_s": 10472.1, 
+     "length_km": 181.694, 
+     "legs": 1, 
+     "maneuvers": 28, 
+     "maneuvers_total": 30, 
+     "highway_km": 0, 
+     "toll_km": 0, 
+     "endpoint_gap_m": [
+      9, 
+      253
+     ], 
+     "ok": true, 
+     "has_toll": false, 
+     "has_highway": false, 
+     "tie_check": "kept", 
+     "end": "near", 
+     "end_point": [
+      40.09067, 
+      -75.392714
+     ]
+    }, 
+    "X1": {
+     "time_s": 3266.2, 
+     "length_km": 72.519, 
+     "legs": 1, 
+     "maneuvers": 2, 
+     "maneuvers_total": 4, 
+     "highway_km": 0, 
+     "toll_km": 0, 
+     "endpoint_gap_m": [
+      16, 
+      23
+     ], 
+     "ok": true, 
+     "has_toll": false, 
+     "has_highway": false, 
+     "tie_check": "kept", 
+     "end": "near", 
+     "end_point": [
+      41.774814, 
+      -78.020978
+     ]
+    }, 
+    "X2": {
+     "time_s": 2618.6, 
+     "length_km": 51.992, 
+     "legs": 1, 
+     "maneuvers": 5, 
+     "maneuvers_total": 7, 
+     "highway_km": 0, 
+     "toll_km": 0, 
+     "endpoint_gap_m": [
+      62, 
+      11
+     ], 
+     "ok": true, 
+     "has_toll": false, 
+     "has_highway": false, 
+     "tie_check": "kept", 
+     "end": "near", 
+     "end_point": [
+      41.420745, 
+      -78.728484
+     ]
+    }, 
+    "X3": {
+     "time_s": 833.7, 
+     "length_km": 15.161, 
+     "legs": 1, 
+     "maneuvers": 4, 
+     "maneuvers_total": 6, 
+     "highway_km": 0, 
+     "toll_km": 0, 
+     "endpoint_gap_m": [
+      4, 
+      15
+     ], 
+     "ok": true, 
+     "has_toll": false, 
+     "has_highway": false, 
+     "tie_check": "kept", 
+     "end": "near", 
+     "end_point": [
+      39.983067, 
+      -76.18431
+     ]
+    }, 
+    "B1": {
+     "time_s": 9709.1, 
+     "length_km": 183.56, 
+     "legs": 1, 
+     "maneuvers": 14, 
+     "maneuvers_total": 16, 
+     "highway_km": 0, 
+     "toll_km": 0, 
+     "endpoint_gap_m": [
+      2, 
+      70
+     ], 
+     "ok": true, 
+     "has_toll": false, 
+     "has_highway": false, 
+     "tie_check": "kept", 
+     "arrival_side": "asked", 
+     "end": "near", 
+     "end_point": [
+      41.499163, 
+      -81.694408
+     ]
+    }, 
+    "B2": {
+     "time_s": 5377.6, 
+     "length_km": 104.153, 
+     "legs": 1, 
+     "maneuvers": 25, 
+     "maneuvers_total": 27, 
+     "highway_km": 0, 
+     "toll_km": 0, 
+     "endpoint_gap_m": [
+      29, 
+      32
+     ], 
+     "ok": true, 
+     "has_toll": false, 
+     "has_highway": false, 
+     "tie_check": "kept", 
+     "end": "near", 
+     "end_point": [
+      40.440622, 
+      -80.002226
+     ]
+    }, 
+    "B3": {
+     "time_s": 10969.6, 
+     "length_km": 208.654, 
+     "legs": 1, 
+     "maneuvers": 29, 
+     "maneuvers_total": 31, 
+     "highway_km": 0, 
+     "toll_km": 0, 
+     "endpoint_gap_m": [
+      70, 
+      32
+     ], 
+     "ok": true, 
+     "has_toll": false, 
+     "has_highway": false, 
+     "tie_check": "kept", 
+     "end": "near", 
+     "end_point": [
+      40.440622, 
+      -80.002226
+     ]
+    }, 
+    "B4": {
+     "time_s": 10706.6, 
+     "length_km": 215.449, 
+     "legs": 1, 
+     "maneuvers": 26, 
+     "maneuvers_total": 28, 
+     "highway_km": 0, 
+     "toll_km": 0, 
+     "endpoint_gap_m": [
+      17, 
+      2
+     ], 
+     "ok": true, 
+     "has_toll": false, 
+     "has_highway": false, 
+     "tie_check": "kept", 
+     "end": "near", 
+     "end_point": [
+      42.127016, 
+      -80.085211
+     ]
+    }, 
+    "B5": {
+     "time_s": 621.7, 
+     "length_km": 12.346, 
+     "legs": 1, 
+     "maneuvers": 5, 
+     "maneuvers_total": 7, 
+     "highway_km": 0, 
+     "toll_km": 0, 
+     "endpoint_gap_m": [
+      3, 
+      8
+     ], 
+     "ok": true, 
+     "has_toll": false, 
+     "has_highway": false, 
+     "tie_check": "kept", 
+     "end": "near", 
+     "end_point": [
+      41.156424, 
+      -80.569299
+     ]
+    }
+   }, 
+   "tolls": {
+    "U1": {
+     "time_s": 374.9, 
+     "length_km": 5.41, 
+     "legs": 1, 
+     "maneuvers": 4, 
+     "maneuvers_total": 6, 
+     "highway_km": 2.38, 
+     "toll_km": 0, 
+     "endpoint_gap_m": [
+      32, 
+      94
+     ], 
+     "ok": true, 
+     "has_toll": false, 
+     "has_highway": true, 
+     "tie_check": "kept", 
+     "end": "near", 
+     "end_point": [
+      40.4441, 
+      -79.950046
+     ]
+    }, 
+    "U2": {
+     "time_s": 176.3, 
+     "length_km": 2.123, 
+     "legs": 1, 
+     "maneuvers": 2, 
+     "maneuvers_total": 4, 
+     "highway_km": 0, 
+     "toll_km": 0, 
+     "endpoint_gap_m": [
+      80, 
+      75
+     ], 
+     "ok": true, 
+     "has_toll": false, 
+     "has_highway": false, 
+     "tie_check": "kept", 
+     "arrival_side": "asked", 
+     "end": "near", 
+     "end_point": [
+      39.95581, 
+      -75.183064
+     ]
+    }, 
+    "U3": {
+     "time_s": 531.6, 
+     "length_km": 7.855, 
+     "legs": 1, 
+     "maneuvers": 3, 
+     "maneuvers_total": 5, 
+     "highway_km": 0, 
+     "toll_km": 0, 
+     "endpoint_gap_m": [
+      2, 
+      173
+     ], 
+     "ok": true, 
+     "has_toll": false, 
+     "has_highway": false, 
+     "tie_check": "kept", 
+     "end": "near", 
+     "end_point": [
+      42.108774, 
+      -80.15529
+     ]
+    }, 
+    "U4": {
+     "time_s": 739.2, 
+     "length_km": 12.242, 
+     "legs": 1, 
+     "maneuvers": 9, 
+     "maneuvers_total": 11, 
+     "highway_km": 6.08, 
+     "toll_km": 0, 
+     "endpoint_gap_m": [
+      70, 
+      106
+     ], 
+     "ok": true, 
+     "has_toll": false, 
+     "has_highway": true, 
+     "tie_check": "kept", 
+     "end": "near", 
+     "end_point": [
+      41.507935, 
+      -81.610629
+     ]
+    }, 
+    "U5": {
+     "time_s": 310.7, 
+     "length_km": 3.768, 
+     "legs": 1, 
+     "maneuvers": 5, 
+     "maneuvers_total": 7, 
+     "highway_km": 0, 
+     "toll_km": 0, 
+     "endpoint_gap_m": [
+      104, 
+      35
+     ], 
+     "ok": true, 
+     "has_toll": false, 
+     "has_highway": false, 
+     "tie_check": "kept", 
+     "end": "near", 
+     "end_point": [
+      40.794721, 
+      -77.859699
+     ]
+    }, 
+    "R1": {
+     "time_s": 1214.8, 
+     "length_km": 23.135, 
+     "legs": 1, 
+     "maneuvers": 8, 
+     "maneuvers_total": 10, 
+     "highway_km": 20.71, 
+     "toll_km": 0, 
+     "endpoint_gap_m": [
+      73, 
+      156
+     ], 
+     "ok": true, 
+     "has_toll": false, 
+     "has_highway": true, 
+     "tie_check": "kept", 
+     "arrival_side": "asked", 
+     "end": "near", 
+     "end_point": [
+      40.288634, 
+      -76.652676
+     ]
+    }, 
+    "R2": {
+     "time_s": 4527.6, 
+     "length_km": 88.915, 
+     "legs": 1, 
+     "maneuvers": 12, 
+     "maneuvers_total": 14, 
+     "highway_km": 39.42, 
+     "toll_km": 0, 
+     "endpoint_gap_m": [
+      6, 
+      16
+     ], 
+     "ok": true, 
+     "has_toll": false, 
+     "has_highway": true, 
+     "tie_check": "kept", 
+     "arrival_side": "asked", 
+     "end": "near", 
+     "end_point": [
+      39.830805, 
+      -77.230964
+     ]
+    }, 
+    "I1": {
+     "time_s": 16950.0, 
+     "length_km": 478.506, 
+     "legs": 1, 
+     "maneuvers": 17, 
+     "maneuvers_total": 19, 
+     "highway_km": 456.05, 
+     "toll_km": 0, 
+     "endpoint_gap_m": [
+      2, 
+      137
+     ], 
+     "ok": true, 
+     "has_toll": false, 
+     "has_highway": true, 
+     "tie_check": "kept", 
+     "arrival_side": "asked", 
+     "end": "near", 
+     "end_point": [
+      40.264016, 
+      -76.884924
+     ]
+    }, 
+    "I2": {
+     "time_s": 16711.4, 
+     "length_km": 455.018, 
+     "legs": 1, 
+     "maneuvers": 16, 
+     "maneuvers_total": 18, 
+     "highway_km": 452.52, 
+     "toll_km": 0, 
+     "endpoint_gap_m": [
+      10, 
+      32
+     ], 
+     "ok": true, 
+     "has_toll": false, 
+     "has_highway": true, 
+     "tie_check": "kept", 
+     "end": "near", 
+     "end_point": [
+      40.440622, 
+      -80.002226
+     ]
+    }, 
+    "I3": {
+     "time_s": 7965.0, 
+     "length_km": 232.424, 
+     "legs": 1, 
+     "maneuvers": 14, 
+     "maneuvers_total": 16, 
+     "highway_km": 227.09, 
+     "toll_km": 0, 
+     "endpoint_gap_m": [
+      80, 
+      70
+     ], 
+     "ok": true, 
+     "has_toll": false, 
+     "has_highway": true, 
+     "tie_check": "kept", 
+     "arrival_side": "asked", 
+     "end": "near", 
+     "end_point": [
+      41.499163, 
+      -81.694408
+     ]
+    }, 
+    "I4": {
+     "time_s": 7660.1, 
+     "length_km": 186.253, 
+     "legs": 1, 
+     "maneuvers": 13, 
+     "maneuvers_total": 15, 
+     "highway_km": 111.96, 
+     "toll_km": 0, 
+     "endpoint_gap_m": [
+      1, 
+      2
+     ], 
+     "ok": true, 
+     "has_toll": false, 
+     "has_highway": true, 
+     "tie_check": "kept", 
+     "end": "near", 
+     "end_point": [
+      41.241209, 
+      -77.001082
+     ]
+    }, 
+    "T1": {
+     "time_s": 20997.8, 
+     "length_km": 531.527, 
+     "legs": 1, 
+     "maneuvers": 31, 
+     "maneuvers_total": 33, 
+     "highway_km": 504.9, 
+     "toll_km": 0, 
+     "endpoint_gap_m": [
+      80, 
+      32
+     ], 
+     "ok": true, 
+     "has_toll": false, 
+     "has_highway": true, 
+     "tie_check": "kept", 
+     "end": "near", 
+     "end_point": [
+      40.440622, 
+      -80.002226
+     ]
+    }, 
+    "T2": {
+     "time_s": 7279.7, 
+     "length_km": 177.833, 
+     "legs": 1, 
+     "maneuvers": 17, 
+     "maneuvers_total": 19, 
+     "highway_km": 143.74, 
+     "toll_km": 0, 
+     "endpoint_gap_m": [
+      9, 
+      253
+     ], 
+     "ok": true, 
+     "has_toll": false, 
+     "has_highway": true, 
+     "tie_check": "kept", 
+     "end": "near", 
+     "end_point": [
+      40.09067, 
+      -75.392714
+     ]
+    }, 
+    "X1": {
+     "time_s": 3266.2, 
+     "length_km": 72.519, 
+     "legs": 1, 
+     "maneuvers": 2, 
+     "maneuvers_total": 4, 
+     "highway_km": 0, 
+     "toll_km": 0, 
+     "endpoint_gap_m": [
+      16, 
+      23
+     ], 
+     "ok": true, 
+     "has_toll": false, 
+     "has_highway": false, 
+     "tie_check": "kept", 
+     "end": "near", 
+     "end_point": [
+      41.774814, 
+      -78.020978
+     ]
+    }, 
+    "X2": {
+     "time_s": 2618.6, 
+     "length_km": 51.992, 
+     "legs": 1, 
+     "maneuvers": 5, 
+     "maneuvers_total": 7, 
+     "highway_km": 0, 
+     "toll_km": 0, 
+     "endpoint_gap_m": [
+      62, 
+      11
+     ], 
+     "ok": true, 
+     "has_toll": false, 
+     "has_highway": false, 
+     "tie_check": "kept", 
+     "end": "near", 
+     "end_point": [
+      41.420745, 
+      -78.728484
+     ]
+    }, 
+    "X3": {
+     "time_s": 833.7, 
+     "length_km": 15.161, 
+     "legs": 1, 
+     "maneuvers": 4, 
+     "maneuvers_total": 6, 
+     "highway_km": 0, 
+     "toll_km": 0, 
+     "endpoint_gap_m": [
+      4, 
+      15
+     ], 
+     "ok": true, 
+     "has_toll": false, 
+     "has_highway": false, 
+     "tie_check": "kept", 
+     "end": "near", 
+     "end_point": [
+      39.983067, 
+      -76.18431
+     ]
+    }, 
+    "B1": {
+     "time_s": 5868.8, 
+     "length_km": 165.591, 
+     "legs": 1, 
+     "maneuvers": 15, 
+     "maneuvers_total": 17, 
+     "highway_km": 162.73, 
+     "toll_km": 0, 
+     "endpoint_gap_m": [
+      2, 
+      70
+     ], 
+     "ok": true, 
+     "has_toll": false, 
+     "has_highway": true, 
+     "tie_check": "kept", 
+     "arrival_side": "asked", 
+     "end": "near", 
+     "end_point": [
+      41.499163, 
+      -81.694408
+     ]
+    }, 
+    "B2": {
+     "time_s": 4618.9, 
+     "length_km": 115.714, 
+     "legs": 1, 
+     "maneuvers": 24, 
+     "maneuvers_total": 26, 
+     "highway_km": 78.99, 
+     "toll_km": 0, 
+     "endpoint_gap_m": [
+      29, 
+      32
+     ], 
+     "ok": true, 
+     "has_toll": false, 
+     "has_highway": true, 
+     "tie_check": "kept", 
+     "end": "near", 
+     "end_point": [
+      40.440622, 
+      -80.002226
+     ]
+    }, 
+    "B3": {
+     "time_s": 8815.0, 
+     "length_km": 226.805, 
+     "legs": 1, 
+     "maneuvers": 30, 
+     "maneuvers_total": 32, 
+     "highway_km": 187.14, 
+     "toll_km": 0, 
+     "endpoint_gap_m": [
+      70, 
+      32
+     ], 
+     "ok": true, 
+     "has_toll": false, 
+     "has_highway": true, 
+     "tie_check": "kept", 
+     "end": "near", 
+     "end_point": [
+      40.440622, 
+      -80.002226
+     ]
+    }, 
+    "B4": {
+     "time_s": 7369.3, 
+     "length_km": 203.9, 
+     "legs": 1, 
+     "maneuvers": 19, 
+     "maneuvers_total": 21, 
+     "highway_km": 200.01, 
+     "toll_km": 0, 
+     "endpoint_gap_m": [
+      17, 
+      2
+     ], 
+     "ok": true, 
+     "has_toll": false, 
+     "has_highway": true, 
+     "tie_check": "kept", 
+     "end": "near", 
+     "end_point": [
+      42.127016, 
+      -80.085211
+     ]
+    }, 
+    "B5": {
+     "time_s": 621.7, 
+     "length_km": 12.346, 
+     "legs": 1, 
+     "maneuvers": 5, 
+     "maneuvers_total": 7, 
+     "highway_km": 0, 
+     "toll_km": 0, 
+     "endpoint_gap_m": [
+      3, 
+      8
+     ], 
+     "ok": true, 
+     "has_toll": false, 
+     "has_highway": false, 
+     "tie_check": "kept", 
+     "end": "near", 
+     "end_point": [
+      41.156424, 
+      -80.569299
+     ]
+    }
+   }, 
+   "both": {
+    "U1": {
+     "time_s": 418.1, 
+     "length_km": 5.173, 
+     "legs": 1, 
+     "maneuvers": 4, 
+     "maneuvers_total": 6, 
+     "highway_km": 0, 
+     "toll_km": 0, 
+     "endpoint_gap_m": [
+      32, 
+      94
+     ], 
+     "ok": true, 
+     "has_toll": false, 
+     "has_highway": false, 
+     "tie_check": "kept", 
+     "end": "near", 
+     "end_point": [
+      40.4441, 
+      -79.950046
+     ]
+    }, 
+    "U2": {
+     "time_s": 176.3, 
+     "length_km": 2.123, 
+     "legs": 1, 
+     "maneuvers": 2, 
+     "maneuvers_total": 4, 
+     "highway_km": 0, 
+     "toll_km": 0, 
+     "endpoint_gap_m": [
+      80, 
+      75
+     ], 
+     "ok": true, 
+     "has_toll": false, 
+     "has_highway": false, 
+     "tie_check": "kept", 
+     "arrival_side": "asked", 
+     "end": "near", 
+     "end_point": [
+      39.95581, 
+      -75.183064
+     ]
+    }, 
+    "U3": {
+     "time_s": 531.6, 
+     "length_km": 7.855, 
+     "legs": 1, 
+     "maneuvers": 3, 
+     "maneuvers_total": 5, 
+     "highway_km": 0, 
+     "toll_km": 0, 
+     "endpoint_gap_m": [
+      2, 
+      173
+     ], 
+     "ok": true, 
+     "has_toll": false, 
+     "has_highway": false, 
+     "tie_check": "kept", 
+     "end": "near", 
+     "end_point": [
+      42.108774, 
+      -80.15529
+     ]
+    }, 
+    "U4": {
+     "time_s": 731.1, 
+     "length_km": 8.635, 
+     "legs": 1, 
+     "maneuvers": 8, 
+     "maneuvers_total": 10, 
+     "highway_km": 0, 
+     "toll_km": 0, 
+     "endpoint_gap_m": [
+      70, 
+      106
+     ], 
+     "ok": true, 
+     "has_toll": false, 
+     "has_highway": false, 
+     "tie_check": "kept", 
+     "arrival_side": "side", 
+     "end": "near", 
+     "end_point": [
+      41.507935, 
+      -81.610629
+     ]
+    }, 
+    "U5": {
+     "time_s": 310.7, 
+     "length_km": 3.768, 
+     "legs": 1, 
+     "maneuvers": 5, 
+     "maneuvers_total": 7, 
+     "highway_km": 0, 
+     "toll_km": 0, 
+     "endpoint_gap_m": [
+      104, 
+      35
+     ], 
+     "ok": true, 
+     "has_toll": false, 
+     "has_highway": false, 
+     "tie_check": "kept", 
+     "end": "near", 
+     "end_point": [
+      40.794721, 
+      -77.859699
+     ]
+    }, 
+    "R1": {
+     "time_s": 1646.5, 
+     "length_km": 23.804, 
+     "legs": 1, 
+     "maneuvers": 14, 
+     "maneuvers_total": 16, 
+     "highway_km": 0, 
+     "toll_km": 0, 
+     "endpoint_gap_m": [
+      73, 
+      156
+     ], 
+     "ok": true, 
+     "has_toll": false, 
+     "has_highway": false, 
+     "tie_check": "kept", 
+     "end": "near", 
+     "end_point": [
+      40.288634, 
+      -76.652676
+     ]
+    }, 
+    "R2": {
+     "time_s": 5218.7, 
+     "length_km": 86.412, 
+     "legs": 1, 
+     "maneuvers": 14, 
+     "maneuvers_total": 16, 
+     "highway_km": 0, 
+     "toll_km": 0, 
+     "endpoint_gap_m": [
+      6, 
+      16
+     ], 
+     "ok": true, 
+     "has_toll": false, 
+     "has_highway": false, 
+     "tie_check": "kept", 
+     "arrival_side": "asked", 
+     "end": "near", 
+     "end_point": [
+      39.830805, 
+      -77.230964
+     ]
+    }, 
+    "I1": {
+     "time_s": 24454.2, 
+     "length_km": 513.882, 
+     "legs": 1, 
+     "maneuvers": 27, 
+     "maneuvers_total": 29, 
+     "highway_km": 0, 
+     "toll_km": 0, 
+     "endpoint_gap_m": [
+      2, 
+      137
+     ], 
+     "ok": true, 
+     "has_toll": false, 
+     "has_highway": false, 
+     "tie_check": "kept", 
+     "arrival_side": "side", 
+     "end": "near", 
+     "end_point": [
+      40.264016, 
+      -76.884924
+     ]
+    }, 
+    "I2": {
+     "time_s": 26028.6, 
+     "length_km": 515.787, 
+     "legs": 1, 
+     "maneuvers": 46, 
+     "maneuvers_total": 48, 
+     "highway_km": 0, 
+     "toll_km": 0, 
+     "endpoint_gap_m": [
+      10, 
+      32
+     ], 
+     "ok": true, 
+     "has_toll": false, 
+     "has_highway": false, 
+     "tie_check": "kept", 
+     "end": "near", 
+     "end_point": [
+      40.440622, 
+      -80.002226
+     ]
+    }, 
+    "I3": {
+     "time_s": 12290.4, 
+     "length_km": 232.333, 
+     "legs": 1, 
+     "maneuvers": 25, 
+     "maneuvers_total": 27, 
+     "highway_km": 0, 
+     "toll_km": 0, 
+     "endpoint_gap_m": [
+      80, 
+      70
+     ], 
+     "ok": true, 
+     "has_toll": false, 
+     "has_highway": false, 
+     "tie_check": "kept", 
+     "arrival_side": "asked", 
+     "end": "near", 
+     "end_point": [
+      41.499163, 
+      -81.694408
+     ]
+    }, 
+    "I4": {
+     "time_s": 9705.5, 
+     "length_km": 195.647, 
+     "legs": 1, 
+     "maneuvers": 20, 
+     "maneuvers_total": 22, 
+     "highway_km": 0, 
+     "toll_km": 0, 
+     "endpoint_gap_m": [
+      1, 
+      2
+     ], 
+     "ok": true, 
+     "has_toll": false, 
+     "has_highway": false, 
+     "tie_check": "kept", 
+     "end": "near", 
+     "end_point": [
+      41.241209, 
+      -77.001082
+     ]
+    }, 
+    "T1": {
+     "time_s": 25737.4, 
+     "length_km": 492.589, 
+     "legs": 1, 
+     "maneuvers": 43, 
+     "maneuvers_total": 45, 
+     "highway_km": 0, 
+     "toll_km": 0, 
+     "endpoint_gap_m": [
+      80, 
+      32
+     ], 
+     "ok": true, 
+     "has_toll": false, 
+     "has_highway": false, 
+     "tie_check": "kept", 
+     "end": "near", 
+     "end_point": [
+      40.440622, 
+      -80.002226
+     ]
+    }, 
+    "T2": {
+     "time_s": 10472.1, 
+     "length_km": 181.694, 
+     "legs": 1, 
+     "maneuvers": 28, 
+     "maneuvers_total": 30, 
+     "highway_km": 0, 
+     "toll_km": 0, 
+     "endpoint_gap_m": [
+      9, 
+      253
+     ], 
+     "ok": true, 
+     "has_toll": false, 
+     "has_highway": false, 
+     "tie_check": "kept", 
+     "end": "near", 
+     "end_point": [
+      40.09067, 
+      -75.392714
+     ]
+    }, 
+    "X1": {
+     "time_s": 3266.2, 
+     "length_km": 72.519, 
+     "legs": 1, 
+     "maneuvers": 2, 
+     "maneuvers_total": 4, 
+     "highway_km": 0, 
+     "toll_km": 0, 
+     "endpoint_gap_m": [
+      16, 
+      23
+     ], 
+     "ok": true, 
+     "has_toll": false, 
+     "has_highway": false, 
+     "tie_check": "kept", 
+     "end": "near", 
+     "end_point": [
+      41.774814, 
+      -78.020978
+     ]
+    }, 
+    "X2": {
+     "time_s": 2618.6, 
+     "length_km": 51.992, 
+     "legs": 1, 
+     "maneuvers": 5, 
+     "maneuvers_total": 7, 
+     "highway_km": 0, 
+     "toll_km": 0, 
+     "endpoint_gap_m": [
+      62, 
+      11
+     ], 
+     "ok": true, 
+     "has_toll": false, 
+     "has_highway": false, 
+     "tie_check": "kept", 
+     "end": "near", 
+     "end_point": [
+      41.420745, 
+      -78.728484
+     ]
+    }, 
+    "X3": {
+     "time_s": 833.7, 
+     "length_km": 15.161, 
+     "legs": 1, 
+     "maneuvers": 4, 
+     "maneuvers_total": 6, 
+     "highway_km": 0, 
+     "toll_km": 0, 
+     "endpoint_gap_m": [
+      4, 
+      15
+     ], 
+     "ok": true, 
+     "has_toll": false, 
+     "has_highway": false, 
+     "tie_check": "kept", 
+     "end": "near", 
+     "end_point": [
+      39.983067, 
+      -76.18431
+     ]
+    }, 
+    "B1": {
+     "time_s": 9709.1, 
+     "length_km": 183.56, 
+     "legs": 1, 
+     "maneuvers": 14, 
+     "maneuvers_total": 16, 
+     "highway_km": 0, 
+     "toll_km": 0, 
+     "endpoint_gap_m": [
+      2, 
+      70
+     ], 
+     "ok": true, 
+     "has_toll": false, 
+     "has_highway": false, 
+     "tie_check": "kept", 
+     "arrival_side": "asked", 
+     "end": "near", 
+     "end_point": [
+      41.499163, 
+      -81.694408
+     ]
+    }, 
+    "B2": {
+     "time_s": 5377.6, 
+     "length_km": 104.153, 
+     "legs": 1, 
+     "maneuvers": 25, 
+     "maneuvers_total": 27, 
+     "highway_km": 0, 
+     "toll_km": 0, 
+     "endpoint_gap_m": [
+      29, 
+      32
+     ], 
+     "ok": true, 
+     "has_toll": false, 
+     "has_highway": false, 
+     "tie_check": "kept", 
+     "end": "near", 
+     "end_point": [
+      40.440622, 
+      -80.002226
+     ]
+    }, 
+    "B3": {
+     "time_s": 10969.6, 
+     "length_km": 208.654, 
+     "legs": 1, 
+     "maneuvers": 29, 
+     "maneuvers_total": 31, 
+     "highway_km": 0, 
+     "toll_km": 0, 
+     "endpoint_gap_m": [
+      70, 
+      32
+     ], 
+     "ok": true, 
+     "has_toll": false, 
+     "has_highway": false, 
+     "tie_check": "kept", 
+     "end": "near", 
+     "end_point": [
+      40.440622, 
+      -80.002226
+     ]
+    }, 
+    "B4": {
+     "time_s": 10706.6, 
+     "length_km": 215.449, 
+     "legs": 1, 
+     "maneuvers": 26, 
+     "maneuvers_total": 28, 
+     "highway_km": 0, 
+     "toll_km": 0, 
+     "endpoint_gap_m": [
+      17, 
+      2
+     ], 
+     "ok": true, 
+     "has_toll": false, 
+     "has_highway": false, 
+     "tie_check": "kept", 
+     "end": "near", 
+     "end_point": [
+      42.127016, 
+      -80.085211
+     ]
+    }, 
+    "B5": {
+     "time_s": 621.7, 
+     "length_km": 12.346, 
+     "legs": 1, 
+     "maneuvers": 5, 
+     "maneuvers_total": 7, 
+     "highway_km": 0, 
+     "toll_km": 0, 
+     "endpoint_gap_m": [
+      3, 
+      8
+     ], 
+     "ok": true, 
+     "has_toll": false, 
+     "has_highway": false, 
+     "tie_check": "kept", 
+     "end": "near", 
+     "end_point": [
+      41.156424, 
+      -80.569299
+     ]
+    }
+   }
+  }, 
+  "simpler": {
+   "none": {
+    "U1": {
+     "time_s": 374.9, 
+     "length_km": 5.41, 
+     "legs": 1, 
+     "maneuvers": 4, 
+     "maneuvers_total": 6, 
+     "highway_km": 2.38, 
+     "toll_km": 0, 
+     "endpoint_gap_m": [
+      32, 
+      94
+     ], 
+     "ok": true, 
+     "candidates_considered": 6, 
+     "has_toll": false, 
+     "has_highway": true, 
+     "tie_check": "kept", 
+     "end": "near", 
+     "end_point": [
+      40.4441, 
+      -79.950046
+     ]
+    }, 
+    "U2": {
+     "time_s": 176.3, 
+     "length_km": 2.123, 
+     "legs": 1, 
+     "maneuvers": 2, 
+     "maneuvers_total": 4, 
+     "highway_km": 0, 
+     "toll_km": 0, 
+     "endpoint_gap_m": [
+      80, 
+      75
+     ], 
+     "ok": true, 
+     "candidates_considered": 5, 
+     "has_toll": false, 
+     "has_highway": false, 
+     "tie_check": "kept", 
+     "arrival_side": "asked", 
+     "end": "near", 
+     "end_point": [
+      39.95581, 
+      -75.183064
+     ]
+    }, 
+    "U3": {
+     "time_s": 531.6, 
+     "length_km": 7.855, 
+     "legs": 1, 
+     "maneuvers": 3, 
+     "maneuvers_total": 5, 
+     "highway_km": 0, 
+     "toll_km": 0, 
+     "endpoint_gap_m": [
+      2, 
+      173
+     ], 
+     "ok": true, 
+     "candidates_considered": 6, 
+     "has_toll": false, 
+     "has_highway": false, 
+     "tie_check": "kept", 
+     "end": "near", 
+     "end_point": [
+      42.108774, 
+      -80.15529
+     ]
+    }, 
+    "U4": {
+     "time_s": 687.3, 
+     "length_km": 8.01, 
+     "legs": 1, 
+     "maneuvers": 7, 
+     "maneuvers_total": 9, 
+     "highway_km": 0, 
+     "toll_km": 0, 
+     "endpoint_gap_m": [
+      70, 
+      106
+     ], 
+     "ok": true, 
+     "candidates_considered": 6, 
+     "has_toll": false, 
+     "has_highway": false, 
+     "tie_check": "kept", 
+     "route_index": 1, 
+     "end": "near", 
+     "end_point": [
+      41.507935, 
+      -81.610629
+     ]
+    }, 
+    "U5": {
+     "time_s": 310.7, 
+     "length_km": 3.768, 
+     "legs": 1, 
+     "maneuvers": 5, 
+     "maneuvers_total": 7, 
+     "highway_km": 0, 
+     "toll_km": 0, 
+     "endpoint_gap_m": [
+      104, 
+      35
+     ], 
+     "ok": true, 
+     "candidates_considered": 6, 
+     "has_toll": false, 
+     "has_highway": false, 
+     "tie_check": "kept", 
+     "end": "near", 
+     "end_point": [
+      40.794721, 
+      -77.859699
+     ]
+    }, 
+    "R1": {
+     "time_s": 1214.8, 
+     "length_km": 23.135, 
+     "legs": 1, 
+     "maneuvers": 8, 
+     "maneuvers_total": 10, 
+     "highway_km": 20.71, 
+     "toll_km": 0, 
+     "endpoint_gap_m": [
+      73, 
+      156
+     ], 
+     "ok": true, 
+     "candidates_considered": 6, 
+     "has_toll": false, 
+     "has_highway": true, 
+     "tie_check": "kept", 
+     "arrival_side": "asked", 
+     "end": "near", 
+     "end_point": [
+      40.288634, 
+      -76.652676
+     ]
+    }, 
+    "R2": {
+     "time_s": 4527.6, 
+     "length_km": 88.915, 
+     "legs": 1, 
+     "maneuvers": 12, 
+     "maneuvers_total": 14, 
+     "highway_km": 39.42, 
+     "toll_km": 0, 
+     "endpoint_gap_m": [
+      6, 
+      16
+     ], 
+     "ok": true, 
+     "candidates_considered": 6, 
+     "has_toll": false, 
+     "has_highway": true, 
+     "tie_check": "kept", 
+     "arrival_side": "asked", 
+     "end": "near", 
+     "end_point": [
+      39.830805, 
+      -77.230964
+     ]
+    }, 
+    "I1": {
+     "time_s": 17245.1, 
+     "length_km": 479.589, 
+     "legs": 1, 
+     "maneuvers": 12, 
+     "maneuvers_total": 14, 
+     "highway_km": 430.98, 
+     "toll_km": 0, 
+     "endpoint_gap_m": [
+      2, 
+      137
+     ], 
+     "ok": true, 
+     "candidates_considered": 6, 
+     "has_toll": false, 
+     "has_highway": true, 
+     "tie_check": "kept", 
+     "arrival_side": "asked", 
+     "end": "near", 
+     "end_point": [
+      40.264016, 
+      -76.884924
+     ]
+    }, 
+    "I2": {
+     "time_s": 16711.4, 
+     "length_km": 455.018, 
+     "legs": 1, 
+     "maneuvers": 16, 
+     "maneuvers_total": 18, 
+     "highway_km": 452.52, 
+     "toll_km": 0, 
+     "endpoint_gap_m": [
+      10, 
+      32
+     ], 
+     "ok": true, 
+     "candidates_considered": 6, 
+     "has_toll": false, 
+     "has_highway": true, 
+     "tie_check": "kept", 
+     "end": "near", 
+     "end_point": [
+      40.440622, 
+      -80.002226
+     ]
+    }, 
+    "I3": {
+     "time_s": 8069.5, 
+     "length_km": 229.096, 
+     "legs": 1, 
+     "maneuvers": 13, 
+     "maneuvers_total": 15, 
+     "highway_km": 218.59, 
+     "toll_km": 0, 
+     "endpoint_gap_m": [
+      80, 
+      70
+     ], 
+     "ok": true, 
+     "candidates_considered": 4, 
+     "has_toll": false, 
+     "has_highway": true, 
+     "tie_check": "kept", 
+     "arrival_side": "asked", 
+     "end": "near", 
+     "end_point": [
+      41.499163, 
+      -81.694408
+     ]
+    }, 
+    "I4": {
+     "time_s": 7627.2, 
+     "length_km": 210.84, 
+     "legs": 1, 
+     "maneuvers": 11, 
+     "maneuvers_total": 13, 
+     "highway_km": 203.6, 
+     "toll_km": 62.86, 
+     "endpoint_gap_m": [
+      1, 
+      2
+     ], 
+     "ok": true, 
+     "candidates_considered": 6, 
+     "has_toll": true, 
+     "has_highway": true, 
+     "tie_check": "kept", 
+     "end": "near", 
+     "end_point": [
+      41.241209, 
+      -77.001082
+     ]
+    }, 
+    "T1": {
+     "time_s": 16609.0, 
+     "length_km": 491.193, 
+     "legs": 1, 
+     "maneuvers": 16, 
+     "maneuvers_total": 18, 
+     "highway_km": 486.71, 
+     "toll_km": 461.03, 
+     "endpoint_gap_m": [
+      80, 
+      32
+     ], 
+     "ok": true, 
+     "candidates_considered": 6, 
+     "has_toll": true, 
+     "has_highway": true, 
+     "tie_check": "kept", 
+     "end": "near", 
+     "end_point": [
+      40.440622, 
+      -80.002226
+     ]
+    }, 
+    "T2": {
+     "time_s": 5873.4, 
+     "length_km": 171.721, 
+     "legs": 1, 
+     "maneuvers": 13, 
+     "maneuvers_total": 15, 
+     "highway_km": 163.8, 
+     "toll_km": 163.69, 
+     "endpoint_gap_m": [
+      9, 
+      253
+     ], 
+     "ok": true, 
+     "candidates_considered": 6, 
+     "has_toll": true, 
+     "has_highway": true, 
+     "tie_check": "kept", 
+     "end": "near", 
+     "end_point": [
+      40.09067, 
+      -75.392714
+     ]
+    }, 
+    "X1": {
+     "time_s": 3266.2, 
+     "length_km": 72.519, 
+     "legs": 1, 
+     "maneuvers": 2, 
+     "maneuvers_total": 4, 
+     "highway_km": 0, 
+     "toll_km": 0, 
+     "endpoint_gap_m": [
+      16, 
+      23
+     ], 
+     "ok": true, 
+     "candidates_considered": 5, 
+     "has_toll": false, 
+     "has_highway": false, 
+     "tie_check": "kept", 
+     "end": "near", 
+     "end_point": [
+      41.774814, 
+      -78.020978
+     ]
+    }, 
+    "X2": {
+     "time_s": 2618.6, 
+     "length_km": 51.992, 
+     "legs": 1, 
+     "maneuvers": 5, 
+     "maneuvers_total": 7, 
+     "highway_km": 0, 
+     "toll_km": 0, 
+     "endpoint_gap_m": [
+      62, 
+      11
+     ], 
+     "ok": true, 
+     "candidates_considered": 5, 
+     "has_toll": false, 
+     "has_highway": false, 
+     "tie_check": "kept", 
+     "end": "near", 
+     "end_point": [
+      41.420745, 
+      -78.728484
+     ]
+    }, 
+    "X3": {
+     "time_s": 833.7, 
+     "length_km": 15.161, 
+     "legs": 1, 
+     "maneuvers": 4, 
+     "maneuvers_total": 6, 
+     "highway_km": 0, 
+     "toll_km": 0, 
+     "endpoint_gap_m": [
+      4, 
+      15
+     ], 
+     "ok": true, 
+     "candidates_considered": 6, 
+     "has_toll": false, 
+     "has_highway": false, 
+     "tie_check": "kept", 
+     "end": "near", 
+     "end_point": [
+      39.983067, 
+      -76.18431
+     ]
+    }, 
+    "B1": {
+     "time_s": 5990.8, 
+     "length_km": 167.101, 
+     "legs": 1, 
+     "maneuvers": 11, 
+     "maneuvers_total": 13, 
+     "highway_km": 160.67, 
+     "toll_km": 0, 
+     "endpoint_gap_m": [
+      2, 
+      70
+     ], 
+     "ok": true, 
+     "candidates_considered": 5, 
+     "has_toll": false, 
+     "has_highway": true, 
+     "tie_check": "kept", 
+     "arrival_side": "asked", 
+     "end": "near", 
+     "end_point": [
+      41.499163, 
+      -81.694408
+     ]
+    }, 
+    "B2": {
+     "time_s": 4190.9, 
+     "length_km": 109.721, 
+     "legs": 1, 
+     "maneuvers": 20, 
+     "maneuvers_total": 22, 
+     "highway_km": 105.68, 
+     "toll_km": 58.13, 
+     "endpoint_gap_m": [
+      29, 
+      32
+     ], 
+     "ok": true, 
+     "candidates_considered": 6, 
+     "has_toll": true, 
+     "has_highway": true, 
+     "tie_check": "kept", 
+     "end": "near", 
+     "end_point": [
+      40.440622, 
+      -80.002226
+     ]
+    }, 
+    "B3": {
+     "time_s": 7693.9, 
+     "length_km": 216.767, 
+     "legs": 1, 
+     "maneuvers": 20, 
+     "maneuvers_total": 22, 
+     "highway_km": 210.01, 
+     "toll_km": 155.72, 
+     "endpoint_gap_m": [
+      70, 
+      32
+     ], 
+     "ok": true, 
+     "candidates_considered": 6, 
+     "has_toll": true, 
+     "has_highway": true, 
+     "tie_check": "kept", 
+     "end": "near", 
+     "end_point": [
+      40.440622, 
+      -80.002226
+     ]
+    }, 
+    "B4": {
+     "time_s": 7684.2, 
+     "length_km": 216.548, 
+     "legs": 1, 
+     "maneuvers": 14, 
+     "maneuvers_total": 16, 
+     "highway_km": 210.98, 
+     "toll_km": 0, 
+     "endpoint_gap_m": [
+      17, 
+      2
+     ], 
+     "ok": true, 
+     "candidates_considered": 6, 
+     "has_toll": false, 
+     "has_highway": true, 
+     "tie_check": "kept", 
+     "end": "near", 
+     "end_point": [
+      42.127016, 
+      -80.085211
+     ]
+    }, 
+    "B5": {
+     "time_s": 621.7, 
+     "length_km": 12.346, 
+     "legs": 1, 
+     "maneuvers": 5, 
+     "maneuvers_total": 7, 
+     "highway_km": 0, 
+     "toll_km": 0, 
+     "endpoint_gap_m": [
+      3, 
+      8
+     ], 
+     "ok": true, 
+     "candidates_considered": 6, 
+     "has_toll": false, 
+     "has_highway": false, 
+     "tie_check": "kept", 
+     "end": "near", 
+     "end_point": [
+      41.156424, 
+      -80.569299
+     ]
+    }
+   }, 
+   "highways": {
+    "U1": {
+     "time_s": 418.1, 
+     "length_km": 5.173, 
+     "legs": 1, 
+     "maneuvers": 4, 
+     "maneuvers_total": 6, 
+     "highway_km": 0, 
+     "toll_km": 0, 
+     "endpoint_gap_m": [
+      32, 
+      94
+     ], 
+     "ok": true, 
+     "candidates_considered": 6, 
+     "has_toll": false, 
+     "has_highway": false, 
+     "tie_check": "kept", 
+     "end": "near", 
+     "end_point": [
+      40.4441, 
+      -79.950046
+     ]
+    }, 
+    "U2": {
+     "time_s": 176.3, 
+     "length_km": 2.123, 
+     "legs": 1, 
+     "maneuvers": 2, 
+     "maneuvers_total": 4, 
+     "highway_km": 0, 
+     "toll_km": 0, 
+     "endpoint_gap_m": [
+      80, 
+      75
+     ], 
+     "ok": true, 
+     "candidates_considered": 4, 
+     "has_toll": false, 
+     "has_highway": false, 
+     "tie_check": "kept", 
+     "arrival_side": "asked", 
+     "end": "near", 
+     "end_point": [
+      39.95581, 
+      -75.183064
+     ]
+    }, 
+    "U3": {
+     "time_s": 531.6, 
+     "length_km": 7.855, 
+     "legs": 1, 
+     "maneuvers": 3, 
+     "maneuvers_total": 5, 
+     "highway_km": 0, 
+     "toll_km": 0, 
+     "endpoint_gap_m": [
+      2, 
+      173
+     ], 
+     "ok": true, 
+     "candidates_considered": 6, 
+     "has_toll": false, 
+     "has_highway": false, 
+     "tie_check": "kept", 
+     "end": "near", 
+     "end_point": [
+      42.108774, 
+      -80.15529
+     ]
+    }, 
+    "U4": {
+     "time_s": 731.1, 
+     "length_km": 8.635, 
+     "legs": 1, 
+     "maneuvers": 8, 
+     "maneuvers_total": 10, 
+     "highway_km": 0, 
+     "toll_km": 0, 
+     "endpoint_gap_m": [
+      70, 
+      106
+     ], 
+     "ok": true, 
+     "candidates_considered": 6, 
+     "has_toll": false, 
+     "has_highway": false, 
+     "tie_check": "kept", 
+     "arrival_side": "side", 
+     "end": "near", 
+     "end_point": [
+      41.507935, 
+      -81.610629
+     ]
+    }, 
+    "U5": {
+     "time_s": 310.7, 
+     "length_km": 3.768, 
+     "legs": 1, 
+     "maneuvers": 5, 
+     "maneuvers_total": 7, 
+     "highway_km": 0, 
+     "toll_km": 0, 
+     "endpoint_gap_m": [
+      104, 
+      35
+     ], 
+     "ok": true, 
+     "candidates_considered": 6, 
+     "has_toll": false, 
+     "has_highway": false, 
+     "tie_check": "kept", 
+     "end": "near", 
+     "end_point": [
+      40.794721, 
+      -77.859699
+     ]
+    }, 
+    "R1": {
+     "time_s": 1614.1, 
+     "length_km": 27.032, 
+     "legs": 1, 
+     "maneuvers": 10, 
+     "maneuvers_total": 12, 
+     "highway_km": 0, 
+     "toll_km": 0, 
+     "endpoint_gap_m": [
+      73, 
+      156
+     ], 
+     "ok": true, 
+     "candidates_considered": 6, 
+     "has_toll": false, 
+     "has_highway": false, 
+     "tie_check": "kept", 
+     "route_index": 2, 
+     "end": "near", 
+     "end_point": [
+      40.288634, 
+      -76.652676
+     ]
+    }, 
+    "R2": {
+     "time_s": 5207.4, 
+     "length_km": 86.432, 
+     "legs": 1, 
+     "maneuvers": 12, 
+     "maneuvers_total": 14, 
+     "highway_km": 0, 
+     "toll_km": 0, 
+     "endpoint_gap_m": [
+      6, 
+      16
+     ], 
+     "ok": true, 
+     "candidates_considered": 6, 
+     "has_toll": false, 
+     "has_highway": false, 
+     "tie_check": "kept", 
+     "arrival_side": "asked", 
+     "end": "near", 
+     "end_point": [
+      39.830805, 
+      -77.230964
+     ]
+    }, 
+    "I1": {
+     "time_s": 24454.2, 
+     "length_km": 513.882, 
+     "legs": 1, 
+     "maneuvers": 27, 
+     "maneuvers_total": 29, 
+     "highway_km": 0, 
+     "toll_km": 0, 
+     "endpoint_gap_m": [
+      2, 
+      137
+     ], 
+     "ok": true, 
+     "candidates_considered": 6, 
+     "has_toll": false, 
+     "has_highway": false, 
+     "tie_check": "kept", 
+     "arrival_side": "side", 
+     "end": "near", 
+     "end_point": [
+      40.264016, 
+      -76.884924
+     ]
+    }, 
+    "I2": {
+     "time_s": 26307.7, 
+     "length_km": 522.794, 
+     "legs": 1, 
+     "maneuvers": 43, 
+     "maneuvers_total": 45, 
+     "highway_km": 0, 
+     "toll_km": 0, 
+     "endpoint_gap_m": [
+      10, 
+      32
+     ], 
+     "ok": true, 
+     "candidates_considered": 6, 
+     "has_toll": false, 
+     "has_highway": false, 
+     "tie_check": "kept", 
+     "end": "near", 
+     "end_point": [
+      40.440622, 
+      -80.002226
+     ]
+    }, 
+    "I3": {
+     "time_s": 12511.1, 
+     "length_km": 251.716, 
+     "legs": 1, 
+     "maneuvers": 23, 
+     "maneuvers_total": 25, 
+     "highway_km": 0, 
+     "toll_km": 0, 
+     "endpoint_gap_m": [
+      80, 
+      70
+     ], 
+     "ok": true, 
+     "candidates_considered": 6, 
+     "has_toll": false, 
+     "has_highway": false, 
+     "tie_check": "kept", 
+     "arrival_side": "asked", 
+     "end": "near", 
+     "end_point": [
+      41.499163, 
+      -81.694408
+     ]
+    }, 
+    "I4": {
+     "time_s": 9424.0, 
+     "length_km": 190.42, 
+     "legs": 1, 
+     "maneuvers": 15, 
+     "maneuvers_total": 17, 
+     "highway_km": 0, 
+     "toll_km": 0, 
+     "endpoint_gap_m": [
+      1, 
+      2
+     ], 
+     "ok": true, 
+     "candidates_considered": 6, 
+     "has_toll": false, 
+     "has_highway": false, 
+     "tie_check": "kept", 
+     "end": "near", 
+     "end_point": [
+      41.241209, 
+      -77.001082
+     ]
+    }, 
+    "T1": {
+     "time_s": 26307.7, 
+     "length_km": 491.619, 
+     "legs": 1, 
+     "maneuvers": 34, 
+     "maneuvers_total": 36, 
+     "highway_km": 0, 
+     "toll_km": 0, 
+     "endpoint_gap_m": [
+      80, 
+      32
+     ], 
+     "ok": true, 
+     "candidates_considered": 6, 
+     "has_toll": false, 
+     "has_highway": false, 
+     "tie_check": "kept", 
+     "end": "near", 
+     "end_point": [
+      40.440622, 
+      -80.002226
+     ]
+    }, 
+    "T2": {
+     "time_s": 10381.6, 
+     "length_km": 179.781, 
+     "legs": 1, 
+     "maneuvers": 23, 
+     "maneuvers_total": 25, 
+     "highway_km": 0, 
+     "toll_km": 0, 
+     "endpoint_gap_m": [
+      9, 
+      253
+     ], 
+     "ok": true, 
+     "candidates_considered": 6, 
+     "has_toll": false, 
+     "has_highway": false, 
+     "tie_check": "kept", 
+     "route_index": 2, 
+     "end": "near", 
+     "end_point": [
+      40.09067, 
+      -75.392714
+     ]
+    }, 
+    "X1": {
+     "time_s": 3266.2, 
+     "length_km": 72.519, 
+     "legs": 1, 
+     "maneuvers": 2, 
+     "maneuvers_total": 4, 
+     "highway_km": 0, 
+     "toll_km": 0, 
+     "endpoint_gap_m": [
+      16, 
+      23
+     ], 
+     "ok": true, 
+     "candidates_considered": 5, 
+     "has_toll": false, 
+     "has_highway": false, 
+     "tie_check": "kept", 
+     "end": "near", 
+     "end_point": [
+      41.774814, 
+      -78.020978
+     ]
+    }, 
+    "X2": {
+     "time_s": 2618.6, 
+     "length_km": 51.992, 
+     "legs": 1, 
+     "maneuvers": 5, 
+     "maneuvers_total": 7, 
+     "highway_km": 0, 
+     "toll_km": 0, 
+     "endpoint_gap_m": [
+      62, 
+      11
+     ], 
+     "ok": true, 
+     "candidates_considered": 5, 
+     "has_toll": false, 
+     "has_highway": false, 
+     "tie_check": "kept", 
+     "end": "near", 
+     "end_point": [
+      41.420745, 
+      -78.728484
+     ]
+    }, 
+    "X3": {
+     "time_s": 833.7, 
+     "length_km": 15.161, 
+     "legs": 1, 
+     "maneuvers": 4, 
+     "maneuvers_total": 6, 
+     "highway_km": 0, 
+     "toll_km": 0, 
+     "endpoint_gap_m": [
+      4, 
+      15
+     ], 
+     "ok": true, 
+     "candidates_considered": 6, 
+     "has_toll": false, 
+     "has_highway": false, 
+     "tie_check": "kept", 
+     "end": "near", 
+     "end_point": [
+      39.983067, 
+      -76.18431
+     ]
+    }, 
+    "B1": {
+     "time_s": 9454.0, 
+     "length_km": 157.908, 
+     "legs": 1, 
+     "maneuvers": 8, 
+     "maneuvers_total": 10, 
+     "highway_km": 0, 
+     "toll_km": 0, 
+     "endpoint_gap_m": [
+      2, 
+      70
+     ], 
+     "ok": true, 
+     "candidates_considered": 6, 
+     "has_toll": false, 
+     "has_highway": false, 
+     "tie_check": "kept", 
+     "arrival_side": "asked", 
+     "end": "near", 
+     "end_point": [
+      41.499163, 
+      -81.694408
+     ]
+    }, 
+    "B2": {
+     "time_s": 5574.3, 
+     "length_km": 107.811, 
+     "legs": 1, 
+     "maneuvers": 17, 
+     "maneuvers_total": 19, 
+     "highway_km": 0, 
+     "toll_km": 0, 
+     "endpoint_gap_m": [
+      29, 
+      32
+     ], 
+     "ok": true, 
+     "candidates_considered": 6, 
+     "has_toll": false, 
+     "has_highway": false, 
+     "tie_check": "kept", 
+     "end": "near", 
+     "end_point": [
+      40.440622, 
+      -80.002226
+     ]
+    }, 
+    "B3": {
+     "time_s": 11247.2, 
+     "length_km": 208.443, 
+     "legs": 1, 
+     "maneuvers": 22, 
+     "maneuvers_total": 24, 
+     "highway_km": 0, 
+     "toll_km": 0, 
+     "endpoint_gap_m": [
+      70, 
+      32
+     ], 
+     "ok": true, 
+     "candidates_considered": 6, 
+     "has_toll": false, 
+     "has_highway": false, 
+     "tie_check": "kept", 
+     "end": "near", 
+     "end_point": [
+      40.440622, 
+      -80.002226
+     ]
+    }, 
+    "B4": {
+     "time_s": 10706.6, 
+     "length_km": 215.449, 
+     "legs": 1, 
+     "maneuvers": 26, 
+     "maneuvers_total": 28, 
+     "highway_km": 0, 
+     "toll_km": 0, 
+     "endpoint_gap_m": [
+      17, 
+      2
+     ], 
+     "ok": true, 
+     "candidates_considered": 6, 
+     "has_toll": false, 
+     "has_highway": false, 
+     "tie_check": "kept", 
+     "end": "near", 
+     "end_point": [
+      42.127016, 
+      -80.085211
+     ]
+    }, 
+    "B5": {
+     "time_s": 621.7, 
+     "length_km": 12.346, 
+     "legs": 1, 
+     "maneuvers": 5, 
+     "maneuvers_total": 7, 
+     "highway_km": 0, 
+     "toll_km": 0, 
+     "endpoint_gap_m": [
+      3, 
+      8
+     ], 
+     "ok": true, 
+     "candidates_considered": 6, 
+     "has_toll": false, 
+     "has_highway": false, 
+     "tie_check": "kept", 
+     "end": "near", 
+     "end_point": [
+      41.156424, 
+      -80.569299
+     ]
+    }
+   }, 
+   "tolls": {
+    "U1": {
+     "time_s": 374.9, 
+     "length_km": 5.41, 
+     "legs": 1, 
+     "maneuvers": 4, 
+     "maneuvers_total": 6, 
+     "highway_km": 2.38, 
+     "toll_km": 0, 
+     "endpoint_gap_m": [
+      32, 
+      94
+     ], 
+     "ok": true, 
+     "candidates_considered": 6, 
+     "has_toll": false, 
+     "has_highway": true, 
+     "tie_check": "kept", 
+     "end": "near", 
+     "end_point": [
+      40.4441, 
+      -79.950046
+     ]
+    }, 
+    "U2": {
+     "time_s": 176.3, 
+     "length_km": 2.123, 
+     "legs": 1, 
+     "maneuvers": 2, 
+     "maneuvers_total": 4, 
+     "highway_km": 0, 
+     "toll_km": 0, 
+     "endpoint_gap_m": [
+      80, 
+      75
+     ], 
+     "ok": true, 
+     "candidates_considered": 5, 
+     "has_toll": false, 
+     "has_highway": false, 
+     "tie_check": "kept", 
+     "arrival_side": "asked", 
+     "end": "near", 
+     "end_point": [
+      39.95581, 
+      -75.183064
+     ]
+    }, 
+    "U3": {
+     "time_s": 531.6, 
+     "length_km": 7.855, 
+     "legs": 1, 
+     "maneuvers": 3, 
+     "maneuvers_total": 5, 
+     "highway_km": 0, 
+     "toll_km": 0, 
+     "endpoint_gap_m": [
+      2, 
+      173
+     ], 
+     "ok": true, 
+     "candidates_considered": 6, 
+     "has_toll": false, 
+     "has_highway": false, 
+     "tie_check": "kept", 
+     "end": "near", 
+     "end_point": [
+      42.108774, 
+      -80.15529
+     ]
+    }, 
+    "U4": {
+     "time_s": 687.3, 
+     "length_km": 8.01, 
+     "legs": 1, 
+     "maneuvers": 7, 
+     "maneuvers_total": 9, 
+     "highway_km": 0, 
+     "toll_km": 0, 
+     "endpoint_gap_m": [
+      70, 
+      106
+     ], 
+     "ok": true, 
+     "candidates_considered": 6, 
+     "has_toll": false, 
+     "has_highway": false, 
+     "tie_check": "kept", 
+     "route_index": 1, 
+     "end": "near", 
+     "end_point": [
+      41.507935, 
+      -81.610629
+     ]
+    }, 
+    "U5": {
+     "time_s": 310.7, 
+     "length_km": 3.768, 
+     "legs": 1, 
+     "maneuvers": 5, 
+     "maneuvers_total": 7, 
+     "highway_km": 0, 
+     "toll_km": 0, 
+     "endpoint_gap_m": [
+      104, 
+      35
+     ], 
+     "ok": true, 
+     "candidates_considered": 6, 
+     "has_toll": false, 
+     "has_highway": false, 
+     "tie_check": "kept", 
+     "end": "near", 
+     "end_point": [
+      40.794721, 
+      -77.859699
+     ]
+    }, 
+    "R1": {
+     "time_s": 1214.8, 
+     "length_km": 23.135, 
+     "legs": 1, 
+     "maneuvers": 8, 
+     "maneuvers_total": 10, 
+     "highway_km": 20.71, 
+     "toll_km": 0, 
+     "endpoint_gap_m": [
+      73, 
+      156
+     ], 
+     "ok": true, 
+     "candidates_considered": 6, 
+     "has_toll": false, 
+     "has_highway": true, 
+     "tie_check": "kept", 
+     "arrival_side": "asked", 
+     "end": "near", 
+     "end_point": [
+      40.288634, 
+      -76.652676
+     ]
+    }, 
+    "R2": {
+     "time_s": 4516.3, 
+     "length_km": 88.935, 
+     "legs": 1, 
+     "maneuvers": 10, 
+     "maneuvers_total": 12, 
+     "highway_km": 39.42, 
+     "toll_km": 0, 
+     "endpoint_gap_m": [
+      6, 
+      16
+     ], 
+     "ok": true, 
+     "candidates_considered": 5, 
+     "has_toll": false, 
+     "has_highway": true, 
+     "tie_check": "kept", 
+     "arrival_side": "asked", 
+     "end": "near", 
+     "end_point": [
+      39.830805, 
+      -77.230964
+     ]
+    }, 
+    "I1": {
+     "time_s": 17245.1, 
+     "length_km": 479.589, 
+     "legs": 1, 
+     "maneuvers": 12, 
+     "maneuvers_total": 14, 
+     "highway_km": 430.98, 
+     "toll_km": 0, 
+     "endpoint_gap_m": [
+      2, 
+      137
+     ], 
+     "ok": true, 
+     "candidates_considered": 6, 
+     "has_toll": false, 
+     "has_highway": true, 
+     "tie_check": "kept", 
+     "arrival_side": "asked", 
+     "end": "near", 
+     "end_point": [
+      40.264016, 
+      -76.884924
+     ]
+    }, 
+    "I2": {
+     "time_s": 16711.4, 
+     "length_km": 455.018, 
+     "legs": 1, 
+     "maneuvers": 16, 
+     "maneuvers_total": 18, 
+     "highway_km": 452.52, 
+     "toll_km": 0, 
+     "endpoint_gap_m": [
+      10, 
+      32
+     ], 
+     "ok": true, 
+     "candidates_considered": 6, 
+     "has_toll": false, 
+     "has_highway": true, 
+     "tie_check": "kept", 
+     "end": "near", 
+     "end_point": [
+      40.440622, 
+      -80.002226
+     ]
+    }, 
+    "I3": {
+     "time_s": 8069.5, 
+     "length_km": 229.096, 
+     "legs": 1, 
+     "maneuvers": 13, 
+     "maneuvers_total": 15, 
+     "highway_km": 218.59, 
+     "toll_km": 0, 
+     "endpoint_gap_m": [
+      80, 
+      70
+     ], 
+     "ok": true, 
+     "candidates_considered": 4, 
+     "has_toll": false, 
+     "has_highway": true, 
+     "tie_check": "kept", 
+     "arrival_side": "asked", 
+     "end": "near", 
+     "end_point": [
+      41.499163, 
+      -81.694408
+     ]
+    }, 
+    "I4": {
+     "time_s": 7660.1, 
+     "length_km": 186.253, 
+     "legs": 1, 
+     "maneuvers": 13, 
+     "maneuvers_total": 15, 
+     "highway_km": 111.96, 
+     "toll_km": 0, 
+     "endpoint_gap_m": [
+      1, 
+      2
+     ], 
+     "ok": true, 
+     "candidates_considered": 6, 
+     "has_toll": false, 
+     "has_highway": true, 
+     "tie_check": "kept", 
+     "end": "near", 
+     "end_point": [
+      41.241209, 
+      -77.001082
+     ]
+    }, 
+    "T1": {
+     "time_s": 20997.8, 
+     "length_km": 531.527, 
+     "legs": 1, 
+     "maneuvers": 31, 
+     "maneuvers_total": 33, 
+     "highway_km": 504.9, 
+     "toll_km": 0, 
+     "endpoint_gap_m": [
+      80, 
+      32
+     ], 
+     "ok": true, 
+     "candidates_considered": 6, 
+     "has_toll": false, 
+     "has_highway": true, 
+     "tie_check": "kept", 
+     "end": "near", 
+     "end_point": [
+      40.440622, 
+      -80.002226
+     ]
+    }, 
+    "T2": {
+     "time_s": 7557.9, 
+     "length_km": 181.314, 
+     "legs": 1, 
+     "maneuvers": 13, 
+     "maneuvers_total": 15, 
+     "highway_km": 176.75, 
+     "toll_km": 0, 
+     "endpoint_gap_m": [
+      9, 
+      253
+     ], 
+     "ok": true, 
+     "candidates_considered": 6, 
+     "has_toll": false, 
+     "has_highway": true, 
+     "tie_check": "kept", 
+     "end": "near", 
+     "end_point": [
+      40.09067, 
+      -75.392714
+     ]
+    }, 
+    "X1": {
+     "time_s": 3266.2, 
+     "length_km": 72.519, 
+     "legs": 1, 
+     "maneuvers": 2, 
+     "maneuvers_total": 4, 
+     "highway_km": 0, 
+     "toll_km": 0, 
+     "endpoint_gap_m": [
+      16, 
+      23
+     ], 
+     "ok": true, 
+     "candidates_considered": 5, 
+     "has_toll": false, 
+     "has_highway": false, 
+     "tie_check": "kept", 
+     "end": "near", 
+     "end_point": [
+      41.774814, 
+      -78.020978
+     ]
+    }, 
+    "X2": {
+     "time_s": 2618.6, 
+     "length_km": 51.992, 
+     "legs": 1, 
+     "maneuvers": 5, 
+     "maneuvers_total": 7, 
+     "highway_km": 0, 
+     "toll_km": 0, 
+     "endpoint_gap_m": [
+      62, 
+      11
+     ], 
+     "ok": true, 
+     "candidates_considered": 5, 
+     "has_toll": false, 
+     "has_highway": false, 
+     "tie_check": "kept", 
+     "end": "near", 
+     "end_point": [
+      41.420745, 
+      -78.728484
+     ]
+    }, 
+    "X3": {
+     "time_s": 833.7, 
+     "length_km": 15.161, 
+     "legs": 1, 
+     "maneuvers": 4, 
+     "maneuvers_total": 6, 
+     "highway_km": 0, 
+     "toll_km": 0, 
+     "endpoint_gap_m": [
+      4, 
+      15
+     ], 
+     "ok": true, 
+     "candidates_considered": 6, 
+     "has_toll": false, 
+     "has_highway": false, 
+     "tie_check": "kept", 
+     "end": "near", 
+     "end_point": [
+      39.983067, 
+      -76.18431
+     ]
+    }, 
+    "B1": {
+     "time_s": 5990.8, 
+     "length_km": 167.101, 
+     "legs": 1, 
+     "maneuvers": 11, 
+     "maneuvers_total": 13, 
+     "highway_km": 160.67, 
+     "toll_km": 0, 
+     "endpoint_gap_m": [
+      2, 
+      70
+     ], 
+     "ok": true, 
+     "candidates_considered": 5, 
+     "has_toll": false, 
+     "has_highway": true, 
+     "tie_check": "kept", 
+     "arrival_side": "asked", 
+     "end": "near", 
+     "end_point": [
+      41.499163, 
+      -81.694408
+     ]
+    }, 
+    "B2": {
+     "time_s": 4799.9, 
+     "length_km": 118.959, 
+     "legs": 1, 
+     "maneuvers": 19, 
+     "maneuvers_total": 21, 
+     "highway_km": 79.32, 
+     "toll_km": 0, 
+     "endpoint_gap_m": [
+      29, 
+      32
+     ], 
+     "ok": true, 
+     "candidates_considered": 6, 
+     "has_toll": false, 
+     "has_highway": true, 
+     "tie_check": "kept", 
+     "end": "near", 
+     "end_point": [
+      40.440622, 
+      -80.002226
+     ]
+    }, 
+    "B3": {
+     "time_s": 9397.6, 
+     "length_km": 220.107, 
+     "legs": 1, 
+     "maneuvers": 22, 
+     "maneuvers_total": 24, 
+     "highway_km": 148.8, 
+     "toll_km": 0, 
+     "endpoint_gap_m": [
+      70, 
+      32
+     ], 
+     "ok": true, 
+     "candidates_considered": 6, 
+     "has_toll": false, 
+     "has_highway": true, 
+     "tie_check": "kept", 
+     "end": "near", 
+     "end_point": [
+      40.440622, 
+      -80.002226
+     ]
+    }, 
+    "B4": {
+     "time_s": 7684.2, 
+     "length_km": 216.548, 
+     "legs": 1, 
+     "maneuvers": 14, 
+     "maneuvers_total": 16, 
+     "highway_km": 210.98, 
+     "toll_km": 0, 
+     "endpoint_gap_m": [
+      17, 
+      2
+     ], 
+     "ok": true, 
+     "candidates_considered": 6, 
+     "has_toll": false, 
+     "has_highway": true, 
+     "tie_check": "kept", 
+     "end": "near", 
+     "end_point": [
+      42.127016, 
+      -80.085211
+     ]
+    }, 
+    "B5": {
+     "time_s": 621.7, 
+     "length_km": 12.346, 
+     "legs": 1, 
+     "maneuvers": 5, 
+     "maneuvers_total": 7, 
+     "highway_km": 0, 
+     "toll_km": 0, 
+     "endpoint_gap_m": [
+      3, 
+      8
+     ], 
+     "ok": true, 
+     "candidates_considered": 6, 
+     "has_toll": false, 
+     "has_highway": false, 
+     "tie_check": "kept", 
+     "end": "near", 
+     "end_point": [
+      41.156424, 
+      -80.569299
+     ]
+    }
+   }, 
+   "both": {
+    "U1": {
+     "time_s": 418.1, 
+     "length_km": 5.173, 
+     "legs": 1, 
+     "maneuvers": 4, 
+     "maneuvers_total": 6, 
+     "highway_km": 0, 
+     "toll_km": 0, 
+     "endpoint_gap_m": [
+      32, 
+      94
+     ], 
+     "ok": true, 
+     "candidates_considered": 6, 
+     "has_toll": false, 
+     "has_highway": false, 
+     "tie_check": "kept", 
+     "end": "near", 
+     "end_point": [
+      40.4441, 
+      -79.950046
+     ]
+    }, 
+    "U2": {
+     "time_s": 176.3, 
+     "length_km": 2.123, 
+     "legs": 1, 
+     "maneuvers": 2, 
+     "maneuvers_total": 4, 
+     "highway_km": 0, 
+     "toll_km": 0, 
+     "endpoint_gap_m": [
+      80, 
+      75
+     ], 
+     "ok": true, 
+     "candidates_considered": 4, 
+     "has_toll": false, 
+     "has_highway": false, 
+     "tie_check": "kept", 
+     "arrival_side": "asked", 
+     "end": "near", 
+     "end_point": [
+      39.95581, 
+      -75.183064
+     ]
+    }, 
+    "U3": {
+     "time_s": 531.6, 
+     "length_km": 7.855, 
+     "legs": 1, 
+     "maneuvers": 3, 
+     "maneuvers_total": 5, 
+     "highway_km": 0, 
+     "toll_km": 0, 
+     "endpoint_gap_m": [
+      2, 
+      173
+     ], 
+     "ok": true, 
+     "candidates_considered": 6, 
+     "has_toll": false, 
+     "has_highway": false, 
+     "tie_check": "kept", 
+     "end": "near", 
+     "end_point": [
+      42.108774, 
+      -80.15529
+     ]
+    }, 
+    "U4": {
+     "time_s": 731.1, 
+     "length_km": 8.635, 
+     "legs": 1, 
+     "maneuvers": 8, 
+     "maneuvers_total": 10, 
+     "highway_km": 0, 
+     "toll_km": 0, 
+     "endpoint_gap_m": [
+      70, 
+      106
+     ], 
+     "ok": true, 
+     "candidates_considered": 6, 
+     "has_toll": false, 
+     "has_highway": false, 
+     "tie_check": "kept", 
+     "arrival_side": "side", 
+     "end": "near", 
+     "end_point": [
+      41.507935, 
+      -81.610629
+     ]
+    }, 
+    "U5": {
+     "time_s": 310.7, 
+     "length_km": 3.768, 
+     "legs": 1, 
+     "maneuvers": 5, 
+     "maneuvers_total": 7, 
+     "highway_km": 0, 
+     "toll_km": 0, 
+     "endpoint_gap_m": [
+      104, 
+      35
+     ], 
+     "ok": true, 
+     "candidates_considered": 6, 
+     "has_toll": false, 
+     "has_highway": false, 
+     "tie_check": "kept", 
+     "end": "near", 
+     "end_point": [
+      40.794721, 
+      -77.859699
+     ]
+    }, 
+    "R1": {
+     "time_s": 1614.1, 
+     "length_km": 27.032, 
+     "legs": 1, 
+     "maneuvers": 10, 
+     "maneuvers_total": 12, 
+     "highway_km": 0, 
+     "toll_km": 0, 
+     "endpoint_gap_m": [
+      73, 
+      156
+     ], 
+     "ok": true, 
+     "candidates_considered": 6, 
+     "has_toll": false, 
+     "has_highway": false, 
+     "tie_check": "kept", 
+     "route_index": 2, 
+     "end": "near", 
+     "end_point": [
+      40.288634, 
+      -76.652676
+     ]
+    }, 
+    "R2": {
+     "time_s": 5207.4, 
+     "length_km": 86.432, 
+     "legs": 1, 
+     "maneuvers": 12, 
+     "maneuvers_total": 14, 
+     "highway_km": 0, 
+     "toll_km": 0, 
+     "endpoint_gap_m": [
+      6, 
+      16
+     ], 
+     "ok": true, 
+     "candidates_considered": 6, 
+     "has_toll": false, 
+     "has_highway": false, 
+     "tie_check": "kept", 
+     "arrival_side": "asked", 
+     "end": "near", 
+     "end_point": [
+      39.830805, 
+      -77.230964
+     ]
+    }, 
+    "I1": {
+     "time_s": 24454.2, 
+     "length_km": 513.882, 
+     "legs": 1, 
+     "maneuvers": 27, 
+     "maneuvers_total": 29, 
+     "highway_km": 0, 
+     "toll_km": 0, 
+     "endpoint_gap_m": [
+      2, 
+      137
+     ], 
+     "ok": true, 
+     "candidates_considered": 6, 
+     "has_toll": false, 
+     "has_highway": false, 
+     "tie_check": "kept", 
+     "arrival_side": "side", 
+     "end": "near", 
+     "end_point": [
+      40.264016, 
+      -76.884924
+     ]
+    }, 
+    "I2": {
+     "time_s": 26307.7, 
+     "length_km": 522.794, 
+     "legs": 1, 
+     "maneuvers": 43, 
+     "maneuvers_total": 45, 
+     "highway_km": 0, 
+     "toll_km": 0, 
+     "endpoint_gap_m": [
+      10, 
+      32
+     ], 
+     "ok": true, 
+     "candidates_considered": 6, 
+     "has_toll": false, 
+     "has_highway": false, 
+     "tie_check": "kept", 
+     "end": "near", 
+     "end_point": [
+      40.440622, 
+      -80.002226
+     ]
+    }, 
+    "I3": {
+     "time_s": 12511.1, 
+     "length_km": 251.716, 
+     "legs": 1, 
+     "maneuvers": 23, 
+     "maneuvers_total": 25, 
+     "highway_km": 0, 
+     "toll_km": 0, 
+     "endpoint_gap_m": [
+      80, 
+      70
+     ], 
+     "ok": true, 
+     "candidates_considered": 6, 
+     "has_toll": false, 
+     "has_highway": false, 
+     "tie_check": "kept", 
+     "arrival_side": "asked", 
+     "end": "near", 
+     "end_point": [
+      41.499163, 
+      -81.694408
+     ]
+    }, 
+    "I4": {
+     "time_s": 9424.0, 
+     "length_km": 190.42, 
+     "legs": 1, 
+     "maneuvers": 15, 
+     "maneuvers_total": 17, 
+     "highway_km": 0, 
+     "toll_km": 0, 
+     "endpoint_gap_m": [
+      1, 
+      2
+     ], 
+     "ok": true, 
+     "candidates_considered": 6, 
+     "has_toll": false, 
+     "has_highway": false, 
+     "tie_check": "kept", 
+     "end": "near", 
+     "end_point": [
+      41.241209, 
+      -77.001082
+     ]
+    }, 
+    "T1": {
+     "time_s": 26307.7, 
+     "length_km": 491.619, 
+     "legs": 1, 
+     "maneuvers": 34, 
+     "maneuvers_total": 36, 
+     "highway_km": 0, 
+     "toll_km": 0, 
+     "endpoint_gap_m": [
+      80, 
+      32
+     ], 
+     "ok": true, 
+     "candidates_considered": 6, 
+     "has_toll": false, 
+     "has_highway": false, 
+     "tie_check": "kept", 
+     "end": "near", 
+     "end_point": [
+      40.440622, 
+      -80.002226
+     ]
+    }, 
+    "T2": {
+     "time_s": 10381.6, 
+     "length_km": 179.781, 
+     "legs": 1, 
+     "maneuvers": 23, 
+     "maneuvers_total": 25, 
+     "highway_km": 0, 
+     "toll_km": 0, 
+     "endpoint_gap_m": [
+      9, 
+      253
+     ], 
+     "ok": true, 
+     "candidates_considered": 6, 
+     "has_toll": false, 
+     "has_highway": false, 
+     "tie_check": "kept", 
+     "route_index": 2, 
+     "end": "near", 
+     "end_point": [
+      40.09067, 
+      -75.392714
+     ]
+    }, 
+    "X1": {
+     "time_s": 3266.2, 
+     "length_km": 72.519, 
+     "legs": 1, 
+     "maneuvers": 2, 
+     "maneuvers_total": 4, 
+     "highway_km": 0, 
+     "toll_km": 0, 
+     "endpoint_gap_m": [
+      16, 
+      23
+     ], 
+     "ok": true, 
+     "candidates_considered": 5, 
+     "has_toll": false, 
+     "has_highway": false, 
+     "tie_check": "kept", 
+     "end": "near", 
+     "end_point": [
+      41.774814, 
+      -78.020978
+     ]
+    }, 
+    "X2": {
+     "time_s": 2618.6, 
+     "length_km": 51.992, 
+     "legs": 1, 
+     "maneuvers": 5, 
+     "maneuvers_total": 7, 
+     "highway_km": 0, 
+     "toll_km": 0, 
+     "endpoint_gap_m": [
+      62, 
+      11
+     ], 
+     "ok": true, 
+     "candidates_considered": 5, 
+     "has_toll": false, 
+     "has_highway": false, 
+     "tie_check": "kept", 
+     "end": "near", 
+     "end_point": [
+      41.420745, 
+      -78.728484
+     ]
+    }, 
+    "X3": {
+     "time_s": 833.7, 
+     "length_km": 15.161, 
+     "legs": 1, 
+     "maneuvers": 4, 
+     "maneuvers_total": 6, 
+     "highway_km": 0, 
+     "toll_km": 0, 
+     "endpoint_gap_m": [
+      4, 
+      15
+     ], 
+     "ok": true, 
+     "candidates_considered": 6, 
+     "has_toll": false, 
+     "has_highway": false, 
+     "tie_check": "kept", 
+     "end": "near", 
+     "end_point": [
+      39.983067, 
+      -76.18431
+     ]
+    }, 
+    "B1": {
+     "time_s": 9454.0, 
+     "length_km": 157.908, 
+     "legs": 1, 
+     "maneuvers": 8, 
+     "maneuvers_total": 10, 
+     "highway_km": 0, 
+     "toll_km": 0, 
+     "endpoint_gap_m": [
+      2, 
+      70
+     ], 
+     "ok": true, 
+     "candidates_considered": 6, 
+     "has_toll": false, 
+     "has_highway": false, 
+     "tie_check": "kept", 
+     "arrival_side": "asked", 
+     "end": "near", 
+     "end_point": [
+      41.499163, 
+      -81.694408
+     ]
+    }, 
+    "B2": {
+     "time_s": 5574.3, 
+     "length_km": 107.811, 
+     "legs": 1, 
+     "maneuvers": 17, 
+     "maneuvers_total": 19, 
+     "highway_km": 0, 
+     "toll_km": 0, 
+     "endpoint_gap_m": [
+      29, 
+      32
+     ], 
+     "ok": true, 
+     "candidates_considered": 6, 
+     "has_toll": false, 
+     "has_highway": false, 
+     "tie_check": "kept", 
+     "end": "near", 
+     "end_point": [
+      40.440622, 
+      -80.002226
+     ]
+    }, 
+    "B3": {
+     "time_s": 11247.2, 
+     "length_km": 208.443, 
+     "legs": 1, 
+     "maneuvers": 22, 
+     "maneuvers_total": 24, 
+     "highway_km": 0, 
+     "toll_km": 0, 
+     "endpoint_gap_m": [
+      70, 
+      32
+     ], 
+     "ok": true, 
+     "candidates_considered": 6, 
+     "has_toll": false, 
+     "has_highway": false, 
+     "tie_check": "kept", 
+     "end": "near", 
+     "end_point": [
+      40.440622, 
+      -80.002226
+     ]
+    }, 
+    "B4": {
+     "time_s": 10706.6, 
+     "length_km": 215.449, 
+     "legs": 1, 
+     "maneuvers": 26, 
+     "maneuvers_total": 28, 
+     "highway_km": 0, 
+     "toll_km": 0, 
+     "endpoint_gap_m": [
+      17, 
+      2
+     ], 
+     "ok": true, 
+     "candidates_considered": 6, 
+     "has_toll": false, 
+     "has_highway": false, 
+     "tie_check": "kept", 
+     "end": "near", 
+     "end_point": [
+      42.127016, 
+      -80.085211
+     ]
+    }, 
+    "B5": {
+     "time_s": 621.7, 
+     "length_km": 12.346, 
+     "legs": 1, 
+     "maneuvers": 5, 
+     "maneuvers_total": 7, 
+     "highway_km": 0, 
+     "toll_km": 0, 
+     "endpoint_gap_m": [
+      3, 
+      8
+     ], 
+     "ok": true, 
+     "candidates_considered": 6, 
+     "has_toll": false, 
+     "has_highway": false, 
+     "tie_check": "kept", 
+     "end": "near", 
+     "end_point": [
+      41.156424, 
+      -80.569299
+     ]
+    }
+   }
+  }, 
+  "eco": {
+   "none": {
+    "U1": {
+     "time_s": 374.9, 
+     "length_km": 5.41, 
+     "legs": 1, 
+     "maneuvers": 4, 
+     "maneuvers_total": 6, 
+     "highway_km": 2.38, 
+     "toll_km": 0, 
+     "endpoint_gap_m": [
+      32, 
+      94
+     ], 
+     "ok": true, 
+     "has_toll": false, 
+     "has_highway": true, 
+     "tie_check": "kept", 
+     "end": "near", 
+     "end_point": [
+      40.4441, 
+      -79.950046
+     ]
+    }, 
+    "U2": {
+     "time_s": 176.3, 
+     "length_km": 2.123, 
+     "legs": 1, 
+     "maneuvers": 2, 
+     "maneuvers_total": 4, 
+     "highway_km": 0, 
+     "toll_km": 0, 
+     "endpoint_gap_m": [
+      80, 
+      75
+     ], 
+     "ok": true, 
+     "has_toll": false, 
+     "has_highway": false, 
+     "tie_check": "kept", 
+     "arrival_side": "asked", 
+     "end": "near", 
+     "end_point": [
+      39.95581, 
+      -75.183064
+     ]
+    }, 
+    "U3": {
+     "time_s": 531.6, 
+     "length_km": 7.855, 
+     "legs": 1, 
+     "maneuvers": 3, 
+     "maneuvers_total": 5, 
+     "highway_km": 0, 
+     "toll_km": 0, 
+     "endpoint_gap_m": [
+      2, 
+      173
+     ], 
+     "ok": true, 
+     "has_toll": false, 
+     "has_highway": false, 
+     "tie_check": "kept", 
+     "end": "near", 
+     "end_point": [
+      42.108774, 
+      -80.15529
+     ]
+    }, 
+    "U4": {
+     "time_s": 687.3, 
+     "length_km": 8.01, 
+     "legs": 1, 
+     "maneuvers": 7, 
+     "maneuvers_total": 9, 
+     "highway_km": 0, 
+     "toll_km": 0, 
+     "endpoint_gap_m": [
+      70, 
+      106
+     ], 
+     "ok": true, 
+     "has_toll": false, 
+     "has_highway": false, 
+     "tie_check": "kept", 
+     "end": "near", 
+     "end_point": [
+      41.507935, 
+      -81.610629
+     ]
+    }, 
+    "U5": {
+     "time_s": 310.7, 
+     "length_km": 3.768, 
+     "legs": 1, 
+     "maneuvers": 5, 
+     "maneuvers_total": 7, 
+     "highway_km": 0, 
+     "toll_km": 0, 
+     "endpoint_gap_m": [
+      104, 
+      35
+     ], 
+     "ok": true, 
+     "has_toll": false, 
+     "has_highway": false, 
+     "tie_check": "kept", 
+     "end": "near", 
+     "end_point": [
+      40.794721, 
+      -77.859699
+     ]
+    }, 
+    "R1": {
+     "time_s": 1214.8, 
+     "length_km": 23.135, 
+     "legs": 1, 
+     "maneuvers": 8, 
+     "maneuvers_total": 10, 
+     "highway_km": 20.71, 
+     "toll_km": 0, 
+     "endpoint_gap_m": [
+      73, 
+      156
+     ], 
+     "ok": true, 
+     "has_toll": false, 
+     "has_highway": true, 
+     "tie_check": "kept", 
+     "arrival_side": "asked", 
+     "end": "near", 
+     "end_point": [
+      40.288634, 
+      -76.652676
+     ]
+    }, 
+    "R2": {
+     "time_s": 4585.2, 
+     "length_km": 87.963, 
+     "legs": 1, 
+     "maneuvers": 12, 
+     "maneuvers_total": 14, 
+     "highway_km": 33.81, 
+     "toll_km": 0, 
+     "endpoint_gap_m": [
+      6, 
+      16
+     ], 
+     "ok": true, 
+     "has_toll": false, 
+     "has_highway": true, 
+     "tie_check": "kept", 
+     "arrival_side": "asked", 
+     "end": "near", 
+     "end_point": [
+      39.830805, 
+      -77.230964
+     ]
+    }, 
+    "I1": {
+     "time_s": 17932.2, 
+     "length_km": 437.823, 
+     "legs": 1, 
+     "maneuvers": 23, 
+     "maneuvers_total": 25, 
+     "highway_km": 261.93, 
+     "toll_km": 0, 
+     "endpoint_gap_m": [
+      2, 
+      137
+     ], 
+     "ok": true, 
+     "has_toll": false, 
+     "has_highway": true, 
+     "tie_check": "kept", 
+     "arrival_side": "asked", 
+     "end": "near", 
+     "end_point": [
+      40.264016, 
+      -76.884924
+     ]
+    }, 
+    "I2": {
+     "time_s": 16962.5, 
+     "length_km": 449.08, 
+     "legs": 1, 
+     "maneuvers": 18, 
+     "maneuvers_total": 20, 
+     "highway_km": 408.2, 
+     "toll_km": 0, 
+     "endpoint_gap_m": [
+      10, 
+      32
+     ], 
+     "ok": true, 
+     "has_toll": false, 
+     "has_highway": true, 
+     "tie_check": "kept", 
+     "end": "near", 
+     "end_point": [
+      40.440622, 
+      -80.002226
+     ]
+    }, 
+    "I3": {
+     "time_s": 7965.0, 
+     "length_km": 232.424, 
+     "legs": 1, 
+     "maneuvers": 14, 
+     "maneuvers_total": 16, 
+     "highway_km": 227.09, 
+     "toll_km": 0, 
+     "endpoint_gap_m": [
+      80, 
+      70
+     ], 
+     "ok": true, 
+     "has_toll": false, 
+     "has_highway": true, 
+     "tie_check": "kept", 
+     "arrival_side": "asked", 
+     "end": "near", 
+     "end_point": [
+      41.499163, 
+      -81.694408
+     ]
+    }, 
+    "I4": {
+     "time_s": 7660.1, 
+     "length_km": 186.253, 
+     "legs": 1, 
+     "maneuvers": 13, 
+     "maneuvers_total": 15, 
+     "highway_km": 111.96, 
+     "toll_km": 0, 
+     "endpoint_gap_m": [
+      1, 
+      2
+     ], 
+     "ok": true, 
+     "has_toll": false, 
+     "has_highway": true, 
+     "tie_check": "kept", 
+     "end": "near", 
+     "end_point": [
+      41.241209, 
+      -77.001082
+     ]
+    }, 
+    "T1": {
+     "time_s": 16609.0, 
+     "length_km": 491.193, 
+     "legs": 1, 
+     "maneuvers": 16, 
+     "maneuvers_total": 18, 
+     "highway_km": 486.71, 
+     "toll_km": 461.03, 
+     "endpoint_gap_m": [
+      80, 
+      32
+     ], 
+     "ok": true, 
+     "has_toll": true, 
+     "has_highway": true, 
+     "tie_check": "kept", 
+     "end": "near", 
+     "end_point": [
+      40.440622, 
+      -80.002226
+     ]
+    }, 
+    "T2": {
+     "time_s": 5873.4, 
+     "length_km": 171.721, 
+     "legs": 1, 
+     "maneuvers": 13, 
+     "maneuvers_total": 15, 
+     "highway_km": 163.8, 
+     "toll_km": 163.69, 
+     "endpoint_gap_m": [
+      9, 
+      253
+     ], 
+     "ok": true, 
+     "has_toll": true, 
+     "has_highway": true, 
+     "tie_check": "kept", 
+     "end": "near", 
+     "end_point": [
+      40.09067, 
+      -75.392714
+     ]
+    }, 
+    "X1": {
+     "time_s": 3226.0, 
+     "length_km": 68.675, 
+     "legs": 1, 
+     "maneuvers": 2, 
+     "maneuvers_total": 4, 
+     "highway_km": 0, 
+     "toll_km": 0, 
+     "endpoint_gap_m": [
+      16, 
+      23
+     ], 
+     "ok": true, 
+     "has_toll": false, 
+     "has_highway": false, 
+     "tie_check": "kept", 
+     "end": "near", 
+     "end_point": [
+      41.774814, 
+      -78.020978
+     ]
+    }, 
+    "X2": {
+     "time_s": 2618.6, 
+     "length_km": 51.992, 
+     "legs": 1, 
+     "maneuvers": 5, 
+     "maneuvers_total": 7, 
+     "highway_km": 0, 
+     "toll_km": 0, 
+     "endpoint_gap_m": [
+      62, 
+      11
+     ], 
+     "ok": true, 
+     "has_toll": false, 
+     "has_highway": false, 
+     "tie_check": "kept", 
+     "end": "near", 
+     "end_point": [
+      41.420745, 
+      -78.728484
+     ]
+    }, 
+    "X3": {
+     "time_s": 896.9, 
+     "length_km": 11.583, 
+     "legs": 1, 
+     "maneuvers": 10, 
+     "maneuvers_total": 12, 
+     "highway_km": 0, 
+     "toll_km": 0, 
+     "endpoint_gap_m": [
+      4, 
+      15
+     ], 
+     "ok": true, 
+     "has_toll": false, 
+     "has_highway": false, 
+     "tie_check": "kept", 
+     "end": "near", 
+     "end_point": [
+      39.983067, 
+      -76.18431
+     ]
+    }, 
+    "B1": {
+     "time_s": 5874.9, 
+     "length_km": 164.533, 
+     "legs": 1, 
+     "maneuvers": 13, 
+     "maneuvers_total": 15, 
+     "highway_km": 158.25, 
+     "toll_km": 0, 
+     "endpoint_gap_m": [
+      2, 
+      70
+     ], 
+     "ok": true, 
+     "has_toll": false, 
+     "has_highway": true, 
+     "tie_check": "kept", 
+     "arrival_side": "asked", 
+     "end": "near", 
+     "end_point": [
+      41.499163, 
+      -81.694408
+     ]
+    }, 
+    "B2": {
+     "time_s": 4209.1, 
+     "length_km": 107.881, 
+     "legs": 1, 
+     "maneuvers": 24, 
+     "maneuvers_total": 26, 
+     "highway_km": 101.32, 
+     "toll_km": 58.13, 
+     "endpoint_gap_m": [
+      29, 
+      32
+     ], 
+     "ok": true, 
+     "has_toll": true, 
+     "has_highway": true, 
+     "tie_check": "kept", 
+     "end": "near", 
+     "end_point": [
+      40.440622, 
+      -80.002226
+     ]
+    }, 
+    "B3": {
+     "time_s": 7693.9, 
+     "length_km": 216.767, 
+     "legs": 1, 
+     "maneuvers": 20, 
+     "maneuvers_total": 22, 
+     "highway_km": 210.01, 
+     "toll_km": 155.72, 
+     "endpoint_gap_m": [
+      70, 
+      32
+     ], 
+     "ok": true, 
+     "has_toll": true, 
+     "has_highway": true, 
+     "tie_check": "kept", 
+     "end": "near", 
+     "end_point": [
+      40.440622, 
+      -80.002226
+     ]
+    }, 
+    "B4": {
+     "time_s": 7315.8, 
+     "length_km": 201.001, 
+     "legs": 1, 
+     "maneuvers": 15, 
+     "maneuvers_total": 17, 
+     "highway_km": 192.82, 
+     "toll_km": 0, 
+     "endpoint_gap_m": [
+      17, 
+      2
+     ], 
+     "ok": true, 
+     "has_toll": false, 
+     "has_highway": true, 
+     "tie_check": "kept", 
+     "end": "near", 
+     "end_point": [
+      42.127016, 
+      -80.085211
+     ]
+    }, 
+    "B5": {
+     "time_s": 621.7, 
+     "length_km": 12.346, 
+     "legs": 1, 
+     "maneuvers": 5, 
+     "maneuvers_total": 7, 
+     "highway_km": 0, 
+     "toll_km": 0, 
+     "endpoint_gap_m": [
+      3, 
+      8
+     ], 
+     "ok": true, 
+     "has_toll": false, 
+     "has_highway": false, 
+     "tie_check": "kept", 
+     "end": "near", 
+     "end_point": [
+      41.156424, 
+      -80.569299
+     ]
+    }
+   }, 
+   "highways": {
+    "U1": {
+     "time_s": 418.1, 
+     "length_km": 5.173, 
+     "legs": 1, 
+     "maneuvers": 4, 
+     "maneuvers_total": 6, 
+     "highway_km": 0, 
+     "toll_km": 0, 
+     "endpoint_gap_m": [
+      32, 
+      94
+     ], 
+     "ok": true, 
+     "has_toll": false, 
+     "has_highway": false, 
+     "tie_check": "kept", 
+     "end": "near", 
+     "end_point": [
+      40.4441, 
+      -79.950046
+     ]
+    }, 
+    "U2": {
+     "time_s": 176.3, 
+     "length_km": 2.123, 
+     "legs": 1, 
+     "maneuvers": 2, 
+     "maneuvers_total": 4, 
+     "highway_km": 0, 
+     "toll_km": 0, 
+     "endpoint_gap_m": [
+      80, 
+      75
+     ], 
+     "ok": true, 
+     "has_toll": false, 
+     "has_highway": false, 
+     "tie_check": "kept", 
+     "arrival_side": "asked", 
+     "end": "near", 
+     "end_point": [
+      39.95581, 
+      -75.183064
+     ]
+    }, 
+    "U3": {
+     "time_s": 531.6, 
+     "length_km": 7.855, 
+     "legs": 1, 
+     "maneuvers": 3, 
+     "maneuvers_total": 5, 
+     "highway_km": 0, 
+     "toll_km": 0, 
+     "endpoint_gap_m": [
+      2, 
+      173
+     ], 
+     "ok": true, 
+     "has_toll": false, 
+     "has_highway": false, 
+     "tie_check": "kept", 
+     "end": "near", 
+     "end_point": [
+      42.108774, 
+      -80.15529
+     ]
+    }, 
+    "U4": {
+     "time_s": 731.1, 
+     "length_km": 8.635, 
+     "legs": 1, 
+     "maneuvers": 8, 
+     "maneuvers_total": 10, 
+     "highway_km": 0, 
+     "toll_km": 0, 
+     "endpoint_gap_m": [
+      70, 
+      106
+     ], 
+     "ok": true, 
+     "has_toll": false, 
+     "has_highway": false, 
+     "tie_check": "kept", 
+     "arrival_side": "side", 
+     "end": "near", 
+     "end_point": [
+      41.507935, 
+      -81.610629
+     ]
+    }, 
+    "U5": {
+     "time_s": 310.7, 
+     "length_km": 3.768, 
+     "legs": 1, 
+     "maneuvers": 5, 
+     "maneuvers_total": 7, 
+     "highway_km": 0, 
+     "toll_km": 0, 
+     "endpoint_gap_m": [
+      104, 
+      35
+     ], 
+     "ok": true, 
+     "has_toll": false, 
+     "has_highway": false, 
+     "tie_check": "kept", 
+     "end": "near", 
+     "end_point": [
+      40.794721, 
+      -77.859699
+     ]
+    }, 
+    "R1": {
+     "time_s": 1646.5, 
+     "length_km": 23.804, 
+     "legs": 1, 
+     "maneuvers": 14, 
+     "maneuvers_total": 16, 
+     "highway_km": 0, 
+     "toll_km": 0, 
+     "endpoint_gap_m": [
+      73, 
+      156
+     ], 
+     "ok": true, 
+     "has_toll": false, 
+     "has_highway": false, 
+     "tie_check": "kept", 
+     "end": "near", 
+     "end_point": [
+      40.288634, 
+      -76.652676
+     ]
+    }, 
+    "R2": {
+     "time_s": 5218.7, 
+     "length_km": 86.412, 
+     "legs": 1, 
+     "maneuvers": 14, 
+     "maneuvers_total": 16, 
+     "highway_km": 0, 
+     "toll_km": 0, 
+     "endpoint_gap_m": [
+      6, 
+      16
+     ], 
+     "ok": true, 
+     "has_toll": false, 
+     "has_highway": false, 
+     "tie_check": "kept", 
+     "arrival_side": "asked", 
+     "end": "near", 
+     "end_point": [
+      39.830805, 
+      -77.230964
+     ]
+    }, 
+    "I1": {
+     "time_s": 24454.2, 
+     "length_km": 513.882, 
+     "legs": 1, 
+     "maneuvers": 27, 
+     "maneuvers_total": 29, 
+     "highway_km": 0, 
+     "toll_km": 0, 
+     "endpoint_gap_m": [
+      2, 
+      137
+     ], 
+     "ok": true, 
+     "has_toll": false, 
+     "has_highway": false, 
+     "tie_check": "kept", 
+     "arrival_side": "side", 
+     "end": "near", 
+     "end_point": [
+      40.264016, 
+      -76.884924
+     ]
+    }, 
+    "I2": {
+     "time_s": 26028.6, 
+     "length_km": 515.787, 
+     "legs": 1, 
+     "maneuvers": 46, 
+     "maneuvers_total": 48, 
+     "highway_km": 0, 
+     "toll_km": 0, 
+     "endpoint_gap_m": [
+      10, 
+      32
+     ], 
+     "ok": true, 
+     "has_toll": false, 
+     "has_highway": false, 
+     "tie_check": "kept", 
+     "end": "near", 
+     "end_point": [
+      40.440622, 
+      -80.002226
+     ]
+    }, 
+    "I3": {
+     "time_s": 12290.4, 
+     "length_km": 232.333, 
+     "legs": 1, 
+     "maneuvers": 25, 
+     "maneuvers_total": 27, 
+     "highway_km": 0, 
+     "toll_km": 0, 
+     "endpoint_gap_m": [
+      80, 
+      70
+     ], 
+     "ok": true, 
+     "has_toll": false, 
+     "has_highway": false, 
+     "tie_check": "kept", 
+     "arrival_side": "asked", 
+     "end": "near", 
+     "end_point": [
+      41.499163, 
+      -81.694408
+     ]
+    }, 
+    "I4": {
+     "time_s": 9797.1, 
+     "length_km": 186.649, 
+     "legs": 1, 
+     "maneuvers": 23, 
+     "maneuvers_total": 25, 
+     "highway_km": 0, 
+     "toll_km": 0, 
+     "endpoint_gap_m": [
+      1, 
+      2
+     ], 
+     "ok": true, 
+     "has_toll": false, 
+     "has_highway": false, 
+     "tie_check": "kept", 
+     "end": "near", 
+     "end_point": [
+      41.241209, 
+      -77.001082
+     ]
+    }, 
+    "T1": {
+     "time_s": 25243.6, 
+     "length_km": 477.415, 
+     "legs": 1, 
+     "maneuvers": 39, 
+     "maneuvers_total": 41, 
+     "highway_km": 0, 
+     "toll_km": 0, 
+     "endpoint_gap_m": [
+      80, 
+      32
+     ], 
+     "ok": true, 
+     "has_toll": false, 
+     "has_highway": false, 
+     "tie_check": "kept", 
+     "end": "near", 
+     "end_point": [
+      40.440622, 
+      -80.002226
+     ]
+    }, 
+    "T2": {
+     "time_s": 10054.5, 
+     "length_km": 171.937, 
+     "legs": 1, 
+     "maneuvers": 23, 
+     "maneuvers_total": 25, 
+     "highway_km": 0, 
+     "toll_km": 0, 
+     "endpoint_gap_m": [
+      9, 
+      253
+     ], 
+     "ok": true, 
+     "has_toll": false, 
+     "has_highway": false, 
+     "tie_check": "kept", 
+     "end": "near", 
+     "end_point": [
+      40.09067, 
+      -75.392714
+     ]
+    }, 
+    "X1": {
+     "time_s": 3226.0, 
+     "length_km": 68.675, 
+     "legs": 1, 
+     "maneuvers": 2, 
+     "maneuvers_total": 4, 
+     "highway_km": 0, 
+     "toll_km": 0, 
+     "endpoint_gap_m": [
+      16, 
+      23
+     ], 
+     "ok": true, 
+     "has_toll": false, 
+     "has_highway": false, 
+     "tie_check": "kept", 
+     "end": "near", 
+     "end_point": [
+      41.774814, 
+      -78.020978
+     ]
+    }, 
+    "X2": {
+     "time_s": 2618.6, 
+     "length_km": 51.992, 
+     "legs": 1, 
+     "maneuvers": 5, 
+     "maneuvers_total": 7, 
+     "highway_km": 0, 
+     "toll_km": 0, 
+     "endpoint_gap_m": [
+      62, 
+      11
+     ], 
+     "ok": true, 
+     "has_toll": false, 
+     "has_highway": false, 
+     "tie_check": "kept", 
+     "end": "near", 
+     "end_point": [
+      41.420745, 
+      -78.728484
+     ]
+    }, 
+    "X3": {
+     "time_s": 896.9, 
+     "length_km": 11.583, 
+     "legs": 1, 
+     "maneuvers": 10, 
+     "maneuvers_total": 12, 
+     "highway_km": 0, 
+     "toll_km": 0, 
+     "endpoint_gap_m": [
+      4, 
+      15
+     ], 
+     "ok": true, 
+     "has_toll": false, 
+     "has_highway": false, 
+     "tie_check": "kept", 
+     "end": "near", 
+     "end_point": [
+      39.983067, 
+      -76.18431
+     ]
+    }, 
+    "B1": {
+     "time_s": 9487.1, 
+     "length_km": 159.128, 
+     "legs": 1, 
+     "maneuvers": 12, 
+     "maneuvers_total": 14, 
+     "highway_km": 0, 
+     "toll_km": 0, 
+     "endpoint_gap_m": [
+      2, 
+      70
+     ], 
+     "ok": true, 
+     "has_toll": false, 
+     "has_highway": false, 
+     "tie_check": "kept", 
+     "arrival_side": "asked", 
+     "end": "near", 
+     "end_point": [
+      41.499163, 
+      -81.694408
+     ]
+    }, 
+    "B2": {
+     "time_s": 5377.6, 
+     "length_km": 104.153, 
+     "legs": 1, 
+     "maneuvers": 25, 
+     "maneuvers_total": 27, 
+     "highway_km": 0, 
+     "toll_km": 0, 
+     "endpoint_gap_m": [
+      29, 
+      32
+     ], 
+     "ok": true, 
+     "has_toll": false, 
+     "has_highway": false, 
+     "tie_check": "kept", 
+     "end": "near", 
+     "end_point": [
+      40.440622, 
+      -80.002226
+     ]
+    }, 
+    "B3": {
+     "time_s": 11006.0, 
+     "length_km": 205.294, 
+     "legs": 1, 
+     "maneuvers": 27, 
+     "maneuvers_total": 29, 
+     "highway_km": 0, 
+     "toll_km": 0, 
+     "endpoint_gap_m": [
+      70, 
+      32
+     ], 
+     "ok": true, 
+     "has_toll": false, 
+     "has_highway": false, 
+     "tie_check": "kept", 
+     "end": "near", 
+     "end_point": [
+      40.440622, 
+      -80.002226
+     ]
+    }, 
+    "B4": {
+     "time_s": 10706.2, 
+     "length_km": 215.201, 
+     "legs": 1, 
+     "maneuvers": 26, 
+     "maneuvers_total": 28, 
+     "highway_km": 0, 
+     "toll_km": 0, 
+     "endpoint_gap_m": [
+      17, 
+      2
+     ], 
+     "ok": true, 
+     "has_toll": false, 
+     "has_highway": false, 
+     "tie_check": "kept", 
+     "end": "near", 
+     "end_point": [
+      42.127016, 
+      -80.085211
+     ]
+    }, 
+    "B5": {
+     "time_s": 621.7, 
+     "length_km": 12.346, 
+     "legs": 1, 
+     "maneuvers": 5, 
+     "maneuvers_total": 7, 
+     "highway_km": 0, 
+     "toll_km": 0, 
+     "endpoint_gap_m": [
+      3, 
+      8
+     ], 
+     "ok": true, 
+     "has_toll": false, 
+     "has_highway": false, 
+     "tie_check": "kept", 
+     "end": "near", 
+     "end_point": [
+      41.156424, 
+      -80.569299
+     ]
+    }
+   }, 
+   "tolls": {
+    "U1": {
+     "time_s": 374.9, 
+     "length_km": 5.41, 
+     "legs": 1, 
+     "maneuvers": 4, 
+     "maneuvers_total": 6, 
+     "highway_km": 2.38, 
+     "toll_km": 0, 
+     "endpoint_gap_m": [
+      32, 
+      94
+     ], 
+     "ok": true, 
+     "has_toll": false, 
+     "has_highway": true, 
+     "tie_check": "kept", 
+     "end": "near", 
+     "end_point": [
+      40.4441, 
+      -79.950046
+     ]
+    }, 
+    "U2": {
+     "time_s": 176.3, 
+     "length_km": 2.123, 
+     "legs": 1, 
+     "maneuvers": 2, 
+     "maneuvers_total": 4, 
+     "highway_km": 0, 
+     "toll_km": 0, 
+     "endpoint_gap_m": [
+      80, 
+      75
+     ], 
+     "ok": true, 
+     "has_toll": false, 
+     "has_highway": false, 
+     "tie_check": "kept", 
+     "arrival_side": "asked", 
+     "end": "near", 
+     "end_point": [
+      39.95581, 
+      -75.183064
+     ]
+    }, 
+    "U3": {
+     "time_s": 531.6, 
+     "length_km": 7.855, 
+     "legs": 1, 
+     "maneuvers": 3, 
+     "maneuvers_total": 5, 
+     "highway_km": 0, 
+     "toll_km": 0, 
+     "endpoint_gap_m": [
+      2, 
+      173
+     ], 
+     "ok": true, 
+     "has_toll": false, 
+     "has_highway": false, 
+     "tie_check": "kept", 
+     "end": "near", 
+     "end_point": [
+      42.108774, 
+      -80.15529
+     ]
+    }, 
+    "U4": {
+     "time_s": 687.3, 
+     "length_km": 8.01, 
+     "legs": 1, 
+     "maneuvers": 7, 
+     "maneuvers_total": 9, 
+     "highway_km": 0, 
+     "toll_km": 0, 
+     "endpoint_gap_m": [
+      70, 
+      106
+     ], 
+     "ok": true, 
+     "has_toll": false, 
+     "has_highway": false, 
+     "tie_check": "kept", 
+     "end": "near", 
+     "end_point": [
+      41.507935, 
+      -81.610629
+     ]
+    }, 
+    "U5": {
+     "time_s": 310.7, 
+     "length_km": 3.768, 
+     "legs": 1, 
+     "maneuvers": 5, 
+     "maneuvers_total": 7, 
+     "highway_km": 0, 
+     "toll_km": 0, 
+     "endpoint_gap_m": [
+      104, 
+      35
+     ], 
+     "ok": true, 
+     "has_toll": false, 
+     "has_highway": false, 
+     "tie_check": "kept", 
+     "end": "near", 
+     "end_point": [
+      40.794721, 
+      -77.859699
+     ]
+    }, 
+    "R1": {
+     "time_s": 1214.8, 
+     "length_km": 23.135, 
+     "legs": 1, 
+     "maneuvers": 8, 
+     "maneuvers_total": 10, 
+     "highway_km": 20.71, 
+     "toll_km": 0, 
+     "endpoint_gap_m": [
+      73, 
+      156
+     ], 
+     "ok": true, 
+     "has_toll": false, 
+     "has_highway": true, 
+     "tie_check": "kept", 
+     "arrival_side": "asked", 
+     "end": "near", 
+     "end_point": [
+      40.288634, 
+      -76.652676
+     ]
+    }, 
+    "R2": {
+     "time_s": 4585.2, 
+     "length_km": 87.963, 
+     "legs": 1, 
+     "maneuvers": 12, 
+     "maneuvers_total": 14, 
+     "highway_km": 33.81, 
+     "toll_km": 0, 
+     "endpoint_gap_m": [
+      6, 
+      16
+     ], 
+     "ok": true, 
+     "has_toll": false, 
+     "has_highway": true, 
+     "tie_check": "kept", 
+     "arrival_side": "asked", 
+     "end": "near", 
+     "end_point": [
+      39.830805, 
+      -77.230964
+     ]
+    }, 
+    "I1": {
+     "time_s": 17932.2, 
+     "length_km": 437.823, 
+     "legs": 1, 
+     "maneuvers": 23, 
+     "maneuvers_total": 25, 
+     "highway_km": 261.93, 
+     "toll_km": 0, 
+     "endpoint_gap_m": [
+      2, 
+      137
+     ], 
+     "ok": true, 
+     "has_toll": false, 
+     "has_highway": true, 
+     "tie_check": "kept", 
+     "arrival_side": "asked", 
+     "end": "near", 
+     "end_point": [
+      40.264016, 
+      -76.884924
+     ]
+    }, 
+    "I2": {
+     "time_s": 16962.5, 
+     "length_km": 449.08, 
+     "legs": 1, 
+     "maneuvers": 18, 
+     "maneuvers_total": 20, 
+     "highway_km": 408.2, 
+     "toll_km": 0, 
+     "endpoint_gap_m": [
+      10, 
+      32
+     ], 
+     "ok": true, 
+     "has_toll": false, 
+     "has_highway": true, 
+     "tie_check": "kept", 
+     "end": "near", 
+     "end_point": [
+      40.440622, 
+      -80.002226
+     ]
+    }, 
+    "I3": {
+     "time_s": 7965.0, 
+     "length_km": 232.424, 
+     "legs": 1, 
+     "maneuvers": 14, 
+     "maneuvers_total": 16, 
+     "highway_km": 227.09, 
+     "toll_km": 0, 
+     "endpoint_gap_m": [
+      80, 
+      70
+     ], 
+     "ok": true, 
+     "has_toll": false, 
+     "has_highway": true, 
+     "tie_check": "kept", 
+     "arrival_side": "asked", 
+     "end": "near", 
+     "end_point": [
+      41.499163, 
+      -81.694408
+     ]
+    }, 
+    "I4": {
+     "time_s": 7660.1, 
+     "length_km": 186.253, 
+     "legs": 1, 
+     "maneuvers": 13, 
+     "maneuvers_total": 15, 
+     "highway_km": 111.96, 
+     "toll_km": 0, 
+     "endpoint_gap_m": [
+      1, 
+      2
+     ], 
+     "ok": true, 
+     "has_toll": false, 
+     "has_highway": true, 
+     "tie_check": "kept", 
+     "end": "near", 
+     "end_point": [
+      41.241209, 
+      -77.001082
+     ]
+    }, 
+    "T1": {
+     "time_s": 22376.3, 
+     "length_km": 487.672, 
+     "legs": 1, 
+     "maneuvers": 35, 
+     "maneuvers_total": 37, 
+     "highway_km": 159.11, 
+     "toll_km": 0, 
+     "endpoint_gap_m": [
+      80, 
+      32
+     ], 
+     "ok": true, 
+     "has_toll": false, 
+     "has_highway": true, 
+     "tie_check": "kept", 
+     "end": "near", 
+     "end_point": [
+      40.440622, 
+      -80.002226
+     ]
+    }, 
+    "T2": {
+     "time_s": 7428.5, 
+     "length_km": 171.996, 
+     "legs": 1, 
+     "maneuvers": 16, 
+     "maneuvers_total": 18, 
+     "highway_km": 119.69, 
+     "toll_km": 0, 
+     "endpoint_gap_m": [
+      9, 
+      253
+     ], 
+     "ok": true, 
+     "has_toll": false, 
+     "has_highway": true, 
+     "tie_check": "kept", 
+     "end": "near", 
+     "end_point": [
+      40.09067, 
+      -75.392714
+     ]
+    }, 
+    "X1": {
+     "time_s": 3226.0, 
+     "length_km": 68.675, 
+     "legs": 1, 
+     "maneuvers": 2, 
+     "maneuvers_total": 4, 
+     "highway_km": 0, 
+     "toll_km": 0, 
+     "endpoint_gap_m": [
+      16, 
+      23
+     ], 
+     "ok": true, 
+     "has_toll": false, 
+     "has_highway": false, 
+     "tie_check": "kept", 
+     "end": "near", 
+     "end_point": [
+      41.774814, 
+      -78.020978
+     ]
+    }, 
+    "X2": {
+     "time_s": 2618.6, 
+     "length_km": 51.992, 
+     "legs": 1, 
+     "maneuvers": 5, 
+     "maneuvers_total": 7, 
+     "highway_km": 0, 
+     "toll_km": 0, 
+     "endpoint_gap_m": [
+      62, 
+      11
+     ], 
+     "ok": true, 
+     "has_toll": false, 
+     "has_highway": false, 
+     "tie_check": "kept", 
+     "end": "near", 
+     "end_point": [
+      41.420745, 
+      -78.728484
+     ]
+    }, 
+    "X3": {
+     "time_s": 896.9, 
+     "length_km": 11.583, 
+     "legs": 1, 
+     "maneuvers": 10, 
+     "maneuvers_total": 12, 
+     "highway_km": 0, 
+     "toll_km": 0, 
+     "endpoint_gap_m": [
+      4, 
+      15
+     ], 
+     "ok": true, 
+     "has_toll": false, 
+     "has_highway": false, 
+     "tie_check": "kept", 
+     "end": "near", 
+     "end_point": [
+      39.983067, 
+      -76.18431
+     ]
+    }, 
+    "B1": {
+     "time_s": 5874.9, 
+     "length_km": 164.533, 
+     "legs": 1, 
+     "maneuvers": 13, 
+     "maneuvers_total": 15, 
+     "highway_km": 158.25, 
+     "toll_km": 0, 
+     "endpoint_gap_m": [
+      2, 
+      70
+     ], 
+     "ok": true, 
+     "has_toll": false, 
+     "has_highway": true, 
+     "tie_check": "kept", 
+     "arrival_side": "asked", 
+     "end": "near", 
+     "end_point": [
+      41.499163, 
+      -81.694408
+     ]
+    }, 
+    "B2": {
+     "time_s": 4945.3, 
+     "length_km": 103.593, 
+     "legs": 1, 
+     "maneuvers": 27, 
+     "maneuvers_total": 29, 
+     "highway_km": 55.52, 
+     "toll_km": 0, 
+     "endpoint_gap_m": [
+      29, 
+      32
+     ], 
+     "ok": true, 
+     "has_toll": false, 
+     "has_highway": true, 
+     "tie_check": "kept", 
+     "end": "near", 
+     "end_point": [
+      40.440622, 
+      -80.002226
+     ]
+    }, 
+    "B3": {
+     "time_s": 10120.3, 
+     "length_km": 200.561, 
+     "legs": 1, 
+     "maneuvers": 20, 
+     "maneuvers_total": 22, 
+     "highway_km": 100.33, 
+     "toll_km": 0, 
+     "endpoint_gap_m": [
+      70, 
+      32
+     ], 
+     "ok": true, 
+     "has_toll": false, 
+     "has_highway": true, 
+     "tie_check": "kept", 
+     "end": "near", 
+     "end_point": [
+      40.440622, 
+      -80.002226
+     ]
+    }, 
+    "B4": {
+     "time_s": 7315.8, 
+     "length_km": 201.001, 
+     "legs": 1, 
+     "maneuvers": 15, 
+     "maneuvers_total": 17, 
+     "highway_km": 192.82, 
+     "toll_km": 0, 
+     "endpoint_gap_m": [
+      17, 
+      2
+     ], 
+     "ok": true, 
+     "has_toll": false, 
+     "has_highway": true, 
+     "tie_check": "kept", 
+     "end": "near", 
+     "end_point": [
+      42.127016, 
+      -80.085211
+     ]
+    }, 
+    "B5": {
+     "time_s": 621.7, 
+     "length_km": 12.346, 
+     "legs": 1, 
+     "maneuvers": 5, 
+     "maneuvers_total": 7, 
+     "highway_km": 0, 
+     "toll_km": 0, 
+     "endpoint_gap_m": [
+      3, 
+      8
+     ], 
+     "ok": true, 
+     "has_toll": false, 
+     "has_highway": false, 
+     "tie_check": "kept", 
+     "end": "near", 
+     "end_point": [
+      41.156424, 
+      -80.569299
+     ]
+    }
+   }, 
+   "both": {
+    "U1": {
+     "time_s": 418.1, 
+     "length_km": 5.173, 
+     "legs": 1, 
+     "maneuvers": 4, 
+     "maneuvers_total": 6, 
+     "highway_km": 0, 
+     "toll_km": 0, 
+     "endpoint_gap_m": [
+      32, 
+      94
+     ], 
+     "ok": true, 
+     "has_toll": false, 
+     "has_highway": false, 
+     "tie_check": "kept", 
+     "end": "near", 
+     "end_point": [
+      40.4441, 
+      -79.950046
+     ]
+    }, 
+    "U2": {
+     "time_s": 176.3, 
+     "length_km": 2.123, 
+     "legs": 1, 
+     "maneuvers": 2, 
+     "maneuvers_total": 4, 
+     "highway_km": 0, 
+     "toll_km": 0, 
+     "endpoint_gap_m": [
+      80, 
+      75
+     ], 
+     "ok": true, 
+     "has_toll": false, 
+     "has_highway": false, 
+     "tie_check": "kept", 
+     "arrival_side": "asked", 
+     "end": "near", 
+     "end_point": [
+      39.95581, 
+      -75.183064
+     ]
+    }, 
+    "U3": {
+     "time_s": 531.6, 
+     "length_km": 7.855, 
+     "legs": 1, 
+     "maneuvers": 3, 
+     "maneuvers_total": 5, 
+     "highway_km": 0, 
+     "toll_km": 0, 
+     "endpoint_gap_m": [
+      2, 
+      173
+     ], 
+     "ok": true, 
+     "has_toll": false, 
+     "has_highway": false, 
+     "tie_check": "kept", 
+     "end": "near", 
+     "end_point": [
+      42.108774, 
+      -80.15529
+     ]
+    }, 
+    "U4": {
+     "time_s": 731.1, 
+     "length_km": 8.635, 
+     "legs": 1, 
+     "maneuvers": 8, 
+     "maneuvers_total": 10, 
+     "highway_km": 0, 
+     "toll_km": 0, 
+     "endpoint_gap_m": [
+      70, 
+      106
+     ], 
+     "ok": true, 
+     "has_toll": false, 
+     "has_highway": false, 
+     "tie_check": "kept", 
+     "arrival_side": "side", 
+     "end": "near", 
+     "end_point": [
+      41.507935, 
+      -81.610629
+     ]
+    }, 
+    "U5": {
+     "time_s": 310.7, 
+     "length_km": 3.768, 
+     "legs": 1, 
+     "maneuvers": 5, 
+     "maneuvers_total": 7, 
+     "highway_km": 0, 
+     "toll_km": 0, 
+     "endpoint_gap_m": [
+      104, 
+      35
+     ], 
+     "ok": true, 
+     "has_toll": false, 
+     "has_highway": false, 
+     "tie_check": "kept", 
+     "end": "near", 
+     "end_point": [
+      40.794721, 
+      -77.859699
+     ]
+    }, 
+    "R1": {
+     "time_s": 1646.5, 
+     "length_km": 23.804, 
+     "legs": 1, 
+     "maneuvers": 14, 
+     "maneuvers_total": 16, 
+     "highway_km": 0, 
+     "toll_km": 0, 
+     "endpoint_gap_m": [
+      73, 
+      156
+     ], 
+     "ok": true, 
+     "has_toll": false, 
+     "has_highway": false, 
+     "tie_check": "kept", 
+     "end": "near", 
+     "end_point": [
+      40.288634, 
+      -76.652676
+     ]
+    }, 
+    "R2": {
+     "time_s": 5218.7, 
+     "length_km": 86.412, 
+     "legs": 1, 
+     "maneuvers": 14, 
+     "maneuvers_total": 16, 
+     "highway_km": 0, 
+     "toll_km": 0, 
+     "endpoint_gap_m": [
+      6, 
+      16
+     ], 
+     "ok": true, 
+     "has_toll": false, 
+     "has_highway": false, 
+     "tie_check": "kept", 
+     "arrival_side": "asked", 
+     "end": "near", 
+     "end_point": [
+      39.830805, 
+      -77.230964
+     ]
+    }, 
+    "I1": {
+     "time_s": 24454.2, 
+     "length_km": 513.882, 
+     "legs": 1, 
+     "maneuvers": 27, 
+     "maneuvers_total": 29, 
+     "highway_km": 0, 
+     "toll_km": 0, 
+     "endpoint_gap_m": [
+      2, 
+      137
+     ], 
+     "ok": true, 
+     "has_toll": false, 
+     "has_highway": false, 
+     "tie_check": "kept", 
+     "arrival_side": "side", 
+     "end": "near", 
+     "end_point": [
+      40.264016, 
+      -76.884924
+     ]
+    }, 
+    "I2": {
+     "time_s": 26028.6, 
+     "length_km": 515.787, 
+     "legs": 1, 
+     "maneuvers": 46, 
+     "maneuvers_total": 48, 
+     "highway_km": 0, 
+     "toll_km": 0, 
+     "endpoint_gap_m": [
+      10, 
+      32
+     ], 
+     "ok": true, 
+     "has_toll": false, 
+     "has_highway": false, 
+     "tie_check": "kept", 
+     "end": "near", 
+     "end_point": [
+      40.440622, 
+      -80.002226
+     ]
+    }, 
+    "I3": {
+     "time_s": 12290.4, 
+     "length_km": 232.333, 
+     "legs": 1, 
+     "maneuvers": 25, 
+     "maneuvers_total": 27, 
+     "highway_km": 0, 
+     "toll_km": 0, 
+     "endpoint_gap_m": [
+      80, 
+      70
+     ], 
+     "ok": true, 
+     "has_toll": false, 
+     "has_highway": false, 
+     "tie_check": "kept", 
+     "arrival_side": "asked", 
+     "end": "near", 
+     "end_point": [
+      41.499163, 
+      -81.694408
+     ]
+    }, 
+    "I4": {
+     "time_s": 9797.1, 
+     "length_km": 186.649, 
+     "legs": 1, 
+     "maneuvers": 23, 
+     "maneuvers_total": 25, 
+     "highway_km": 0, 
+     "toll_km": 0, 
+     "endpoint_gap_m": [
+      1, 
+      2
+     ], 
+     "ok": true, 
+     "has_toll": false, 
+     "has_highway": false, 
+     "tie_check": "kept", 
+     "end": "near", 
+     "end_point": [
+      41.241209, 
+      -77.001082
+     ]
+    }, 
+    "T1": {
+     "time_s": 25243.6, 
+     "length_km": 477.415, 
+     "legs": 1, 
+     "maneuvers": 39, 
+     "maneuvers_total": 41, 
+     "highway_km": 0, 
+     "toll_km": 0, 
+     "endpoint_gap_m": [
+      80, 
+      32
+     ], 
+     "ok": true, 
+     "has_toll": false, 
+     "has_highway": false, 
+     "tie_check": "kept", 
+     "end": "near", 
+     "end_point": [
+      40.440622, 
+      -80.002226
+     ]
+    }, 
+    "T2": {
+     "time_s": 10054.5, 
+     "length_km": 171.937, 
+     "legs": 1, 
+     "maneuvers": 23, 
+     "maneuvers_total": 25, 
+     "highway_km": 0, 
+     "toll_km": 0, 
+     "endpoint_gap_m": [
+      9, 
+      253
+     ], 
+     "ok": true, 
+     "has_toll": false, 
+     "has_highway": false, 
+     "tie_check": "kept", 
+     "end": "near", 
+     "end_point": [
+      40.09067, 
+      -75.392714
+     ]
+    }, 
+    "X1": {
+     "time_s": 3226.0, 
+     "length_km": 68.675, 
+     "legs": 1, 
+     "maneuvers": 2, 
+     "maneuvers_total": 4, 
+     "highway_km": 0, 
+     "toll_km": 0, 
+     "endpoint_gap_m": [
+      16, 
+      23
+     ], 
+     "ok": true, 
+     "has_toll": false, 
+     "has_highway": false, 
+     "tie_check": "kept", 
+     "end": "near", 
+     "end_point": [
+      41.774814, 
+      -78.020978
+     ]
+    }, 
+    "X2": {
+     "time_s": 2618.6, 
+     "length_km": 51.992, 
+     "legs": 1, 
+     "maneuvers": 5, 
+     "maneuvers_total": 7, 
+     "highway_km": 0, 
+     "toll_km": 0, 
+     "endpoint_gap_m": [
+      62, 
+      11
+     ], 
+     "ok": true, 
+     "has_toll": false, 
+     "has_highway": false, 
+     "tie_check": "kept", 
+     "end": "near", 
+     "end_point": [
+      41.420745, 
+      -78.728484
+     ]
+    }, 
+    "X3": {
+     "time_s": 896.9, 
+     "length_km": 11.583, 
+     "legs": 1, 
+     "maneuvers": 10, 
+     "maneuvers_total": 12, 
+     "highway_km": 0, 
+     "toll_km": 0, 
+     "endpoint_gap_m": [
+      4, 
+      15
+     ], 
+     "ok": true, 
+     "has_toll": false, 
+     "has_highway": false, 
+     "tie_check": "kept", 
+     "end": "near", 
+     "end_point": [
+      39.983067, 
+      -76.18431
+     ]
+    }, 
+    "B1": {
+     "time_s": 9487.1, 
+     "length_km": 159.128, 
+     "legs": 1, 
+     "maneuvers": 12, 
+     "maneuvers_total": 14, 
+     "highway_km": 0, 
+     "toll_km": 0, 
+     "endpoint_gap_m": [
+      2, 
+      70
+     ], 
+     "ok": true, 
+     "has_toll": false, 
+     "has_highway": false, 
+     "tie_check": "kept", 
+     "arrival_side": "asked", 
+     "end": "near", 
+     "end_point": [
+      41.499163, 
+      -81.694408
+     ]
+    }, 
+    "B2": {
+     "time_s": 5377.6, 
+     "length_km": 104.153, 
+     "legs": 1, 
+     "maneuvers": 25, 
+     "maneuvers_total": 27, 
+     "highway_km": 0, 
+     "toll_km": 0, 
+     "endpoint_gap_m": [
+      29, 
+      32
+     ], 
+     "ok": true, 
+     "has_toll": false, 
+     "has_highway": false, 
+     "tie_check": "kept", 
+     "end": "near", 
+     "end_point": [
+      40.440622, 
+      -80.002226
+     ]
+    }, 
+    "B3": {
+     "time_s": 11006.0, 
+     "length_km": 205.294, 
+     "legs": 1, 
+     "maneuvers": 27, 
+     "maneuvers_total": 29, 
+     "highway_km": 0, 
+     "toll_km": 0, 
+     "endpoint_gap_m": [
+      70, 
+      32
+     ], 
+     "ok": true, 
+     "has_toll": false, 
+     "has_highway": false, 
+     "tie_check": "kept", 
+     "end": "near", 
+     "end_point": [
+      40.440622, 
+      -80.002226
+     ]
+    }, 
+    "B4": {
+     "time_s": 10706.2, 
+     "length_km": 215.201, 
+     "legs": 1, 
+     "maneuvers": 26, 
+     "maneuvers_total": 28, 
+     "highway_km": 0, 
+     "toll_km": 0, 
+     "endpoint_gap_m": [
+      17, 
+      2
+     ], 
+     "ok": true, 
+     "has_toll": false, 
+     "has_highway": false, 
+     "tie_check": "kept", 
+     "end": "near", 
+     "end_point": [
+      42.127016, 
+      -80.085211
+     ]
+    }, 
+    "B5": {
+     "time_s": 621.7, 
+     "length_km": 12.346, 
+     "legs": 1, 
+     "maneuvers": 5, 
+     "maneuvers_total": 7, 
+     "highway_km": 0, 
+     "toll_km": 0, 
+     "endpoint_gap_m": [
+      3, 
+      8
+     ], 
+     "ok": true, 
+     "has_toll": false, 
+     "has_highway": false, 
+     "tie_check": "kept", 
+     "end": "near", 
+     "end_point": [
+      41.156424, 
+      -80.569299
+     ]
+    }
+   }
+  }
+ }, 
+ "cases": {
+  "carlisle_kop": {
+   "stops": [
+    {
+     "lat": 40.2, 
+     "lon": -77.19
+    }, 
+    {
+     "lat": 40.09, 
+     "lon": -75.38
+    }
+   ], 
+   "note": "Avoid tolls has no tolls (exclude_tolls; review F2, found with Shortest, which left in batch D)", 
+   "fastest/none": {
+    "time_s": 5996.7, 
+    "length_km": 173.079, 
+    "legs": 1, 
+    "maneuvers": 11, 
+    "maneuvers_total": 13, 
+    "highway_km": 165.99, 
+    "toll_km": 163.69, 
+    "endpoint_gap_m": [
+     3, 
+     90
+    ], 
+    "ok": true, 
+    "has_toll": true, 
+    "has_highway": true, 
+    "tie_check": "kept", 
+    "end": "near", 
+    "end_point": [
+     40.089266, 
+     -75.379563
+    ]
+   }, 
+   "fastest/tolls": {
+    "time_s": 7420.8, 
+    "length_km": 180.7, 
+    "legs": 1, 
+    "maneuvers": 15, 
+    "maneuvers_total": 17, 
+    "highway_km": 148.73, 
+    "toll_km": 0, 
+    "endpoint_gap_m": [
+     3, 
+     90
+    ], 
+    "ok": true, 
+    "has_toll": false, 
+    "has_highway": true, 
+    "tie_check": "kept", 
+    "end": "near", 
+    "end_point": [
+     40.089266, 
+     -75.379563
+    ]
+   }
+  }, 
+  "carlisle_turnpike": {
+   "stops": [
+    {
+     "lat": 40.2, 
+     "lon": -77.19
+    }, 
+    {
+     "lat": 40.149533, 
+     "lon": -75.844894, 
+     "search_filter": {
+      "min_road_class": "service_other", 
+      "max_road_class": "motorway"
+     }
+    }
+   ], 
+   "note": "a destination on a toll road with Avoid tolls: the fallback route with its warning, not No route (fastest 141.5 km; without the option 126.3 km)", 
+   "fastest/none": {
+    "time_s": 4337.5, 
+    "length_km": 126.334, 
+    "legs": 1, 
+    "maneuvers": 4, 
+    "maneuvers_total": 6, 
+    "highway_km": 120.21, 
+    "toll_km": 121.21, 
+    "endpoint_gap_m": [
+     3, 
+     0
+    ], 
+    "ok": true, 
+    "has_toll": true, 
+    "has_highway": true, 
+    "tie_check": "kept", 
+    "end": "near", 
+    "end_point": [
+     40.149533, 
+     -75.844894
+    ]
+   }, 
+   "fastest/tolls": {
+    "time_s": 5797.2, 
+    "length_km": 141.478, 
+    "legs": 1, 
+    "maneuvers": 14, 
+    "maneuvers_total": 16, 
+    "highway_km": 113.74, 
+    "toll_km": 4.17, 
+    "endpoint_gap_m": [
+     3, 
+     0
+    ], 
+    "ok": true, 
+    "used_fallback": true, 
+    "has_toll": true, 
+    "has_highway": true, 
+    "fallback_reason": "no_route", 
+    "fallback_warning": "No route to this place avoids toll roads. This route uses them.", 
+    "tie_check": "kept", 
+    "end": "near", 
+    "end_point": [
+     40.149533, 
+     -75.844894
+    ]
+   }
+  }, 
+  "erie_i90": {
+   "stops": [
+    {
+     "lat": 42.1292, 
+     "lon": -80.0851
+    }, 
+    {
+     "lat": 42.032716, 
+     "lon": -80.125726, 
+     "search_filter": {
+      "min_road_class": "service_other", 
+      "max_road_class": "motorway"
+     }
+    }
+   ], 
+   "note": "a destination on I-90 with Avoid highways: the fallback route with its warning, not No route", 
+   "fastest/none": {
+    "time_s": 620.7, 
+    "length_km": 14.252, 
+    "legs": 1, 
+    "maneuvers": 4, 
+    "maneuvers_total": 6, 
+    "highway_km": 12.61, 
+    "toll_km": 0, 
+    "endpoint_gap_m": [
+     1, 
+     0
+    ], 
+    "ok": true, 
+    "has_toll": false, 
+    "has_highway": true, 
+    "tie_check": "kept", 
+    "end": "near", 
+    "end_point": [
+     42.032716, 
+     -80.125726
+    ]
+   }, 
+   "fastest/highways": {
+    "time_s": 815.4, 
+    "length_km": 12.97, 
+    "legs": 1, 
+    "maneuvers": 5, 
+    "maneuvers_total": 7, 
+    "highway_km": 3.54, 
+    "toll_km": 0, 
+    "endpoint_gap_m": [
+     1, 
+     0
+    ], 
+    "ok": true, 
+    "used_fallback": true, 
+    "has_toll": false, 
+    "has_highway": true, 
+    "fallback_reason": "no_route", 
+    "fallback_warning": "No route to this place avoids highways. This route uses them.", 
+    "tie_check": "kept", 
+    "end": "near", 
+    "end_point": [
+     42.032716, 
+     -80.125726
+    ]
+   }
+  }, 
+  "turnpike_start_kop": {
+   "stops": [
+    {
+     "lat": 40.22969, 
+     "lon": -76.350721
+    }, 
+    {
+     "lat": 40.09, 
+     "lon": -75.38
+    }
+   ], 
+   "note": "a trip that starts on a toll road may stay on it (93.9 km with tolls either way; owner accepted)", 
+   "fastest/none": {
+    "time_s": 3161.4, 
+    "length_km": 93.896, 
+    "legs": 1, 
+    "maneuvers": 7, 
+    "maneuvers_total": 9, 
+    "highway_km": 92.93, 
+    "toll_km": 89.64, 
+    "endpoint_gap_m": [
+     0, 
+     90
+    ], 
+    "ok": true, 
+    "has_toll": true, 
+    "has_highway": true, 
+    "tie_check": "kept", 
+    "end": "near", 
+    "end_point": [
+     40.089266, 
+     -75.379563
+    ]
+   }, 
+   "fastest/tolls": {
+    "time_s": 3161.4, 
+    "length_km": 93.896, 
+    "legs": 1, 
+    "maneuvers": 7, 
+    "maneuvers_total": 9, 
+    "highway_km": 92.93, 
+    "toll_km": 89.64, 
+    "endpoint_gap_m": [
+     0, 
+     90
+    ], 
+    "ok": true, 
+    "has_toll": true, 
+    "has_highway": true, 
+    "tie_check": "kept", 
+    "end": "near", 
+    "end_point": [
+     40.089266, 
+     -75.379563
+    ]
+   }
+  }, 
+  "address_street": {
+   "stops": [
+    {
+     "lat": 42.1292, 
+     "lon": -80.0851
+    }, 
+    {
+     "lat": 42.1243521, 
+     "lon": -80.0777055, 
+     "_street": "East 12th Street"
+    }
+   ], 
+   "note": "Family Dollar, 155 East 12th Street: tied to East 12th Street (49 m), not Holland Street (37 m)", 
+   "fastest/none": {
+    "time_s": 105.1, 
+    "length_km": 1.011, 
+    "legs": 1, 
+    "maneuvers": 1, 
+    "maneuvers_total": 3, 
+    "highway_km": 0, 
+    "toll_km": 0, 
+    "endpoint_gap_m": [
+     1, 
+     0
+    ], 
+    "ok": true, 
+    "has_toll": false, 
+    "has_highway": false, 
+    "tie_check": "kept", 
+    "end": "street", 
+    "end_point": [
+     42.124743, 
+     -80.07797
+    ]
+   }, 
+   "simpler/none": {
+    "time_s": 105.1, 
+    "length_km": 1.011, 
+    "legs": 1, 
+    "maneuvers": 1, 
+    "maneuvers_total": 3, 
+    "highway_km": 0, 
+    "toll_km": 0, 
+    "endpoint_gap_m": [
+     1, 
+     0
+    ], 
+    "ok": true, 
+    "candidates_considered": 6, 
+    "has_toll": false, 
+    "has_highway": false, 
+    "tie_check": "kept", 
+    "end": "street", 
+    "end_point": [
+     42.124743, 
+     -80.07797
+    ]
+   }
+  }, 
+  "address_out_of_reach": {
+   "stops": [
+    {
+     "lat": 42.1292, 
+     "lon": -80.0851
+    }, 
+    {
+     "lat": 42.0685317, 
+     "lon": -80.1040745, 
+     "_street": "Interchange Road"
+    }
+   ], 
+   "note": "Ulta Beauty in Millcreek Mall: Interchange Road is not within 300 m, so the nearest street; that tie adds a U-turn on Millcreek Mall Boulevard, so the tie check takes the untied route", 
+   "fastest/none": {
+    "time_s": 621.9, 
+    "length_km": 11.203, 
+    "legs": 1, 
+    "maneuvers": 10, 
+    "maneuvers_total": 12, 
+    "highway_km": 8.68, 
+    "toll_km": 0, 
+    "endpoint_gap_m": [
+     1, 
+     32
+    ], 
+    "ok": true, 
+    "has_toll": false, 
+    "has_highway": true, 
+    "tie_check": "untied", 
+    "arrival_side": "asked", 
+    "end": "place", 
+    "end_point": [
+     42.06856, 
+     -80.10369
+    ]
+   }
+  }, 
+  "dropped_pin": {
+   "stops": [
+    {
+     "lat": 42.1292, 
+     "lon": -80.0851
+    }, 
+    {
+     "lat": 42.1243521, 
+     "lon": -80.0777055, 
+     "_tie": "none"
+    }
+   ], 
+   "note": "a dropped pin is not tied: the route goes to the road at the pin (alley_factor still applies)", 
+   "fastest/none": {
+    "time_s": 127.7, 
+    "length_km": 1.147, 
+    "legs": 1, 
+    "maneuvers": 3, 
+    "maneuvers_total": 5, 
+    "highway_km": 0, 
+    "toll_km": 0, 
+    "endpoint_gap_m": [
+     1, 
+     14
+    ], 
+    "ok": true, 
+    "has_toll": false, 
+    "has_highway": false, 
+    "end": "pin", 
+    "end_point": [
+     42.124239, 
+     -80.077629
+    ]
+   }
+  }, 
+  "erie_butler": {
+   "stops": [
+    {
+     "lat": 42.1292, 
+     "lon": -80.0851
+    }, 
+    {
+     "lat": 40.8612, 
+     "lon": -79.8953
+    }
+   ], 
+   "note": "downtown Erie to downtown Butler: both keep I-79 exit 99 and US 422 (batch D)", 
+   "fastest/none": {
+    "time_s": 5801.9, 
+    "length_km": 166.266, 
+    "legs": 1, 
+    "maneuvers": 7, 
+    "maneuvers_total": 9, 
+    "highway_km": 162.62, 
+    "toll_km": 0, 
+    "endpoint_gap_m": [
+     1, 
+     3
+    ], 
+    "ok": true, 
+    "has_toll": false, 
+    "has_highway": true, 
+    "tie_check": "kept", 
+    "end": "near", 
+    "end_point": [
+     40.8612, 
+     -79.895265
+    ]
+   }, 
+   "simpler/none": {
+    "time_s": 5856.5, 
+    "length_km": 165.821, 
+    "legs": 1, 
+    "maneuvers": 6, 
+    "maneuvers_total": 8, 
+    "highway_km": 158.71, 
+    "toll_km": 0, 
+    "endpoint_gap_m": [
+     1, 
+     3
+    ], 
+    "ok": true, 
+    "candidates_considered": 6, 
+    "has_toll": false, 
+    "has_highway": true, 
+    "tie_check": "kept", 
+    "end": "near", 
+    "end_point": [
+     40.8612, 
+     -79.895265
+    ]
+   }
+  }, 
+  "erie_center_township": {
+   "stops": [
+    {
+     "lat": 42.1292, 
+     "lon": -80.0851
+    }, 
+    {
+     "lat": 40.9208972, 
+     "lon": -79.913666
+    }
+   ], 
+   "note": "downtown Erie to Center School, Center Township, near the owner's case: Fastest takes exit 113 and PA 258; Simpler's fourth candidate (use_highways 1.0, maneuver_penalty 60) brings exit 99 and US 422 into the pool (batch D)", 
+   "fastest/none": {
+    "time_s": 5833.2, 
+    "length_km": 157.162, 
+    "legs": 1, 
+    "maneuvers": 10, 
+    "maneuvers_total": 12, 
+    "highway_km": 117.15, 
+    "toll_km": 0, 
+    "endpoint_gap_m": [
+     1, 
+     43
+    ], 
+    "ok": true, 
+    "has_toll": false, 
+    "has_highway": true, 
+    "tie_check": "kept", 
+    "end": "near", 
+    "end_point": [
+     40.920513, 
+     -79.913732
+    ]
+   }, 
+   "simpler/none": {
+    "time_s": 6005.3, 
+    "length_km": 169.745, 
+    "legs": 1, 
+    "maneuvers": 9, 
+    "maneuvers_total": 11, 
+    "highway_km": 162.98, 
+    "toll_km": 0, 
+    "endpoint_gap_m": [
+     1, 
+     43
+    ], 
+    "ok": true, 
+    "candidates_considered": 6, 
+    "has_toll": false, 
+    "has_highway": true, 
+    "tie_check": "kept", 
+    "end": "near", 
+    "end_point": [
+     40.920513, 
+     -79.913732
+    ]
+   }
+  }, 
+  "side_residential": {
+   "stops": [
+    {
+     "lat": 42.0726, 
+     "lon": -80.0623
+    }, 
+    {
+     "lat": 42.1273475, 
+     "lon": -80.049085, 
+     "_street": "East 20th Street"
+    }
+   ], 
+   "note": "Morning Star Baptist Church, East 20th Street (residential): no side, the plain route arrives on the left (780 s)", 
+   "fastest/none": {
+    "time_s": 779.6, 
+    "length_km": 8.923, 
+    "legs": 1, 
+    "maneuvers": 11, 
+    "maneuvers_total": 13, 
+    "highway_km": 0, 
+    "toll_km": 0, 
+    "endpoint_gap_m": [
+     50, 
+     0
+    ], 
+    "ok": true, 
+    "has_toll": false, 
+    "has_highway": false, 
+    "tie_check": "kept", 
+    "arrival_side": "asked", 
+    "end": "street", 
+    "end_point": [
+     42.127499, 
+     -80.04923
+    ]
+   }
+  }, 
+  "side_one_block": {
+   "stops": [
+    {
+     "lat": 42.1292, 
+     "lon": -80.0851
+    }, 
+    {
+     "lat": 42.1273552, 
+     "lon": -80.0735438, 
+     "_street": "Parade Street"
+    }
+   ], 
+   "note": "a shop on Parade Street (secondary): the side route, one block more (167 s, +10 s, +1 instruction)", 
+   "fastest/none": {
+    "time_s": 167.4, 
+    "length_km": 1.567, 
+    "legs": 1, 
+    "maneuvers": 3, 
+    "maneuvers_total": 5, 
+    "highway_km": 0, 
+    "toll_km": 0, 
+    "endpoint_gap_m": [
+     1, 
+     0
+    ], 
+    "ok": true, 
+    "has_toll": false, 
+    "has_highway": false, 
+    "tie_check": "kept", 
+    "arrival_side": "side", 
+    "end": "street", 
+    "end_point": [
+     42.127501, 
+     -80.073286
+    ]
+   }
+  }, 
+  "side_long_loop": {
+   "stops": [
+    {
+     "lat": 42.0726, 
+     "lon": -80.0623
+    }, 
+    {
+     "lat": 42.1250197, 
+     "lon": -80.082664, 
+     "_street": "State Street"
+    }
+   ], 
+   "note": "a shop on State Street (primary): the side route is a longer loop (+44 s, +4 instructions), so the plain route arrives on the left (677 s)", 
+   "fastest/none": {
+    "time_s": 677.4, 
+    "length_km": 7.683, 
+    "legs": 1, 
+    "maneuvers": 6, 
+    "maneuvers_total": 8, 
+    "highway_km": 0, 
+    "toll_km": 0, 
+    "endpoint_gap_m": [
+     50, 
+     0
+    ], 
+    "ok": true, 
+    "has_toll": false, 
+    "has_highway": false, 
+    "tie_check": "kept", 
+    "arrival_side": "asked", 
+    "end": "street", 
+    "end_point": [
+     42.125125, 
+     -80.082371
+    ]
+   }
+  }, 
+  "lot_restaurant": {
+   "stops": [
+    {
+     "lat": 42.1292, 
+     "lon": -80.0851
+    }, 
+    {
+     "lat": 42.0537626, 
+     "lon": -80.0853645, 
+     "_street": "Peach Street", 
+     "_poi": true
+    }
+   ], 
+   "note": "a restaurant on Peach Street: the route ends in its lot beside the building (driveway 15 m), entered from Mandy Lane behind it, not on Peach Street (batch E)", 
+   "fastest/none": {
+    "time_s": 676.6, 
+    "length_km": 12.978, 
+    "legs": 1, 
+    "maneuvers": 9, 
+    "maneuvers_total": 11, 
+    "highway_km": 8.68, 
+    "toll_km": 0, 
+    "endpoint_gap_m": [
+     1, 
+     0
+    ], 
+    "ok": true, 
+    "has_toll": false, 
+    "has_highway": true, 
+    "tie_check": "kept", 
+    "end": "lot", 
+    "entry_closed": false, 
+    "end_point": [
+     42.053661, 
+     -80.085252
+    ]
+   }, 
+   "simpler/none": {
+    "time_s": 719.5, 
+    "length_km": 9.436, 
+    "legs": 1, 
+    "maneuvers": 5, 
+    "maneuvers_total": 7, 
+    "highway_km": 0, 
+    "toll_km": 0, 
+    "endpoint_gap_m": [
+     1, 
+     0
+    ], 
+    "ok": true, 
+    "candidates_considered": 6, 
+    "has_toll": false, 
+    "has_highway": false, 
+    "tie_check": "kept", 
+    "route_index": 1, 
+    "end": "lot", 
+    "entry_closed": false, 
+    "end_point": [
+     42.053661, 
+     -80.085252
+    ]
+   }
+  }, 
+  "lot_plaza": {
+   "stops": [
+    {
+     "lat": 42.0726, 
+     "lon": -80.0623
+    }, 
+    {
+     "lat": 42.0517956, 
+     "lon": -80.0848752, 
+     "_street": "Peach Street", 
+     "_poi": true
+    }
+   ], 
+   "note": "a store in a strip plaza: Downs Drive, Scott Drive, into the plaza lot, 22 m from the store (batch E)", 
+   "fastest/none": {
+    "time_s": 522.3, 
+    "length_km": 7.898, 
+    "legs": 1, 
+    "maneuvers": 12, 
+    "maneuvers_total": 14, 
+    "highway_km": 3.62, 
+    "toll_km": 0, 
+    "endpoint_gap_m": [
+     50, 
+     0
+    ], 
+    "ok": true, 
+    "has_toll": false, 
+    "has_highway": true, 
+    "tie_check": "kept", 
+    "end": "lot", 
+    "entry_closed": false, 
+    "end_point": [
+     42.051926, 
+     -80.084675
+    ]
+   }
+  }, 
+  "lot_alley_case": {
+   "stops": [
+    {
+     "lat": 42.1292, 
+     "lon": -80.0851
+    }, 
+    {
+     "lat": 42.1243521, 
+     "lon": -80.0777055, 
+     "_street": "East 12th Street", 
+     "_poi": true
+    }
+   ], 
+   "note": "Family Dollar as a point of interest: East 12th Street, then its own lot by a driveway; never the alley (batch E)", 
+   "fastest/none": {
+    "time_s": 122.9, 
+    "length_km": 1.058, 
+    "legs": 1, 
+    "maneuvers": 3, 
+    "maneuvers_total": 5, 
+    "highway_km": 0, 
+    "toll_km": 0, 
+    "endpoint_gap_m": [
+     1, 
+     0
+    ], 
+    "ok": true, 
+    "has_toll": false, 
+    "has_highway": false, 
+    "tie_check": "kept", 
+    "end": "lot", 
+    "entry_closed": false, 
+    "end_point": [
+     42.124531, 
+     -80.077828
+    ]
+   }, 
+   "simpler/none": {
+    "time_s": 122.9, 
+    "length_km": 1.058, 
+    "legs": 1, 
+    "maneuvers": 3, 
+    "maneuvers_total": 5, 
+    "highway_km": 0, 
+    "toll_km": 0, 
+    "endpoint_gap_m": [
+     1, 
+     0
+    ], 
+    "ok": true, 
+    "candidates_considered": 5, 
+    "has_toll": false, 
+    "has_highway": false, 
+    "tie_check": "kept", 
+    "end": "lot", 
+    "entry_closed": false, 
+    "end_point": [
+     42.124531, 
+     -80.077828
+    ]
+   }
+  }, 
+  "lot_none_downtown": {
+   "stops": [
+    {
+     "lat": 42.0726, 
+     "lon": -80.0623
+    }, 
+    {
+     "lat": 42.1213778, 
+     "lon": -80.0809081, 
+     "_street": "Turnpike Street", 
+     "_poi": true
+    }
+   ], 
+   "note": "a downtown business whose street is nearer than the driveway behind it: no lot, its address street as before (batch E)", 
+   "fastest/none": {
+    "time_s": 648.9, 
+    "length_km": 7.339, 
+    "legs": 1, 
+    "maneuvers": 8, 
+    "maneuvers_total": 10, 
+    "highway_km": 0, 
+    "toll_km": 0, 
+    "endpoint_gap_m": [
+     50, 
+     0
+    ], 
+    "ok": true, 
+    "has_toll": false, 
+    "has_highway": false, 
+    "tie_check": "kept", 
+    "end": "street", 
+    "end_point": [
+     42.121375, 
+     -80.080679
+    ]
+   }, 
+   "simpler/none": {
+    "time_s": 648.9, 
+    "length_km": 7.339, 
+    "legs": 1, 
+    "maneuvers": 8, 
+    "maneuvers_total": 10, 
+    "highway_km": 0, 
+    "toll_km": 0, 
+    "endpoint_gap_m": [
+     50, 
+     0
+    ], 
+    "ok": true, 
+    "candidates_considered": 6, 
+    "has_toll": false, 
+    "has_highway": false, 
+    "tie_check": "kept", 
+    "end": "street", 
+    "end_point": [
+     42.121375, 
+     -80.080679
+    ]
+   }
+  }, 
+  "lot_back_to_street": {
+   "stops": [
+    {
+     "lat": 42.1292, 
+     "lon": -80.0851
+    }, 
+    {
+     "lat": 42.0680696, 
+     "lon": -80.1040303, 
+     "_street": "Interchange Road", 
+     "_poi": true
+    }
+   ], 
+   "note": "Five Below in the Millcreek Mall plaza: the lot route is more than 90 s longer than the street end, so the tie check keeps Interchange Road (batch E)", 
+   "fastest/none": {
+    "time_s": 493.6, 
+    "length_km": 10.283, 
+    "legs": 1, 
+    "maneuvers": 5, 
+    "maneuvers_total": 7, 
+    "highway_km": 8.68, 
+    "toll_km": 0, 
+    "endpoint_gap_m": [
+     1, 
+     0
+    ], 
+    "ok": true, 
+    "has_toll": false, 
+    "has_highway": true, 
+    "tie_check": "untied", 
+    "arrival_side": "asked", 
+    "end": "street", 
+    "end_point": [
+     42.065639, 
+     -80.105055
+    ]
+   }
+  }, 
+  "door_parking": {
+   "stops": [
+    {
+     "lat": 42.105, 
+     "lon": -80.108
+    }, 
+    {
+     "lat": 42.0520658, 
+     "lon": -80.0798629, 
+     "_street": "Downs Drive", 
+     "_poi": true, 
+     "_door": {
+      "lat": 42.0518263, 
+      "lon": -80.0804005
+     }
+    }
+   ], 
+   "note": "a large store whose front is known from its parking: the route ends at the lane by its door, not on the lane behind the building (item 28)", 
+   "fastest/none": {
+    "time_s": 586.5, 
+    "length_km": 10.489, 
+    "legs": 1, 
+    "maneuvers": 7, 
+    "maneuvers_total": 9, 
+    "highway_km": 5.33, 
+    "toll_km": 0, 
+    "endpoint_gap_m": [
+     59, 
+     0
+    ], 
+    "ok": true, 
+    "has_toll": false, 
+    "has_highway": true, 
+    "tie_check": "kept", 
+    "end": "lot", 
+    "entry_closed": false, 
+    "end_point": [
+     42.051864, 
+     -80.080553
+    ]
+   }, 
+   "simpler/none": {
+    "time_s": 586.5, 
+    "length_km": 10.489, 
+    "legs": 1, 
+    "maneuvers": 7, 
+    "maneuvers_total": 9, 
+    "highway_km": 5.33, 
+    "toll_km": 0, 
+    "endpoint_gap_m": [
+     59, 
+     0
+    ], 
+    "ok": true, 
+    "candidates_considered": 6, 
+    "has_toll": false, 
+    "has_highway": true, 
+    "tie_check": "kept", 
+    "end": "lot", 
+    "entry_closed": false, 
+    "end_point": [
+     42.051864, 
+     -80.080553
+    ]
+   }
+  }, 
+  "door_entrance": {
+   "stops": [
+    {
+     "lat": 42.1292, 
+     "lon": -80.0851
+    }, 
+    {
+     "lat": 42.122977, 
+     "lon": -80.0411089, 
+     "_street": "Elm Street", 
+     "_poi": true, 
+     "_door": {
+      "lat": 42.1225111, 
+      "lon": -80.0416271
+     }
+    }
+   ], 
+   "note": "a large store with a mapped main entrance: the route ends at the lane by that entrance (item 28)", 
+   "fastest/none": {
+    "time_s": 420.8, 
+    "length_km": 4.928, 
+    "legs": 1, 
+    "maneuvers": 7, 
+    "maneuvers_total": 9, 
+    "highway_km": 0, 
+    "toll_km": 0, 
+    "endpoint_gap_m": [
+     1, 
+     0
+    ], 
+    "ok": true, 
+    "has_toll": false, 
+    "has_highway": false, 
+    "tie_check": "kept", 
+    "end": "lot", 
+    "entry_closed": true, 
+    "end_point": [
+     42.122466, 
+     -80.041565
+    ]
+   }, 
+   "simpler/none": {
+    "time_s": 420.8, 
+    "length_km": 4.928, 
+    "legs": 1, 
+    "maneuvers": 7, 
+    "maneuvers_total": 9, 
+    "highway_km": 0, 
+    "toll_km": 0, 
+    "endpoint_gap_m": [
+     1, 
+     0
+    ], 
+    "ok": true, 
+    "candidates_considered": 6, 
+    "has_toll": false, 
+    "has_highway": false, 
+    "tie_check": "kept", 
+    "end": "lot", 
+    "entry_closed": true, 
+    "end_point": [
+     42.122466, 
+     -80.041565
+    ]
+   }
+  }, 
+  "entrance_other": {
+   "stops": [
+    {
+     "lat": 42.14274, 
+     "lon": -80.067754
+    }, 
+    {
+     "lat": 42.122977, 
+     "lon": -80.0411089, 
+     "_street": "Elm Street", 
+     "_poi": true, 
+     "_door": {
+      "lat": 42.1225111, 
+      "lon": -80.0416271
+     }
+    }
+   ], 
+   "note": "two ways into one lot: the engine's own choice is 15 s slower by the clock than the other way in and costs it hardly less, so the plan leaves that way in out (item 35)", 
+   "fastest/none": {
+    "time_s": 347.9, 
+    "length_km": 4.257, 
+    "legs": 1, 
+    "maneuvers": 6, 
+    "maneuvers_total": 8, 
+    "highway_km": 0, 
+    "toll_km": 0, 
+    "endpoint_gap_m": [
+     45, 
+     0
+    ], 
+    "ok": true, 
+    "has_toll": false, 
+    "has_highway": false, 
+    "tie_check": "kept", 
+    "end": "lot", 
+    "entry_closed": true, 
+    "end_point": [
+     42.122466, 
+     -80.041565
+    ]
+   }, 
+   "simpler/none": {
+    "time_s": 347.9, 
+    "length_km": 4.257, 
+    "legs": 1, 
+    "maneuvers": 6, 
+    "maneuvers_total": 8, 
+    "highway_km": 0, 
+    "toll_km": 0, 
+    "endpoint_gap_m": [
+     45, 
+     0
+    ], 
+    "ok": true, 
+    "candidates_considered": 6, 
+    "has_toll": false, 
+    "has_highway": false, 
+    "tie_check": "kept", 
+    "end": "lot", 
+    "entry_closed": true, 
+    "end_point": [
+     42.122466, 
+     -80.041565
+    ]
+   }
+  }, 
+  "door_walk": {
+   "stops": [
+    {
+     "lat": 42.139676, 
+     "lon": -79.941422
+    }, 
+    {
+     "lat": 42.1594394, 
+     "lon": -79.9680847, 
+     "_street": "Buffalo Road", 
+     "_poi": true, 
+     "_door": {
+      "lat": 42.1590627, 
+      "lon": -79.9685117
+     }
+    }
+   ], 
+   "note": "a large store whose lot route is 97 s longer than its street end, 224 m from the door: the walk saved allows it, the route ends by the door (item 28)", 
+   "fastest/none": {
+    "time_s": 447.6, 
+    "length_km": 6.183, 
+    "legs": 1, 
+    "maneuvers": 7, 
+    "maneuvers_total": 9, 
+    "highway_km": 0, 
+    "toll_km": 0, 
+    "endpoint_gap_m": [
+     201, 
+     0
+    ], 
+    "ok": true, 
+    "has_toll": false, 
+    "has_highway": false, 
+    "tie_check": "kept", 
+    "end": "lot", 
+    "entry_closed": false, 
+    "end_point": [
+     42.159013, 
+     -79.968651
+    ]
+   }, 
+   "simpler/none": {
+    "time_s": 447.6, 
+    "length_km": 6.183, 
+    "legs": 1, 
+    "maneuvers": 7, 
+    "maneuvers_total": 9, 
+    "highway_km": 0, 
+    "toll_km": 0, 
+    "endpoint_gap_m": [
+     201, 
+     0
+    ], 
+    "ok": true, 
+    "candidates_considered": 4, 
+    "has_toll": false, 
+    "has_highway": false, 
+    "tie_check": "kept", 
+    "end": "lot", 
+    "entry_closed": false, 
+    "end_point": [
+     42.159013, 
+     -79.968651
+    ]
+   }
+  }, 
+  "door_none": {
+   "stops": [
+    {
+     "lat": 42.105, 
+     "lon": -80.108
+    }, 
+    {
+     "lat": 42.0520658, 
+     "lon": -80.0798629, 
+     "_street": "Downs Drive", 
+     "_poi": true
+    }
+   ], 
+   "note": "the same store without its door (a pack built before 2026-11-21): as 0.1.13, the lane nearest to the middle of the roof (item 28)", 
+   "fastest/none": {
+    "time_s": 590.0, 
+    "length_km": 10.658, 
+    "legs": 1, 
+    "maneuvers": 7, 
+    "maneuvers_total": 9, 
+    "highway_km": 5.33, 
+    "toll_km": 0, 
+    "endpoint_gap_m": [
+     59, 
+     0
+    ], 
+    "ok": true, 
+    "has_toll": false, 
+    "has_highway": true, 
+    "tie_check": "kept", 
+    "end": "lot", 
+    "entry_closed": false, 
+    "end_point": [
+     42.052267, 
+     -80.079181
+    ]
+   }
+  }, 
+  "end_same_west": {
+   "stops": [
+    {
+     "lat": 42.105, 
+     "lon": -80.108
+    }, 
+    {
+     "lat": 42.0525432, 
+     "lon": -80.0840009, 
+     "_street": "Peach Street", 
+     "_poi": true
+    }
+   ], 
+   "note": "a doughnut shop on Peach Street from the west: 0.1.6's Simpler ended on Peach Street (its own way into the lot was more than 90 s slower than its own street end); now the end is decided once with Fastest and Simpler ends at the same lot point (batch E2)", 
+   "fastest/none": {
+    "time_s": 583.0, 
+    "length_km": 10.333, 
+    "legs": 1, 
+    "maneuvers": 10, 
+    "maneuvers_total": 12, 
+    "highway_km": 5.33, 
+    "toll_km": 0, 
+    "endpoint_gap_m": [
+     59, 
+     0
+    ], 
+    "ok": true, 
+    "has_toll": false, 
+    "has_highway": true, 
+    "tie_check": "kept", 
+    "end": "lot", 
+    "entry_closed": false, 
+    "end_point": [
+     42.052458, 
+     -80.083755
+    ]
+   }, 
+   "simpler/none": {
+    "time_s": 613.0, 
+    "length_km": 10.279, 
+    "legs": 1, 
+    "maneuvers": 9, 
+    "maneuvers_total": 11, 
+    "highway_km": 5.33, 
+    "toll_km": 0, 
+    "endpoint_gap_m": [
+     59, 
+     0
+    ], 
+    "ok": true, 
+    "candidates_considered": 6, 
+    "has_toll": false, 
+    "has_highway": true, 
+    "tie_check": "kept", 
+    "end": "lot", 
+    "entry_closed": false, 
+    "end_point": [
+     42.052458, 
+     -80.083755
+    ]
+   }
+  }, 
+  "end_same_north": {
+   "stops": [
+    {
+     "lat": 42.1292, 
+     "lon": -80.0851
+    }, 
+    {
+     "lat": 42.0525432, 
+     "lon": -80.0840009, 
+     "_street": "Peach Street", 
+     "_poi": true
+    }
+   ], 
+   "note": "the same shop from the north: both types end at the same lot point (batch E2)", 
+   "fastest/none": {
+    "time_s": 707.3, 
+    "length_km": 13.322, 
+    "legs": 1, 
+    "maneuvers": 11, 
+    "maneuvers_total": 13, 
+    "highway_km": 8.68, 
+    "toll_km": 0, 
+    "endpoint_gap_m": [
+     1, 
+     0
+    ], 
+    "ok": true, 
+    "has_toll": false, 
+    "has_highway": true, 
+    "tie_check": "kept", 
+    "end": "lot", 
+    "entry_closed": false, 
+    "end_point": [
+     42.052458, 
+     -80.083755
+    ]
+   }, 
+   "simpler/none": {
+    "time_s": 750.2, 
+    "length_km": 9.78, 
+    "legs": 1, 
+    "maneuvers": 7, 
+    "maneuvers_total": 9, 
+    "highway_km": 0, 
+    "toll_km": 0, 
+    "endpoint_gap_m": [
+     1, 
+     0
+    ], 
+    "ok": true, 
+    "candidates_considered": 6, 
+    "has_toll": false, 
+    "has_highway": false, 
+    "tie_check": "kept", 
+    "route_index": 1, 
+    "end": "lot", 
+    "entry_closed": false, 
+    "end_point": [
+     42.052458, 
+     -80.083755
+    ]
+   }
+  }, 
+  "end_same_south": {
+   "stops": [
+    {
+     "lat": 42.001, 
+     "lon": -80.07
+    }, 
+    {
+     "lat": 42.0525432, 
+     "lon": -80.0840009, 
+     "_street": "Peach Street", 
+     "_poi": true
+    }
+   ], 
+   "note": "the same shop from the south: both types end at the same lot point (batch E2)", 
+   "fastest/none": {
+    "time_s": 624.0, 
+    "length_km": 9.907, 
+    "legs": 1, 
+    "maneuvers": 8, 
+    "maneuvers_total": 10, 
+    "highway_km": 0, 
+    "toll_km": 0, 
+    "endpoint_gap_m": [
+     71, 
+     0
+    ], 
+    "ok": true, 
+    "has_toll": false, 
+    "has_highway": false, 
+    "tie_check": "kept", 
+    "end": "lot", 
+    "entry_closed": false, 
+    "end_point": [
+     42.052458, 
+     -80.083755
+    ]
+   }, 
+   "simpler/none": {
+    "time_s": 624.0, 
+    "length_km": 9.907, 
+    "legs": 1, 
+    "maneuvers": 8, 
+    "maneuvers_total": 10, 
+    "highway_km": 0, 
+    "toll_km": 0, 
+    "endpoint_gap_m": [
+     71, 
+     0
+    ], 
+    "ok": true, 
+    "candidates_considered": 4, 
+    "has_toll": false, 
+    "has_highway": false, 
+    "tie_check": "kept", 
+    "end": "lot", 
+    "entry_closed": false, 
+    "end_point": [
+     42.052458, 
+     -80.083755
+    ]
+   }
+  }, 
+  "end_same_avoid": {
+   "stops": [
+    {
+     "lat": 42.105, 
+     "lon": -80.108
+    }, 
+    {
+     "lat": 42.0525432, 
+     "lon": -80.0840009, 
+     "_street": "Peach Street", 
+     "_poi": true
+    }
+   ], 
+   "note": "with an option the end is decided with Fastest and that option (batch E2)", 
+   "simpler/tolls": {
+    "time_s": 613.0, 
+    "length_km": 10.279, 
+    "legs": 1, 
+    "maneuvers": 9, 
+    "maneuvers_total": 11, 
+    "highway_km": 5.33, 
+    "toll_km": 0, 
+    "endpoint_gap_m": [
+     59, 
+     0
+    ], 
+    "ok": true, 
+    "candidates_considered": 6, 
+    "has_toll": false, 
+    "has_highway": true, 
+    "tie_check": "kept", 
+    "end": "lot", 
+    "entry_closed": false, 
+    "end_point": [
+     42.052458, 
+     -80.083755
+    ]
+   }, 
+   "fastest/tolls": {
+    "time_s": 583.0, 
+    "length_km": 10.333, 
+    "legs": 1, 
+    "maneuvers": 10, 
+    "maneuvers_total": 12, 
+    "highway_km": 5.33, 
+    "toll_km": 0, 
+    "endpoint_gap_m": [
+     59, 
+     0
+    ], 
+    "ok": true, 
+    "has_toll": false, 
+    "has_highway": true, 
+    "tie_check": "kept", 
+    "end": "lot", 
+    "entry_closed": false, 
+    "end_point": [
+     42.052458, 
+     -80.083755
+    ]
+   }
+  }, 
+  "car_wash_street": {
+   "stops": [
+    {
+     "lat": 42.127, 
+     "lon": -80.0852
+    }, 
+    {
+     "lat": 42.1120289, 
+     "lon": -80.1136557, 
+     "_street": "West 12th Street", 
+     "_poi": true
+    }
+   ], 
+   "note": "a car wash on West 12th Street: the way into its lot is its wash lane (drive_through), so the lot fails and the route ends on West 12th Street at the entrance (batch E2)", 
+   "fastest/none": {
+    "time_s": 260.1, 
+    "length_km": 3.569, 
+    "legs": 1, 
+    "maneuvers": 2, 
+    "maneuvers_total": 4, 
+    "highway_km": 0, 
+    "toll_km": 0, 
+    "endpoint_gap_m": [
+     2, 
+     0
+    ], 
+    "ok": true, 
+    "has_toll": false, 
+    "has_highway": false, 
+    "tie_check": "untied", 
+    "end": "street", 
+    "end_point": [
+     42.111662, 
+     -80.113445
+    ]
+   }, 
+   "simpler/none": {
+    "time_s": 260.1, 
+    "length_km": 3.569, 
+    "legs": 1, 
+    "maneuvers": 2, 
+    "maneuvers_total": 4, 
+    "highway_km": 0, 
+    "toll_km": 0, 
+    "endpoint_gap_m": [
+     2, 
+     0
+    ], 
+    "ok": true, 
+    "candidates_considered": 5, 
+    "has_toll": false, 
+    "has_highway": false, 
+    "tie_check": "untied", 
+    "end": "street", 
+    "end_point": [
+     42.111662, 
+     -80.113445
+    ]
+   }
+  }, 
+  "drive_through_lot": {
+   "stops": [
+    {
+     "lat": 42.0726, 
+     "lon": -80.0623
+    }, 
+    {
+     "lat": 42.0893217, 
+     "lon": -80.0854826, 
+     "_street": "Peach Street", 
+     "_poi": true
+    }
+   ], 
+   "note": "a drive-through restaurant on Peach Street with an ordinary entrance: ends in its lot, its drive-through lanes left out of the route (exclude_polygons; batch E2)", 
+   "fastest/none": {
+    "time_s": 371.9, 
+    "length_km": 3.822, 
+    "legs": 1, 
+    "maneuvers": 8, 
+    "maneuvers_total": 10, 
+    "highway_km": 0, 
+    "toll_km": 0, 
+    "endpoint_gap_m": [
+     50, 
+     0
+    ], 
+    "ok": true, 
+    "has_toll": false, 
+    "has_highway": false, 
+    "tie_check": "kept", 
+    "end": "lot", 
+    "entry_closed": false, 
+    "end_point": [
+     42.089491, 
+     -80.085541
+    ]
+   }, 
+   "simpler/none": {
+    "time_s": 371.9, 
+    "length_km": 3.822, 
+    "legs": 1, 
+    "maneuvers": 8, 
+    "maneuvers_total": 10, 
+    "highway_km": 0, 
+    "toll_km": 0, 
+    "endpoint_gap_m": [
+     50, 
+     0
+    ], 
+    "ok": true, 
+    "candidates_considered": 4, 
+    "has_toll": false, 
+    "has_highway": false, 
+    "tie_check": "kept", 
+    "end": "lot", 
+    "entry_closed": false, 
+    "end_point": [
+     42.089491, 
+     -80.085541
+    ]
+   }
+  }
+ }, 
+ "meta": {
+  "engine": "pyvalhalla 3.9.1", 
+  "device_layout": "tar", 
+  "graph_build": [
+   "261114-pa-oh-v3.9.1-b53087"
+  ], 
+  "packs": [
+   "oh", 
+   "pa"
+  ], 
+  "requests": 1583, 
+  "new_distinct_requests": 625
+ }
+}

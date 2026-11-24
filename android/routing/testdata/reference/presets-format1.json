@@ -1,0 +1,63 @@
+{
+  "format": "beamline-route-presets/1",
+  "engine": "valhalla",
+  "valhalla_version": "3.9.1",
+  "note": "Option names, ranges and defaults checked against docs/docs/api/route/api-reference.md and src/sif/autocost.cc, src/sif/dynamiccost.cc at valhalla tag 3.9.1. Values tuned on trips.json (21 PA/OH trips); see docs/experiments/01-routing.md. A preset is either one request (costing_options, optional fallback_costing_options when the first finds no route) or a candidate pool with a select rule (see packbuilder/routing/route_lib.py run_preset).",
+  "requires_config": {
+    "service_limits.allow_hard_exclusions": true,
+    "service_limits.max_alternates": 2
+  },
+  "checks": {
+    "warn_if_endpoint_gap_m_over": 1000,
+    "note": "Valhalla snaps a point to the nearest road within 35 km without saying so (Lake Erie -> 14 km, Binghamton NY on a PA+OH device -> 8 km). The app warns when a route end is further than this from the requested point (route_lib.far_snap_warnings)."
+  },
+  "presets": [
+    {
+      "id": "fastest",
+      "label": "Fastest",
+      "costing": "auto",
+      "costing_options": {},
+      "tuning": "Valhalla defaults (maneuver_penalty 5 s, use_highways 0.5, use_tolls 0.5, use_distance 0, top_speed 140 km/h)."
+    },
+    {
+      "id": "shortest",
+      "label": "Shortest",
+      "costing": "auto",
+      "costing_options": {"shortest": true},
+      "tuning": "shortest=true: distance-only cost. 20/21 trips differ from Fastest, mean -8.3% distance, +22% time. use_distance=1.0 is almost the same; disable_hierarchy_pruning changed nothing on these trips."
+    },
+    {
+      "id": "simpler",
+      "label": "Simpler",
+      "costing": "auto",
+      "select": "min_maneuvers",
+      "max_time_increase": 0.05,
+      "alternates": 2,
+      "candidates": [{}, {"maneuver_penalty": 60}, {"maneuver_penalty": 300}],
+      "tuning": "maneuver_penalty alone is noise for this goal (60 s: mean -0.5 maneuvers but +1.5% time; 120-300 s: more time, maneuvers not reduced). Pool of Fastest + 2 alternates + two maneuver_penalty routes, pick the fewest maneuvers within +5% time: 6/21 trips change, never more maneuvers than Fastest, about 3 route calls per request."
+    },
+    {
+      "id": "eco",
+      "label": "Eco",
+      "costing": "auto",
+      "costing_options": {"use_distance": 0.5},
+      "tuning": "Proxy only (Valhalla has no fuel model): equal weight on distance and time. 9/21 trips differ, mean -3.7% distance, +0.4% time. top_speed below 113 km/h made routes leave 70 mph interstates entirely (+7..16% time) and was rejected. A candidate pool with min_distance within +5% time gave about the same result (-3.9% / +0.2%) at 3x the cost."
+    },
+    {
+      "id": "avoid_highways",
+      "label": "Avoid highways",
+      "costing": "auto",
+      "costing_options": {"exclude_highways": true},
+      "fallback_costing_options": {"use_highways": 0.0},
+      "fallback_when": {"highway_km_over": 0.5},
+      "tuning": "exclude_highways (hard exclusion of motorway-class roads; needs service_limits.allow_hard_exclusions) gave 0 motorway km at +25.5% time. use_highways=0 also penalises trunk roads 4x: 24 km of motorway left, +45% time. In 3.9.1 the exclusion only forbids driving ONTO a motorway (dynamiccost.h CheckExclusions), so when the trip starts on one it may stay on motorways all the way (I-90 near the OH line -> Erie: 46.7 of 48.3 km on I-90/I-79). So the fallback runs both when the exclusion finds no route and when the result still has more than 0.5 motorway km; the route with fewer motorway km wins (same trip: 1.9 km to the next exit)."
+    },
+    {
+      "id": "avoid_tolls",
+      "label": "Avoid tolls",
+      "costing": "auto",
+      "costing_options": {"use_tolls": 0.0},
+      "tuning": "use_tolls=0 (toll edges cost about 5x) removed every toll km on the 4 trips that had tolls (PA Turnpike, Ohio Turnpike); exclude_tolls and an extra toll_booth_penalty gave the same routes. Soft option kept: it cannot fail. Limitation: a trip that starts ON the Turnpike keeps the Fastest route (I-76 near the OH line -> Pittsburgh: 42.9 toll km either way); exclude_tolls cannot help there because it also allows staying on a toll road."
+    }
+  ]
+}

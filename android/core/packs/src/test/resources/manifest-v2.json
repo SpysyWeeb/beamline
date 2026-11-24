@@ -1,0 +1,56 @@
+{
+  "manifest_version": 2,
+  "pack_id": "us-pa",
+  "name": "Pennsylvania",
+  "country": "US",
+  "state": "PA",
+  "osm_snapshot": "2026-11-14",
+  "created_utc": "2026-11-15T20:00:00Z",
+  "bounds": [
+    -80.52,
+    39.66,
+    -74.69,
+    42.52
+  ],
+  "attribution": "© OpenStreetMap contributors",
+  "parts": {
+    "map": {
+      "file": "map.pmtiles",
+      "format": "pmtiles",
+      "format_version": 3,
+      "schema": "protomaps-basemap",
+      "schema_version": "4.15.2",
+      "min_zoom": 0,
+      "max_zoom": 15,
+      "bytes": 1234,
+      "sha256": "0000000000000000000000000000000000000000000000000000000000000000"
+    },
+    "routing": {
+      "file": "routing.tar",
+      "format": "valhalla-tar",
+      "format_version": 1,
+      "valhalla_version": "3.9.1",
+      "graph_build": "261114-pa-oh-v3.9.1-b53087",
+      "bytes": 1234,
+      "sha256": "0000000000000000000000000000000000000000000000000000000000000000"
+    },
+    "search": {
+      "file": "search.sqlite",
+      "format": "beamline-search-sqlite",
+      "format_version": 1,
+      "bytes": 1234,
+      "sha256": "0000000000000000000000000000000000000000000000000000000000000000"
+    },
+    "future_part": {
+      "file": "future.bin",
+      "format": "something-new",
+      "format_version": 7,
+      "bytes": 1234,
+      "sha256": "0000000000000000000000000000000000000000000000000000000000000000",
+      "note": "a part this app does not know: copied, checked, kept"
+    }
+  },
+  "builder": {
+    "note": "unknown top-level keys are ignored"
+  }
+}

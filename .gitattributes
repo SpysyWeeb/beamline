@@ -1,0 +1,14 @@
+# Keep LF line endings everywhere so shell scripts and gradlew work on Linux
+# and in WSL; Windows-only script types keep CRLF.
+* text=auto eol=lf
+*.bat text eol=crlf
+*.cmd text eol=crlf
+*.ps1 text eol=crlf
+
+*.jar binary
+*.png binary
+*.pbf binary
+*.pmtiles binary
+*.sqlite binary
+*.ttf binary
+*.otf binary

@@ -1,0 +1,188 @@
+<title>Beamline Turn Banner</title>
+<meta name="claude:viewport-fit-sides" content="cover">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Barlow:wght@400;500;600&family=Barlow+Condensed:wght@600&display=swap">
+<style>
+/* Layout: the user's real junction as three phone-top frames in driving order, then what the map data says about it, then notes. */
+:root {
+  --bg: #EEF1F4; --surface: #FFFFFF; --ink: #17212B; --muted: #566575; --line: #D3DAE1; --accent: #2A74D8;
+  /* App specimen colours are fixed: they depict the app's own banner and day map. */
+  --ban-bg: #16212C; --ban-ink: #FFFFFF; --ban-muted: #A9B8C7; --ban-line: #2B3A49;
+  --lane-pref: #3D8CF0; --lane-ok: #8FA2B6; --lane-off: #56667A;
+  --map-land: #E7E5DF; --map-road: #FFFFFF; --map-edge: #D2CFC7; --route: #5BAAFF; --route-casing: #2C72CF;
+  --arrow-top: #7CBDFF; --arrow-rear: #3D8CF0; --arrow-under: #1B54A6; --arrow-edge: #FFFFFF; --brake-off: #7A2620;
+  --font-display: "Barlow Condensed", "Arial Narrow", sans-serif;
+  --font-body: "Barlow", "Segoe UI", system-ui, sans-serif;
+}
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) { --bg: #0D1216; --surface: #151C23; --ink: #E7EDF3; --muted: #97A5B4; --line: #28323C; --accent: #5AA5FF; color-scheme: dark; }
+}
+:root[data-theme="dark"] { --bg: #0D1216; --surface: #151C23; --ink: #E7EDF3; --muted: #97A5B4; --line: #28323C; --accent: #5AA5FF; color-scheme: dark; }
+
+body { background: var(--bg); color: var(--ink); font-family: var(--font-body); font-size: 16px; line-height: 1.5; }
+.wrap {
+  max-width: 1040px; margin: 0 auto; padding-block: 28px 56px;
+  padding-left: max(16px, env(safe-area-inset-left, 0px));
+  padding-right: max(16px, env(safe-area-inset-right, 0px));
+  display: flex; flex-direction: column; gap: 40px;
+}
+h1, h2 { font-family: var(--font-display); font-weight: 600; line-height: 1.1; margin: 0; text-wrap: balance; }
+h1 { font-size: 2.6rem; letter-spacing: 0.01em; }
+h2 { font-size: 1.6rem; letter-spacing: 0.02em; }
+p { margin: 0; }
+.lede { color: var(--muted); max-width: 64ch; margin-top: 8px; }
+.note { color: var(--muted); font-size: 0.9rem; margin-top: 4px; }
+
+.frames { display: grid; grid-template-columns: repeat(auto-fit, minmax(260px, 1fr)); gap: 24px; margin-top: 16px; align-items: start; }
+.frame { margin: 0; display: flex; flex-direction: column; gap: 10px; min-width: 0; }
+.frame figcaption strong { display: block; font-weight: 600; }
+.frame figcaption span { color: var(--muted); font-size: 0.9rem; }
+.phone { border-radius: 22px; overflow: hidden; border: 1px solid var(--line); background: var(--map-land); max-width: 340px; }
+.phone svg.map { display: block; width: 100%; height: auto; }
+
+.ban { background: var(--ban-bg); color: var(--ban-ink); }
+.ban-main { display: flex; gap: 12px; align-items: center; padding: 14px 14px 14px 16px; }
+.ban-icon { flex: none; width: 54px; height: 54px; display: grid; place-items: center; }
+.ban-icon svg { width: 54px; height: 54px; }
+.ban-copy { min-width: 0; flex: 1; }
+.ban-dist { font-family: var(--font-display); font-size: 2rem; line-height: 1; letter-spacing: 0.01em; }
+.ban-text { font-weight: 600; font-size: 1.05rem; line-height: 1.25; margin-top: 3px; }
+.ban-text span { font-weight: 400; color: var(--ban-muted); }
+.then-chip { flex: none; display: flex; flex-direction: column; align-items: center; gap: 1px; padding: 6px 9px 7px; border: 1px solid var(--ban-line); border-radius: 12px; }
+.then-chip small { font-size: 0.68rem; font-weight: 600; letter-spacing: 0.08em; text-transform: uppercase; color: var(--ban-muted); }
+.then-chip svg { width: 28px; height: 28px; }
+.then-chip span { font-size: 0.8rem; font-weight: 600; line-height: 1.1; white-space: nowrap; }
+.ban-lanes { display: flex; gap: 6px; align-items: center; padding: 10px 16px 0; border-top: 1px solid var(--ban-line); }
+.lane { width: 40px; height: 44px; border-radius: 9px; display: grid; place-items: center; color: var(--lane-off); border: 1.5px solid transparent; }
+.lane svg { width: 26px; height: 26px; }
+.lane.ok { color: var(--ban-ink); border-color: var(--lane-ok); }
+.lane.pref { color: var(--ban-ink); background: var(--lane-pref); border-color: var(--lane-pref); }
+.ban-hint { padding: 6px 16px 12px; color: var(--ban-muted); font-size: 0.85rem; }
+.ban-hint:empty { padding-top: 0; }
+.ban-nolanes { height: 2px; }
+
+.legend { display: flex; flex-wrap: wrap; gap: 10px 22px; margin-top: 18px; align-items: center; }
+.legend div { display: flex; align-items: center; gap: 8px; color: var(--muted); font-size: 0.9rem; }
+.legend .swatch { background: var(--ban-bg); border-radius: 11px; padding: 4px; display: grid; }
+
+.notes { display: grid; grid-template-columns: repeat(auto-fit, minmax(280px, 1fr)); gap: 28px 40px; }
+.notes > div { min-width: 0; }
+ul { margin: 12px 0 0; padding-left: 1.1em; color: var(--muted); display: flex; flex-direction: column; gap: 8px; max-width: 70ch; }
+ul strong { color: var(--ink); font-weight: 600; }
+</style>
+
+<div class="wrap">
+  <header>
+    <h1>Turn banner</h1>
+    <p class="lede">Your example: I-90 exit 24, left onto Peach St, then right onto Downs Dr. The following turn sits beside the main instruction, with the distance to it under its arrow.</p>
+    <p class="note">Turns, distances and lanes are taken from the Pennsylvania routing data built for the app, not invented. The moments shown (0.5 mi, 400 ft) are picked for illustration.</p>
+  </header>
+
+  <section aria-labelledby="seq-h">
+    <h2 id="seq-h">The three moments</h2>
+    <div class="frames" id="frames"></div>
+    <div class="legend" aria-label="Lane colours">
+      <div><span class="swatch"><span class="lane pref" id="lg-pref"></span></span>Best lane for this turn and the next</div>
+      <div><span class="swatch"><span class="lane ok" id="lg-ok"></span></span>Also allowed for this turn</div>
+      <div><span class="swatch"><span class="lane" id="lg-off"></span></span>Not for this route</div>
+    </div>
+  </section>
+
+  <section aria-labelledby="data-h">
+    <h2 id="data-h">What the map has for this junction</h2>
+    <ul>
+      <li><strong>End of the ramp: three lanes, not four.</strong> The map has left, left-or-straight, and right. You described left, left, straight, right. If the map is wrong, it can be corrected in OpenStreetMap and the next pack picks it up.</li>
+      <li><strong>The lane pick matches what you want.</strong> Both left lanes are allowed, and the routing engine prefers the right-hand one, ahead of the right turn onto Downs Dr.</li>
+      <li><strong>The turns are 0.22 mi apart.</strong> On the way there is one more junction, where it also prefers the right-hand through lane.</li>
+      <li><strong>The engine's own back-to-back rule did not fire here.</strong> It treats 0.22 mi as too far apart, so the app needs its own rule for when to show the following turn.</li>
+    </ul>
+  </section>
+
+  <section class="notes">
+    <div>
+      <h2>What it does</h2>
+      <ul>
+        <li><strong>Shows the following turn beside the main one.</strong> Its arrow, with the distance from the first turn to the second under it.</li>
+        <li><strong>Picks the lane with the next turn in mind.</strong> With two left-turn lanes and a right turn soon after, it points you to the right-hand one.</li>
+        <li><strong>Says it in one sentence.</strong> "Turn left onto Peach Street, then turn right in two tenths of a mile. Use the right-hand left-turn lane."</li>
+      </ul>
+    </div>
+    <div>
+      <h2>Limits</h2>
+      <ul>
+        <li><strong>Lane arrows need lane data.</strong> The map has none for the exit itself, so the first frame has no lane row. It is never guessed.</li>
+        <li><strong>One junction is not proof.</strong> The lane pick worked here; it still needs checking on more junctions before it is trusted.</li>
+      </ul>
+    </div>
+  </section>
+</div>
+
+<script>
+(function () {
+  var paths = {
+    left: '<path d="M16 20v-7a4 4 0 0 0-4-4H6"/><path d="M9.5 5.5 6 9l3.5 3.5"/>',
+    right: '<path d="M8 20v-7a4 4 0 0 1 4-4h6"/><path d="M14.5 5.5 18 9l-3.5 3.5"/>',
+    straight: '<path d="M12 20V5"/><path d="M7.5 9.5 12 5l4.5 4.5"/>',
+    exit: '<path d="M9 20v-6c0-2 1-3.3 2.4-4.5L17 5"/><path d="M11.5 5H17v5.5"/>',
+    leftstraight: '<path d="M14 20V5"/><path d="M10.5 8.5 14 5l3.5 3.5"/><path d="M14 14H7"/><path d="M9.5 11.5 7 14l2.5 2.5"/>',
+    straightright: '<path d="M10 20V5"/><path d="M6.5 8.5 10 5l3.5 3.5"/><path d="M10 14h7"/><path d="M14.5 11.5 17 14l-2.5 2.5"/>'
+  };
+  var names = { left: 'left', right: 'right', straight: 'straight on', exit: 'exit right', leftstraight: 'left or straight on', straightright: 'straight on or right' };
+  function icon(k, w) {
+    return '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="' + (w || 2.4) +
+      '" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">' + paths[k] + '</svg>';
+  }
+  function map(route) {
+    var o = 'M0 -38 L27 28 L27 34.5 L0 21.5 L-27 34.5 L-27 28 Z';
+    return '<svg class="map" viewBox="0 0 300 150" aria-hidden="true">' +
+      '<rect width="300" height="150" style="fill:var(--map-land)"/>' +
+      '<path d="M150 160V-10M-10 40H310" fill="none" style="stroke:var(--map-edge);stroke-width:35"/>' +
+      '<path d="M150 160V-10M-10 40H310" fill="none" style="stroke:var(--map-road);stroke-width:30"/>' +
+      '<path d="' + route + '" fill="none" style="stroke:var(--route-casing);stroke-width:15;stroke-linejoin:round"/>' +
+      '<path d="' + route + '" fill="none" style="stroke:var(--route);stroke-width:9.5;stroke-linejoin:round"/>' +
+      '<g transform="translate(150 112) scale(.62)">' +
+      '<path d="' + o + '" style="fill:var(--arrow-under)"/>' +
+      '<path d="M0 -38 L0 15 L-27 28 Z" style="fill:var(--arrow-top)"/><path d="M0 -38 L27 28 L0 15 Z" style="fill:var(--arrow-rear)"/>' +
+      '<g style="fill:var(--brake-off)"><path d="M25.6 28.9 L16.5 24.5 L16.5 29.9 L25.6 34.3 Z"/><path d="M-25.6 28.9 L-16.5 24.5 L-16.5 29.9 L-25.6 34.3 Z"/></g>' +
+      '<path d="' + o + '" fill="none" style="stroke:var(--arrow-edge);stroke-width:4.5;stroke-linejoin:round"/></g></svg>';
+  }
+  function lanes(list) {
+    if (!list) return '<div class="ban-nolanes"></div>';
+    var label = list.map(function (l) { return names[l[0]] + (l[1] === 'pref' ? ' (best)' : l[1] === 'ok' ? ' (allowed)' : ''); }).join(', ');
+    return '<div class="ban-lanes" role="img" aria-label="Lanes, left to right: ' + label + '">' +
+      list.map(function (l) { return '<span class="lane ' + (l[1] === 'off' ? '' : l[1]) + '">' + icon(l[0]) + '</span>'; }).join('') + '</div>';
+  }
+  function banner(f) {
+    var chip = f.then ? '<div class="then-chip" role="img" aria-label="Then ' + names[f.then.icon] + ', ' + f.then.dist + '"><small>Then</small>' +
+      icon(f.then.icon) + '<span>' + f.then.dist + '</span></div>' : '';
+    return '<div class="ban"><div class="ban-main"><span class="ban-icon">' + icon(f.icon, 2.2) + '</span>' +
+      '<div class="ban-copy"><div class="ban-dist">' + f.dist + '</div><div class="ban-text">' + f.text + ' <span>' + f.sub + '</span></div></div>' + chip + '</div>' +
+      lanes(f.lanes) + (f.lanes ? '<div class="ban-hint">' + (f.hint || '') + '</div>' : '') + '</div>';
+  }
+  function frame(host, f, title, note) {
+    var el = document.createElement('figure');
+    el.className = 'frame';
+    el.innerHTML = '<div class="phone">' + banner(f) + map(f.route) + '</div><figcaption><strong>' + title + '</strong><span>' + note + '</span></figcaption>';
+    host.appendChild(el);
+  }
+
+  var fr = document.getElementById('frames');
+  frame(fr, {
+    icon: 'exit', dist: '0.5 mi', text: 'Exit 24', sub: 'US 19 / Peach St, toward Waterford',
+    then: { icon: 'left', dist: 'In 0.3 mi' }, lanes: null, route: 'M150 160 L150 80 L198 14'
+  }, '1. On I-90', 'No lane row: the map has no lane data for this exit.');
+  frame(fr, {
+    icon: 'left', dist: '400 ft', text: 'Turn left', sub: 'onto US 19 / Peach St',
+    then: { icon: 'right', dist: 'In 0.2 mi' },
+    lanes: [['left', 'ok'], ['leftstraight', 'pref'], ['right', 'off']],
+    hint: '', route: 'M150 160 L150 40 L-10 40'
+  }, '2. On the ramp', 'Both left lanes turn left; the right-hand one is highlighted.');
+  frame(fr, {
+    icon: 'right', dist: '0.2 mi', text: 'Turn right', sub: 'onto Downs Dr', then: null,
+    lanes: [['left', 'off'], ['straight', 'off'], ['straight', 'off'], ['straightright', 'pref']], hint: '', route: 'M150 160 L150 40 L310 40'
+  }, '3. On Peach St', 'The right-most of four lanes for Downs Dr.');
+
+  document.getElementById('lg-pref').innerHTML = icon('left');
+  document.getElementById('lg-ok').innerHTML = icon('left');
+  document.getElementById('lg-off').innerHTML = icon('straight');
+})();
+</script>

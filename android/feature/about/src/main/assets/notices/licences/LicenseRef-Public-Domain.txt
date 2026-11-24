@@ -1,0 +1,11 @@
+Public domain
+
+These data are in the public domain. Natural Earth's makers have placed its data in the public
+domain (naturalearthdata.com/about/terms-of-use). Data made by the United States Census Bureau
+and the United States Department of Transportation are works of the United States Government,
+which are not subject to copyright in the United States (17 U.S.C. 105). No permission is needed
+to use them; Beamline credits each source as its maker asks.
+
+The IANA Time Zone Database (tz code and data, as distributed in the tz repository) is in the public
+domain: its LICENSE file says so for all its files except date.c, newstrftime.3 and strftime.c, which
+are not part of the data.

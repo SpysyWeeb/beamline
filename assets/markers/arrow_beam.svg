@@ -1,0 +1,5 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="360" height="360" viewBox="-225 -225 450 450">
+  <!-- Position marker piece 'arrow_beam' for Beamline, from the approved sketch docs/design/position-markers.html (path data and colours of its script). Units: sketch units, 1 unit = 0.8 dp; (0,0) = the anchor (the vehicle position), at the centre of the canvas; the piece points up (north / heading 0). MIT License. See assets/markers/SPEC.md. -->
+  <defs><filter id="soft" x="-60%" y="-60%" width="220%" height="220%"><feGaussianBlur stdDeviation="4"/></filter><filter id="wide" x="-60%" y="-60%" width="220%" height="220%"><feGaussianBlur stdDeviation="9"/></filter><radialGradient id="beam" gradientUnits="userSpaceOnUse" cx="0" cy="-37" r="176"><stop offset="0" stop-color="#FFF3CF" stop-opacity=".85"/><stop offset=".5" stop-color="#FFF3CF" stop-opacity=".3"/><stop offset="1" stop-color="#FFF3CF" stop-opacity="0"/></radialGradient></defs>
+  <path d="M0 -37 L-51 -203 A174 174 0 0 1 51 -203 Z" fill="url(#beam)" filter="url(#soft)"/>
+</svg>

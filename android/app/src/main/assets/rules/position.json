@@ -1,0 +1,23 @@
+{
+  "_comment": "Browsing puck rules (read by :core:location PositionRules). The puck turns grey when the last fix is older than stale_after_s or its accuracy radius is larger than poor_accuracy_m. stale_after_s is 30 (10 before 2026-11-16): on the owner's phone indoors a fix came every 20 s (report 11), and the puck blinked between blue and grey. The compass cone hides when no compass reading came for heading_max_age_s. heading_smoothing is the weight of each new compass reading (0..1). A fix from one of satellite_providers is always taken; a fix from another provider (the network) replaces the last fix only when it is at least as accurate or the last fix is older than stale_after_s.",
+  "stale_after_s": 30,
+  "poor_accuracy_m": 100,
+  "heading_max_age_s": 3,
+  "heading_smoothing": 0.25,
+  "tick_s": 1,
+  "satellite_providers": ["gps"],
+  "_bubble": "Rule G7 (docs/architecture.md 3.1; batch C2, 2026-11-18), browsing only: guidance keeps the route-snapped position. The puck sits on an estimate made from the recent fixes whenever the last fix or the estimate is poorer than show_above_m, and a soft circle of the estimate's radius (about 68 %, like a fix's accuracy; at most max_m) is drawn around it while that radius is above show_above_m. Standing still (the accelerometer's |a| varies by less than still_below_mps2 over accel_window_s, and no fix at most speed_max_accuracy_m accurate reports moving_speed_mps or more): the mean of the fixes of the last still_window_s (at most still_max_fixes), weighted by 1/accuracy^2, radius = their weighted spread, at least the mean's own error. Otherwise a constant-velocity Kalman filter (process noise moving_accel_mps2). A fix farther than reset_sigmas combined radii from the estimate starts again at that fix. A fix without accuracy counts as unknown_accuracy_m. First guesses for the phone test.",
+  "bubble": {
+    "show_above_m": 25,
+    "max_m": 2000,
+    "still_window_s": 120,
+    "still_max_fixes": 12,
+    "moving_accel_mps2": 1.5,
+    "reset_sigmas": 3,
+    "moving_speed_mps": 1.0,
+    "speed_max_accuracy_m": 30,
+    "unknown_accuracy_m": 50,
+    "accel_window_s": 2,
+    "still_below_mps2": 0.15
+  }
+}

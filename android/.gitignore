@@ -1,0 +1,4 @@
+# Kotlin 2.x compiler session data (the repo root .gitignore covers .gradle/, build/, local.properties)
+.kotlin/
+# Overview map copied in by scripts/sync_assets.py (a swappable input, not committed)
+app/assets-local/

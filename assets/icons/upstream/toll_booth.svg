@@ -1,0 +1,19 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="1569.44 306.84 19 19">
+  <!-- Extracted from protomaps/basemaps sprites/refill.svg (commit 42ffaaa4) group '_toll_booth'. Derived from tangrams/icons, Copyright (c) 2017 Mapzen, MIT License; Protomaps visual design CC0-1.0. See assets/LICENSES.md. -->
+  <g>
+      <rect x="1569.94" y="307.34" width="18" height="18" rx="4" ry="4" stroke-miterlimit="10" stroke="#3f3f3f" fill="#f4f4f4" />
+      <g>
+         <rect x="1577.47" y="315.19" width="8.27" height="1.59" rx=".73" ry=".73" transform="translate(-10.74 572.4) rotate(-20.45)" stroke="#3f3f3f" stroke-linecap="round" stroke-linejoin="round" fill="#e2e2e2" />
+         <path d="M1575.21,311.46h3.46c.7,0,1.27,.57,1.27,1.27v8.94c0,.37-.3,.67-.67,.67h-4.67c-.37,0-.67-.3-.67-.67v-8.94c0-.7,.57-1.27,1.27-1.27Z" stroke="#3f3f3f" stroke-linecap="round" stroke-linejoin="round" fill="#e2e2e2" />
+         <rect x="1572.94" y="320.34" width="8" height="2" stroke="#3f3f3f" stroke-linecap="round" stroke-linejoin="round" fill="#d3d3d3" />
+         <line x1="1580.94" y1="315.39" x2="1580.94" y2="316.9" stroke="#3f3f3f" fill="none" stroke-linecap="round" stroke-linejoin="round" />
+         <line x1="1582.94" y1="314.64" x2="1582.94" y2="316.34" stroke="#3f3f3f" fill="none" stroke-linecap="round" stroke-linejoin="round" />
+         <polygon points="1576.99 310.3 1573.04 312.34 1580.94 312.34 1576.99 310.3" stroke="#3f3f3f" stroke-linecap="round" stroke-linejoin="round" fill="#d3d3d3" />
+      </g>
+      <g>
+         <path d="M1578.13,314.78c-.34-.8-1.77-.85-2.17-.19-.54,.89,.87,1.39,1.5,1.55,.99,.25,1.09,1.54-.1,1.86-.84,.22-1.69-.29-1.69-1.1" stroke="#3f3f3f" fill="none" stroke-linecap="round" stroke-linejoin="round" stroke-width=".75" />
+         <line x1="1576.95" y1="313.44" x2="1576.95" y2="314.25" stroke="#5c473b" fill="none" stroke-linecap="round" stroke-linejoin="round" stroke-width=".75" />
+         <line x1="1576.95" y1="318.84" x2="1576.95" y2="314.25" stroke="#3f3f3f" fill="none" stroke-linecap="round" stroke-linejoin="round" stroke-width=".75" />
+      </g>
+      </g>
+</svg>

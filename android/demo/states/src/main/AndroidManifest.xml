@@ -1,0 +1,31 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- Host for track G's device checks of :feature:states (first-run picker, States screen,
+     DownloadService, notifications; docs/architecture-downloads.md 10.3). Not shipped.
+     It declares no permission itself: its network permissions come only from :feature:states,
+     merged in (that library's manifest of docs/architecture-downloads.md 5.3, and INTERNET from
+     OkHttp's Android AAR, which :core:download brings). -->
+<manifest xmlns:android="http://schemas.android.com/apk/res/android">
+
+    <application
+        android:name=".DemoApplication"
+        android:allowBackup="false"
+        android:label="Beamline states demo"
+        android:supportsRtl="true"
+        android:theme="@android:style/Theme.Material.Light.NoActionBar">
+        <activity
+            android:name=".DemoActivity"
+            android:exported="true"
+            android:launchMode="singleTask"
+            android:configChanges="orientation|screenSize|screenLayout|keyboardHidden|uiMode|density">
+            <intent-filter>
+                <action android:name="android.intent.action.MAIN" />
+                <category android:name="android.intent.category.LAUNCHER" />
+            </intent-filter>
+            <intent-filter>
+                <action android:name="io.github.spysyweeb.beamline.action.OPEN_STATES" />
+                <action android:name="io.github.spysyweeb.beamline.action.OPEN_MAP" />
+                <category android:name="android.intent.category.DEFAULT" />
+            </intent-filter>
+        </activity>
+    </application>
+</manifest>

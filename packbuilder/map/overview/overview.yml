@@ -1,0 +1,314 @@
+# Beamline US overview pack: zoom 0-7, from public-domain inputs only.
+#
+#   Natural Earth 5.1.2 (public domain): land, ocean, lakes, country and state
+#     lines, state names, cities, national parks.
+#   US Census TIGER/Line 2026 primary roads (public domain): interstates and the
+#     other limited-access highways, with interstate and US-route shields.
+#   US Census 2026 Gazetteer places + Vintage 2025 population estimates (public
+#     domain): towns of 5,000+ people that Natural Earth lacks (census_places.py).
+#
+# Built by packbuilder/map/overview/build_overview.py with Planetiler 0.10.2
+# "generate-custom" (YAML schema; see the Planetiler custommap README). The
+# layers and attributes follow the Protomaps basemap schema (4.x) that the
+# app's day and night styles are written for, so the same style draws this
+# pack below zoom 8 and the state packs from zoom 8.
+# No OpenStreetMap data and no CC-BY layer: no credit line is required
+# (Natural Earth and the Census Bureau are credited anyway).
+schema_name: Beamline US overview
+schema_description: Whole-US overview (z0-7) from Natural Earth and US Census TIGER/Line, Protomaps basemap 4.x layer schema
+attribution: 'Natural Earth; US Census Bureau'
+version: "4.15.2"
+args:
+  ne_path:
+    description: Natural Earth subset GeoPackage (made by build_overview.py)
+    default: data/map/work/overview/ne_overview.gpkg
+  tiger_roads_path:
+    description: TIGER/Line primary roads zip
+    default: data/map/work/data/census/tl_2026_us_primaryroads.zip
+  census_places_path:
+    description: towns from census_places.py
+    default: data/map/work/overview/census_places.geojson
+  minzoom: 0
+  maxzoom: 7
+sources:
+  ne:
+    type: geopackage
+    local_path: '${ args.ne_path }'
+  tiger_roads:
+    type: shapefile
+    local_path: '${ args.tiger_roads_path }'
+    projection: EPSG:4269
+  census_places:
+    type: geojson
+    local_path: '${ args.census_places_path }'
+layers:
+  - id: earth
+    features:
+      - source: ne
+        geometry: polygon
+        include_when: '${ feature.source_layer == "ne_50m_land" }'
+        min_zoom: 0
+        attributes:
+          - key: kind
+            value: earth
+      - source: ne
+        geometry: polygon
+        include_when: '${ feature.source_layer == "ne_10m_land" }'
+        min_zoom: 4
+        attributes:
+          - key: kind
+            value: earth
+  - id: water
+    features:
+      - source: ne
+        geometry: polygon
+        include_when: '${ feature.source_layer == "ne_50m_ocean" }'
+        attributes:
+          - key: kind
+            value: ocean
+          - key: sort_rank
+            value: 200
+      - source: ne
+        geometry: polygon
+        include_when: '${ feature.source_layer == "ne_10m_ocean" }'
+        min_zoom: 4
+        attributes:
+          - key: kind
+            value: ocean
+          - key: sort_rank
+            value: 200
+      - source: ne
+        geometry: polygon
+        include_when: '${ (feature.source_layer == "ne_10m_lakes" || feature.source_layer == "ne_10m_lakes_north_america") && double(feature.tags.min_zoom) <= 7.0 }'
+        min_zoom: '${ int(feature.tags.min_zoom) }'
+        attributes:
+          - key: kind
+            value: water
+          - key: kind_detail
+            value: lake
+          - key: sort_rank
+            value: 200
+          - key: min_zoom
+            value: '${ int(feature.tags.min_zoom) + 1 }'
+      # lake names: one label point per lake, from Natural Earth's label zoom
+      - source: ne
+        geometry: innermost_point
+        include_when: '${ (feature.source_layer == "ne_10m_lakes" || feature.source_layer == "ne_10m_lakes_north_america") && double(feature.tags.min_label) <= 7.0 && feature.tags.name != null && feature.tags.name != "" }'
+        min_zoom: '${ int(feature.tags.min_label) }'
+        attributes:
+          - key: kind
+            value: water
+          - key: kind_detail
+            value: lake
+          - key: name
+            tag_value: name
+          - key: name:en
+            tag_value: name
+          - key: min_zoom
+            value: '${ int(feature.tags.min_label) + 1 }'
+  - id: landuse
+    features:
+      - source: ne
+        geometry: polygon
+        include_when: '${ feature.source_layer == "ne_10m_parks_and_protected_lands_area" }'
+        min_zoom: 5
+        attributes:
+          - key: kind
+            value: national_park
+          - key: sort_rank
+            value: 189
+  - id: boundaries
+    features:
+      - source: ne
+        geometry: line
+        include_when: '${ feature.source_layer == "ne_10m_admin_0_boundary_lines_land" && (feature.tags.ADM0_A3_L == "USA" || feature.tags.ADM0_A3_R == "USA") }'
+        min_zoom: 0
+        attributes:
+          - key: kind
+            value: country
+          - key: kind_detail
+            value: 2
+          - key: sort_rank
+            value: 289
+      - source: ne
+        geometry: line
+        include_when: '${ feature.source_layer == "ne_10m_admin_1_states_provinces_lines" && feature.tags.ADM0_A3 == "USA" }'
+        min_zoom: 2
+        attributes:
+          - key: kind
+            value: region
+          - key: kind_detail
+            value: 4
+          - key: sort_rank
+            value: 289
+    tile_post_process:
+      merge_line_strings:
+        min_length: 0
+        tolerance: 0.25
+        tolerance_at_max_zoom: 0.25
+        buffer: 4
+  - id: places
+    features:
+      # state names: one point per state, at the pole of inaccessibility of the largest part
+      - source: ne
+        geometry: innermost_point
+        include_when: '${ feature.source_layer == "ne_10m_admin_1_states_provinces" && feature.tags.adm0_a3 == "USA" }'
+        min_zoom: '${ int(feature.tags.min_label) }'
+        attributes:
+          - key: kind
+            value: region
+          - key: kind_detail
+            value: state
+          - key: name
+            tag_value: name
+          - key: name:en
+            tag_value: name
+          - key: ref
+            tag_value: postal
+          - key: wikidata
+            tag_value: wikidataid
+          - key: min_zoom
+            value: '${ int(feature.tags.min_label) }'
+          - key: sort_key
+            value: '${ int(feature.tags.min_label * 10.0) - 100 }'
+      # cities: US, plus the largest Canadian and Mexican cities for orientation near the borders
+      - source: ne
+        geometry: point
+        include_when: '${ feature.source_layer == "ne_10m_populated_places" && (feature.tags.ADM0_A3 == "USA" || ((feature.tags.ADM0_A3 == "CAN" || feature.tags.ADM0_A3 == "MEX") && double(feature.tags.MIN_ZOOM) <= 5.0)) }'
+        min_zoom: '${ int(feature.tags.MIN_ZOOM) - 1 }'
+        attributes:
+          - key: kind
+            value: locality
+          - key: kind_detail
+            value: city
+          - key: name
+            tag_value: NAME
+          - key: name:en
+            tag_value: NAME
+          - key: population
+            tag_value: POP_MAX
+            type: integer
+          - key: population_rank
+            tag_value: RANK_MAX
+            type: integer
+          - key: capital
+            value:
+              "yes":
+                FEATURECLA: Admin-0 capital
+              "4":
+                FEATURECLA: Admin-1 capital
+          - key: wikidata
+            tag_value: WIKIDATAID
+          - key: min_zoom
+            value: '${ int(feature.tags.MIN_ZOOM) + 1 }'
+          - key: sort_key
+            value: '${ -int(feature.tags.POP_MAX) }'
+      # towns of 5,000+ people (incorporated places) that Natural Earth lacks: US Census
+      - source: census_places
+        geometry: point
+        min_zoom: '${ int(feature.tags.min_zoom) }'
+        attributes:
+          - key: kind
+            value: locality
+          - key: kind_detail
+            value: town
+          - key: name
+            tag_value: name
+          - key: name:en
+            tag_value: name
+          - key: population
+            tag_value: population
+            type: integer
+          - key: population_rank
+            tag_value: population_rank
+            type: integer
+          - key: min_zoom
+            value: '${ int(feature.tags.min_zoom) + 1 }'
+          - key: sort_key
+            value: '${ -int(feature.tags.population) }'
+      # country names (United States, Canada, Mexico)
+      - source: ne
+        geometry: innermost_point
+        include_when: '${ feature.source_layer == "ne_10m_admin_0_countries" && (feature.tags.ADM0_A3 == "USA" || feature.tags.ADM0_A3 == "CAN" || feature.tags.ADM0_A3 == "MEX") }'
+        min_zoom: 2
+        attributes:
+          - key: kind
+            value: country
+          - key: name
+            tag_value: NAME_EN
+          - key: name:en
+            tag_value: NAME_EN
+          - key: population_rank
+            value: 14
+          - key: min_zoom
+            value: 3
+          - key: sort_key
+            value: -1000000000
+  - id: roads
+    features:
+      # US and state routes that are not freeways, from Natural Earth (1:10M), for zoom 6-7
+      - source: ne
+        geometry: line
+        include_when: '${ feature.source_layer == "ne_10m_roads" && feature.tags.sov_a3 == "USA" && feature.tags.expressway == 0 && (feature.tags.level == "Federal" || feature.tags.level == "State") && (feature.tags.type == "Major Highway" || feature.tags.type == "Secondary Highway") }'
+        min_zoom: 6
+        attributes:
+          - key: kind
+            value: major_road
+          - key: kind_detail
+            value:
+              trunk:
+                level: Federal
+              primary:
+                level: State
+          - key: sort_rank
+            value: 400
+          - key: min_zoom
+            value: 7
+          - key: network
+            include_when:
+              level: Federal
+            value: US:US
+          - key: shield_text
+            include_when:
+              level: Federal
+            tag_value: name
+      - source: tiger_roads
+        geometry: line
+        include_when: '${ feature.tags.MTFCC == "S1100" }'
+        min_zoom:
+          default_value: 6
+          overrides:
+            3:
+              RTTYP: I
+        attributes:
+          - key: kind
+            value: highway
+          - key: kind_detail
+            value: motorway
+          - key: sort_rank
+            value: 400
+          - key: min_zoom
+            type: integer
+            value:
+              default_value: 7
+              overrides:
+                4:
+                  RTTYP: I
+          - key: network
+            min_zoom: 5
+            value:
+              US:I:
+                RTTYP: I
+              US:US:
+                RTTYP: U
+          - key: shield_text
+            min_zoom: 5
+            include_when:
+              RTTYP: [I, U]
+            value: '${ feature.tags.FULLNAME.replaceRegex("^(I-|US Hwy) ?([0-9]+).*$", "$2") }'
+    tile_post_process:
+      merge_line_strings:
+        min_length: 0.5
+        tolerance: 0.25
+        tolerance_at_max_zoom: 0.25
+        buffer: 4

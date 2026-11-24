@@ -1,0 +1,8 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="434.56 389.58 19 19">
+  <!-- Extracted from protomaps/basemaps sprites/refill.svg (commit 42ffaaa4) group '_peak'. Derived from tangrams/icons, Copyright (c) 2017 Mapzen, MIT License; Protomaps visual design CC0-1.0. See assets/LICENSES.md. -->
+  <g>
+      <rect x="435.06" y="390.08" width="18" height="18" rx="4" ry="4" stroke-miterlimit="10" stroke="#3f3f3f" fill="#f4f4f4" />
+      <polygon points="444.96 395.37 440.68 402.78 449.36 402.78 444.96 395.37" stroke="#3f3f3f" stroke-linecap="round" stroke-linejoin="round" fill="#d3d3d3" />
+      <polygon points="441.53 398 438.76 402.78 444.37 402.78 441.53 398" stroke="#3f3f3f" stroke-linecap="round" stroke-linejoin="round" fill="#d3d3d3" />
+   </g>
+</svg>

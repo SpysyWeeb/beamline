@@ -1,0 +1,8 @@
+<!-- Beamline app icon, 'Night drive'. Android adaptive icon canvas: 108 units, the middle 72 (18 to 90) are visible. -->
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 108 108" width="108" height="108">
+<rect x="-300" y="-300" width="700" height="700" fill="#1D2733"/>
+<path d="M-6 -300V400M114 -300V400M-300 -74H400M-300 -26H400M-300 102H400M-300 166H400" fill="none" stroke="#2C3643" stroke-width="11"/>
+<path d="M54 -300V400M-300 38H400" fill="none" stroke="#3B4756" stroke-width="17"/>
+<path d="M54 400V-300" fill="none" stroke="#2059AB" stroke-width="9.5" stroke-linejoin="round"/>
+<path d="M54 400V-300" fill="none" stroke="#5CA6F8" stroke-width="6" stroke-linejoin="round"/>
+</svg>

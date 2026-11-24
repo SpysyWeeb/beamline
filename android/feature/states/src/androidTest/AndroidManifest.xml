@@ -1,0 +1,20 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- Test APK only: a do-nothing accessibility service. ReadingOrderTest turns it on so that an
+     accessibility service is enabled, as TalkBack would be: only then does Compose compute the
+     traversal links (traversalBefore/After) a screen reader follows. It reads nothing itself. -->
+<manifest xmlns:android="http://schemas.android.com/apk/res/android">
+    <application>
+        <service
+            android:name="io.github.spysyweeb.beamline.feature.states.ReadingOrderProbe"
+            android:exported="true"
+            android:label="Beamline reading-order probe (test)"
+            android:permission="android.permission.BIND_ACCESSIBILITY_SERVICE">
+            <intent-filter>
+                <action android:name="android.accessibilityservice.AccessibilityService" />
+            </intent-filter>
+            <meta-data
+                android:name="android.accessibilityservice"
+                android:resource="@xml/reading_order_probe" />
+        </service>
+    </application>
+</manifest>

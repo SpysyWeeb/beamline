@@ -1,0 +1,8 @@
+[
+ {"name": "60-emoji-trail-oh-z16-day", "packs": ["oh-261114-z0-15.pmtiles"], "variant": "day", "zoom": 16, "lat": 41.1285, "lon": -81.1150, "note": "West Branch State Park trails named with U+1F7E2/U+1F7E6 in OSM; before the finish step the viewer requested glyph range 128768-129023 (404)"},
+ {"name": "61-emoji-trail-oh-z17-night", "packs": ["oh-261114-z0-15.pmtiles"], "variant": "night", "zoom": 17, "lat": 41.1290, "lon": -81.1240},
+ {"name": "62-oneway-reverse-sharpsburg-z17-day", "packs": ["pa-261114-z0-15.pmtiles"], "variant": "day", "zoom": 17, "lat": 40.4951, "lon": -79.9265, "note": "Sharpsburg: 14th Street, Middle Street, Clay Street are oneway=-1 in the tiles"},
+ {"name": "63-oneway-reverse-sharpsburg-z17-night", "packs": ["pa-261114-z0-15.pmtiles"], "variant": "night", "zoom": 17, "lat": 40.4951, "lon": -79.9265},
+ {"name": "50-viewer-open-local-file-ohio", "packs": ["pa-261114-z0-15.pmtiles"], "file": "data/map/packs/oh-261114-z0-15.pmtiles", "variant": "day", "zoom": 0, "lat": 0, "lon": 0, "note": "open-file path: the view should frame Ohio from the header bounds"},
+ {"name": "51-viewer-open-local-file-base", "packs": ["pa-261114-z0-15.pmtiles"], "file": "data/map/packs/base-us-20261114-z0-7.pmtiles", "variant": "day", "zoom": 0, "lat": 0, "lon": 0, "note": "open-file path with a US base pack whose bounds span -180..180: header centre and centre zoom are used"}
+]

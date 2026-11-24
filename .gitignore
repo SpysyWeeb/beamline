@@ -1,0 +1,26 @@
+# Downloaded inputs and build outputs (large, reproducible)
+/data/
+# Portable tools fetched by scripts
+/tools/bin/
+/tools/cache/
+# Generated contact sheet (3 MB of embedded renders; rebuilt by packbuilder/map/style/build_art.py)
+/assets/sheet/
+# Python
+.venv/
+.venv-*/
+__pycache__/
+*.pyc
+*.egg-info/
+# Android
+android/.gradle/
+android/build/
+android/**/build/
+android/local.properties
+android/.idea/
+*.apk
+*.aab
+# Editors / OS
+.vscode/
+.idea/
+Thumbs.db
+.DS_Store

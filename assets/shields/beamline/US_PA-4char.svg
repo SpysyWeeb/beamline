@@ -1,0 +1,4 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 39.02 21">
+  <!-- Drawn for Beamline by packbuilder/map/style/draw_shields.py from the sign dimensions in PennDOT Publication 236 (sheet M1-5, Pennsylvania Route Marker). MIT License; see assets/LICENSES.md for the basis. Edit the script, not this file. -->
+  <path transform="translate(0.5 0.5) scale(0.91)" d="M4.41,0 L37.41,0 L36.74,4 L41.82,4 L38.81,22 L3.01,22 L0,4 L5.08,4 Z" fill="#fff" stroke="#000" stroke-width="1.1" stroke-linejoin="round"/>
+</svg>

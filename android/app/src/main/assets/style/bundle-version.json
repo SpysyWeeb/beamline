@@ -1,0 +1,10 @@
+{
+  "source": "packbuilder/map/style-bundle",
+  "content_sha256": "ea983f89f9f83c7042652139e75c78e2df5deaedd1a19bcf0c2c1fdd9702d90b",
+  "files": 781,
+  "bytes": 1664228,
+  "git_commit": "61d411b9f58c40dd1faa0547aabd721aeb355073",
+  "git_commit_date": "2026-11-16T05:45:05-07:00",
+  "uncommitted_changes": true,
+  "copied_utc": "2026-11-20T15:44:10Z"
+}

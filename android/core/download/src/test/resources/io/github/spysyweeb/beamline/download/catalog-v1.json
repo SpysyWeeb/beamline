@@ -1,0 +1,75 @@
+{
+ "format": "beamline-catalog/1",
+ "serial": 20261116085521,
+ "generated_utc": "2026-11-16T08:55:21Z",
+ "licence": {
+  "id": "ODbL-1.0",
+  "name": "Open Database License 1.0",
+  "url": "https://opendatacommons.org/licenses/odbl/1-0/",
+  "notice": "Map data © OpenStreetMap contributors, available under the Open Database License."
+ },
+ "packs": [
+  {
+   "id": "us-pa",
+   "state": "PA",
+   "name": "Pennsylvania",
+   "pack_version": 202611160419,
+   "manifest_version": 2,
+   "osm_snapshot": "2026-11-14",
+   "credit": "© OpenStreetMap contributors",
+   "bounds": [
+    -80.51985,
+    39.7198,
+    -74.68956,
+    42.51607
+   ],
+   "manifest": {
+    "path": "../us-pa-202611160419/manifest.json",
+    "encoding": "identity",
+    "bytes": 1237,
+    "sha256": "b57a4565e667150e2d6b92362af7243795ad990bf3003561741b1167186dee1a"
+   },
+   "parts": [
+    {
+     "name": "search",
+     "file": "search.sqlite",
+     "optional": false,
+     "bytes": 154705920,
+     "sha256": "92f09d9a15bf347b2947442c3997b6c1741f107b2e9a33b76165cedfc7dea4d8",
+     "transfer": {
+      "path": "../us-pa-202611160419/search.sqlite.gz",
+      "encoding": "gzip",
+      "bytes": 63346929,
+      "sha256": "9a18901983a73bd3d63f8e52e178725cc767d655dff85b962f4c18030f34c9cd"
+     }
+    },
+    {
+     "name": "routing",
+     "file": "routing.tar",
+     "optional": false,
+     "bytes": 634429440,
+     "sha256": "3347f2e97e10d7bbd1ed4be4eb4437b4b09e62baf8a8f3a4c4eb3d2b42dbc342",
+     "transfer": {
+      "path": "../us-pa-202611160419/routing.tar.gz",
+      "encoding": "gzip",
+      "bytes": 240430781,
+      "sha256": "b57509a4cdb23e124eab8d3840076117bd25433ece957b701e030ff59192d3da"
+     }
+    },
+    {
+     "name": "map",
+     "file": "map.pmtiles",
+     "optional": false,
+     "bytes": 244703514,
+     "sha256": "13a23f6a6bb4f0e725c9eedf01f655f3b4e8f52f58f9ba9d83c62c809f342711",
+     "transfer": {
+      "path": "../us-pa-202611160419/map.pmtiles",
+      "encoding": "identity",
+      "bytes": 244703514,
+      "sha256": "13a23f6a6bb4f0e725c9eedf01f655f3b4e8f52f58f9ba9d83c62c809f342711"
+     }
+    }
+   ]
+  }
+ ]
+}

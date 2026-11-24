@@ -1,0 +1,13 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="517.3 813.22 19 19">
+  <!-- Extracted from protomaps/basemaps sprites/refill.svg (commit 42ffaaa4) group '_convenience'. Derived from tangrams/icons, Copyright (c) 2017 Mapzen, MIT License; Protomaps visual design CC0-1.0. See assets/LICENSES.md. -->
+  <g>
+      <rect x="517.8" y="813.72" width="18" height="18" rx="4" ry="4" stroke-miterlimit="10" stroke="#3f3f3f" fill="#f4f4f4" />
+      <path d="M521.84,821.53l1.19,4.25c.11,.42,.4,1.15,1.16,1.15h5.28c.61,0,.89-.53,1.11-1.06l1.24-4.35" stroke="#3f3f3f" stroke-linecap="round" stroke-linejoin="round" fill="#d3d3d3" />
+      <line x1="520.77" y1="821.15" x2="532.88" y2="821.15" stroke="#3f3f3f" fill="none" stroke-linejoin="round" />
+      <line x1="526.77" y1="822.7" x2="526.77" y2="825.13" stroke="#3f3f3f" fill="none" stroke-linejoin="round" />
+      <line x1="524.77" y1="822.7" x2="524.77" y2="825.13" stroke="#3f3f3f" fill="none" stroke-linejoin="round" />
+      <line x1="528.77" y1="822.7" x2="528.77" y2="825.13" stroke="#3f3f3f" fill="none" stroke-linejoin="round" />
+      <line x1="525.45" y1="817.84" x2="523.35" y2="820.94" stroke="#3f3f3f" fill="none" stroke-linecap="round" stroke-linejoin="round" />
+      <line x1="528.15" y1="817.84" x2="530.25" y2="820.94" stroke="#3f3f3f" fill="none" stroke-linecap="round" stroke-linejoin="round" />
+   </g>
+</svg>

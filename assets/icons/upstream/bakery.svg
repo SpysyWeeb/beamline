@@ -1,0 +1,12 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="517.29 981.96 19 19">
+  <!-- Extracted from protomaps/basemaps sprites/refill.svg (commit 42ffaaa4) group '_bakery'. Derived from tangrams/icons, Copyright (c) 2017 Mapzen, MIT License; Protomaps visual design CC0-1.0. See assets/LICENSES.md. -->
+  <g>
+      <rect x="517.79" y="982.46" width="18" height="18" rx="4" ry="4" stroke-miterlimit="10" stroke="#3f3f3f" fill="#f4f4f4" />
+      <polyline points="521.39 993.92 521.39 997.13 532.39 994.71 532.39 991.65" fill="#d3d3d3" />
+      <line x1="521.4" y1="996.2" x2="532.01" y2="993.92" fill="none" stroke-width="1.5" stroke-linejoin="round" stroke="#848484" />
+      <path d="M521.39,993.92l11-2.27c-.04-2.71-3.23-3.95-5.5-4.05l-5.51,6.32Z" stroke="#3f3f3f" stroke-linecap="round" stroke-linejoin="round" fill="#d3d3d3" />
+      <path d="M528.19,989.18c0,1.54-2.36,1.51-2.36,0s2.36-1.55,2.36,0Z" stroke="#3f3f3f" stroke-linecap="round" stroke-linejoin="round" fill="#bfbfbf" />
+      <path d="M527.19,987.91c-1.12-.46-.86-2.17,.34-2.27" stroke="#3f3f3f" fill="none" stroke-linecap="round" stroke-linejoin="round" />
+      <polyline points="521.39 993.92 521.39 997.13 532.39 994.71 532.39 991.65" stroke="#3f3f3f" fill="none" stroke-linecap="round" stroke-linejoin="round" />
+   </g>
+</svg>

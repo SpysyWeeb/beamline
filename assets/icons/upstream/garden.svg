@@ -1,0 +1,10 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="435.25 307.5 19 19">
+  <!-- Extracted from protomaps/basemaps sprites/refill.svg (commit 42ffaaa4) group '_garden'. Derived from tangrams/icons, Copyright (c) 2017 Mapzen, MIT License; Protomaps visual design CC0-1.0. See assets/LICENSES.md. -->
+  <g>
+      <rect x="435.75" y="308" width="18" height="18" rx="4" ry="4" stroke-miterlimit="10" stroke="#3f3f3f" fill="#f4f4f4" />
+      <path d="M447.31,315.17c0,1.46-1.18,2.64-2.64,2.64s-2.64-1.18-2.64-2.64v-2.64l1.3,1.47,1.34-1.47,1.33,1.55,1.31-1.55v2.64Z" stroke="#3f3f3f" stroke-linecap="round" stroke-linejoin="round" fill="#d3d3d3" />
+      <line x1="444.67" y1="319.28" x2="444.67" y2="323.52" stroke="#3f3f3f" fill="none" stroke-linecap="round" stroke-linejoin="round" />
+      <path d="M443.03,323.48s.3-1.99-.82-3.69c-1.22-1.83-3.11-2.23-3.11-2.23h0s-.37,1.9,.85,3.73c1.13,1.7,3.09,2.18,3.09,2.18Z" stroke="#3f3f3f" stroke-linecap="round" stroke-linejoin="round" fill="#d3d3d3" />
+      <path d="M446.23,323.48s-.3-1.99,.82-3.69c1.22-1.83,3.11-2.23,3.11-2.23h0s.37,1.9-.85,3.73c-1.13,1.7-3.09,2.18-3.09,2.18Z" stroke="#3f3f3f" stroke-linecap="round" stroke-linejoin="round" fill="#d3d3d3" />
+   </g>
+</svg>

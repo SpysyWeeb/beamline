@@ -1,0 +1,21 @@
+{
+  "format": "beamline-download-rules/1",
+  "note": "Rules of the state-pack downloader (docs/architecture-downloads.md 2.3, 2.4, 2.6, 5.2 and 6.3; user_agent is the one of network rule N3). Read by android/core/download (copied there by android/routing/scripts/sync_data.py; edit this file, not the copy). Times in seconds unless named _ms or _min; sizes in bytes. Every value is a first guess for the phone test, not a measurement.",
+  "user_agent": "Beamline-Packs/1",
+  "connect_timeout_s": 15,
+  "read_timeout_s": 30,
+  "max_redirects": 5,
+  "buffer_bytes": 262144,
+  "sync_every_bytes": 67108864,
+  "progress_every_ms": 500,
+  "retry_backoff_s": [2, 5, 10, 30, 60],
+  "max_attempts_without_progress": 8,
+  "wait_for_network_max_min": 360,
+  "max_deaths_without_progress": 2,
+  "catalog_max_bytes": 2097152,
+  "catalog_refresh_after_min": 360,
+  "space_margin_bytes": 200000000,
+  "max_file_bytes": 8589934591,
+  "hash_retries": 1,
+  "speed_window_s": 20
+}

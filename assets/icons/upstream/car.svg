@@ -1,0 +1,7 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="477.25 93.5 19 19">
+  <!-- Extracted from protomaps/basemaps sprites/refill.svg (commit 42ffaaa4) group '_car'. Derived from tangrams/icons, Copyright (c) 2017 Mapzen, MIT License; Protomaps visual design CC0-1.0. See assets/LICENSES.md. -->
+  <g>
+      <rect x="477.75" y="94" width="18" height="18" rx="4" ry="4" stroke-miterlimit="10" stroke="#3f3f3f" fill="#f4f4f4" />
+      <path d="M490.32,100.64s-.61-.61-1.22-.61h-4.86c-.61,0-1.21,.61-1.21,.61l-1.22,2.07v2.14h9.72v-2.14l-1.22-2.07Zm-8.15,2.2h9.04m-9.4,1.75v1.32c0,.67,.54,1.21,1.22,1.21s1.21-.54,1.21-1.21v-3.06m4.86,0v3.06c0,.67,.54,1.21,1.22,1.21s1.22-.54,1.22-1.21v-1.17" stroke-miterlimit="10" stroke="#3f3f3f" stroke-linecap="round" fill="#d3d3d3" />
+   </g>
+</svg>

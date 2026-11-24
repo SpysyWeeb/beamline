@@ -1,0 +1,7 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <!-- Window theme shown before Compose draws; colours match the day map background. -->
+    <style name="Theme.Beamline" parent="android:Theme.Material.Light.NoActionBar">
+        <item name="android:windowBackground">@color/map_background</item>
+    </style>
+</resources>

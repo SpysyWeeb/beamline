@@ -1,0 +1,179 @@
+{
+ "_doc": "SP20 matching cases (docs/architecture-saved-places.md 10.1 items 14 and 16): made-up places at public points in Erie; 'expect' lists the matching names in order. Checked by android/core/search's SavedPlacesTest and packbuilder/search/tests/test_saved_places.py.",
+ "rules": {
+  "search_min_chars": 1,
+  "search_max_rows": 3
+ },
+ "file": {
+  "format": "beamline-saved-places/1",
+  "show_on_map": true,
+  "places": [
+   {
+    "id": "s0000000000000001",
+    "kind": "home",
+    "name": "Home",
+    "lat": 42.13646,
+    "lon": -80.08718,
+    "place_name": "Erie Maritime Museum",
+    "subtitle": "100 East Front Street, Erie",
+    "category": "museum"
+   },
+   {
+    "id": "s0000000000000002",
+    "kind": "work",
+    "name": "Work",
+    "lat": 42.08418,
+    "lon": -80.17321,
+    "place_name": "42.08418, -80.17321"
+   },
+   {
+    "id": "s0000000000000003",
+    "kind": "other",
+    "name": "Mom's",
+    "lat": 42.13108,
+    "lon": -80.08557,
+    "place_name": "Erie Art Museum",
+    "subtitle": "20 East 5th Street, Erie"
+   },
+   {
+    "id": "s0000000000000004",
+    "kind": "other",
+    "name": "Mom's House",
+    "lat": 42.11,
+    "lon": -80.13,
+    "place_name": "42.11000, -80.13000"
+   },
+   {
+    "id": "s0000000000000005",
+    "kind": "other",
+    "name": "Momo Sushi",
+    "lat": 42.06875,
+    "lon": -80.09813,
+    "place_name": "Millcreek Mall",
+    "subtitle": "5800 Peach Street, Erie",
+    "category": "mall"
+   },
+   {
+    "id": "s0000000000000006",
+    "kind": "other",
+    "name": "Gym",
+    "lat": 42.0971,
+    "lon": -80.07578,
+    "place_name": "42.09710, -80.07578"
+   },
+   {
+    "id": "s0000000000000007",
+    "kind": "other",
+    "name": "\ud83c\udfe0",
+    "lat": 42.1292,
+    "lon": -80.0851,
+    "place_name": "42.12920, -80.08510"
+   },
+   {
+    "id": "s0000000000000008",
+    "kind": "other",
+    "name": "Mall",
+    "lat": 42.06875,
+    "lon": -80.09813,
+    "place_name": "Millcreek Mall"
+   }
+  ]
+ },
+ "cases": [
+  {
+   "typed": "",
+   "expect": []
+  },
+  {
+   "typed": "h",
+   "expect": [
+    "Home",
+    "Mom's House"
+   ]
+  },
+  {
+   "typed": "home",
+   "expect": [
+    "Home"
+   ]
+  },
+  {
+   "typed": "mom",
+   "expect": [
+    "Momo Sushi",
+    "Mom's",
+    "Mom's House"
+   ]
+  },
+  {
+   "typed": "moms",
+   "expect": [
+    "Mom's",
+    "Mom's House"
+   ]
+  },
+  {
+   "typed": "ho mo",
+   "expect": [
+    "Mom's House"
+   ]
+  },
+  {
+   "typed": "xyz",
+   "expect": []
+  },
+  {
+   "typed": "\ud83c\udfe0",
+   "expect": [
+    "\ud83c\udfe0"
+   ]
+  },
+  {
+   "typed": "m",
+   "expect": [
+    "Mall",
+    "Momo Sushi",
+    "Mom's"
+   ]
+  },
+  {
+   "typed": "MOM'S",
+   "expect": [
+    "Mom's",
+    "Mom's House"
+   ]
+  },
+  {
+   "typed": "  ",
+   "expect": []
+  },
+  {
+   "typed": "***",
+   "expect": []
+  },
+  {
+   "typed": "house",
+   "expect": [
+    "Mom's House"
+   ]
+  },
+  {
+   "typed": "w",
+   "expect": [
+    "Work"
+   ]
+  },
+  {
+   "typed": "sushi",
+   "expect": [
+    "Momo Sushi"
+   ]
+  },
+  {
+   "typed": "gym ",
+   "expect": [
+    "Gym"
+   ]
+  }
+ ]
+}

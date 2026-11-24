@@ -1,0 +1,14 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="856.26 264.39 19 19">
+  <!-- Extracted from protomaps/basemaps sprites/refill.svg (commit 42ffaaa4) group '_service_area'. Derived from tangrams/icons, Copyright (c) 2017 Mapzen, MIT License; Protomaps visual design CC0-1.0. See assets/LICENSES.md. -->
+  <g>
+      <rect x="856.76" y="264.89" width="18" height="18" rx="4" ry="4" stroke-miterlimit="10" stroke="#3f3f3f" fill="#f4f4f4" />
+      <rect x="860.76" y="271.89" width="5" height="7" stroke-miterlimit="10" stroke="#3f3f3f" stroke-linecap="round" fill="#fff" />
+      <rect x="859.76" y="269.89" width="7" height="2" stroke-miterlimit="10" stroke="#3f3f3f" stroke-linecap="round" fill="#fff" />
+      <rect x="860.76" y="273.89" width="5" height="3" stroke-miterlimit="10" stroke="#3f3f3f" fill="#aaa" />
+      <line x1="859.76" y1="278.89" x2="871.76" y2="278.89" stroke="#3f3f3f" fill="none" stroke-linejoin="round" stroke-linecap="square" />
+      <line x1="870.76" y1="269.39" x2="870.76" y2="278.39" stroke="#3f3f3f" fill="none" stroke-linejoin="round" />
+      <rect x="868.76" y="270.89" width="4" height="2" rx=".48" ry=".48" stroke-miterlimit="10" stroke="#3f3f3f" stroke-width=".75" fill="#cecece" />
+      <rect x="868.76" y="272.89" width="4" height="2" rx=".48" ry=".48" stroke-miterlimit="10" stroke="#3f3f3f" stroke-width=".75" fill="#b5b5b5" />
+      <rect x="868.76" y="274.89" width="4" height="2" rx=".48" ry=".48" stroke="#3f3f3f" stroke-linecap="round" stroke-linejoin="round" fill="#d1d1d1" stroke-width=".75" />
+      </g>
+</svg>

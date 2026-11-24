@@ -1,0 +1,21 @@
+{
+  "format": "beamline-search-app/1",
+  "note": "How the app's search screen uses the search engine (docs/architecture.md 3.8, rules S1-S7): where results are ranked from, typing, merging the answers of neighbouring state packs, how many results Enter shows on the map and how far (rule S11: up to max_results of the candidates nearest first, none farther than within_km, 25 miles; when none is that close, the nearest nearest_when_none_within anyway; candidates is how many matches the engine is asked for before they are sorted by distance), how near a place without a search id must be to a pack POI of the same name for its hours, phone and website (rule S10, details.match_within_m), recents and the shortcut buttons; and the user's saved places (docs/architecture-saved-places.md, rules SP10-SP31, SP50-SP56): how many, how long a name, when two places are the same, how saved names match typed text, from which map zoom a tapped point may be saved and how precise a position must be for 'Use my position'. Read by android/core/search and android/feature/search (copied into android/core/search by android/scripts/copy_search_rules.py; edit this file, not the copy). Each shortcut's query is a term of packbuilder/search/categories.json; its icon is a sprite name from assets/poi_icons.json. Every number is a first guess for the phone test.",
+  "near": {"fix_max_age_s": 60},
+  "typing": {"debounce_ms": 120},
+  "merge": {"pack_margin_km": 50, "dedupe_m": 100, "limit": 10},
+  "on_map": {"max_results": 20, "within_km": 40.23, "nearest_when_none_within": 5, "candidates": 100},
+  "details": {"match_within_m": 100},
+  "recents": {"max": 30, "same_place_m": 50},
+  "saved": {"max_other": 100, "name_max_chars": 40, "same_place_m": 50, "search_min_chars": 1, "search_max_rows": 3,
+            "pick_min_zoom": 16, "position_max_accuracy_m": 30},
+  "shortcuts": [
+    {"id": "gas", "label": "Gas", "query": "gas", "icon": "fuel"},
+    {"id": "rest_stops", "label": "Rest stops", "query": "rest stops", "icon": "rest_area"},
+    {"id": "food", "label": "Food", "query": "food", "icon": "restaurant"},
+    {"id": "coffee", "label": "Coffee", "query": "coffee", "icon": "cafe"},
+    {"id": "parking", "label": "Parking", "query": "parking", "icon": "parking"},
+    {"id": "ev_charging", "label": "EV charging", "query": "ev charging", "icon": "charging_station"},
+    {"id": "hotels", "label": "Hotels", "query": "lodging", "icon": "hotel"}
+  ]
+}

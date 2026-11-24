@@ -1,0 +1,10 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="650.75 1234.86 10 10">
+  <!-- Extracted from protomaps/basemaps sprites/refill.svg (commit 42ffaaa4) group '_townspot-s-rev'. Derived from tangrams/icons, Copyright (c) 2017 Mapzen, MIT License; Protomaps visual design CC0-1.0. See assets/LICENSES.md. -->
+  <g>
+      <g>
+         <circle cx="655.75" cy="1239.86" r="3.75" fill="#ededed" />
+         <path d="M655.75,1236.86c1.63,0,3,1.37,3,3s-1.37,3-3,3-3-1.37-3-3,1.37-3,3-3m0-1.5c-2.45,0-4.5,2.05-4.5,4.5s2.05,4.5,4.5,4.5,4.5-2.05,4.5-4.5-2.05-4.5-4.5-4.5h0Z" fill="#494949" />
+         <circle cx="655.75" cy="1239.86" r="4.5" stroke-miterlimit="10" fill="none" stroke="#4a4a4a" />
+      </g>
+   </g>
+</svg>

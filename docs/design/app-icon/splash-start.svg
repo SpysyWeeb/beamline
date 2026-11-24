@@ -1,0 +1,30 @@
+<!-- Beamline splash scene, starting state (no buildings, park or river yet). Same units as the icon: the icon's visible square is x and y from 18 to 90,
+     half the screen width. The reveal is a circle centred on (54, 54) opening from radius 36; nothing is scaled. -->
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="-18 -102 144 312" width="432" height="936">
+<defs>
+  <filter id="b4" x="-80%" y="-80%" width="260%" height="260%"><feGaussianBlur stdDeviation="3.2"/></filter>
+  <filter id="b2" x="-80%" y="-80%" width="260%" height="260%"><feGaussianBlur stdDeviation="1.6"/></filter>
+  <filter id="b8" x="-80%" y="-80%" width="260%" height="260%"><feGaussianBlur stdDeviation="5"/></filter>
+  <radialGradient id="bm" gradientUnits="userSpaceOnUse" cx="54" cy="50" r="44"><stop offset="0" stop-color="#FFF3CF" stop-opacity=".9"/><stop offset=".5" stop-color="#FFF3CF" stop-opacity=".32"/><stop offset="1" stop-color="#FFF3CF" stop-opacity="0"/></radialGradient>
+</defs>
+<clipPath id="c"><circle cx="54" cy="54" r="36"/></clipPath>
+<rect x="-300" y="-300" width="700" height="700" fill="#1D2733"/>
+<g clip-path="url(#c)">
+<rect x="-300" y="-300" width="700" height="700" fill="#1D2733"/>
+<path d="M-6 -300V400M114 -300V400M-300 -74H400M-300 -26H400M-300 102H400M-300 166H400" fill="none" stroke="#2C3643" stroke-width="11"/>
+<path d="M54 -300V400M-300 38H400" fill="none" stroke="#3B4756" stroke-width="17"/>
+<path d="M-30 166 L54 166 L54 -26 L114 -26 L114 -120" fill="none" stroke="#2059AB" stroke-width="9.5" stroke-linejoin="round"/>
+<path d="M-30 166 L54 166 L54 -26 L114 -26 L114 -120" fill="none" stroke="#5CA6F8" stroke-width="6" stroke-linejoin="round"/>
+<path d="M54 50 L40 8 A44 44 0 0 1 68 8 Z" fill="url(#bm)" filter="url(#b2)"/>
+<ellipse cx="54" cy="82" rx="15" ry="6" fill="#FF3B2F" fill-opacity=".45" filter="url(#b8)"/>
+<g transform="translate(54 66) scale(.44)">
+  <ellipse cy="12" rx="27" ry="30" fill="#000000" fill-opacity=".35" filter="url(#b4)"/>
+  <g fill="#FF3B2F" fill-opacity=".9" filter="url(#b4)"><path d="M25.6 28.9 L16.5 24.5 L16.5 29.9 L25.6 34.3 Z"/><path d="M-25.6 28.9 L-16.5 24.5 L-16.5 29.9 L-25.6 34.3 Z"/></g>
+  <path d="M0 -38 L27 28 L27 34.5 L0 21.5 L-27 34.5 L-27 28 Z" fill="#1B54A6"/>
+  <path d="M0 -38 L0 15 L-27 28 Z" fill="#7CBDFF"/>
+  <path d="M0 -38 L27 28 L0 15 Z" fill="#3D8CF0"/>
+  <g fill="#FF3B2F"><path d="M25.6 28.9 L16.5 24.5 L16.5 29.9 L25.6 34.3 Z"/><path d="M-25.6 28.9 L-16.5 24.5 L-16.5 29.9 L-25.6 34.3 Z"/></g>
+  <path d="M0 -38 L27 28 L27 34.5 L0 21.5 L-27 34.5 L-27 28 Z" fill="none" stroke="#FFFFFF" stroke-width="4.5" stroke-linejoin="round"/>
+</g>
+</g>
+</svg>

@@ -1,0 +1,152 @@
+{
+ "_doc": [
+  "Route line colours and widths. The app reads this file and draws the route at run time (line layers above roads, below labels).",
+  "The owner chose candidate B ('Clear') on 2026-11-15: 'selected' names it and the app draws it. A and C are kept for reference. Renders: assets/sheet/index.html and data/art/route/*.png.",
+  "Each theme: fill (the line) and casing (a wider line drawn under it). traveled: the part already driven, the candidate mixed 55 % toward the map's land colour (day #E2DFDA, night #1F1F1F). alternative: alternative routes, grey.",
+  "Widths in dp per map zoom, to be interpolated exponentially with base 1.5 (MapLibre: [\"interpolate\", [\"exponential\", 1.5], [\"zoom\"], z1, w1, ...]). The casing is drawn as its own wider line, not as a line-gap.",
+  "Colours as #RRGGBB, opaque. Line cap and join round."
+ ],
+ "version": 1,
+ "selected": "B",
+ "default_until_selected": "A",
+ "candidates": {
+  "A": {
+   "name": "Sky",
+   "note": "the blue of the approved marker sketch; the lightest of the three and the closest to the day water colour",
+   "day": {
+    "fill": "#5BAAFF",
+    "casing": "#2C72CF",
+    "traveled": {
+     "fill": "#A5C7EB",
+     "casing": "#90AED5"
+    }
+   },
+   "night": {
+    "fill": "#4B96EE",
+    "casing": "#1B4A91",
+    "traveled": {
+     "fill": "#33557C",
+     "casing": "#1D3252"
+    }
+   }
+  },
+  "B": {
+   "name": "Clear",
+   "note": "deeper and more saturated, by day and by night: the darkest of the three, not the lightest; the strongest edge on the day map and, by day, the furthest from water",
+   "day": {
+    "fill": "#4A8CF7",
+    "casing": "#1F5BC4",
+    "traveled": {
+     "fill": "#9EBAE7",
+     "casing": "#8AA4D0"
+    }
+   },
+   "night": {
+    "fill": "#3A80F0",
+    "casing": "#1C3F86",
+    "traveled": {
+     "fill": "#2B4B7D",
+     "casing": "#1E2D4D"
+    }
+   }
+  },
+  "C": {
+   "name": "Periwinkle",
+   "note": "softer and slightly violet; the brightest line at night",
+   "day": {
+    "fill": "#7AA2F0",
+    "casing": "#4166BD",
+    "traveled": {
+     "fill": "#B3C4E4",
+     "casing": "#9AA9CD"
+    }
+   },
+   "night": {
+    "fill": "#86A9F2",
+    "casing": "#2E4A8C",
+    "traveled": {
+     "fill": "#4D5D7E",
+     "casing": "#263250"
+    }
+   }
+  }
+ },
+ "alternative": {
+  "day": {
+   "fill": "#A7AFB9",
+   "casing": "#7E8792"
+  },
+  "night": {
+   "fill": "#5B636D",
+   "casing": "#2B3036"
+  }
+ },
+ "widths_dp": {
+  "interpolation": {
+   "type": "exponential",
+   "base": 1.5
+  },
+  "fill": [
+   [
+    8,
+    3.0
+   ],
+   [
+    12,
+    5.0
+   ],
+   [
+    14,
+    7.0
+   ],
+   [
+    16,
+    10.0
+   ],
+   [
+    18,
+    16.0
+   ],
+   [
+    20,
+    26.0
+   ]
+  ],
+  "casing": [
+   [
+    8,
+    4.5
+   ],
+   [
+    12,
+    7.0
+   ],
+   [
+    14,
+    9.5
+   ],
+   [
+    16,
+    13.0
+   ],
+   [
+    18,
+    20.0
+   ],
+   [
+    20,
+    31.0
+   ]
+  ]
+ },
+ "line_cap": "round",
+ "line_join": "round",
+ "layer_order": "above the road and bridge layers, below one-way arrows, shields and all labels (in the bundled style: right before 'roads_oneway')",
+ "traveled_mix": {
+  "toward": {
+   "day": "#E2DFDA",
+   "night": "#1F1F1F"
+  },
+  "amount": 0.55
+ }
+}

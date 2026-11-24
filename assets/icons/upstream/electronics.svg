@@ -1,0 +1,9 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="603.09 472.5 19 19">
+  <!-- Extracted from protomaps/basemaps sprites/refill.svg (commit 42ffaaa4) group '_electronics'. Derived from tangrams/icons, Copyright (c) 2017 Mapzen, MIT License; Protomaps visual design CC0-1.0. See assets/LICENSES.md. -->
+  <g>
+      <rect x="603.59" y="473" width="18" height="18" rx="4" ry="4" stroke-miterlimit="10" stroke="#3f3f3f" fill="#f4f4f4" />
+      <polygon points="618.02 486 607.14 486 608.52 483 616.64 483 618.02 486" stroke="#3f3f3f" stroke-linecap="round" stroke-linejoin="round" fill="#919191" />
+      <rect x="608.59" y="478" width="8" height="5" stroke="#3f3f3f" stroke-linecap="round" stroke-linejoin="round" fill="#d3d3d3" />
+      <polygon points="613.96 485.08 611.05 485.08 611.4 484.08 613.61 484.08 613.96 485.08" fill="#3f3f3f" />
+   </g>
+</svg>

@@ -1,0 +1,287 @@
+{
+ "_comment": "Rule sets for size_report.py option: features each one removes from a finished pack, to measure what it would save. A rule matches by layer and optionally kind / kind_not, geometry (point, line, polygon), max_area_px (polygons smaller than this many pixels of a 256-px tile), zooms or only_max_zoom; drop_layer removes the whole layer; simplify_px simplifies matching lines and polygons with this tolerance in pixels of a 256-px tile instead of removing them.",
+ "poi_drop": {
+  "what_is_lost": "street furniture, trees, crossings, railway switches and signals, turning circles, parking spaces (build_config.json poi_drop_kinds)",
+  "rules": [
+   {
+    "layer": "pois",
+    "kind": [
+     "tree",
+     "shrub",
+     "crossing",
+     "street_lamp",
+     "bench",
+     "waste_basket",
+     "picnic_table",
+     "bicycle_parking",
+     "post_box",
+     "letter_box",
+     "switch",
+     "signal",
+     "buffer_stop",
+     "tram_crossing",
+     "turning_circle",
+     "turning_loop",
+     "loading_dock",
+     "camp_pitch",
+     "parking_space",
+     "vending_machine",
+     "milestone",
+     "public_bookcase",
+     "navigationaid",
+     "holding_position",
+     "census",
+     "boundary_stone",
+     "firepit",
+     "bbq",
+     "waste_disposal",
+     "drinking_water"
+    ]
+   }
+  ]
+ },
+ "no_building_polygons_top": {
+  "what_is_lost": "every building footprint at the max zoom (house numbers stay); below it buildings stay",
+  "rules": [
+   {
+    "layer": "buildings",
+    "geometry": "polygon",
+    "only_max_zoom": true
+   }
+  ]
+ },
+ "small_buildings_top": {
+  "what_is_lost": "building footprints smaller than 1 px2 at the max zoom (z14: about 52 m2 at 41 N; sheds, garages) -- no effect on a z14 pack: the profile's merge already drops buildings under 3.125 px2 below z15",
+  "rules": [
+   {
+    "layer": "buildings",
+    "geometry": "polygon",
+    "only_max_zoom": true,
+    "max_area_px": 1.0
+   }
+  ]
+ },
+ "no_buildings_below_top": {
+  "what_is_lost": "building footprints at z11-13 (the style draws the buildings layer at every zoom it has data for)",
+  "rules": [
+   {
+    "layer": "buildings",
+    "geometry": "polygon",
+    "zooms": [
+     11,
+     12,
+     13
+    ]
+   }
+  ]
+ },
+ "small_landuse_top": {
+  "what_is_lost": "landuse polygons smaller than 4 px2 at the max zoom (z14: about 210 m2)",
+  "rules": [
+   {
+    "layer": "landuse",
+    "geometry": "polygon",
+    "only_max_zoom": true,
+    "max_area_px": 4.0
+   }
+  ]
+ },
+ "no_paths": {
+  "what_is_lost": "footways, cycleways, tracks and steps at every zoom",
+  "rules": [
+   {
+    "layer": "roads",
+    "kind": [
+     "path"
+    ]
+   }
+  ]
+ },
+ "landuse_undrawn": {
+  "what_is_lost": "landuse kinds the day and night styles do not draw (farmland, residential, commercial, retail, pitch, wetland, meadow, ...), at every zoom",
+  "rules": [
+   {
+    "layer": "landuse",
+    "kind_not": [
+     "national_park",
+     "park",
+     "cemetery",
+     "protected_area",
+     "nature_reserve",
+     "forest",
+     "golf_course",
+     "wood",
+     "scrub",
+     "grassland",
+     "grass",
+     "glacier",
+     "sand",
+     "military",
+     "naval_base",
+     "airfield",
+     "allotments",
+     "village_green",
+     "playground",
+     "hospital",
+     "industrial",
+     "school",
+     "university",
+     "college",
+     "beach",
+     "zoo",
+     "aerodrome",
+     "runway",
+     "taxiway",
+     "pedestrian",
+     "dam",
+     "pier"
+    ]
+   }
+  ]
+ },
+ "footways": {
+  "what_is_lost": "footways, sidewalks, crossings, steps, cycleways, bridleways, corridors and generic paths at every zoom (tracks and pedestrian streets stay)",
+  "rules": [
+   {
+    "layer": "roads",
+    "kind": [
+     "path"
+    ],
+    "kind_detail": [
+     "footway",
+     "sidewalk",
+     "crossing",
+     "steps",
+     "path",
+     "cycleway",
+     "bridleway",
+     "corridor"
+    ]
+   }
+  ]
+ },
+ "small_wood_top": {
+  "what_is_lost": "wood/forest polygons smaller than 16 px2 at the max zoom (z14: about 830 m2)",
+  "rules": [
+   {
+    "layer": "landuse",
+    "kind": [
+     "wood",
+     "forest"
+    ],
+    "geometry": "polygon",
+    "only_max_zoom": true,
+    "max_area_px": 16.0
+   }
+  ]
+ },
+ "simplify_landuse_top": {
+  "what_is_lost": "landuse polygon detail at the max zoom: simplified with 0.5 px tolerance (z14: about 3.6 m at 41 N) instead of Planetiler's 0.0625 px",
+  "rules": [
+   {
+    "layer": "landuse",
+    "geometry": "polygon",
+    "only_max_zoom": true,
+    "simplify_px": 0.5
+   }
+  ]
+ },
+ "simplify_landuse_all": {
+  "what_is_lost": "landuse polygon detail at z11-max: simplified with 0.5 px tolerance at every zoom from 11",
+  "rules": [
+   {
+    "layer": "landuse",
+    "geometry": "polygon",
+    "zooms": [
+     11,
+     12,
+     13,
+     14,
+     15
+    ],
+    "simplify_px": 0.5
+   }
+  ]
+ },
+ "simplify_water_lines_top": {
+  "what_is_lost": "stream and river line detail at the max zoom: 0.5 px tolerance",
+  "rules": [
+   {
+    "layer": "water",
+    "geometry": "line",
+    "only_max_zoom": true,
+    "simplify_px": 0.5
+   }
+  ]
+ },
+ "lean": {
+  "what_is_lost": "landuse_undrawn + footways + simplify_landuse_all together",
+  "rules": [
+   {
+    "layer": "landuse",
+    "kind_not": [
+     "national_park",
+     "park",
+     "cemetery",
+     "protected_area",
+     "nature_reserve",
+     "forest",
+     "golf_course",
+     "wood",
+     "scrub",
+     "grassland",
+     "grass",
+     "glacier",
+     "sand",
+     "military",
+     "naval_base",
+     "airfield",
+     "allotments",
+     "village_green",
+     "playground",
+     "hospital",
+     "industrial",
+     "school",
+     "university",
+     "college",
+     "beach",
+     "zoo",
+     "aerodrome",
+     "runway",
+     "taxiway",
+     "pedestrian",
+     "dam",
+     "pier"
+    ]
+   },
+   {
+    "layer": "roads",
+    "kind": [
+     "path"
+    ],
+    "kind_detail": [
+     "footway",
+     "sidewalk",
+     "crossing",
+     "steps",
+     "path",
+     "cycleway",
+     "bridleway",
+     "corridor"
+    ]
+   },
+   {
+    "layer": "landuse",
+    "geometry": "polygon",
+    "zooms": [
+     11,
+     12,
+     13,
+     14,
+     15
+    ],
+    "simplify_px": 0.5
+   }
+  ]
+ }
+}

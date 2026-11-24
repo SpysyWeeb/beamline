@@ -1,0 +1,6005 @@
+{
+ "presets": {
+  "fastest": {
+   "U1": {
+    "time_s": 374.9, 
+    "length_km": 5.41, 
+    "legs": 1, 
+    "maneuvers": 4, 
+    "maneuvers_total": 6, 
+    "highway_km": 2.38, 
+    "toll_km": 0, 
+    "endpoint_gap_m": [
+     32, 
+     94
+    ], 
+    "ok": true
+   }, 
+   "U2": {
+    "time_s": 176.3, 
+    "length_km": 2.123, 
+    "legs": 1, 
+    "maneuvers": 2, 
+    "maneuvers_total": 4, 
+    "highway_km": 0, 
+    "toll_km": 0, 
+    "endpoint_gap_m": [
+     80, 
+     75
+    ], 
+    "ok": true
+   }, 
+   "U3": {
+    "time_s": 531.6, 
+    "length_km": 7.855, 
+    "legs": 1, 
+    "maneuvers": 3, 
+    "maneuvers_total": 5, 
+    "highway_km": 0, 
+    "toll_km": 0, 
+    "endpoint_gap_m": [
+     2, 
+     173
+    ], 
+    "ok": true
+   }, 
+   "U4": {
+    "time_s": 739.2, 
+    "length_km": 12.242, 
+    "legs": 1, 
+    "maneuvers": 9, 
+    "maneuvers_total": 11, 
+    "highway_km": 6.08, 
+    "toll_km": 0, 
+    "endpoint_gap_m": [
+     70, 
+     106
+    ], 
+    "ok": true
+   }, 
+   "U5": {
+    "time_s": 310.7, 
+    "length_km": 3.768, 
+    "legs": 1, 
+    "maneuvers": 5, 
+    "maneuvers_total": 7, 
+    "highway_km": 0, 
+    "toll_km": 0, 
+    "endpoint_gap_m": [
+     104, 
+     35
+    ], 
+    "ok": true
+   }, 
+   "R1": {
+    "time_s": 1214.8, 
+    "length_km": 23.135, 
+    "legs": 1, 
+    "maneuvers": 8, 
+    "maneuvers_total": 10, 
+    "highway_km": 20.71, 
+    "toll_km": 0, 
+    "endpoint_gap_m": [
+     73, 
+     156
+    ], 
+    "ok": true
+   }, 
+   "R2": {
+    "time_s": 4527.6, 
+    "length_km": 88.915, 
+    "legs": 1, 
+    "maneuvers": 12, 
+    "maneuvers_total": 14, 
+    "highway_km": 39.42, 
+    "toll_km": 0, 
+    "endpoint_gap_m": [
+     6, 
+     16
+    ], 
+    "ok": true
+   }, 
+   "I1": {
+    "time_s": 16950.0, 
+    "length_km": 478.506, 
+    "legs": 1, 
+    "maneuvers": 17, 
+    "maneuvers_total": 19, 
+    "highway_km": 456.05, 
+    "toll_km": 0, 
+    "endpoint_gap_m": [
+     2, 
+     137
+    ], 
+    "ok": true
+   }, 
+   "I2": {
+    "time_s": 16711.4, 
+    "length_km": 455.018, 
+    "legs": 1, 
+    "maneuvers": 16, 
+    "maneuvers_total": 18, 
+    "highway_km": 452.52, 
+    "toll_km": 0, 
+    "endpoint_gap_m": [
+     10, 
+     32
+    ], 
+    "ok": true
+   }, 
+   "I3": {
+    "time_s": 7965.0, 
+    "length_km": 232.424, 
+    "legs": 1, 
+    "maneuvers": 14, 
+    "maneuvers_total": 16, 
+    "highway_km": 227.09, 
+    "toll_km": 0, 
+    "endpoint_gap_m": [
+     80, 
+     70
+    ], 
+    "ok": true
+   }, 
+   "I4": {
+    "time_s": 7660.1, 
+    "length_km": 186.253, 
+    "legs": 1, 
+    "maneuvers": 13, 
+    "maneuvers_total": 15, 
+    "highway_km": 111.96, 
+    "toll_km": 0, 
+    "endpoint_gap_m": [
+     1, 
+     2
+    ], 
+    "ok": true
+   }, 
+   "T1": {
+    "time_s": 16609.0, 
+    "length_km": 491.193, 
+    "legs": 1, 
+    "maneuvers": 16, 
+    "maneuvers_total": 18, 
+    "highway_km": 486.71, 
+    "toll_km": 461.03, 
+    "endpoint_gap_m": [
+     80, 
+     32
+    ], 
+    "ok": true
+   }, 
+   "T2": {
+    "time_s": 5873.4, 
+    "length_km": 171.721, 
+    "legs": 1, 
+    "maneuvers": 13, 
+    "maneuvers_total": 15, 
+    "highway_km": 163.8, 
+    "toll_km": 163.69, 
+    "endpoint_gap_m": [
+     9, 
+     253
+    ], 
+    "ok": true
+   }, 
+   "X1": {
+    "time_s": 3266.2, 
+    "length_km": 72.519, 
+    "legs": 1, 
+    "maneuvers": 2, 
+    "maneuvers_total": 4, 
+    "highway_km": 0, 
+    "toll_km": 0, 
+    "endpoint_gap_m": [
+     16, 
+     23
+    ], 
+    "ok": true
+   }, 
+   "X2": {
+    "time_s": 2618.6, 
+    "length_km": 51.992, 
+    "legs": 1, 
+    "maneuvers": 5, 
+    "maneuvers_total": 7, 
+    "highway_km": 0, 
+    "toll_km": 0, 
+    "endpoint_gap_m": [
+     62, 
+     11
+    ], 
+    "ok": true
+   }, 
+   "X3": {
+    "time_s": 833.7, 
+    "length_km": 15.161, 
+    "legs": 1, 
+    "maneuvers": 4, 
+    "maneuvers_total": 6, 
+    "highway_km": 0, 
+    "toll_km": 0, 
+    "endpoint_gap_m": [
+     4, 
+     15
+    ], 
+    "ok": true
+   }, 
+   "B1": {
+    "time_s": 5868.8, 
+    "length_km": 165.591, 
+    "legs": 1, 
+    "maneuvers": 15, 
+    "maneuvers_total": 17, 
+    "highway_km": 162.73, 
+    "toll_km": 0, 
+    "endpoint_gap_m": [
+     2, 
+     70
+    ], 
+    "ok": true
+   }, 
+   "B2": {
+    "time_s": 4169.9, 
+    "length_km": 109.605, 
+    "legs": 1, 
+    "maneuvers": 21, 
+    "maneuvers_total": 23, 
+    "highway_km": 105.68, 
+    "toll_km": 58.13, 
+    "endpoint_gap_m": [
+     29, 
+     32
+    ], 
+    "ok": true
+   }, 
+   "B3": {
+    "time_s": 7693.9, 
+    "length_km": 216.767, 
+    "legs": 1, 
+    "maneuvers": 20, 
+    "maneuvers_total": 22, 
+    "highway_km": 210.01, 
+    "toll_km": 155.72, 
+    "endpoint_gap_m": [
+     70, 
+     32
+    ], 
+    "ok": true
+   }, 
+   "B4": {
+    "time_s": 7369.3, 
+    "length_km": 203.9, 
+    "legs": 1, 
+    "maneuvers": 19, 
+    "maneuvers_total": 21, 
+    "highway_km": 200.01, 
+    "toll_km": 0, 
+    "endpoint_gap_m": [
+     17, 
+     2
+    ], 
+    "ok": true
+   }, 
+   "B5": {
+    "time_s": 621.7, 
+    "length_km": 12.346, 
+    "legs": 1, 
+    "maneuvers": 5, 
+    "maneuvers_total": 7, 
+    "highway_km": 0, 
+    "toll_km": 0, 
+    "endpoint_gap_m": [
+     3, 
+     8
+    ], 
+    "ok": true
+   }
+  }, 
+  "shortest": {
+   "U1": {
+    "time_s": 481.2, 
+    "length_km": 4.956, 
+    "legs": 1, 
+    "maneuvers": 4, 
+    "maneuvers_total": 6, 
+    "highway_km": 0, 
+    "toll_km": 0, 
+    "endpoint_gap_m": [
+     32, 
+     94
+    ], 
+    "ok": true
+   }, 
+   "U2": {
+    "time_s": 176.3, 
+    "length_km": 2.123, 
+    "legs": 1, 
+    "maneuvers": 2, 
+    "maneuvers_total": 4, 
+    "highway_km": 0, 
+    "toll_km": 0, 
+    "endpoint_gap_m": [
+     80, 
+     75
+    ], 
+    "ok": true
+   }, 
+   "U3": {
+    "time_s": 659.3, 
+    "length_km": 7.043, 
+    "legs": 1, 
+    "maneuvers": 7, 
+    "maneuvers_total": 9, 
+    "highway_km": 0, 
+    "toll_km": 0, 
+    "endpoint_gap_m": [
+     2, 
+     173
+    ], 
+    "ok": true
+   }, 
+   "U4": {
+    "time_s": 756.5, 
+    "length_km": 7.532, 
+    "legs": 1, 
+    "maneuvers": 1, 
+    "maneuvers_total": 3, 
+    "highway_km": 0, 
+    "toll_km": 0, 
+    "endpoint_gap_m": [
+     70, 
+     106
+    ], 
+    "ok": true
+   }, 
+   "U5": {
+    "time_s": 410.1, 
+    "length_km": 3.019, 
+    "legs": 1, 
+    "maneuvers": 10, 
+    "maneuvers_total": 12, 
+    "highway_km": 0, 
+    "toll_km": 0, 
+    "endpoint_gap_m": [
+     104, 
+     35
+    ], 
+    "ok": true
+   }, 
+   "R1": {
+    "time_s": 1580.7, 
+    "length_km": 22.532, 
+    "legs": 1, 
+    "maneuvers": 15, 
+    "maneuvers_total": 17, 
+    "highway_km": 9.03, 
+    "toll_km": 0, 
+    "endpoint_gap_m": [
+     73, 
+     156
+    ], 
+    "ok": true
+   }, 
+   "R2": {
+    "time_s": 5184.4, 
+    "length_km": 85.896, 
+    "legs": 1, 
+    "maneuvers": 16, 
+    "maneuvers_total": 18, 
+    "highway_km": 0, 
+    "toll_km": 0, 
+    "endpoint_gap_m": [
+     6, 
+     16
+    ], 
+    "ok": true
+   }, 
+   "I1": {
+    "time_s": 19301.1, 
+    "length_km": 433.298, 
+    "legs": 1, 
+    "maneuvers": 33, 
+    "maneuvers_total": 35, 
+    "highway_km": 232.29, 
+    "toll_km": 0, 
+    "endpoint_gap_m": [
+     2, 
+     137
+    ], 
+    "ok": true
+   }, 
+   "I2": {
+    "time_s": 20255.0, 
+    "length_km": 441.1, 
+    "legs": 1, 
+    "maneuvers": 46, 
+    "maneuvers_total": 48, 
+    "highway_km": 252.56, 
+    "toll_km": 0, 
+    "endpoint_gap_m": [
+     10, 
+     32
+    ], 
+    "ok": true
+   }, 
+   "I3": {
+    "time_s": 10752.4, 
+    "length_km": 222.145, 
+    "legs": 1, 
+    "maneuvers": 21, 
+    "maneuvers_total": 23, 
+    "highway_km": 102.36, 
+    "toll_km": 0, 
+    "endpoint_gap_m": [
+     80, 
+     70
+    ], 
+    "ok": true
+   }, 
+   "I4": {
+    "time_s": 9132.1, 
+    "length_km": 180.488, 
+    "legs": 1, 
+    "maneuvers": 34, 
+    "maneuvers_total": 36, 
+    "highway_km": 30.96, 
+    "toll_km": 0, 
+    "endpoint_gap_m": [
+     1, 
+     2
+    ], 
+    "ok": true
+   }, 
+   "T1": {
+    "time_s": 24620.0, 
+    "length_km": 467.789, 
+    "legs": 1, 
+    "maneuvers": 48, 
+    "maneuvers_total": 50, 
+    "highway_km": 65.34, 
+    "toll_km": 0, 
+    "endpoint_gap_m": [
+     80, 
+     32
+    ], 
+    "ok": true
+   }, 
+   "T2": {
+    "time_s": 6362.6, 
+    "length_km": 167.456, 
+    "legs": 1, 
+    "maneuvers": 16, 
+    "maneuvers_total": 18, 
+    "highway_km": 138.85, 
+    "toll_km": 137.21, 
+    "endpoint_gap_m": [
+     9, 
+     253
+    ], 
+    "ok": true
+   }, 
+   "X1": {
+    "time_s": 3226.0, 
+    "length_km": 68.675, 
+    "legs": 1, 
+    "maneuvers": 2, 
+    "maneuvers_total": 4, 
+    "highway_km": 0, 
+    "toll_km": 0, 
+    "endpoint_gap_m": [
+     16, 
+     23
+    ], 
+    "ok": true
+   }, 
+   "X2": {
+    "time_s": 3860.6, 
+    "length_km": 49.422, 
+    "legs": 1, 
+    "maneuvers": 16, 
+    "maneuvers_total": 18, 
+    "highway_km": 0, 
+    "toll_km": 0, 
+    "endpoint_gap_m": [
+     62, 
+     11
+    ], 
+    "ok": true
+   }, 
+   "X3": {
+    "time_s": 1008.4, 
+    "length_km": 11.558, 
+    "legs": 1, 
+    "maneuvers": 13, 
+    "maneuvers_total": 15, 
+    "highway_km": 0, 
+    "toll_km": 0, 
+    "endpoint_gap_m": [
+     4, 
+     15
+    ], 
+    "ok": true
+   }, 
+   "B1": {
+    "time_s": 8357.3, 
+    "length_km": 156.981, 
+    "legs": 1, 
+    "maneuvers": 18, 
+    "maneuvers_total": 20, 
+    "highway_km": 32.06, 
+    "toll_km": 0, 
+    "endpoint_gap_m": [
+     2, 
+     70
+    ], 
+    "ok": true
+   }, 
+   "B2": {
+    "time_s": 5152.5, 
+    "length_km": 102.945, 
+    "legs": 1, 
+    "maneuvers": 26, 
+    "maneuvers_total": 28, 
+    "highway_km": 12.97, 
+    "toll_km": 0, 
+    "endpoint_gap_m": [
+     29, 
+     32
+    ], 
+    "ok": true
+   }, 
+   "B3": {
+    "time_s": 10102.6, 
+    "length_km": 200.525, 
+    "legs": 1, 
+    "maneuvers": 26, 
+    "maneuvers_total": 28, 
+    "highway_km": 70.03, 
+    "toll_km": 0, 
+    "endpoint_gap_m": [
+     70, 
+     32
+    ], 
+    "ok": true
+   }, 
+   "B4": {
+    "time_s": 9564.9, 
+    "length_km": 193.522, 
+    "legs": 1, 
+    "maneuvers": 25, 
+    "maneuvers_total": 27, 
+    "highway_km": 82.58, 
+    "toll_km": 0, 
+    "endpoint_gap_m": [
+     17, 
+     2
+    ], 
+    "ok": true
+   }, 
+   "B5": {
+    "time_s": 682.9, 
+    "length_km": 12.187, 
+    "legs": 1, 
+    "maneuvers": 8, 
+    "maneuvers_total": 10, 
+    "highway_km": 0, 
+    "toll_km": 0, 
+    "endpoint_gap_m": [
+     3, 
+     8
+    ], 
+    "ok": true
+   }
+  }, 
+  "simpler": {
+   "U1": {
+    "time_s": 374.9, 
+    "length_km": 5.41, 
+    "legs": 1, 
+    "maneuvers": 4, 
+    "maneuvers_total": 6, 
+    "highway_km": 2.38, 
+    "toll_km": 0, 
+    "endpoint_gap_m": [
+     32, 
+     94
+    ], 
+    "ok": true, 
+    "candidates_considered": 5
+   }, 
+   "U2": {
+    "time_s": 176.3, 
+    "length_km": 2.123, 
+    "legs": 1, 
+    "maneuvers": 2, 
+    "maneuvers_total": 4, 
+    "highway_km": 0, 
+    "toll_km": 0, 
+    "endpoint_gap_m": [
+     80, 
+     75
+    ], 
+    "ok": true, 
+    "candidates_considered": 4
+   }, 
+   "U3": {
+    "time_s": 531.6, 
+    "length_km": 7.855, 
+    "legs": 1, 
+    "maneuvers": 3, 
+    "maneuvers_total": 5, 
+    "highway_km": 0, 
+    "toll_km": 0, 
+    "endpoint_gap_m": [
+     2, 
+     173
+    ], 
+    "ok": true, 
+    "candidates_considered": 5
+   }, 
+   "U4": {
+    "time_s": 687.3, 
+    "length_km": 8.01, 
+    "legs": 1, 
+    "maneuvers": 7, 
+    "maneuvers_total": 9, 
+    "highway_km": 0, 
+    "toll_km": 0, 
+    "endpoint_gap_m": [
+     70, 
+     106
+    ], 
+    "ok": true, 
+    "candidates_considered": 5
+   }, 
+   "U5": {
+    "time_s": 310.7, 
+    "length_km": 3.768, 
+    "legs": 1, 
+    "maneuvers": 5, 
+    "maneuvers_total": 7, 
+    "highway_km": 0, 
+    "toll_km": 0, 
+    "endpoint_gap_m": [
+     104, 
+     35
+    ], 
+    "ok": true, 
+    "candidates_considered": 5
+   }, 
+   "R1": {
+    "time_s": 1214.8, 
+    "length_km": 23.135, 
+    "legs": 1, 
+    "maneuvers": 8, 
+    "maneuvers_total": 10, 
+    "highway_km": 20.71, 
+    "toll_km": 0, 
+    "endpoint_gap_m": [
+     73, 
+     156
+    ], 
+    "ok": true, 
+    "candidates_considered": 5
+   }, 
+   "R2": {
+    "time_s": 4527.6, 
+    "length_km": 88.915, 
+    "legs": 1, 
+    "maneuvers": 12, 
+    "maneuvers_total": 14, 
+    "highway_km": 39.42, 
+    "toll_km": 0, 
+    "endpoint_gap_m": [
+     6, 
+     16
+    ], 
+    "ok": true, 
+    "candidates_considered": 5
+   }, 
+   "I1": {
+    "time_s": 17245.1, 
+    "length_km": 479.589, 
+    "legs": 1, 
+    "maneuvers": 12, 
+    "maneuvers_total": 14, 
+    "highway_km": 430.98, 
+    "toll_km": 0, 
+    "endpoint_gap_m": [
+     2, 
+     137
+    ], 
+    "ok": true, 
+    "candidates_considered": 5
+   }, 
+   "I2": {
+    "time_s": 16711.4, 
+    "length_km": 455.018, 
+    "legs": 1, 
+    "maneuvers": 16, 
+    "maneuvers_total": 18, 
+    "highway_km": 452.52, 
+    "toll_km": 0, 
+    "endpoint_gap_m": [
+     10, 
+     32
+    ], 
+    "ok": true, 
+    "candidates_considered": 5
+   }, 
+   "I3": {
+    "time_s": 8069.5, 
+    "length_km": 229.096, 
+    "legs": 1, 
+    "maneuvers": 13, 
+    "maneuvers_total": 15, 
+    "highway_km": 218.59, 
+    "toll_km": 0, 
+    "endpoint_gap_m": [
+     80, 
+     70
+    ], 
+    "ok": true, 
+    "candidates_considered": 3
+   }, 
+   "I4": {
+    "time_s": 7627.2, 
+    "length_km": 210.84, 
+    "legs": 1, 
+    "maneuvers": 11, 
+    "maneuvers_total": 13, 
+    "highway_km": 203.6, 
+    "toll_km": 62.86, 
+    "endpoint_gap_m": [
+     1, 
+     2
+    ], 
+    "ok": true, 
+    "candidates_considered": 5
+   }, 
+   "T1": {
+    "time_s": 16609.0, 
+    "length_km": 491.193, 
+    "legs": 1, 
+    "maneuvers": 16, 
+    "maneuvers_total": 18, 
+    "highway_km": 486.71, 
+    "toll_km": 461.03, 
+    "endpoint_gap_m": [
+     80, 
+     32
+    ], 
+    "ok": true, 
+    "candidates_considered": 5
+   }, 
+   "T2": {
+    "time_s": 5873.4, 
+    "length_km": 171.721, 
+    "legs": 1, 
+    "maneuvers": 13, 
+    "maneuvers_total": 15, 
+    "highway_km": 163.8, 
+    "toll_km": 163.69, 
+    "endpoint_gap_m": [
+     9, 
+     253
+    ], 
+    "ok": true, 
+    "candidates_considered": 5
+   }, 
+   "X1": {
+    "time_s": 3266.2, 
+    "length_km": 72.519, 
+    "legs": 1, 
+    "maneuvers": 2, 
+    "maneuvers_total": 4, 
+    "highway_km": 0, 
+    "toll_km": 0, 
+    "endpoint_gap_m": [
+     16, 
+     23
+    ], 
+    "ok": true, 
+    "candidates_considered": 4
+   }, 
+   "X2": {
+    "time_s": 2618.6, 
+    "length_km": 51.992, 
+    "legs": 1, 
+    "maneuvers": 5, 
+    "maneuvers_total": 7, 
+    "highway_km": 0, 
+    "toll_km": 0, 
+    "endpoint_gap_m": [
+     62, 
+     11
+    ], 
+    "ok": true, 
+    "candidates_considered": 4
+   }, 
+   "X3": {
+    "time_s": 833.7, 
+    "length_km": 15.161, 
+    "legs": 1, 
+    "maneuvers": 4, 
+    "maneuvers_total": 6, 
+    "highway_km": 0, 
+    "toll_km": 0, 
+    "endpoint_gap_m": [
+     4, 
+     15
+    ], 
+    "ok": true, 
+    "candidates_considered": 5
+   }, 
+   "B1": {
+    "time_s": 5990.8, 
+    "length_km": 167.101, 
+    "legs": 1, 
+    "maneuvers": 11, 
+    "maneuvers_total": 13, 
+    "highway_km": 160.67, 
+    "toll_km": 0, 
+    "endpoint_gap_m": [
+     2, 
+     70
+    ], 
+    "ok": true, 
+    "candidates_considered": 4
+   }, 
+   "B2": {
+    "time_s": 4190.9, 
+    "length_km": 109.721, 
+    "legs": 1, 
+    "maneuvers": 20, 
+    "maneuvers_total": 22, 
+    "highway_km": 105.68, 
+    "toll_km": 58.13, 
+    "endpoint_gap_m": [
+     29, 
+     32
+    ], 
+    "ok": true, 
+    "candidates_considered": 5
+   }, 
+   "B3": {
+    "time_s": 7693.9, 
+    "length_km": 216.767, 
+    "legs": 1, 
+    "maneuvers": 20, 
+    "maneuvers_total": 22, 
+    "highway_km": 210.01, 
+    "toll_km": 155.72, 
+    "endpoint_gap_m": [
+     70, 
+     32
+    ], 
+    "ok": true, 
+    "candidates_considered": 5
+   }, 
+   "B4": {
+    "time_s": 7333.8, 
+    "length_km": 202.241, 
+    "legs": 1, 
+    "maneuvers": 16, 
+    "maneuvers_total": 18, 
+    "highway_km": 195.65, 
+    "toll_km": 0, 
+    "endpoint_gap_m": [
+     17, 
+     2
+    ], 
+    "ok": true, 
+    "candidates_considered": 5
+   }, 
+   "B5": {
+    "time_s": 621.7, 
+    "length_km": 12.346, 
+    "legs": 1, 
+    "maneuvers": 5, 
+    "maneuvers_total": 7, 
+    "highway_km": 0, 
+    "toll_km": 0, 
+    "endpoint_gap_m": [
+     3, 
+     8
+    ], 
+    "ok": true, 
+    "candidates_considered": 5
+   }
+  }, 
+  "eco": {
+   "U1": {
+    "time_s": 374.9, 
+    "length_km": 5.41, 
+    "legs": 1, 
+    "maneuvers": 4, 
+    "maneuvers_total": 6, 
+    "highway_km": 2.38, 
+    "toll_km": 0, 
+    "endpoint_gap_m": [
+     32, 
+     94
+    ], 
+    "ok": true
+   }, 
+   "U2": {
+    "time_s": 176.3, 
+    "length_km": 2.123, 
+    "legs": 1, 
+    "maneuvers": 2, 
+    "maneuvers_total": 4, 
+    "highway_km": 0, 
+    "toll_km": 0, 
+    "endpoint_gap_m": [
+     80, 
+     75
+    ], 
+    "ok": true
+   }, 
+   "U3": {
+    "time_s": 531.6, 
+    "length_km": 7.855, 
+    "legs": 1, 
+    "maneuvers": 3, 
+    "maneuvers_total": 5, 
+    "highway_km": 0, 
+    "toll_km": 0, 
+    "endpoint_gap_m": [
+     2, 
+     173
+    ], 
+    "ok": true
+   }, 
+   "U4": {
+    "time_s": 687.3, 
+    "length_km": 8.01, 
+    "legs": 1, 
+    "maneuvers": 7, 
+    "maneuvers_total": 9, 
+    "highway_km": 0, 
+    "toll_km": 0, 
+    "endpoint_gap_m": [
+     70, 
+     106
+    ], 
+    "ok": true
+   }, 
+   "U5": {
+    "time_s": 310.7, 
+    "length_km": 3.768, 
+    "legs": 1, 
+    "maneuvers": 5, 
+    "maneuvers_total": 7, 
+    "highway_km": 0, 
+    "toll_km": 0, 
+    "endpoint_gap_m": [
+     104, 
+     35
+    ], 
+    "ok": true
+   }, 
+   "R1": {
+    "time_s": 1214.8, 
+    "length_km": 23.135, 
+    "legs": 1, 
+    "maneuvers": 8, 
+    "maneuvers_total": 10, 
+    "highway_km": 20.71, 
+    "toll_km": 0, 
+    "endpoint_gap_m": [
+     73, 
+     156
+    ], 
+    "ok": true
+   }, 
+   "R2": {
+    "time_s": 4585.2, 
+    "length_km": 87.963, 
+    "legs": 1, 
+    "maneuvers": 12, 
+    "maneuvers_total": 14, 
+    "highway_km": 33.81, 
+    "toll_km": 0, 
+    "endpoint_gap_m": [
+     6, 
+     16
+    ], 
+    "ok": true
+   }, 
+   "I1": {
+    "time_s": 17932.2, 
+    "length_km": 437.823, 
+    "legs": 1, 
+    "maneuvers": 23, 
+    "maneuvers_total": 25, 
+    "highway_km": 261.93, 
+    "toll_km": 0, 
+    "endpoint_gap_m": [
+     2, 
+     137
+    ], 
+    "ok": true
+   }, 
+   "I2": {
+    "time_s": 16962.5, 
+    "length_km": 449.08, 
+    "legs": 1, 
+    "maneuvers": 18, 
+    "maneuvers_total": 20, 
+    "highway_km": 408.2, 
+    "toll_km": 0, 
+    "endpoint_gap_m": [
+     10, 
+     32
+    ], 
+    "ok": true
+   }, 
+   "I3": {
+    "time_s": 7965.0, 
+    "length_km": 232.424, 
+    "legs": 1, 
+    "maneuvers": 14, 
+    "maneuvers_total": 16, 
+    "highway_km": 227.09, 
+    "toll_km": 0, 
+    "endpoint_gap_m": [
+     80, 
+     70
+    ], 
+    "ok": true
+   }, 
+   "I4": {
+    "time_s": 7660.1, 
+    "length_km": 186.253, 
+    "legs": 1, 
+    "maneuvers": 13, 
+    "maneuvers_total": 15, 
+    "highway_km": 111.96, 
+    "toll_km": 0, 
+    "endpoint_gap_m": [
+     1, 
+     2
+    ], 
+    "ok": true
+   }, 
+   "T1": {
+    "time_s": 16609.0, 
+    "length_km": 491.193, 
+    "legs": 1, 
+    "maneuvers": 16, 
+    "maneuvers_total": 18, 
+    "highway_km": 486.71, 
+    "toll_km": 461.03, 
+    "endpoint_gap_m": [
+     80, 
+     32
+    ], 
+    "ok": true
+   }, 
+   "T2": {
+    "time_s": 5873.4, 
+    "length_km": 171.721, 
+    "legs": 1, 
+    "maneuvers": 13, 
+    "maneuvers_total": 15, 
+    "highway_km": 163.8, 
+    "toll_km": 163.69, 
+    "endpoint_gap_m": [
+     9, 
+     253
+    ], 
+    "ok": true
+   }, 
+   "X1": {
+    "time_s": 3226.0, 
+    "length_km": 68.675, 
+    "legs": 1, 
+    "maneuvers": 2, 
+    "maneuvers_total": 4, 
+    "highway_km": 0, 
+    "toll_km": 0, 
+    "endpoint_gap_m": [
+     16, 
+     23
+    ], 
+    "ok": true
+   }, 
+   "X2": {
+    "time_s": 2618.6, 
+    "length_km": 51.992, 
+    "legs": 1, 
+    "maneuvers": 5, 
+    "maneuvers_total": 7, 
+    "highway_km": 0, 
+    "toll_km": 0, 
+    "endpoint_gap_m": [
+     62, 
+     11
+    ], 
+    "ok": true
+   }, 
+   "X3": {
+    "time_s": 896.9, 
+    "length_km": 11.583, 
+    "legs": 1, 
+    "maneuvers": 10, 
+    "maneuvers_total": 12, 
+    "highway_km": 0, 
+    "toll_km": 0, 
+    "endpoint_gap_m": [
+     4, 
+     15
+    ], 
+    "ok": true
+   }, 
+   "B1": {
+    "time_s": 5874.9, 
+    "length_km": 164.533, 
+    "legs": 1, 
+    "maneuvers": 13, 
+    "maneuvers_total": 15, 
+    "highway_km": 158.25, 
+    "toll_km": 0, 
+    "endpoint_gap_m": [
+     2, 
+     70
+    ], 
+    "ok": true
+   }, 
+   "B2": {
+    "time_s": 4209.1, 
+    "length_km": 107.881, 
+    "legs": 1, 
+    "maneuvers": 24, 
+    "maneuvers_total": 26, 
+    "highway_km": 101.32, 
+    "toll_km": 58.13, 
+    "endpoint_gap_m": [
+     29, 
+     32
+    ], 
+    "ok": true
+   }, 
+   "B3": {
+    "time_s": 7693.9, 
+    "length_km": 216.767, 
+    "legs": 1, 
+    "maneuvers": 20, 
+    "maneuvers_total": 22, 
+    "highway_km": 210.01, 
+    "toll_km": 155.72, 
+    "endpoint_gap_m": [
+     70, 
+     32
+    ], 
+    "ok": true
+   }, 
+   "B4": {
+    "time_s": 7315.8, 
+    "length_km": 201.001, 
+    "legs": 1, 
+    "maneuvers": 15, 
+    "maneuvers_total": 17, 
+    "highway_km": 192.82, 
+    "toll_km": 0, 
+    "endpoint_gap_m": [
+     17, 
+     2
+    ], 
+    "ok": true
+   }, 
+   "B5": {
+    "time_s": 621.7, 
+    "length_km": 12.346, 
+    "legs": 1, 
+    "maneuvers": 5, 
+    "maneuvers_total": 7, 
+    "highway_km": 0, 
+    "toll_km": 0, 
+    "endpoint_gap_m": [
+     3, 
+     8
+    ], 
+    "ok": true
+   }
+  }, 
+  "avoid_highways": {
+   "U1": {
+    "time_s": 418.1, 
+    "length_km": 5.173, 
+    "legs": 1, 
+    "maneuvers": 4, 
+    "maneuvers_total": 6, 
+    "highway_km": 0, 
+    "toll_km": 0, 
+    "endpoint_gap_m": [
+     32, 
+     94
+    ], 
+    "ok": true
+   }, 
+   "U2": {
+    "time_s": 176.3, 
+    "length_km": 2.123, 
+    "legs": 1, 
+    "maneuvers": 2, 
+    "maneuvers_total": 4, 
+    "highway_km": 0, 
+    "toll_km": 0, 
+    "endpoint_gap_m": [
+     80, 
+     75
+    ], 
+    "ok": true
+   }, 
+   "U3": {
+    "time_s": 531.6, 
+    "length_km": 7.855, 
+    "legs": 1, 
+    "maneuvers": 3, 
+    "maneuvers_total": 5, 
+    "highway_km": 0, 
+    "toll_km": 0, 
+    "endpoint_gap_m": [
+     2, 
+     173
+    ], 
+    "ok": true
+   }, 
+   "U4": {
+    "time_s": 731.1, 
+    "length_km": 8.635, 
+    "legs": 1, 
+    "maneuvers": 8, 
+    "maneuvers_total": 10, 
+    "highway_km": 0, 
+    "toll_km": 0, 
+    "endpoint_gap_m": [
+     70, 
+     106
+    ], 
+    "ok": true
+   }, 
+   "U5": {
+    "time_s": 310.7, 
+    "length_km": 3.768, 
+    "legs": 1, 
+    "maneuvers": 5, 
+    "maneuvers_total": 7, 
+    "highway_km": 0, 
+    "toll_km": 0, 
+    "endpoint_gap_m": [
+     104, 
+     35
+    ], 
+    "ok": true
+   }, 
+   "R1": {
+    "time_s": 1646.5, 
+    "length_km": 23.804, 
+    "legs": 1, 
+    "maneuvers": 14, 
+    "maneuvers_total": 16, 
+    "highway_km": 0, 
+    "toll_km": 0, 
+    "endpoint_gap_m": [
+     73, 
+     156
+    ], 
+    "ok": true
+   }, 
+   "R2": {
+    "time_s": 5218.7, 
+    "length_km": 86.412, 
+    "legs": 1, 
+    "maneuvers": 14, 
+    "maneuvers_total": 16, 
+    "highway_km": 0, 
+    "toll_km": 0, 
+    "endpoint_gap_m": [
+     6, 
+     16
+    ], 
+    "ok": true
+   }, 
+   "I1": {
+    "time_s": 24454.2, 
+    "length_km": 513.882, 
+    "legs": 1, 
+    "maneuvers": 27, 
+    "maneuvers_total": 29, 
+    "highway_km": 0, 
+    "toll_km": 0, 
+    "endpoint_gap_m": [
+     2, 
+     137
+    ], 
+    "ok": true
+   }, 
+   "I2": {
+    "time_s": 26028.6, 
+    "length_km": 515.787, 
+    "legs": 1, 
+    "maneuvers": 46, 
+    "maneuvers_total": 48, 
+    "highway_km": 0, 
+    "toll_km": 0, 
+    "endpoint_gap_m": [
+     10, 
+     32
+    ], 
+    "ok": true
+   }, 
+   "I3": {
+    "time_s": 12290.4, 
+    "length_km": 232.333, 
+    "legs": 1, 
+    "maneuvers": 25, 
+    "maneuvers_total": 27, 
+    "highway_km": 0, 
+    "toll_km": 0, 
+    "endpoint_gap_m": [
+     80, 
+     70
+    ], 
+    "ok": true
+   }, 
+   "I4": {
+    "time_s": 9705.5, 
+    "length_km": 195.647, 
+    "legs": 1, 
+    "maneuvers": 20, 
+    "maneuvers_total": 22, 
+    "highway_km": 0, 
+    "toll_km": 0, 
+    "endpoint_gap_m": [
+     1, 
+     2
+    ], 
+    "ok": true
+   }, 
+   "T1": {
+    "time_s": 25737.4, 
+    "length_km": 492.589, 
+    "legs": 1, 
+    "maneuvers": 43, 
+    "maneuvers_total": 45, 
+    "highway_km": 0, 
+    "toll_km": 0, 
+    "endpoint_gap_m": [
+     80, 
+     32
+    ], 
+    "ok": true
+   }, 
+   "T2": {
+    "time_s": 10472.1, 
+    "length_km": 181.694, 
+    "legs": 1, 
+    "maneuvers": 28, 
+    "maneuvers_total": 30, 
+    "highway_km": 0, 
+    "toll_km": 0, 
+    "endpoint_gap_m": [
+     9, 
+     253
+    ], 
+    "ok": true
+   }, 
+   "X1": {
+    "time_s": 3266.2, 
+    "length_km": 72.519, 
+    "legs": 1, 
+    "maneuvers": 2, 
+    "maneuvers_total": 4, 
+    "highway_km": 0, 
+    "toll_km": 0, 
+    "endpoint_gap_m": [
+     16, 
+     23
+    ], 
+    "ok": true
+   }, 
+   "X2": {
+    "time_s": 2618.6, 
+    "length_km": 51.992, 
+    "legs": 1, 
+    "maneuvers": 5, 
+    "maneuvers_total": 7, 
+    "highway_km": 0, 
+    "toll_km": 0, 
+    "endpoint_gap_m": [
+     62, 
+     11
+    ], 
+    "ok": true
+   }, 
+   "X3": {
+    "time_s": 833.7, 
+    "length_km": 15.161, 
+    "legs": 1, 
+    "maneuvers": 4, 
+    "maneuvers_total": 6, 
+    "highway_km": 0, 
+    "toll_km": 0, 
+    "endpoint_gap_m": [
+     4, 
+     15
+    ], 
+    "ok": true
+   }, 
+   "B1": {
+    "time_s": 9709.1, 
+    "length_km": 183.56, 
+    "legs": 1, 
+    "maneuvers": 14, 
+    "maneuvers_total": 16, 
+    "highway_km": 0, 
+    "toll_km": 0, 
+    "endpoint_gap_m": [
+     2, 
+     70
+    ], 
+    "ok": true
+   }, 
+   "B2": {
+    "time_s": 5377.6, 
+    "length_km": 104.153, 
+    "legs": 1, 
+    "maneuvers": 25, 
+    "maneuvers_total": 27, 
+    "highway_km": 0, 
+    "toll_km": 0, 
+    "endpoint_gap_m": [
+     29, 
+     32
+    ], 
+    "ok": true
+   }, 
+   "B3": {
+    "time_s": 10969.6, 
+    "length_km": 208.654, 
+    "legs": 1, 
+    "maneuvers": 29, 
+    "maneuvers_total": 31, 
+    "highway_km": 0, 
+    "toll_km": 0, 
+    "endpoint_gap_m": [
+     70, 
+     32
+    ], 
+    "ok": true
+   }, 
+   "B4": {
+    "time_s": 10706.6, 
+    "length_km": 215.449, 
+    "legs": 1, 
+    "maneuvers": 26, 
+    "maneuvers_total": 28, 
+    "highway_km": 0, 
+    "toll_km": 0, 
+    "endpoint_gap_m": [
+     17, 
+     2
+    ], 
+    "ok": true
+   }, 
+   "B5": {
+    "time_s": 621.7, 
+    "length_km": 12.346, 
+    "legs": 1, 
+    "maneuvers": 5, 
+    "maneuvers_total": 7, 
+    "highway_km": 0, 
+    "toll_km": 0, 
+    "endpoint_gap_m": [
+     3, 
+     8
+    ], 
+    "ok": true
+   }
+  }, 
+  "avoid_tolls": {
+   "U1": {
+    "time_s": 374.9, 
+    "length_km": 5.41, 
+    "legs": 1, 
+    "maneuvers": 4, 
+    "maneuvers_total": 6, 
+    "highway_km": 2.38, 
+    "toll_km": 0, 
+    "endpoint_gap_m": [
+     32, 
+     94
+    ], 
+    "ok": true
+   }, 
+   "U2": {
+    "time_s": 176.3, 
+    "length_km": 2.123, 
+    "legs": 1, 
+    "maneuvers": 2, 
+    "maneuvers_total": 4, 
+    "highway_km": 0, 
+    "toll_km": 0, 
+    "endpoint_gap_m": [
+     80, 
+     75
+    ], 
+    "ok": true
+   }, 
+   "U3": {
+    "time_s": 531.6, 
+    "length_km": 7.855, 
+    "legs": 1, 
+    "maneuvers": 3, 
+    "maneuvers_total": 5, 
+    "highway_km": 0, 
+    "toll_km": 0, 
+    "endpoint_gap_m": [
+     2, 
+     173
+    ], 
+    "ok": true
+   }, 
+   "U4": {
+    "time_s": 739.2, 
+    "length_km": 12.242, 
+    "legs": 1, 
+    "maneuvers": 9, 
+    "maneuvers_total": 11, 
+    "highway_km": 6.08, 
+    "toll_km": 0, 
+    "endpoint_gap_m": [
+     70, 
+     106
+    ], 
+    "ok": true
+   }, 
+   "U5": {
+    "time_s": 310.7, 
+    "length_km": 3.768, 
+    "legs": 1, 
+    "maneuvers": 5, 
+    "maneuvers_total": 7, 
+    "highway_km": 0, 
+    "toll_km": 0, 
+    "endpoint_gap_m": [
+     104, 
+     35
+    ], 
+    "ok": true
+   }, 
+   "R1": {
+    "time_s": 1214.8, 
+    "length_km": 23.135, 
+    "legs": 1, 
+    "maneuvers": 8, 
+    "maneuvers_total": 10, 
+    "highway_km": 20.71, 
+    "toll_km": 0, 
+    "endpoint_gap_m": [
+     73, 
+     156
+    ], 
+    "ok": true
+   }, 
+   "R2": {
+    "time_s": 4527.6, 
+    "length_km": 88.915, 
+    "legs": 1, 
+    "maneuvers": 12, 
+    "maneuvers_total": 14, 
+    "highway_km": 39.42, 
+    "toll_km": 0, 
+    "endpoint_gap_m": [
+     6, 
+     16
+    ], 
+    "ok": true
+   }, 
+   "I1": {
+    "time_s": 16950.0, 
+    "length_km": 478.506, 
+    "legs": 1, 
+    "maneuvers": 17, 
+    "maneuvers_total": 19, 
+    "highway_km": 456.05, 
+    "toll_km": 0, 
+    "endpoint_gap_m": [
+     2, 
+     137
+    ], 
+    "ok": true
+   }, 
+   "I2": {
+    "time_s": 16711.4, 
+    "length_km": 455.018, 
+    "legs": 1, 
+    "maneuvers": 16, 
+    "maneuvers_total": 18, 
+    "highway_km": 452.52, 
+    "toll_km": 0, 
+    "endpoint_gap_m": [
+     10, 
+     32
+    ], 
+    "ok": true
+   }, 
+   "I3": {
+    "time_s": 7965.0, 
+    "length_km": 232.424, 
+    "legs": 1, 
+    "maneuvers": 14, 
+    "maneuvers_total": 16, 
+    "highway_km": 227.09, 
+    "toll_km": 0, 
+    "endpoint_gap_m": [
+     80, 
+     70
+    ], 
+    "ok": true
+   }, 
+   "I4": {
+    "time_s": 7660.1, 
+    "length_km": 186.253, 
+    "legs": 1, 
+    "maneuvers": 13, 
+    "maneuvers_total": 15, 
+    "highway_km": 111.96, 
+    "toll_km": 0, 
+    "endpoint_gap_m": [
+     1, 
+     2
+    ], 
+    "ok": true
+   }, 
+   "T1": {
+    "time_s": 20997.8, 
+    "length_km": 531.527, 
+    "legs": 1, 
+    "maneuvers": 31, 
+    "maneuvers_total": 33, 
+    "highway_km": 504.9, 
+    "toll_km": 0, 
+    "endpoint_gap_m": [
+     80, 
+     32
+    ], 
+    "ok": true
+   }, 
+   "T2": {
+    "time_s": 7279.7, 
+    "length_km": 177.833, 
+    "legs": 1, 
+    "maneuvers": 17, 
+    "maneuvers_total": 19, 
+    "highway_km": 143.74, 
+    "toll_km": 0, 
+    "endpoint_gap_m": [
+     9, 
+     253
+    ], 
+    "ok": true
+   }, 
+   "X1": {
+    "time_s": 3266.2, 
+    "length_km": 72.519, 
+    "legs": 1, 
+    "maneuvers": 2, 
+    "maneuvers_total": 4, 
+    "highway_km": 0, 
+    "toll_km": 0, 
+    "endpoint_gap_m": [
+     16, 
+     23
+    ], 
+    "ok": true
+   }, 
+   "X2": {
+    "time_s": 2618.6, 
+    "length_km": 51.992, 
+    "legs": 1, 
+    "maneuvers": 5, 
+    "maneuvers_total": 7, 
+    "highway_km": 0, 
+    "toll_km": 0, 
+    "endpoint_gap_m": [
+     62, 
+     11
+    ], 
+    "ok": true
+   }, 
+   "X3": {
+    "time_s": 833.7, 
+    "length_km": 15.161, 
+    "legs": 1, 
+    "maneuvers": 4, 
+    "maneuvers_total": 6, 
+    "highway_km": 0, 
+    "toll_km": 0, 
+    "endpoint_gap_m": [
+     4, 
+     15
+    ], 
+    "ok": true
+   }, 
+   "B1": {
+    "time_s": 5868.8, 
+    "length_km": 165.591, 
+    "legs": 1, 
+    "maneuvers": 15, 
+    "maneuvers_total": 17, 
+    "highway_km": 162.73, 
+    "toll_km": 0, 
+    "endpoint_gap_m": [
+     2, 
+     70
+    ], 
+    "ok": true
+   }, 
+   "B2": {
+    "time_s": 4618.9, 
+    "length_km": 115.714, 
+    "legs": 1, 
+    "maneuvers": 24, 
+    "maneuvers_total": 26, 
+    "highway_km": 78.99, 
+    "toll_km": 0, 
+    "endpoint_gap_m": [
+     29, 
+     32
+    ], 
+    "ok": true
+   }, 
+   "B3": {
+    "time_s": 8815.0, 
+    "length_km": 226.805, 
+    "legs": 1, 
+    "maneuvers": 30, 
+    "maneuvers_total": 32, 
+    "highway_km": 187.14, 
+    "toll_km": 0, 
+    "endpoint_gap_m": [
+     70, 
+     32
+    ], 
+    "ok": true
+   }, 
+   "B4": {
+    "time_s": 7369.3, 
+    "length_km": 203.9, 
+    "legs": 1, 
+    "maneuvers": 19, 
+    "maneuvers_total": 21, 
+    "highway_km": 200.01, 
+    "toll_km": 0, 
+    "endpoint_gap_m": [
+     17, 
+     2
+    ], 
+    "ok": true
+   }, 
+   "B5": {
+    "time_s": 621.7, 
+    "length_km": 12.346, 
+    "legs": 1, 
+    "maneuvers": 5, 
+    "maneuvers_total": 7, 
+    "highway_km": 0, 
+    "toll_km": 0, 
+    "endpoint_gap_m": [
+     3, 
+     8
+    ], 
+    "ok": true
+   }
+  }
+ }, 
+ "alternates": {
+  "fastest": {
+   "U1": {
+    "alternates": [
+     {
+      "time_s": 418.1, 
+      "length_km": 5.173, 
+      "legs": 1, 
+      "maneuvers": 4, 
+      "maneuvers_total": 6, 
+      "highway_km": 0, 
+      "toll_km": 0, 
+      "endpoint_gap_m": [
+       32, 
+       94
+      ], 
+      "ok": true
+     }, 
+     {
+      "time_s": 514.2, 
+      "length_km": 6.612, 
+      "legs": 1, 
+      "maneuvers": 5, 
+      "maneuvers_total": 7, 
+      "highway_km": 0, 
+      "toll_km": 0, 
+      "endpoint_gap_m": [
+       32, 
+       94
+      ], 
+      "ok": true
+     }
+    ]
+   }, 
+   "U2": {
+    "alternates": [
+     {
+      "time_s": 202.5, 
+      "length_km": 3.74, 
+      "legs": 1, 
+      "maneuvers": 5, 
+      "maneuvers_total": 7, 
+      "highway_km": 1.52, 
+      "toll_km": 0, 
+      "endpoint_gap_m": [
+       80, 
+       75
+      ], 
+      "ok": true
+     }
+    ]
+   }, 
+   "U3": {
+    "alternates": [
+     {
+      "time_s": 575.8, 
+      "length_km": 8.914, 
+      "legs": 1, 
+      "maneuvers": 7, 
+      "maneuvers_total": 9, 
+      "highway_km": 0, 
+      "toll_km": 0, 
+      "endpoint_gap_m": [
+       2, 
+       173
+      ], 
+      "ok": true
+     }, 
+     {
+      "time_s": 575.7, 
+      "length_km": 8.057, 
+      "legs": 1, 
+      "maneuvers": 6, 
+      "maneuvers_total": 8, 
+      "highway_km": 0, 
+      "toll_km": 0, 
+      "endpoint_gap_m": [
+       2, 
+       173
+      ], 
+      "ok": true
+     }
+    ]
+   }, 
+   "U4": {
+    "alternates": [
+     {
+      "time_s": 687.3, 
+      "length_km": 8.01, 
+      "legs": 1, 
+      "maneuvers": 7, 
+      "maneuvers_total": 9, 
+      "highway_km": 0, 
+      "toll_km": 0, 
+      "endpoint_gap_m": [
+       70, 
+       106
+      ], 
+      "ok": true
+     }, 
+     {
+      "time_s": 789.4, 
+      "length_km": 9.157, 
+      "legs": 1, 
+      "maneuvers": 8, 
+      "maneuvers_total": 10, 
+      "highway_km": 0, 
+      "toll_km": 0, 
+      "endpoint_gap_m": [
+       70, 
+       106
+      ], 
+      "ok": true
+     }
+    ]
+   }, 
+   "U5": {
+    "alternates": [
+     {
+      "time_s": 304.0, 
+      "length_km": 3.279, 
+      "legs": 1, 
+      "maneuvers": 7, 
+      "maneuvers_total": 9, 
+      "highway_km": 0, 
+      "toll_km": 0, 
+      "endpoint_gap_m": [
+       104, 
+       35
+      ], 
+      "ok": true
+     }, 
+     {
+      "time_s": 367.5, 
+      "length_km": 3.933, 
+      "legs": 1, 
+      "maneuvers": 6, 
+      "maneuvers_total": 8, 
+      "highway_km": 0, 
+      "toll_km": 0, 
+      "endpoint_gap_m": [
+       104, 
+       35
+      ], 
+      "ok": true
+     }
+    ]
+   }, 
+   "R1": {
+    "alternates": [
+     {
+      "time_s": 1594.4, 
+      "length_km": 31.896, 
+      "legs": 1, 
+      "maneuvers": 12, 
+      "maneuvers_total": 14, 
+      "highway_km": 17.55, 
+      "toll_km": 0, 
+      "endpoint_gap_m": [
+       73, 
+       156
+      ], 
+      "ok": true
+     }, 
+     {
+      "time_s": 1559.7, 
+      "length_km": 29.554, 
+      "legs": 1, 
+      "maneuvers": 15, 
+      "maneuvers_total": 17, 
+      "highway_km": 20.99, 
+      "toll_km": 0, 
+      "endpoint_gap_m": [
+       73, 
+       156
+      ], 
+      "ok": true
+     }
+    ]
+   }, 
+   "R2": {
+    "alternates": [
+     {
+      "time_s": 4728.0, 
+      "length_km": 118.667, 
+      "legs": 1, 
+      "maneuvers": 13, 
+      "maneuvers_total": 15, 
+      "highway_km": 110.01, 
+      "toll_km": 63.27, 
+      "endpoint_gap_m": [
+       6, 
+       16
+      ], 
+      "ok": true
+     }, 
+     {
+      "time_s": 5232.5, 
+      "length_km": 125.407, 
+      "legs": 1, 
+      "maneuvers": 16, 
+      "maneuvers_total": 18, 
+      "highway_km": 95.37, 
+      "toll_km": 93.9, 
+      "endpoint_gap_m": [
+       6, 
+       16
+      ], 
+      "ok": true
+     }
+    ]
+   }, 
+   "I1": {
+    "alternates": [
+     {
+      "time_s": 17474.6, 
+      "length_km": 525.023, 
+      "legs": 1, 
+      "maneuvers": 13, 
+      "maneuvers_total": 15, 
+      "highway_km": 515.59, 
+      "toll_km": 345.49, 
+      "endpoint_gap_m": [
+       2, 
+       137
+      ], 
+      "ok": true
+     }, 
+     {
+      "time_s": 18714.8, 
+      "length_km": 520.274, 
+      "legs": 1, 
+      "maneuvers": 22, 
+      "maneuvers_total": 24, 
+      "highway_km": 508.32, 
+      "toll_km": 156.4, 
+      "endpoint_gap_m": [
+       2, 
+       137
+      ], 
+      "ok": true
+     }
+    ]
+   }, 
+   "I2": {
+    "alternates": [
+     {
+      "time_s": 17253.7, 
+      "length_km": 478.712, 
+      "legs": 1, 
+      "maneuvers": 19, 
+      "maneuvers_total": 21, 
+      "highway_km": 476.29, 
+      "toll_km": 0, 
+      "endpoint_gap_m": [
+       10, 
+       32
+      ], 
+      "ok": true
+     }, 
+     {
+      "time_s": 17547.6, 
+      "length_km": 471.918, 
+      "legs": 1, 
+      "maneuvers": 19, 
+      "maneuvers_total": 21, 
+      "highway_km": 327.57, 
+      "toll_km": 0, 
+      "endpoint_gap_m": [
+       10, 
+       32
+      ], 
+      "ok": true
+     }
+    ]
+   }, 
+   "I3": {
+    "alternates": []
+   }, 
+   "I4": {
+    "alternates": [
+     {
+      "time_s": 7902.0, 
+      "length_km": 188.603, 
+      "legs": 1, 
+      "maneuvers": 16, 
+      "maneuvers_total": 18, 
+      "highway_km": 112.86, 
+      "toll_km": 0, 
+      "endpoint_gap_m": [
+       1, 
+       2
+      ], 
+      "ok": true
+     }, 
+     {
+      "time_s": 8588.1, 
+      "length_km": 191.391, 
+      "legs": 1, 
+      "maneuvers": 19, 
+      "maneuvers_total": 21, 
+      "highway_km": 89.55, 
+      "toll_km": 0, 
+      "endpoint_gap_m": [
+       1, 
+       2
+      ], 
+      "ok": true
+     }
+    ]
+   }, 
+   "T1": {
+    "alternates": [
+     {
+      "time_s": 19871.4, 
+      "length_km": 529.044, 
+      "legs": 1, 
+      "maneuvers": 23, 
+      "maneuvers_total": 25, 
+      "highway_km": 524.98, 
+      "toll_km": 133.66, 
+      "endpoint_gap_m": [
+       80, 
+       32
+      ], 
+      "ok": true
+     }, 
+     {
+      "time_s": 20469.6, 
+      "length_km": 531.918, 
+      "legs": 1, 
+      "maneuvers": 20, 
+      "maneuvers_total": 22, 
+      "highway_km": 415.22, 
+      "toll_km": 238.84, 
+      "endpoint_gap_m": [
+       80, 
+       32
+      ], 
+      "ok": true
+     }
+    ]
+   }, 
+   "T2": {
+    "alternates": [
+     {
+      "time_s": 6673.7, 
+      "length_km": 184.958, 
+      "legs": 1, 
+      "maneuvers": 19, 
+      "maneuvers_total": 21, 
+      "highway_km": 175.47, 
+      "toll_km": 150.8, 
+      "endpoint_gap_m": [
+       9, 
+       253
+      ], 
+      "ok": true
+     }, 
+     {
+      "time_s": 6843.4, 
+      "length_km": 178.972, 
+      "legs": 1, 
+      "maneuvers": 23, 
+      "maneuvers_total": 25, 
+      "highway_km": 149.5, 
+      "toll_km": 98.24, 
+      "endpoint_gap_m": [
+       9, 
+       253
+      ], 
+      "ok": true
+     }
+    ]
+   }, 
+   "X1": {
+    "alternates": [
+     {
+      "time_s": 4337.1, 
+      "length_km": 93.248, 
+      "legs": 1, 
+      "maneuvers": 6, 
+      "maneuvers_total": 8, 
+      "highway_km": 0, 
+      "toll_km": 0, 
+      "endpoint_gap_m": [
+       16, 
+       23
+      ], 
+      "ok": true
+     }
+    ]
+   }, 
+   "X2": {
+    "alternates": [
+     {
+      "time_s": 3349.1, 
+      "length_km": 64.244, 
+      "legs": 1, 
+      "maneuvers": 8, 
+      "maneuvers_total": 10, 
+      "highway_km": 0, 
+      "toll_km": 0, 
+      "endpoint_gap_m": [
+       62, 
+       11
+      ], 
+      "ok": true
+     }
+    ]
+   }, 
+   "X3": {
+    "alternates": [
+     {
+      "time_s": 871.0, 
+      "length_km": 12.29, 
+      "legs": 1, 
+      "maneuvers": 9, 
+      "maneuvers_total": 11, 
+      "highway_km": 0, 
+      "toll_km": 0, 
+      "endpoint_gap_m": [
+       4, 
+       15
+      ], 
+      "ok": true
+     }, 
+     {
+      "time_s": 978.0, 
+      "length_km": 14.369, 
+      "legs": 1, 
+      "maneuvers": 5, 
+      "maneuvers_total": 7, 
+      "highway_km": 0, 
+      "toll_km": 0, 
+      "endpoint_gap_m": [
+       4, 
+       15
+      ], 
+      "ok": true
+     }
+    ]
+   }, 
+   "B1": {
+    "alternates": [
+     {
+      "time_s": 6589.0, 
+      "length_km": 168.861, 
+      "legs": 1, 
+      "maneuvers": 20, 
+      "maneuvers_total": 22, 
+      "highway_km": 140.63, 
+      "toll_km": 0, 
+      "endpoint_gap_m": [
+       2, 
+       70
+      ], 
+      "ok": true
+     }
+    ]
+   }, 
+   "B2": {
+    "alternates": [
+     {
+      "time_s": 4525.5, 
+      "length_km": 119.074, 
+      "legs": 1, 
+      "maneuvers": 20, 
+      "maneuvers_total": 22, 
+      "highway_km": 114.87, 
+      "toll_km": 67.7, 
+      "endpoint_gap_m": [
+       29, 
+       32
+      ], 
+      "ok": true
+     }, 
+     {
+      "time_s": 4783.5, 
+      "length_km": 118.881, 
+      "legs": 1, 
+      "maneuvers": 20, 
+      "maneuvers_total": 22, 
+      "highway_km": 79.32, 
+      "toll_km": 0, 
+      "endpoint_gap_m": [
+       29, 
+       32
+      ], 
+      "ok": true
+     }
+    ]
+   }, 
+   "B3": {
+    "alternates": [
+     {
+      "time_s": 8188.4, 
+      "length_km": 219.34, 
+      "legs": 1, 
+      "maneuvers": 26, 
+      "maneuvers_total": 28, 
+      "highway_km": 214.84, 
+      "toll_km": 82.67, 
+      "endpoint_gap_m": [
+       70, 
+       32
+      ], 
+      "ok": true
+     }, 
+     {
+      "time_s": 8860.2, 
+      "length_km": 230.309, 
+      "legs": 1, 
+      "maneuvers": 26, 
+      "maneuvers_total": 28, 
+      "highway_km": 226.99, 
+      "toll_km": 58.13, 
+      "endpoint_gap_m": [
+       70, 
+       32
+      ], 
+      "ok": true
+     }
+    ]
+   }, 
+   "B4": {
+    "alternates": [
+     {
+      "time_s": 8015.9, 
+      "length_km": 230.04, 
+      "legs": 1, 
+      "maneuvers": 19, 
+      "maneuvers_total": 21, 
+      "highway_km": 225.83, 
+      "toll_km": 0, 
+      "endpoint_gap_m": [
+       17, 
+       2
+      ], 
+      "ok": true
+     }, 
+     {
+      "time_s": 8045.9, 
+      "length_km": 235.541, 
+      "legs": 1, 
+      "maneuvers": 17, 
+      "maneuvers_total": 19, 
+      "highway_km": 231.33, 
+      "toll_km": 0, 
+      "endpoint_gap_m": [
+       17, 
+       2
+      ], 
+      "ok": true
+     }
+    ]
+   }, 
+   "B5": {
+    "alternates": [
+     {
+      "time_s": 822.7, 
+      "length_km": 15.092, 
+      "legs": 1, 
+      "maneuvers": 2, 
+      "maneuvers_total": 4, 
+      "highway_km": 0, 
+      "toll_km": 0, 
+      "endpoint_gap_m": [
+       3, 
+       8
+      ], 
+      "ok": true
+     }, 
+     {
+      "time_s": 974.6, 
+      "length_km": 15.767, 
+      "legs": 1, 
+      "maneuvers": 5, 
+      "maneuvers_total": 7, 
+      "highway_km": 0, 
+      "toll_km": 0, 
+      "endpoint_gap_m": [
+       3, 
+       8
+      ], 
+      "ok": true
+     }
+    ]
+   }
+  }, 
+  "shortest": {
+   "U1": {
+    "alternates": [
+     {
+      "time_s": 423.8, 
+      "length_km": 5.165, 
+      "legs": 1, 
+      "maneuvers": 4, 
+      "maneuvers_total": 6, 
+      "highway_km": 0, 
+      "toll_km": 0, 
+      "endpoint_gap_m": [
+       32, 
+       94
+      ], 
+      "ok": true
+     }, 
+     {
+      "time_s": 380.7, 
+      "length_km": 5.402, 
+      "legs": 1, 
+      "maneuvers": 4, 
+      "maneuvers_total": 6, 
+      "highway_km": 2.38, 
+      "toll_km": 0, 
+      "endpoint_gap_m": [
+       32, 
+       94
+      ], 
+      "ok": true
+     }
+    ]
+   }, 
+   "U2": {
+    "alternates": []
+   }, 
+   "U3": {
+    "alternates": [
+     {
+      "time_s": 625.9, 
+      "length_km": 7.068, 
+      "legs": 1, 
+      "maneuvers": 7, 
+      "maneuvers_total": 9, 
+      "highway_km": 0, 
+      "toll_km": 0, 
+      "endpoint_gap_m": [
+       2, 
+       173
+      ], 
+      "ok": true
+     }, 
+     {
+      "time_s": 629.3, 
+      "length_km": 7.716, 
+      "legs": 1, 
+      "maneuvers": 11, 
+      "maneuvers_total": 13, 
+      "highway_km": 0, 
+      "toll_km": 0, 
+      "endpoint_gap_m": [
+       2, 
+       173
+      ], 
+      "ok": true
+     }
+    ]
+   }, 
+   "U4": {
+    "alternates": [
+     {
+      "time_s": 757.3, 
+      "length_km": 7.83, 
+      "legs": 1, 
+      "maneuvers": 8, 
+      "maneuvers_total": 10, 
+      "highway_km": 0, 
+      "toll_km": 0, 
+      "endpoint_gap_m": [
+       70, 
+       106
+      ], 
+      "ok": true
+     }, 
+     {
+      "time_s": 689.7, 
+      "length_km": 7.887, 
+      "legs": 1, 
+      "maneuvers": 7, 
+      "maneuvers_total": 9, 
+      "highway_km": 0, 
+      "toll_km": 0, 
+      "endpoint_gap_m": [
+       70, 
+       106
+      ], 
+      "ok": true
+     }
+    ]
+   }, 
+   "U5": {
+    "alternates": [
+     {
+      "time_s": 407.3, 
+      "length_km": 3.221, 
+      "legs": 1, 
+      "maneuvers": 8, 
+      "maneuvers_total": 10, 
+      "highway_km": 0, 
+      "toll_km": 0, 
+      "endpoint_gap_m": [
+       104, 
+       35
+      ], 
+      "ok": true
+     }, 
+     {
+      "time_s": 470.0, 
+      "length_km": 3.676, 
+      "legs": 1, 
+      "maneuvers": 10, 
+      "maneuvers_total": 12, 
+      "highway_km": 0, 
+      "toll_km": 0, 
+      "endpoint_gap_m": [
+       104, 
+       35
+      ], 
+      "ok": true
+     }
+    ]
+   }, 
+   "R1": {
+    "alternates": [
+     {
+      "time_s": 1409.1, 
+      "length_km": 22.546, 
+      "legs": 1, 
+      "maneuvers": 18, 
+      "maneuvers_total": 20, 
+      "highway_km": 17.05, 
+      "toll_km": 0, 
+      "endpoint_gap_m": [
+       73, 
+       156
+      ], 
+      "ok": true
+     }, 
+     {
+      "time_s": 1840.5, 
+      "length_km": 22.974, 
+      "legs": 1, 
+      "maneuvers": 22, 
+      "maneuvers_total": 24, 
+      "highway_km": 0, 
+      "toll_km": 0, 
+      "endpoint_gap_m": [
+       73, 
+       156
+      ], 
+      "ok": true
+     }
+    ]
+   }, 
+   "R2": {
+    "alternates": [
+     {
+      "time_s": 4543.0, 
+      "length_km": 87.397, 
+      "legs": 1, 
+      "maneuvers": 11, 
+      "maneuvers_total": 13, 
+      "highway_km": 33.8, 
+      "toll_km": 0, 
+      "endpoint_gap_m": [
+       6, 
+       16
+      ], 
+      "ok": true
+     }
+    ]
+   }, 
+   "I1": {
+    "alternates": [
+     {
+      "time_s": 20089.4, 
+      "length_km": 491.883, 
+      "legs": 1, 
+      "maneuvers": 33, 
+      "maneuvers_total": 35, 
+      "highway_km": 321.18, 
+      "toll_km": 151.74, 
+      "endpoint_gap_m": [
+       2, 
+       137
+      ], 
+      "ok": true
+     }, 
+     {
+      "time_s": 20821.3, 
+      "length_km": 496.115, 
+      "legs": 1, 
+      "maneuvers": 29, 
+      "maneuvers_total": 31, 
+      "highway_km": 433.42, 
+      "toll_km": 0, 
+      "endpoint_gap_m": [
+       2, 
+       137
+      ], 
+      "ok": true
+     }
+    ]
+   }, 
+   "I2": {
+    "alternates": [
+     {
+      "time_s": 21402.9, 
+      "length_km": 445.84, 
+      "legs": 1, 
+      "maneuvers": 46, 
+      "maneuvers_total": 48, 
+      "highway_km": 231.97, 
+      "toll_km": 0, 
+      "endpoint_gap_m": [
+       10, 
+       32
+      ], 
+      "ok": true
+     }, 
+     {
+      "time_s": 22756.9, 
+      "length_km": 447.508, 
+      "legs": 1, 
+      "maneuvers": 41, 
+      "maneuvers_total": 43, 
+      "highway_km": 199.42, 
+      "toll_km": 0, 
+      "endpoint_gap_m": [
+       10, 
+       32
+      ], 
+      "ok": true
+     }
+    ]
+   }, 
+   "I3": {
+    "alternates": [
+     {
+      "time_s": 11959.0, 
+      "length_km": 224.707, 
+      "legs": 1, 
+      "maneuvers": 30, 
+      "maneuvers_total": 32, 
+      "highway_km": 45.37, 
+      "toll_km": 0, 
+      "endpoint_gap_m": [
+       80, 
+       70
+      ], 
+      "ok": true
+     }, 
+     {
+      "time_s": 12450.5, 
+      "length_km": 231.45, 
+      "legs": 1, 
+      "maneuvers": 28, 
+      "maneuvers_total": 30, 
+      "highway_km": 1.59, 
+      "toll_km": 0, 
+      "endpoint_gap_m": [
+       80, 
+       70
+      ], 
+      "ok": true
+     }
+    ]
+   }, 
+   "I4": {
+    "alternates": [
+     {
+      "time_s": 8967.6, 
+      "length_km": 188.308, 
+      "legs": 1, 
+      "maneuvers": 21, 
+      "maneuvers_total": 23, 
+      "highway_km": 36.2, 
+      "toll_km": 0, 
+      "endpoint_gap_m": [
+       1, 
+       2
+      ], 
+      "ok": true
+     }
+    ]
+   }, 
+   "T1": {
+    "alternates": [
+     {
+      "time_s": 22937.7, 
+      "length_km": 470.929, 
+      "legs": 1, 
+      "maneuvers": 43, 
+      "maneuvers_total": 45, 
+      "highway_km": 193.12, 
+      "toll_km": 108.94, 
+      "endpoint_gap_m": [
+       80, 
+       32
+      ], 
+      "ok": true
+     }, 
+     {
+      "time_s": 23930.9, 
+      "length_km": 497.977, 
+      "legs": 1, 
+      "maneuvers": 23, 
+      "maneuvers_total": 25, 
+      "highway_km": 383.27, 
+      "toll_km": 0, 
+      "endpoint_gap_m": [
+       80, 
+       32
+      ], 
+      "ok": true
+     }
+    ]
+   }, 
+   "T2": {
+    "alternates": [
+     {
+      "time_s": 8483.8, 
+      "length_km": 168.504, 
+      "legs": 1, 
+      "maneuvers": 16, 
+      "maneuvers_total": 18, 
+      "highway_km": 100.85, 
+      "toll_km": 0, 
+      "endpoint_gap_m": [
+       9, 
+       253
+      ], 
+      "ok": true
+     }, 
+     {
+      "time_s": 8540.0, 
+      "length_km": 170.143, 
+      "legs": 1, 
+      "maneuvers": 19, 
+      "maneuvers_total": 21, 
+      "highway_km": 51.05, 
+      "toll_km": 0, 
+      "endpoint_gap_m": [
+       9, 
+       253
+      ], 
+      "ok": true
+     }
+    ]
+   }, 
+   "X1": {
+    "alternates": []
+   }, 
+   "X2": {
+    "alternates": [
+     {
+      "time_s": 4418.3, 
+      "length_km": 59.964, 
+      "legs": 1, 
+      "maneuvers": 13, 
+      "maneuvers_total": 15, 
+      "highway_km": 0, 
+      "toll_km": 0, 
+      "endpoint_gap_m": [
+       62, 
+       11
+      ], 
+      "ok": true
+     }
+    ]
+   }, 
+   "X3": {
+    "alternates": [
+     {
+      "time_s": 956.1, 
+      "length_km": 11.866, 
+      "legs": 1, 
+      "maneuvers": 13, 
+      "maneuvers_total": 15, 
+      "highway_km": 0, 
+      "toll_km": 0, 
+      "endpoint_gap_m": [
+       4, 
+       15
+      ], 
+      "ok": true
+     }, 
+     {
+      "time_s": 1187.0, 
+      "length_km": 12.917, 
+      "legs": 1, 
+      "maneuvers": 13, 
+      "maneuvers_total": 15, 
+      "highway_km": 0, 
+      "toll_km": 0, 
+      "endpoint_gap_m": [
+       4, 
+       15
+      ], 
+      "ok": true
+     }
+    ]
+   }, 
+   "B1": {
+    "alternates": [
+     {
+      "time_s": 7217.9, 
+      "length_km": 159.546, 
+      "legs": 1, 
+      "maneuvers": 20, 
+      "maneuvers_total": 22, 
+      "highway_km": 88.09, 
+      "toll_km": 0, 
+      "endpoint_gap_m": [
+       2, 
+       70
+      ], 
+      "ok": true
+     }, 
+     {
+      "time_s": 8102.1, 
+      "length_km": 160.156, 
+      "legs": 1, 
+      "maneuvers": 22, 
+      "maneuvers_total": 24, 
+      "highway_km": 51.37, 
+      "toll_km": 0, 
+      "endpoint_gap_m": [
+       2, 
+       70
+      ], 
+      "ok": true
+     }
+    ]
+   }, 
+   "B2": {
+    "alternates": [
+     {
+      "time_s": 4964.6, 
+      "length_km": 105.875, 
+      "legs": 1, 
+      "maneuvers": 27, 
+      "maneuvers_total": 29, 
+      "highway_km": 65.1, 
+      "toll_km": 58.13, 
+      "endpoint_gap_m": [
+       29, 
+       32
+      ], 
+      "ok": true
+     }, 
+     {
+      "time_s": 6395.5, 
+      "length_km": 110.211, 
+      "legs": 1, 
+      "maneuvers": 26, 
+      "maneuvers_total": 28, 
+      "highway_km": 12.97, 
+      "toll_km": 0, 
+      "endpoint_gap_m": [
+       29, 
+       32
+      ], 
+      "ok": true
+     }
+    ]
+   }, 
+   "B3": {
+    "alternates": [
+     {
+      "time_s": 9036.3, 
+      "length_km": 203.603, 
+      "legs": 1, 
+      "maneuvers": 32, 
+      "maneuvers_total": 34, 
+      "highway_km": 105.61, 
+      "toll_km": 50.77, 
+      "endpoint_gap_m": [
+       70, 
+       32
+      ], 
+      "ok": true
+     }, 
+     {
+      "time_s": 9562.2, 
+      "length_km": 207.545, 
+      "legs": 1, 
+      "maneuvers": 33, 
+      "maneuvers_total": 35, 
+      "highway_km": 108.38, 
+      "toll_km": 0, 
+      "endpoint_gap_m": [
+       70, 
+       32
+      ], 
+      "ok": true
+     }
+    ]
+   }, 
+   "B4": {
+    "alternates": [
+     {
+      "time_s": 11541.0, 
+      "length_km": 194.05, 
+      "legs": 1, 
+      "maneuvers": 26, 
+      "maneuvers_total": 28, 
+      "highway_km": 6.59, 
+      "toll_km": 0, 
+      "endpoint_gap_m": [
+       17, 
+       2
+      ], 
+      "ok": true
+     }, 
+     {
+      "time_s": 10675.9, 
+      "length_km": 213.541, 
+      "legs": 1, 
+      "maneuvers": 37, 
+      "maneuvers_total": 39, 
+      "highway_km": 44.55, 
+      "toll_km": 0, 
+      "endpoint_gap_m": [
+       17, 
+       2
+      ], 
+      "ok": true
+     }
+    ]
+   }, 
+   "B5": {
+    "alternates": [
+     {
+      "time_s": 1095.8, 
+      "length_km": 13.075, 
+      "legs": 1, 
+      "maneuvers": 22, 
+      "maneuvers_total": 24, 
+      "highway_km": 0, 
+      "toll_km": 0, 
+      "endpoint_gap_m": [
+       3, 
+       8
+      ], 
+      "ok": true
+     }, 
+     {
+      "time_s": 1199.6, 
+      "length_km": 13.413, 
+      "legs": 1, 
+      "maneuvers": 11, 
+      "maneuvers_total": 13, 
+      "highway_km": 0, 
+      "toll_km": 0, 
+      "endpoint_gap_m": [
+       3, 
+       8
+      ], 
+      "ok": true
+     }
+    ]
+   }
+  }, 
+  "simpler": {
+   "U1": {
+    "alternates": [
+     {
+      "time_s": 418.1, 
+      "length_km": 5.173, 
+      "legs": 1, 
+      "maneuvers": 4, 
+      "maneuvers_total": 6, 
+      "highway_km": 0, 
+      "toll_km": 0, 
+      "endpoint_gap_m": [
+       32, 
+       94
+      ], 
+      "ok": true
+     }, 
+     {
+      "time_s": 514.2, 
+      "length_km": 6.612, 
+      "legs": 1, 
+      "maneuvers": 5, 
+      "maneuvers_total": 7, 
+      "highway_km": 0, 
+      "toll_km": 0, 
+      "endpoint_gap_m": [
+       32, 
+       94
+      ], 
+      "ok": true
+     }
+    ]
+   }, 
+   "U2": {
+    "alternates": [
+     {
+      "time_s": 202.5, 
+      "length_km": 3.74, 
+      "legs": 1, 
+      "maneuvers": 5, 
+      "maneuvers_total": 7, 
+      "highway_km": 1.52, 
+      "toll_km": 0, 
+      "endpoint_gap_m": [
+       80, 
+       75
+      ], 
+      "ok": true
+     }
+    ]
+   }, 
+   "U3": {
+    "alternates": [
+     {
+      "time_s": 575.8, 
+      "length_km": 8.914, 
+      "legs": 1, 
+      "maneuvers": 7, 
+      "maneuvers_total": 9, 
+      "highway_km": 0, 
+      "toll_km": 0, 
+      "endpoint_gap_m": [
+       2, 
+       173
+      ], 
+      "ok": true
+     }, 
+     {
+      "time_s": 575.7, 
+      "length_km": 8.057, 
+      "legs": 1, 
+      "maneuvers": 6, 
+      "maneuvers_total": 8, 
+      "highway_km": 0, 
+      "toll_km": 0, 
+      "endpoint_gap_m": [
+       2, 
+       173
+      ], 
+      "ok": true
+     }
+    ]
+   }, 
+   "U4": {
+    "alternates": [
+     {
+      "time_s": 739.2, 
+      "length_km": 12.242, 
+      "legs": 1, 
+      "maneuvers": 9, 
+      "maneuvers_total": 11, 
+      "highway_km": 6.08, 
+      "toll_km": 0, 
+      "endpoint_gap_m": [
+       70, 
+       106
+      ], 
+      "ok": true
+     }, 
+     {
+      "time_s": 789.4, 
+      "length_km": 9.157, 
+      "legs": 1, 
+      "maneuvers": 8, 
+      "maneuvers_total": 10, 
+      "highway_km": 0, 
+      "toll_km": 0, 
+      "endpoint_gap_m": [
+       70, 
+       106
+      ], 
+      "ok": true
+     }
+    ]
+   }, 
+   "U5": {
+    "alternates": [
+     {
+      "time_s": 304.0, 
+      "length_km": 3.279, 
+      "legs": 1, 
+      "maneuvers": 7, 
+      "maneuvers_total": 9, 
+      "highway_km": 0, 
+      "toll_km": 0, 
+      "endpoint_gap_m": [
+       104, 
+       35
+      ], 
+      "ok": true
+     }, 
+     {
+      "time_s": 367.5, 
+      "length_km": 3.933, 
+      "legs": 1, 
+      "maneuvers": 6, 
+      "maneuvers_total": 8, 
+      "highway_km": 0, 
+      "toll_km": 0, 
+      "endpoint_gap_m": [
+       104, 
+       35
+      ], 
+      "ok": true
+     }
+    ]
+   }, 
+   "R1": {
+    "alternates": [
+     {
+      "time_s": 1594.4, 
+      "length_km": 31.896, 
+      "legs": 1, 
+      "maneuvers": 12, 
+      "maneuvers_total": 14, 
+      "highway_km": 17.55, 
+      "toll_km": 0, 
+      "endpoint_gap_m": [
+       73, 
+       156
+      ], 
+      "ok": true
+     }, 
+     {
+      "time_s": 1559.7, 
+      "length_km": 29.554, 
+      "legs": 1, 
+      "maneuvers": 15, 
+      "maneuvers_total": 17, 
+      "highway_km": 20.99, 
+      "toll_km": 0, 
+      "endpoint_gap_m": [
+       73, 
+       156
+      ], 
+      "ok": true
+     }
+    ]
+   }, 
+   "R2": {
+    "alternates": [
+     {
+      "time_s": 4728.0, 
+      "length_km": 118.667, 
+      "legs": 1, 
+      "maneuvers": 13, 
+      "maneuvers_total": 15, 
+      "highway_km": 110.01, 
+      "toll_km": 63.27, 
+      "endpoint_gap_m": [
+       6, 
+       16
+      ], 
+      "ok": true
+     }, 
+     {
+      "time_s": 5232.5, 
+      "length_km": 125.407, 
+      "legs": 1, 
+      "maneuvers": 16, 
+      "maneuvers_total": 18, 
+      "highway_km": 95.37, 
+      "toll_km": 93.9, 
+      "endpoint_gap_m": [
+       6, 
+       16
+      ], 
+      "ok": true
+     }
+    ]
+   }, 
+   "I1": {
+    "alternates": [
+     {
+      "time_s": 16950.0, 
+      "length_km": 478.506, 
+      "legs": 1, 
+      "maneuvers": 17, 
+      "maneuvers_total": 19, 
+      "highway_km": 456.05, 
+      "toll_km": 0, 
+      "endpoint_gap_m": [
+       2, 
+       137
+      ], 
+      "ok": true
+     }, 
+     {
+      "time_s": 17474.6, 
+      "length_km": 525.023, 
+      "legs": 1, 
+      "maneuvers": 13, 
+      "maneuvers_total": 15, 
+      "highway_km": 515.59, 
+      "toll_km": 345.49, 
+      "endpoint_gap_m": [
+       2, 
+       137
+      ], 
+      "ok": true
+     }
+    ]
+   }, 
+   "I2": {
+    "alternates": [
+     {
+      "time_s": 17253.7, 
+      "length_km": 478.712, 
+      "legs": 1, 
+      "maneuvers": 19, 
+      "maneuvers_total": 21, 
+      "highway_km": 476.29, 
+      "toll_km": 0, 
+      "endpoint_gap_m": [
+       10, 
+       32
+      ], 
+      "ok": true
+     }, 
+     {
+      "time_s": 17547.6, 
+      "length_km": 471.918, 
+      "legs": 1, 
+      "maneuvers": 19, 
+      "maneuvers_total": 21, 
+      "highway_km": 327.57, 
+      "toll_km": 0, 
+      "endpoint_gap_m": [
+       10, 
+       32
+      ], 
+      "ok": true
+     }
+    ]
+   }, 
+   "I3": {
+    "alternates": [
+     {
+      "time_s": 7965.0, 
+      "length_km": 232.424, 
+      "legs": 1, 
+      "maneuvers": 14, 
+      "maneuvers_total": 16, 
+      "highway_km": 227.09, 
+      "toll_km": 0, 
+      "endpoint_gap_m": [
+       80, 
+       70
+      ], 
+      "ok": true
+     }
+    ]
+   }, 
+   "I4": {
+    "alternates": [
+     {
+      "time_s": 7660.1, 
+      "length_km": 186.253, 
+      "legs": 1, 
+      "maneuvers": 13, 
+      "maneuvers_total": 15, 
+      "highway_km": 111.96, 
+      "toll_km": 0, 
+      "endpoint_gap_m": [
+       1, 
+       2
+      ], 
+      "ok": true
+     }, 
+     {
+      "time_s": 7902.0, 
+      "length_km": 188.603, 
+      "legs": 1, 
+      "maneuvers": 16, 
+      "maneuvers_total": 18, 
+      "highway_km": 112.86, 
+      "toll_km": 0, 
+      "endpoint_gap_m": [
+       1, 
+       2
+      ], 
+      "ok": true
+     }
+    ]
+   }, 
+   "T1": {
+    "alternates": [
+     {
+      "time_s": 19871.4, 
+      "length_km": 529.044, 
+      "legs": 1, 
+      "maneuvers": 23, 
+      "maneuvers_total": 25, 
+      "highway_km": 524.98, 
+      "toll_km": 133.66, 
+      "endpoint_gap_m": [
+       80, 
+       32
+      ], 
+      "ok": true
+     }, 
+     {
+      "time_s": 20469.6, 
+      "length_km": 531.918, 
+      "legs": 1, 
+      "maneuvers": 20, 
+      "maneuvers_total": 22, 
+      "highway_km": 415.22, 
+      "toll_km": 238.84, 
+      "endpoint_gap_m": [
+       80, 
+       32
+      ], 
+      "ok": true
+     }
+    ]
+   }, 
+   "T2": {
+    "alternates": [
+     {
+      "time_s": 6673.7, 
+      "length_km": 184.958, 
+      "legs": 1, 
+      "maneuvers": 19, 
+      "maneuvers_total": 21, 
+      "highway_km": 175.47, 
+      "toll_km": 150.8, 
+      "endpoint_gap_m": [
+       9, 
+       253
+      ], 
+      "ok": true
+     }, 
+     {
+      "time_s": 6843.4, 
+      "length_km": 178.972, 
+      "legs": 1, 
+      "maneuvers": 23, 
+      "maneuvers_total": 25, 
+      "highway_km": 149.5, 
+      "toll_km": 98.24, 
+      "endpoint_gap_m": [
+       9, 
+       253
+      ], 
+      "ok": true
+     }
+    ]
+   }, 
+   "X1": {
+    "alternates": [
+     {
+      "time_s": 4337.1, 
+      "length_km": 93.248, 
+      "legs": 1, 
+      "maneuvers": 6, 
+      "maneuvers_total": 8, 
+      "highway_km": 0, 
+      "toll_km": 0, 
+      "endpoint_gap_m": [
+       16, 
+       23
+      ], 
+      "ok": true
+     }
+    ]
+   }, 
+   "X2": {
+    "alternates": [
+     {
+      "time_s": 3349.1, 
+      "length_km": 64.244, 
+      "legs": 1, 
+      "maneuvers": 8, 
+      "maneuvers_total": 10, 
+      "highway_km": 0, 
+      "toll_km": 0, 
+      "endpoint_gap_m": [
+       62, 
+       11
+      ], 
+      "ok": true
+     }
+    ]
+   }, 
+   "X3": {
+    "alternates": [
+     {
+      "time_s": 871.0, 
+      "length_km": 12.29, 
+      "legs": 1, 
+      "maneuvers": 9, 
+      "maneuvers_total": 11, 
+      "highway_km": 0, 
+      "toll_km": 0, 
+      "endpoint_gap_m": [
+       4, 
+       15
+      ], 
+      "ok": true
+     }, 
+     {
+      "time_s": 978.0, 
+      "length_km": 14.369, 
+      "legs": 1, 
+      "maneuvers": 5, 
+      "maneuvers_total": 7, 
+      "highway_km": 0, 
+      "toll_km": 0, 
+      "endpoint_gap_m": [
+       4, 
+       15
+      ], 
+      "ok": true
+     }
+    ]
+   }, 
+   "B1": {
+    "alternates": [
+     {
+      "time_s": 5868.8, 
+      "length_km": 165.591, 
+      "legs": 1, 
+      "maneuvers": 15, 
+      "maneuvers_total": 17, 
+      "highway_km": 162.73, 
+      "toll_km": 0, 
+      "endpoint_gap_m": [
+       2, 
+       70
+      ], 
+      "ok": true
+     }, 
+     {
+      "time_s": 6589.0, 
+      "length_km": 168.861, 
+      "legs": 1, 
+      "maneuvers": 20, 
+      "maneuvers_total": 22, 
+      "highway_km": 140.63, 
+      "toll_km": 0, 
+      "endpoint_gap_m": [
+       2, 
+       70
+      ], 
+      "ok": true
+     }
+    ]
+   }, 
+   "B2": {
+    "alternates": [
+     {
+      "time_s": 4169.9, 
+      "length_km": 109.605, 
+      "legs": 1, 
+      "maneuvers": 21, 
+      "maneuvers_total": 23, 
+      "highway_km": 105.68, 
+      "toll_km": 58.13, 
+      "endpoint_gap_m": [
+       29, 
+       32
+      ], 
+      "ok": true
+     }, 
+     {
+      "time_s": 4525.5, 
+      "length_km": 119.074, 
+      "legs": 1, 
+      "maneuvers": 20, 
+      "maneuvers_total": 22, 
+      "highway_km": 114.87, 
+      "toll_km": 67.7, 
+      "endpoint_gap_m": [
+       29, 
+       32
+      ], 
+      "ok": true
+     }
+    ]
+   }, 
+   "B3": {
+    "alternates": [
+     {
+      "time_s": 8188.4, 
+      "length_km": 219.34, 
+      "legs": 1, 
+      "maneuvers": 26, 
+      "maneuvers_total": 28, 
+      "highway_km": 214.84, 
+      "toll_km": 82.67, 
+      "endpoint_gap_m": [
+       70, 
+       32
+      ], 
+      "ok": true
+     }, 
+     {
+      "time_s": 8860.2, 
+      "length_km": 230.309, 
+      "legs": 1, 
+      "maneuvers": 26, 
+      "maneuvers_total": 28, 
+      "highway_km": 226.99, 
+      "toll_km": 58.13, 
+      "endpoint_gap_m": [
+       70, 
+       32
+      ], 
+      "ok": true
+     }
+    ]
+   }, 
+   "B4": {
+    "alternates": [
+     {
+      "time_s": 7369.3, 
+      "length_km": 203.9, 
+      "legs": 1, 
+      "maneuvers": 19, 
+      "maneuvers_total": 21, 
+      "highway_km": 200.01, 
+      "toll_km": 0, 
+      "endpoint_gap_m": [
+       17, 
+       2
+      ], 
+      "ok": true
+     }, 
+     {
+      "time_s": 8015.9, 
+      "length_km": 230.04, 
+      "legs": 1, 
+      "maneuvers": 19, 
+      "maneuvers_total": 21, 
+      "highway_km": 225.83, 
+      "toll_km": 0, 
+      "endpoint_gap_m": [
+       17, 
+       2
+      ], 
+      "ok": true
+     }
+    ]
+   }, 
+   "B5": {
+    "alternates": [
+     {
+      "time_s": 822.7, 
+      "length_km": 15.092, 
+      "legs": 1, 
+      "maneuvers": 2, 
+      "maneuvers_total": 4, 
+      "highway_km": 0, 
+      "toll_km": 0, 
+      "endpoint_gap_m": [
+       3, 
+       8
+      ], 
+      "ok": true
+     }, 
+     {
+      "time_s": 974.6, 
+      "length_km": 15.767, 
+      "legs": 1, 
+      "maneuvers": 5, 
+      "maneuvers_total": 7, 
+      "highway_km": 0, 
+      "toll_km": 0, 
+      "endpoint_gap_m": [
+       3, 
+       8
+      ], 
+      "ok": true
+     }
+    ]
+   }
+  }, 
+  "eco": {
+   "U1": {
+    "alternates": [
+     {
+      "time_s": 418.1, 
+      "length_km": 5.173, 
+      "legs": 1, 
+      "maneuvers": 4, 
+      "maneuvers_total": 6, 
+      "highway_km": 0, 
+      "toll_km": 0, 
+      "endpoint_gap_m": [
+       32, 
+       94
+      ], 
+      "ok": true
+     }, 
+     {
+      "time_s": 505.1, 
+      "length_km": 5.491, 
+      "legs": 1, 
+      "maneuvers": 6, 
+      "maneuvers_total": 8, 
+      "highway_km": 0, 
+      "toll_km": 0, 
+      "endpoint_gap_m": [
+       32, 
+       94
+      ], 
+      "ok": true
+     }
+    ]
+   }, 
+   "U2": {
+    "alternates": [
+     {
+      "time_s": 202.5, 
+      "length_km": 3.74, 
+      "legs": 1, 
+      "maneuvers": 5, 
+      "maneuvers_total": 7, 
+      "highway_km": 1.52, 
+      "toll_km": 0, 
+      "endpoint_gap_m": [
+       80, 
+       75
+      ], 
+      "ok": true
+     }, 
+     {
+      "time_s": 261.4, 
+      "length_km": 3.109, 
+      "legs": 1, 
+      "maneuvers": 5, 
+      "maneuvers_total": 7, 
+      "highway_km": 0, 
+      "toll_km": 0, 
+      "endpoint_gap_m": [
+       80, 
+       75
+      ], 
+      "ok": true
+     }
+    ]
+   }, 
+   "U3": {
+    "alternates": [
+     {
+      "time_s": 575.7, 
+      "length_km": 8.057, 
+      "legs": 1, 
+      "maneuvers": 6, 
+      "maneuvers_total": 8, 
+      "highway_km": 0, 
+      "toll_km": 0, 
+      "endpoint_gap_m": [
+       2, 
+       173
+      ], 
+      "ok": true
+     }, 
+     {
+      "time_s": 602.4, 
+      "length_km": 7.859, 
+      "legs": 1, 
+      "maneuvers": 5, 
+      "maneuvers_total": 7, 
+      "highway_km": 0, 
+      "toll_km": 0, 
+      "endpoint_gap_m": [
+       2, 
+       173
+      ], 
+      "ok": true
+     }
+    ]
+   }, 
+   "U4": {
+    "alternates": [
+     {
+      "time_s": 756.5, 
+      "length_km": 7.532, 
+      "legs": 1, 
+      "maneuvers": 1, 
+      "maneuvers_total": 3, 
+      "highway_km": 0, 
+      "toll_km": 0, 
+      "endpoint_gap_m": [
+       70, 
+       106
+      ], 
+      "ok": true
+     }, 
+     {
+      "time_s": 789.4, 
+      "length_km": 9.157, 
+      "legs": 1, 
+      "maneuvers": 8, 
+      "maneuvers_total": 10, 
+      "highway_km": 0, 
+      "toll_km": 0, 
+      "endpoint_gap_m": [
+       70, 
+       106
+      ], 
+      "ok": true
+     }
+    ]
+   }, 
+   "U5": {
+    "alternates": [
+     {
+      "time_s": 304.0, 
+      "length_km": 3.279, 
+      "legs": 1, 
+      "maneuvers": 7, 
+      "maneuvers_total": 9, 
+      "highway_km": 0, 
+      "toll_km": 0, 
+      "endpoint_gap_m": [
+       104, 
+       35
+      ], 
+      "ok": true
+     }, 
+     {
+      "time_s": 367.5, 
+      "length_km": 3.933, 
+      "legs": 1, 
+      "maneuvers": 6, 
+      "maneuvers_total": 8, 
+      "highway_km": 0, 
+      "toll_km": 0, 
+      "endpoint_gap_m": [
+       104, 
+       35
+      ], 
+      "ok": true
+     }
+    ]
+   }, 
+   "R1": {
+    "alternates": [
+     {
+      "time_s": 1646.5, 
+      "length_km": 23.804, 
+      "legs": 1, 
+      "maneuvers": 14, 
+      "maneuvers_total": 16, 
+      "highway_km": 0, 
+      "toll_km": 0, 
+      "endpoint_gap_m": [
+       73, 
+       156
+      ], 
+      "ok": true
+     }, 
+     {
+      "time_s": 1501.4, 
+      "length_km": 23.427, 
+      "legs": 1, 
+      "maneuvers": 12, 
+      "maneuvers_total": 14, 
+      "highway_km": 11.7, 
+      "toll_km": 0, 
+      "endpoint_gap_m": [
+       73, 
+       156
+      ], 
+      "ok": true
+     }
+    ]
+   }, 
+   "R2": {
+    "alternates": [
+     {
+      "time_s": 4728.0, 
+      "length_km": 118.667, 
+      "legs": 1, 
+      "maneuvers": 13, 
+      "maneuvers_total": 15, 
+      "highway_km": 110.01, 
+      "toll_km": 63.27, 
+      "endpoint_gap_m": [
+       6, 
+       16
+      ], 
+      "ok": true
+     }, 
+     {
+      "time_s": 5232.5, 
+      "length_km": 125.407, 
+      "legs": 1, 
+      "maneuvers": 16, 
+      "maneuvers_total": 18, 
+      "highway_km": 95.37, 
+      "toll_km": 93.9, 
+      "endpoint_gap_m": [
+       6, 
+       16
+      ], 
+      "ok": true
+     }
+    ]
+   }, 
+   "I1": {
+    "alternates": [
+     {
+      "time_s": 19424.3, 
+      "length_km": 496.101, 
+      "legs": 1, 
+      "maneuvers": 29, 
+      "maneuvers_total": 31, 
+      "highway_km": 360.9, 
+      "toll_km": 156.4, 
+      "endpoint_gap_m": [
+       2, 
+       137
+      ], 
+      "ok": true
+     }, 
+     {
+      "time_s": 17471.3, 
+      "length_km": 524.281, 
+      "legs": 1, 
+      "maneuvers": 13, 
+      "maneuvers_total": 15, 
+      "highway_km": 512.24, 
+      "toll_km": 345.49, 
+      "endpoint_gap_m": [
+       2, 
+       137
+      ], 
+      "ok": true
+     }
+    ]
+   }, 
+   "I2": {
+    "alternates": [
+     {
+      "time_s": 17316.8, 
+      "length_km": 475.786, 
+      "legs": 1, 
+      "maneuvers": 16, 
+      "maneuvers_total": 18, 
+      "highway_km": 466.18, 
+      "toll_km": 0, 
+      "endpoint_gap_m": [
+       10, 
+       32
+      ], 
+      "ok": true
+     }, 
+     {
+      "time_s": 18208.7, 
+      "length_km": 453.651, 
+      "legs": 1, 
+      "maneuvers": 20, 
+      "maneuvers_total": 22, 
+      "highway_km": 362.97, 
+      "toll_km": 0, 
+      "endpoint_gap_m": [
+       10, 
+       32
+      ], 
+      "ok": true
+     }
+    ]
+   }, 
+   "I3": {
+    "alternates": []
+   }, 
+   "I4": {
+    "alternates": [
+     {
+      "time_s": 8588.1, 
+      "length_km": 191.391, 
+      "legs": 1, 
+      "maneuvers": 19, 
+      "maneuvers_total": 21, 
+      "highway_km": 89.55, 
+      "toll_km": 0, 
+      "endpoint_gap_m": [
+       1, 
+       2
+      ], 
+      "ok": true
+     }, 
+     {
+      "time_s": 9727.0, 
+      "length_km": 208.425, 
+      "legs": 1, 
+      "maneuvers": 26, 
+      "maneuvers_total": 28, 
+      "highway_km": 62.58, 
+      "toll_km": 0, 
+      "endpoint_gap_m": [
+       1, 
+       2
+      ], 
+      "ok": true
+     }
+    ]
+   }, 
+   "T1": {
+    "alternates": [
+     {
+      "time_s": 20334.8, 
+      "length_km": 509.751, 
+      "legs": 1, 
+      "maneuvers": 23, 
+      "maneuvers_total": 25, 
+      "highway_km": 487.56, 
+      "toll_km": 133.66, 
+      "endpoint_gap_m": [
+       80, 
+       32
+      ], 
+      "ok": true
+     }, 
+     {
+      "time_s": 21064.9, 
+      "length_km": 558.945, 
+      "legs": 1, 
+      "maneuvers": 28, 
+      "maneuvers_total": 30, 
+      "highway_km": 473.2, 
+      "toll_km": 101.37, 
+      "endpoint_gap_m": [
+       80, 
+       32
+      ], 
+      "ok": true
+     }
+    ]
+   }, 
+   "T2": {
+    "alternates": [
+     {
+      "time_s": 6673.7, 
+      "length_km": 184.958, 
+      "legs": 1, 
+      "maneuvers": 19, 
+      "maneuvers_total": 21, 
+      "highway_km": 175.47, 
+      "toll_km": 150.8, 
+      "endpoint_gap_m": [
+       9, 
+       253
+      ], 
+      "ok": true
+     }, 
+     {
+      "time_s": 7123.5, 
+      "length_km": 175.028, 
+      "legs": 1, 
+      "maneuvers": 16, 
+      "maneuvers_total": 18, 
+      "highway_km": 137.57, 
+      "toll_km": 89.86, 
+      "endpoint_gap_m": [
+       9, 
+       253
+      ], 
+      "ok": true
+     }
+    ]
+   }, 
+   "X1": {
+    "alternates": [
+     {
+      "time_s": 4337.1, 
+      "length_km": 93.248, 
+      "legs": 1, 
+      "maneuvers": 5, 
+      "maneuvers_total": 7, 
+      "highway_km": 0, 
+      "toll_km": 0, 
+      "endpoint_gap_m": [
+       16, 
+       23
+      ], 
+      "ok": true
+     }
+    ]
+   }, 
+   "X2": {
+    "alternates": [
+     {
+      "time_s": 2782.2, 
+      "length_km": 50.032, 
+      "legs": 1, 
+      "maneuvers": 9, 
+      "maneuvers_total": 11, 
+      "highway_km": 0, 
+      "toll_km": 0, 
+      "endpoint_gap_m": [
+       62, 
+       11
+      ], 
+      "ok": true
+     }, 
+     {
+      "time_s": 3349.1, 
+      "length_km": 64.244, 
+      "legs": 1, 
+      "maneuvers": 8, 
+      "maneuvers_total": 10, 
+      "highway_km": 0, 
+      "toll_km": 0, 
+      "endpoint_gap_m": [
+       62, 
+       11
+      ], 
+      "ok": true
+     }
+    ]
+   }, 
+   "X3": {
+    "alternates": [
+     {
+      "time_s": 870.1, 
+      "length_km": 13.885, 
+      "legs": 1, 
+      "maneuvers": 6, 
+      "maneuvers_total": 8, 
+      "highway_km": 0, 
+      "toll_km": 0, 
+      "endpoint_gap_m": [
+       4, 
+       15
+      ], 
+      "ok": true
+     }, 
+     {
+      "time_s": 978.0, 
+      "length_km": 14.369, 
+      "legs": 1, 
+      "maneuvers": 5, 
+      "maneuvers_total": 7, 
+      "highway_km": 0, 
+      "toll_km": 0, 
+      "endpoint_gap_m": [
+       4, 
+       15
+      ], 
+      "ok": true
+     }
+    ]
+   }, 
+   "B1": {
+    "alternates": [
+     {
+      "time_s": 6619.0, 
+      "length_km": 169.74, 
+      "legs": 1, 
+      "maneuvers": 17, 
+      "maneuvers_total": 19, 
+      "highway_km": 144.68, 
+      "toll_km": 0, 
+      "endpoint_gap_m": [
+       2, 
+       70
+      ], 
+      "ok": true
+     }, 
+     {
+      "time_s": 7905.3, 
+      "length_km": 189.912, 
+      "legs": 1, 
+      "maneuvers": 23, 
+      "maneuvers_total": 25, 
+      "highway_km": 115.93, 
+      "toll_km": 0, 
+      "endpoint_gap_m": [
+       2, 
+       70
+      ], 
+      "ok": true
+     }
+    ]
+   }, 
+   "B2": {
+    "alternates": [
+     {
+      "time_s": 4945.3, 
+      "length_km": 103.593, 
+      "legs": 1, 
+      "maneuvers": 27, 
+      "maneuvers_total": 29, 
+      "highway_km": 55.52, 
+      "toll_km": 0, 
+      "endpoint_gap_m": [
+       29, 
+       32
+      ], 
+      "ok": true
+     }, 
+     {
+      "time_s": 4698.4, 
+      "length_km": 112.56, 
+      "legs": 1, 
+      "maneuvers": 26, 
+      "maneuvers_total": 28, 
+      "highway_km": 73.2, 
+      "toll_km": 0, 
+      "endpoint_gap_m": [
+       29, 
+       32
+      ], 
+      "ok": true
+     }
+    ]
+   }, 
+   "B3": {
+    "alternates": [
+     {
+      "time_s": 8666.0, 
+      "length_km": 210.513, 
+      "legs": 1, 
+      "maneuvers": 23, 
+      "maneuvers_total": 25, 
+      "highway_km": 185.48, 
+      "toll_km": 82.67, 
+      "endpoint_gap_m": [
+       70, 
+       32
+      ], 
+      "ok": true
+     }, 
+     {
+      "time_s": 10120.3, 
+      "length_km": 200.561, 
+      "legs": 1, 
+      "maneuvers": 20, 
+      "maneuvers_total": 22, 
+      "highway_km": 100.33, 
+      "toll_km": 0, 
+      "endpoint_gap_m": [
+       70, 
+       32
+      ], 
+      "ok": true
+     }
+    ]
+   }, 
+   "B4": {
+    "alternates": [
+     {
+      "time_s": 8004.5, 
+      "length_km": 227.205, 
+      "legs": 1, 
+      "maneuvers": 14, 
+      "maneuvers_total": 16, 
+      "highway_km": 217.97, 
+      "toll_km": 0, 
+      "endpoint_gap_m": [
+       17, 
+       2
+      ], 
+      "ok": true
+     }, 
+     {
+      "time_s": 8147.1, 
+      "length_km": 229.876, 
+      "legs": 1, 
+      "maneuvers": 16, 
+      "maneuvers_total": 18, 
+      "highway_km": 208.34, 
+      "toll_km": 0, 
+      "endpoint_gap_m": [
+       17, 
+       2
+      ], 
+      "ok": true
+     }
+    ]
+   }, 
+   "B5": {
+    "alternates": [
+     {
+      "time_s": 822.7, 
+      "length_km": 15.092, 
+      "legs": 1, 
+      "maneuvers": 2, 
+      "maneuvers_total": 4, 
+      "highway_km": 0, 
+      "toll_km": 0, 
+      "endpoint_gap_m": [
+       3, 
+       8
+      ], 
+      "ok": true
+     }, 
+     {
+      "time_s": 824.7, 
+      "length_km": 15.711, 
+      "legs": 1, 
+      "maneuvers": 9, 
+      "maneuvers_total": 11, 
+      "highway_km": 0, 
+      "toll_km": 0, 
+      "endpoint_gap_m": [
+       3, 
+       8
+      ], 
+      "ok": true
+     }
+    ]
+   }
+  }, 
+  "avoid_highways": {
+   "U1": {
+    "alternates": [
+     {
+      "time_s": 505.1, 
+      "length_km": 5.491, 
+      "legs": 1, 
+      "maneuvers": 6, 
+      "maneuvers_total": 8, 
+      "highway_km": 0, 
+      "toll_km": 0, 
+      "endpoint_gap_m": [
+       32, 
+       94
+      ], 
+      "ok": true
+     }, 
+     {
+      "time_s": 496.9, 
+      "length_km": 5.281, 
+      "legs": 1, 
+      "maneuvers": 4, 
+      "maneuvers_total": 6, 
+      "highway_km": 0, 
+      "toll_km": 0, 
+      "endpoint_gap_m": [
+       32, 
+       94
+      ], 
+      "ok": true
+     }
+    ]
+   }, 
+   "U2": {
+    "alternates": []
+   }, 
+   "U3": {
+    "alternates": [
+     {
+      "time_s": 575.8, 
+      "length_km": 8.914, 
+      "legs": 1, 
+      "maneuvers": 7, 
+      "maneuvers_total": 9, 
+      "highway_km": 0, 
+      "toll_km": 0, 
+      "endpoint_gap_m": [
+       2, 
+       173
+      ], 
+      "ok": true
+     }, 
+     {
+      "time_s": 575.7, 
+      "length_km": 8.057, 
+      "legs": 1, 
+      "maneuvers": 6, 
+      "maneuvers_total": 8, 
+      "highway_km": 0, 
+      "toll_km": 0, 
+      "endpoint_gap_m": [
+       2, 
+       173
+      ], 
+      "ok": true
+     }
+    ]
+   }, 
+   "U4": {
+    "alternates": [
+     {
+      "time_s": 789.4, 
+      "length_km": 9.157, 
+      "legs": 1, 
+      "maneuvers": 8, 
+      "maneuvers_total": 10, 
+      "highway_km": 0, 
+      "toll_km": 0, 
+      "endpoint_gap_m": [
+       70, 
+       106
+      ], 
+      "ok": true
+     }, 
+     {
+      "time_s": 817.6, 
+      "length_km": 10.139, 
+      "legs": 1, 
+      "maneuvers": 8, 
+      "maneuvers_total": 10, 
+      "highway_km": 0, 
+      "toll_km": 0, 
+      "endpoint_gap_m": [
+       70, 
+       106
+      ], 
+      "ok": true
+     }
+    ]
+   }, 
+   "U5": {
+    "alternates": [
+     {
+      "time_s": 304.0, 
+      "length_km": 3.279, 
+      "legs": 1, 
+      "maneuvers": 7, 
+      "maneuvers_total": 9, 
+      "highway_km": 0, 
+      "toll_km": 0, 
+      "endpoint_gap_m": [
+       104, 
+       35
+      ], 
+      "ok": true
+     }, 
+     {
+      "time_s": 367.5, 
+      "length_km": 3.933, 
+      "legs": 1, 
+      "maneuvers": 6, 
+      "maneuvers_total": 8, 
+      "highway_km": 0, 
+      "toll_km": 0, 
+      "endpoint_gap_m": [
+       104, 
+       35
+      ], 
+      "ok": true
+     }
+    ]
+   }, 
+   "R1": {
+    "alternates": [
+     {
+      "time_s": 1661.2, 
+      "length_km": 24.541, 
+      "legs": 1, 
+      "maneuvers": 12, 
+      "maneuvers_total": 14, 
+      "highway_km": 0, 
+      "toll_km": 0, 
+      "endpoint_gap_m": [
+       73, 
+       156
+      ], 
+      "ok": true
+     }, 
+     {
+      "time_s": 1614.1, 
+      "length_km": 27.032, 
+      "legs": 1, 
+      "maneuvers": 10, 
+      "maneuvers_total": 12, 
+      "highway_km": 0, 
+      "toll_km": 0, 
+      "endpoint_gap_m": [
+       73, 
+       156
+      ], 
+      "ok": true
+     }
+    ]
+   }, 
+   "R2": {
+    "alternates": [
+     {
+      "time_s": 5624.3, 
+      "length_km": 95.501, 
+      "legs": 1, 
+      "maneuvers": 23, 
+      "maneuvers_total": 25, 
+      "highway_km": 0, 
+      "toll_km": 0, 
+      "endpoint_gap_m": [
+       6, 
+       16
+      ], 
+      "ok": true
+     }, 
+     {
+      "time_s": 6663.0, 
+      "length_km": 122.144, 
+      "legs": 1, 
+      "maneuvers": 18, 
+      "maneuvers_total": 20, 
+      "highway_km": 0, 
+      "toll_km": 0, 
+      "endpoint_gap_m": [
+       6, 
+       16
+      ], 
+      "ok": true
+     }
+    ]
+   }, 
+   "I1": {
+    "alternates": [
+     {
+      "time_s": 25459.4, 
+      "length_km": 536.146, 
+      "legs": 1, 
+      "maneuvers": 35, 
+      "maneuvers_total": 37, 
+      "highway_km": 0, 
+      "toll_km": 0, 
+      "endpoint_gap_m": [
+       2, 
+       137
+      ], 
+      "ok": true
+     }, 
+     {
+      "time_s": 25052.8, 
+      "length_km": 513.534, 
+      "legs": 1, 
+      "maneuvers": 37, 
+      "maneuvers_total": 39, 
+      "highway_km": 0, 
+      "toll_km": 0, 
+      "endpoint_gap_m": [
+       2, 
+       137
+      ], 
+      "ok": true
+     }
+    ]
+   }, 
+   "I2": {
+    "alternates": [
+     {
+      "time_s": 27293.5, 
+      "length_km": 560.265, 
+      "legs": 1, 
+      "maneuvers": 40, 
+      "maneuvers_total": 42, 
+      "highway_km": 0, 
+      "toll_km": 0, 
+      "endpoint_gap_m": [
+       10, 
+       32
+      ], 
+      "ok": true
+     }, 
+     {
+      "time_s": 27677.4, 
+      "length_km": 546.798, 
+      "legs": 1, 
+      "maneuvers": 43, 
+      "maneuvers_total": 45, 
+      "highway_km": 0, 
+      "toll_km": 0, 
+      "endpoint_gap_m": [
+       10, 
+       32
+      ], 
+      "ok": true
+     }
+    ]
+   }, 
+   "I3": {
+    "alternates": [
+     {
+      "time_s": 12733.4, 
+      "length_km": 249.696, 
+      "legs": 1, 
+      "maneuvers": 36, 
+      "maneuvers_total": 38, 
+      "highway_km": 0, 
+      "toll_km": 0, 
+      "endpoint_gap_m": [
+       80, 
+       70
+      ], 
+      "ok": true
+     }, 
+     {
+      "time_s": 15689.6, 
+      "length_km": 307.871, 
+      "legs": 1, 
+      "maneuvers": 35, 
+      "maneuvers_total": 37, 
+      "highway_km": 0, 
+      "toll_km": 0, 
+      "endpoint_gap_m": [
+       80, 
+       70
+      ], 
+      "ok": true
+     }
+    ]
+   }, 
+   "I4": {
+    "alternates": [
+     {
+      "time_s": 9593.6, 
+      "length_km": 188.758, 
+      "legs": 1, 
+      "maneuvers": 23, 
+      "maneuvers_total": 25, 
+      "highway_km": 0, 
+      "toll_km": 0, 
+      "endpoint_gap_m": [
+       1, 
+       2
+      ], 
+      "ok": true
+     }, 
+     {
+      "time_s": 10462.4, 
+      "length_km": 212.621, 
+      "legs": 1, 
+      "maneuvers": 18, 
+      "maneuvers_total": 20, 
+      "highway_km": 0, 
+      "toll_km": 0, 
+      "endpoint_gap_m": [
+       1, 
+       2
+      ], 
+      "ok": true
+     }
+    ]
+   }, 
+   "T1": {
+    "alternates": [
+     {
+      "time_s": 26277.6, 
+      "length_km": 512.774, 
+      "legs": 1, 
+      "maneuvers": 45, 
+      "maneuvers_total": 47, 
+      "highway_km": 0, 
+      "toll_km": 0, 
+      "endpoint_gap_m": [
+       80, 
+       32
+      ], 
+      "ok": true
+     }, 
+     {
+      "time_s": 30614.7, 
+      "length_km": 606.055, 
+      "legs": 1, 
+      "maneuvers": 62, 
+      "maneuvers_total": 64, 
+      "highway_km": 0, 
+      "toll_km": 0, 
+      "endpoint_gap_m": [
+       80, 
+       32
+      ], 
+      "ok": true
+     }
+    ]
+   }, 
+   "T2": {
+    "alternates": [
+     {
+      "time_s": 9979.9, 
+      "length_km": 179.347, 
+      "legs": 1, 
+      "maneuvers": 25, 
+      "maneuvers_total": 27, 
+      "highway_km": 0, 
+      "toll_km": 0, 
+      "endpoint_gap_m": [
+       9, 
+       253
+      ], 
+      "ok": true
+     }, 
+     {
+      "time_s": 10381.6, 
+      "length_km": 179.781, 
+      "legs": 1, 
+      "maneuvers": 23, 
+      "maneuvers_total": 25, 
+      "highway_km": 0, 
+      "toll_km": 0, 
+      "endpoint_gap_m": [
+       9, 
+       253
+      ], 
+      "ok": true
+     }
+    ]
+   }, 
+   "X1": {
+    "alternates": [
+     {
+      "time_s": 4337.1, 
+      "length_km": 93.248, 
+      "legs": 1, 
+      "maneuvers": 6, 
+      "maneuvers_total": 8, 
+      "highway_km": 0, 
+      "toll_km": 0, 
+      "endpoint_gap_m": [
+       16, 
+       23
+      ], 
+      "ok": true
+     }
+    ]
+   }, 
+   "X2": {
+    "alternates": [
+     {
+      "time_s": 3349.1, 
+      "length_km": 64.244, 
+      "legs": 1, 
+      "maneuvers": 8, 
+      "maneuvers_total": 10, 
+      "highway_km": 0, 
+      "toll_km": 0, 
+      "endpoint_gap_m": [
+       62, 
+       11
+      ], 
+      "ok": true
+     }
+    ]
+   }, 
+   "X3": {
+    "alternates": [
+     {
+      "time_s": 871.0, 
+      "length_km": 12.29, 
+      "legs": 1, 
+      "maneuvers": 9, 
+      "maneuvers_total": 11, 
+      "highway_km": 0, 
+      "toll_km": 0, 
+      "endpoint_gap_m": [
+       4, 
+       15
+      ], 
+      "ok": true
+     }, 
+     {
+      "time_s": 978.0, 
+      "length_km": 14.369, 
+      "legs": 1, 
+      "maneuvers": 5, 
+      "maneuvers_total": 7, 
+      "highway_km": 0, 
+      "toll_km": 0, 
+      "endpoint_gap_m": [
+       4, 
+       15
+      ], 
+      "ok": true
+     }
+    ]
+   }, 
+   "B1": {
+    "alternates": [
+     {
+      "time_s": 9499.5, 
+      "length_km": 159.588, 
+      "legs": 1, 
+      "maneuvers": 12, 
+      "maneuvers_total": 14, 
+      "highway_km": 0, 
+      "toll_km": 0, 
+      "endpoint_gap_m": [
+       2, 
+       70
+      ], 
+      "ok": true
+     }, 
+     {
+      "time_s": 9762.7, 
+      "length_km": 188.557, 
+      "legs": 1, 
+      "maneuvers": 12, 
+      "maneuvers_total": 14, 
+      "highway_km": 0, 
+      "toll_km": 0, 
+      "endpoint_gap_m": [
+       2, 
+       70
+      ], 
+      "ok": true
+     }
+    ]
+   }, 
+   "B2": {
+    "alternates": [
+     {
+      "time_s": 5872.4, 
+      "length_km": 111.178, 
+      "legs": 1, 
+      "maneuvers": 25, 
+      "maneuvers_total": 27, 
+      "highway_km": 0, 
+      "toll_km": 0, 
+      "endpoint_gap_m": [
+       29, 
+       32
+      ], 
+      "ok": true
+     }, 
+     {
+      "time_s": 6055.7, 
+      "length_km": 113.166, 
+      "legs": 1, 
+      "maneuvers": 23, 
+      "maneuvers_total": 25, 
+      "highway_km": 0, 
+      "toll_km": 0, 
+      "endpoint_gap_m": [
+       29, 
+       32
+      ], 
+      "ok": true
+     }
+    ]
+   }, 
+   "B3": {
+    "alternates": [
+     {
+      "time_s": 12458.8, 
+      "length_km": 239.622, 
+      "legs": 1, 
+      "maneuvers": 17, 
+      "maneuvers_total": 19, 
+      "highway_km": 0, 
+      "toll_km": 0, 
+      "endpoint_gap_m": [
+       70, 
+       32
+      ], 
+      "ok": true
+     }, 
+     {
+      "time_s": 13076.5, 
+      "length_km": 245.394, 
+      "legs": 1, 
+      "maneuvers": 23, 
+      "maneuvers_total": 25, 
+      "highway_km": 0, 
+      "toll_km": 0, 
+      "endpoint_gap_m": [
+       70, 
+       32
+      ], 
+      "ok": true
+     }
+    ]
+   }, 
+   "B4": {
+    "alternates": [
+     {
+      "time_s": 10869.9, 
+      "length_km": 214.543, 
+      "legs": 1, 
+      "maneuvers": 30, 
+      "maneuvers_total": 32, 
+      "highway_km": 0, 
+      "toll_km": 0, 
+      "endpoint_gap_m": [
+       17, 
+       2
+      ], 
+      "ok": true
+     }, 
+     {
+      "time_s": 11038.0, 
+      "length_km": 217.499, 
+      "legs": 1, 
+      "maneuvers": 28, 
+      "maneuvers_total": 30, 
+      "highway_km": 0, 
+      "toll_km": 0, 
+      "endpoint_gap_m": [
+       17, 
+       2
+      ], 
+      "ok": true
+     }
+    ]
+   }, 
+   "B5": {
+    "alternates": [
+     {
+      "time_s": 822.7, 
+      "length_km": 15.092, 
+      "legs": 1, 
+      "maneuvers": 2, 
+      "maneuvers_total": 4, 
+      "highway_km": 0, 
+      "toll_km": 0, 
+      "endpoint_gap_m": [
+       3, 
+       8
+      ], 
+      "ok": true
+     }, 
+     {
+      "time_s": 974.6, 
+      "length_km": 15.767, 
+      "legs": 1, 
+      "maneuvers": 5, 
+      "maneuvers_total": 7, 
+      "highway_km": 0, 
+      "toll_km": 0, 
+      "endpoint_gap_m": [
+       3, 
+       8
+      ], 
+      "ok": true
+     }
+    ]
+   }
+  }, 
+  "avoid_tolls": {
+   "U1": {
+    "alternates": [
+     {
+      "time_s": 418.1, 
+      "length_km": 5.173, 
+      "legs": 1, 
+      "maneuvers": 4, 
+      "maneuvers_total": 6, 
+      "highway_km": 0, 
+      "toll_km": 0, 
+      "endpoint_gap_m": [
+       32, 
+       94
+      ], 
+      "ok": true
+     }, 
+     {
+      "time_s": 514.2, 
+      "length_km": 6.612, 
+      "legs": 1, 
+      "maneuvers": 5, 
+      "maneuvers_total": 7, 
+      "highway_km": 0, 
+      "toll_km": 0, 
+      "endpoint_gap_m": [
+       32, 
+       94
+      ], 
+      "ok": true
+     }
+    ]
+   }, 
+   "U2": {
+    "alternates": [
+     {
+      "time_s": 202.5, 
+      "length_km": 3.74, 
+      "legs": 1, 
+      "maneuvers": 5, 
+      "maneuvers_total": 7, 
+      "highway_km": 1.52, 
+      "toll_km": 0, 
+      "endpoint_gap_m": [
+       80, 
+       75
+      ], 
+      "ok": true
+     }
+    ]
+   }, 
+   "U3": {
+    "alternates": [
+     {
+      "time_s": 575.8, 
+      "length_km": 8.914, 
+      "legs": 1, 
+      "maneuvers": 7, 
+      "maneuvers_total": 9, 
+      "highway_km": 0, 
+      "toll_km": 0, 
+      "endpoint_gap_m": [
+       2, 
+       173
+      ], 
+      "ok": true
+     }, 
+     {
+      "time_s": 575.7, 
+      "length_km": 8.057, 
+      "legs": 1, 
+      "maneuvers": 6, 
+      "maneuvers_total": 8, 
+      "highway_km": 0, 
+      "toll_km": 0, 
+      "endpoint_gap_m": [
+       2, 
+       173
+      ], 
+      "ok": true
+     }
+    ]
+   }, 
+   "U4": {
+    "alternates": [
+     {
+      "time_s": 687.3, 
+      "length_km": 8.01, 
+      "legs": 1, 
+      "maneuvers": 7, 
+      "maneuvers_total": 9, 
+      "highway_km": 0, 
+      "toll_km": 0, 
+      "endpoint_gap_m": [
+       70, 
+       106
+      ], 
+      "ok": true
+     }, 
+     {
+      "time_s": 789.4, 
+      "length_km": 9.157, 
+      "legs": 1, 
+      "maneuvers": 8, 
+      "maneuvers_total": 10, 
+      "highway_km": 0, 
+      "toll_km": 0, 
+      "endpoint_gap_m": [
+       70, 
+       106
+      ], 
+      "ok": true
+     }
+    ]
+   }, 
+   "U5": {
+    "alternates": [
+     {
+      "time_s": 304.0, 
+      "length_km": 3.279, 
+      "legs": 1, 
+      "maneuvers": 7, 
+      "maneuvers_total": 9, 
+      "highway_km": 0, 
+      "toll_km": 0, 
+      "endpoint_gap_m": [
+       104, 
+       35
+      ], 
+      "ok": true
+     }, 
+     {
+      "time_s": 367.5, 
+      "length_km": 3.933, 
+      "legs": 1, 
+      "maneuvers": 6, 
+      "maneuvers_total": 8, 
+      "highway_km": 0, 
+      "toll_km": 0, 
+      "endpoint_gap_m": [
+       104, 
+       35
+      ], 
+      "ok": true
+     }
+    ]
+   }, 
+   "R1": {
+    "alternates": [
+     {
+      "time_s": 1594.4, 
+      "length_km": 31.896, 
+      "legs": 1, 
+      "maneuvers": 12, 
+      "maneuvers_total": 14, 
+      "highway_km": 17.55, 
+      "toll_km": 0, 
+      "endpoint_gap_m": [
+       73, 
+       156
+      ], 
+      "ok": true
+     }, 
+     {
+      "time_s": 1559.7, 
+      "length_km": 29.554, 
+      "legs": 1, 
+      "maneuvers": 15, 
+      "maneuvers_total": 17, 
+      "highway_km": 20.99, 
+      "toll_km": 0, 
+      "endpoint_gap_m": [
+       73, 
+       156
+      ], 
+      "ok": true
+     }
+    ]
+   }, 
+   "R2": {
+    "alternates": [
+     {
+      "time_s": 4932.8, 
+      "length_km": 120.446, 
+      "legs": 1, 
+      "maneuvers": 14, 
+      "maneuvers_total": 16, 
+      "highway_km": 111.93, 
+      "toll_km": 0, 
+      "endpoint_gap_m": [
+       6, 
+       16
+      ], 
+      "ok": true
+     }
+    ]
+   }, 
+   "I1": {
+    "alternates": [
+     {
+      "time_s": 19634.5, 
+      "length_km": 528.856, 
+      "legs": 1, 
+      "maneuvers": 20, 
+      "maneuvers_total": 22, 
+      "highway_km": 522.77, 
+      "toll_km": 0, 
+      "endpoint_gap_m": [
+       2, 
+       137
+      ], 
+      "ok": true
+     }, 
+     {
+      "time_s": 20644.6, 
+      "length_km": 537.924, 
+      "legs": 1, 
+      "maneuvers": 22, 
+      "maneuvers_total": 24, 
+      "highway_km": 386.16, 
+      "toll_km": 0, 
+      "endpoint_gap_m": [
+       2, 
+       137
+      ], 
+      "ok": true
+     }
+    ]
+   }, 
+   "I2": {
+    "alternates": [
+     {
+      "time_s": 17253.7, 
+      "length_km": 478.712, 
+      "legs": 1, 
+      "maneuvers": 19, 
+      "maneuvers_total": 21, 
+      "highway_km": 476.29, 
+      "toll_km": 0, 
+      "endpoint_gap_m": [
+       10, 
+       32
+      ], 
+      "ok": true
+     }, 
+     {
+      "time_s": 17547.6, 
+      "length_km": 471.918, 
+      "legs": 1, 
+      "maneuvers": 19, 
+      "maneuvers_total": 21, 
+      "highway_km": 327.57, 
+      "toll_km": 0, 
+      "endpoint_gap_m": [
+       10, 
+       32
+      ], 
+      "ok": true
+     }
+    ]
+   }, 
+   "I3": {
+    "alternates": []
+   }, 
+   "I4": {
+    "alternates": [
+     {
+      "time_s": 7902.0, 
+      "length_km": 188.603, 
+      "legs": 1, 
+      "maneuvers": 16, 
+      "maneuvers_total": 18, 
+      "highway_km": 112.86, 
+      "toll_km": 0, 
+      "endpoint_gap_m": [
+       1, 
+       2
+      ], 
+      "ok": true
+     }, 
+     {
+      "time_s": 8588.1, 
+      "length_km": 191.391, 
+      "legs": 1, 
+      "maneuvers": 19, 
+      "maneuvers_total": 21, 
+      "highway_km": 89.55, 
+      "toll_km": 0, 
+      "endpoint_gap_m": [
+       1, 
+       2
+      ], 
+      "ok": true
+     }
+    ]
+   }, 
+   "T1": {
+    "alternates": [
+     {
+      "time_s": 21474.5, 
+      "length_km": 504.124, 
+      "legs": 1, 
+      "maneuvers": 35, 
+      "maneuvers_total": 37, 
+      "highway_km": 252.76, 
+      "toll_km": 0, 
+      "endpoint_gap_m": [
+       80, 
+       32
+      ], 
+      "ok": true
+     }, 
+     {
+      "time_s": 22429.7, 
+      "length_km": 564.545, 
+      "legs": 1, 
+      "maneuvers": 39, 
+      "maneuvers_total": 41, 
+      "highway_km": 464.85, 
+      "toll_km": 0, 
+      "endpoint_gap_m": [
+       80, 
+       32
+      ], 
+      "ok": true
+     }
+    ]
+   }, 
+   "T2": {
+    "alternates": [
+     {
+      "time_s": 7884.1, 
+      "length_km": 194.019, 
+      "legs": 1, 
+      "maneuvers": 17, 
+      "maneuvers_total": 19, 
+      "highway_km": 165.72, 
+      "toll_km": 0, 
+      "endpoint_gap_m": [
+       9, 
+       253
+      ], 
+      "ok": true
+     }, 
+     {
+      "time_s": 7732.3, 
+      "length_km": 184.153, 
+      "legs": 1, 
+      "maneuvers": 18, 
+      "maneuvers_total": 20, 
+      "highway_km": 138.02, 
+      "toll_km": 0, 
+      "endpoint_gap_m": [
+       9, 
+       253
+      ], 
+      "ok": true
+     }
+    ]
+   }, 
+   "X1": {
+    "alternates": [
+     {
+      "time_s": 4337.1, 
+      "length_km": 93.248, 
+      "legs": 1, 
+      "maneuvers": 6, 
+      "maneuvers_total": 8, 
+      "highway_km": 0, 
+      "toll_km": 0, 
+      "endpoint_gap_m": [
+       16, 
+       23
+      ], 
+      "ok": true
+     }
+    ]
+   }, 
+   "X2": {
+    "alternates": [
+     {
+      "time_s": 3349.1, 
+      "length_km": 64.244, 
+      "legs": 1, 
+      "maneuvers": 8, 
+      "maneuvers_total": 10, 
+      "highway_km": 0, 
+      "toll_km": 0, 
+      "endpoint_gap_m": [
+       62, 
+       11
+      ], 
+      "ok": true
+     }
+    ]
+   }, 
+   "X3": {
+    "alternates": [
+     {
+      "time_s": 871.0, 
+      "length_km": 12.29, 
+      "legs": 1, 
+      "maneuvers": 9, 
+      "maneuvers_total": 11, 
+      "highway_km": 0, 
+      "toll_km": 0, 
+      "endpoint_gap_m": [
+       4, 
+       15
+      ], 
+      "ok": true
+     }, 
+     {
+      "time_s": 978.0, 
+      "length_km": 14.369, 
+      "legs": 1, 
+      "maneuvers": 5, 
+      "maneuvers_total": 7, 
+      "highway_km": 0, 
+      "toll_km": 0, 
+      "endpoint_gap_m": [
+       4, 
+       15
+      ], 
+      "ok": true
+     }
+    ]
+   }, 
+   "B1": {
+    "alternates": [
+     {
+      "time_s": 6589.0, 
+      "length_km": 168.861, 
+      "legs": 1, 
+      "maneuvers": 20, 
+      "maneuvers_total": 22, 
+      "highway_km": 140.63, 
+      "toll_km": 0, 
+      "endpoint_gap_m": [
+       2, 
+       70
+      ], 
+      "ok": true
+     }
+    ]
+   }, 
+   "B2": {
+    "alternates": [
+     {
+      "time_s": 4783.5, 
+      "length_km": 118.881, 
+      "legs": 1, 
+      "maneuvers": 20, 
+      "maneuvers_total": 22, 
+      "highway_km": 79.32, 
+      "toll_km": 0, 
+      "endpoint_gap_m": [
+       29, 
+       32
+      ], 
+      "ok": true
+     }, 
+     {
+      "time_s": 4978.0, 
+      "length_km": 118.213, 
+      "legs": 1, 
+      "maneuvers": 30, 
+      "maneuvers_total": 32, 
+      "highway_km": 72.37, 
+      "toll_km": 0, 
+      "endpoint_gap_m": [
+       29, 
+       32
+      ], 
+      "ok": true
+     }
+    ]
+   }, 
+   "B3": {
+    "alternates": [
+     {
+      "time_s": 9261.2, 
+      "length_km": 225.409, 
+      "legs": 1, 
+      "maneuvers": 27, 
+      "maneuvers_total": 29, 
+      "highway_km": 159.99, 
+      "toll_km": 0, 
+      "endpoint_gap_m": [
+       70, 
+       32
+      ], 
+      "ok": true
+     }, 
+     {
+      "time_s": 9341.8, 
+      "length_km": 253.059, 
+      "legs": 1, 
+      "maneuvers": 23, 
+      "maneuvers_total": 25, 
+      "highway_km": 250.73, 
+      "toll_km": 0, 
+      "endpoint_gap_m": [
+       70, 
+       32
+      ], 
+      "ok": true
+     }
+    ]
+   }, 
+   "B4": {
+    "alternates": [
+     {
+      "time_s": 8015.9, 
+      "length_km": 230.04, 
+      "legs": 1, 
+      "maneuvers": 19, 
+      "maneuvers_total": 21, 
+      "highway_km": 225.83, 
+      "toll_km": 0, 
+      "endpoint_gap_m": [
+       17, 
+       2
+      ], 
+      "ok": true
+     }, 
+     {
+      "time_s": 8045.9, 
+      "length_km": 235.541, 
+      "legs": 1, 
+      "maneuvers": 17, 
+      "maneuvers_total": 19, 
+      "highway_km": 231.33, 
+      "toll_km": 0, 
+      "endpoint_gap_m": [
+       17, 
+       2
+      ], 
+      "ok": true
+     }
+    ]
+   }, 
+   "B5": {
+    "alternates": [
+     {
+      "time_s": 822.7, 
+      "length_km": 15.092, 
+      "legs": 1, 
+      "maneuvers": 2, 
+      "maneuvers_total": 4, 
+      "highway_km": 0, 
+      "toll_km": 0, 
+      "endpoint_gap_m": [
+       3, 
+       8
+      ], 
+      "ok": true
+     }, 
+     {
+      "time_s": 974.6, 
+      "length_km": 15.767, 
+      "legs": 1, 
+      "maneuvers": 5, 
+      "maneuvers_total": 7, 
+      "highway_km": 0, 
+      "toll_km": 0, 
+      "endpoint_gap_m": [
+       3, 
+       8
+      ], 
+      "ok": true
+     }
+    ]
+   }
+  }
+ }, 
+ "motorway_origin": {
+  "exit24": {
+   "stops": [
+    {
+     "lat": 42.028694, 
+     "lon": -80.128884, 
+     "heading": 57, 
+     "radius": 60
+    }, 
+    {
+     "lat": 42.053308, 
+     "lon": -80.079579
+    }
+   ], 
+   "fastest": {
+    "time_s": 272.8, 
+    "length_km": 5.341, 
+    "legs": 1, 
+    "maneuvers": 3, 
+    "maneuvers_total": 5, 
+    "highway_km": 4.17, 
+    "toll_km": 0, 
+    "endpoint_gap_m": [
+     0, 
+     0
+    ], 
+    "ok": true, 
+    "alternates": []
+   }, 
+   "avoid_highways": {
+    "time_s": 272.8, 
+    "length_km": 5.341, 
+    "legs": 1, 
+    "maneuvers": 3, 
+    "maneuvers_total": 5, 
+    "highway_km": 4.17, 
+    "toll_km": 0, 
+    "endpoint_gap_m": [
+     0, 
+     0
+    ], 
+    "ok": true, 
+    "alternates": []
+   }
+  }, 
+  "I90_pa_to_erie": {
+   "stops": [
+    {
+     "lat": 41.943116, 
+     "lon": -80.489605
+    }, 
+    {
+     "lat": 42.127, 
+     "lon": -80.0852
+    }
+   ], 
+   "fastest": {
+    "time_s": 1912.6, 
+    "length_km": 48.345, 
+    "legs": 1, 
+    "maneuvers": 7, 
+    "maneuvers_total": 9, 
+    "highway_km": 46.71, 
+    "toll_km": 0, 
+    "endpoint_gap_m": [
+     0, 
+     2
+    ], 
+    "ok": true, 
+    "alternates": [
+     {
+      "time_s": 2101.2, 
+      "length_km": 44.903, 
+      "legs": 1, 
+      "maneuvers": 7, 
+      "maneuvers_total": 9, 
+      "highway_km": 22.15, 
+      "toll_km": 0, 
+      "endpoint_gap_m": [
+       0, 
+       2
+      ], 
+      "ok": true
+     }
+    ]
+   }, 
+   "avoid_highways": {
+    "time_s": 2207.2, 
+    "length_km": 42.414, 
+    "legs": 1, 
+    "maneuvers": 7, 
+    "maneuvers_total": 9, 
+    "highway_km": 1.85, 
+    "toll_km": 0, 
+    "endpoint_gap_m": [
+     0, 
+     2
+    ], 
+    "ok": true, 
+    "used_fallback": true, 
+    "alternates": [
+     {
+      "time_s": 2221.4, 
+      "length_km": 42.343, 
+      "legs": 1, 
+      "maneuvers": 9, 
+      "maneuvers_total": 11, 
+      "highway_km": 1.85, 
+      "toll_km": 0, 
+      "endpoint_gap_m": [
+       0, 
+       2
+      ], 
+      "ok": true
+     }, 
+     {
+      "time_s": 2330.0, 
+      "length_km": 44.802, 
+      "legs": 1, 
+      "maneuvers": 11, 
+      "maneuvers_total": 13, 
+      "highway_km": 1.85, 
+      "toll_km": 0, 
+      "endpoint_gap_m": [
+       0, 
+       2
+      ], 
+      "ok": true
+     }
+    ]
+   }
+  }, 
+  "I90_pa_to_I90_oh": {
+   "stops": [
+    {
+     "lat": 41.943116, 
+     "lon": -80.489605
+    }, 
+    {
+     "lat": 41.924682, 
+     "lon": -80.544549, 
+     "search_filter": {
+      "min_road_class": "service_other", 
+      "max_road_class": "motorway"
+     }
+    }
+   ], 
+   "fastest": {
+    "time_s": 530.1, 
+    "length_km": 14.552, 
+    "legs": 1, 
+    "maneuvers": 6, 
+    "maneuvers_total": 8, 
+    "highway_km": 13.08, 
+    "toll_km": 0, 
+    "endpoint_gap_m": [
+     0, 
+     0
+    ], 
+    "ok": true, 
+    "alternates": [
+     {
+      "time_s": 788.6, 
+      "length_km": 17.067, 
+      "legs": 1, 
+      "maneuvers": 6, 
+      "maneuvers_total": 8, 
+      "highway_km": 4.24, 
+      "toll_km": 0, 
+      "endpoint_gap_m": [
+       0, 
+       0
+      ], 
+      "ok": true
+     }
+    ]
+   }, 
+   "avoid_highways": {
+    "time_s": 788.6, 
+    "length_km": 17.067, 
+    "legs": 1, 
+    "maneuvers": 6, 
+    "maneuvers_total": 8, 
+    "highway_km": 4.24, 
+    "toll_km": 0, 
+    "endpoint_gap_m": [
+     0, 
+     0
+    ], 
+    "ok": true, 
+    "used_fallback": true, 
+    "alternates": [
+     {
+      "time_s": 1154.9, 
+      "length_km": 22.766, 
+      "legs": 1, 
+      "maneuvers": 5, 
+      "maneuvers_total": 7, 
+      "highway_km": 4.13, 
+      "toll_km": 0, 
+      "endpoint_gap_m": [
+       0, 
+       0
+      ], 
+      "ok": true
+     }, 
+     {
+      "time_s": 1357.4, 
+      "length_km": 27.587, 
+      "legs": 1, 
+      "maneuvers": 6, 
+      "maneuvers_total": 8, 
+      "highway_km": 4.13, 
+      "toll_km": 0, 
+      "endpoint_gap_m": [
+       0, 
+       0
+      ], 
+      "ok": true
+     }
+    ]
+   }
+  }, 
+  "I80_pa_to_sharon": {
+   "stops": [
+    {
+     "lat": 41.180677, 
+     "lon": -80.492403
+    }, 
+    {
+     "lat": 41.233, 
+     "lon": -80.4932
+    }
+   ], 
+   "fastest": {
+    "time_s": 723.4, 
+    "length_km": 14.766, 
+    "legs": 1, 
+    "maneuvers": 5, 
+    "maneuvers_total": 7, 
+    "highway_km": 13.52, 
+    "toll_km": 0, 
+    "endpoint_gap_m": [
+     0, 
+     3
+    ], 
+    "ok": true, 
+    "alternates": [
+     {
+      "time_s": 665.6, 
+      "length_km": 12.633, 
+      "legs": 1, 
+      "maneuvers": 5, 
+      "maneuvers_total": 7, 
+      "highway_km": 5.55, 
+      "toll_km": 0, 
+      "endpoint_gap_m": [
+       0, 
+       3
+      ], 
+      "ok": true
+     }, 
+     {
+      "time_s": 768.6, 
+      "length_km": 14.737, 
+      "legs": 1, 
+      "maneuvers": 4, 
+      "maneuvers_total": 6, 
+      "highway_km": 5.55, 
+      "toll_km": 0, 
+      "endpoint_gap_m": [
+       0, 
+       3
+      ], 
+      "ok": true
+     }
+    ]
+   }, 
+   "avoid_highways": {
+    "time_s": 864.1, 
+    "length_km": 16.389, 
+    "legs": 1, 
+    "maneuvers": 8, 
+    "maneuvers_total": 10, 
+    "highway_km": 4.56, 
+    "toll_km": 0, 
+    "endpoint_gap_m": [
+     0, 
+     3
+    ], 
+    "ok": true, 
+    "used_fallback": true, 
+    "alternates": [
+     {
+      "time_s": 886.6, 
+      "length_km": 15.711, 
+      "legs": 1, 
+      "maneuvers": 7, 
+      "maneuvers_total": 9, 
+      "highway_km": 4.56, 
+      "toll_km": 0, 
+      "endpoint_gap_m": [
+       0, 
+       3
+      ], 
+      "ok": true
+     }, 
+     {
+      "time_s": 986.7, 
+      "length_km": 19.363, 
+      "legs": 1, 
+      "maneuvers": 8, 
+      "maneuvers_total": 10, 
+      "highway_km": 4.56, 
+      "toll_km": 0, 
+      "endpoint_gap_m": [
+       0, 
+       3
+      ], 
+      "ok": true
+     }
+    ]
+   }
+  }
+ }, 
+ "meta": {
+  "engine": "pyvalhalla 3.9.1", 
+  "device_layout": "tar", 
+  "graph_build": [
+   "261114-pa-oh-v3.9.1-b53087"
+  ], 
+  "packs": [
+   "oh", 
+   "pa"
+  ], 
+  "requests": 666, 
+  "distinct_requests": 427
+ }, 
+ "matrix_1x40": {
+  "trip": "I1", 
+  "request": {
+   "sources": [
+    {
+     "lat": 42.127, 
+     "lon": -80.0852
+    }
+   ], 
+   "targets": [
+    {
+     "lat": 42.103279, 
+     "lon": -80.117442
+    }, 
+    {
+     "lat": 42.024668, 
+     "lon": -80.159609
+    }, 
+    {
+     "lat": 41.912681, 
+     "lon": -80.171668
+    }, 
+    {
+     "lat": 41.804539, 
+     "lon": -80.194088
+    }, 
+    {
+     "lat": 41.702557, 
+     "lon": -80.194998
+    }, 
+    {
+     "lat": 41.60562, 
+     "lon": -80.183477
+    }, 
+    {
+     "lat": 41.507347, 
+     "lon": -80.166652
+    }, 
+    {
+     "lat": 41.401329, 
+     "lon": -80.174877
+    }, 
+    {
+     "lat": 41.294491, 
+     "lon": -80.153375
+    }, 
+    {
+     "lat": 41.184766, 
+     "lon": -80.156424
+    }, 
+    {
+     "lat": 41.204569, 
+     "lon": -80.017615
+    }, 
+    {
+     "lat": 41.183501, 
+     "lon": -79.889997
+    }, 
+    {
+     "lat": 41.177399, 
+     "lon": -79.745181
+    }, 
+    {
+     "lat": 41.184029, 
+     "lon": -79.629854
+    }, 
+    {
+     "lat": 41.201962, 
+     "lon": -79.498242
+    }, 
+    {
+     "lat": 41.163982, 
+     "lon": -79.365307
+    }, 
+    {
+     "lat": 41.192033, 
+     "lon": -79.230475
+    }, 
+    {
+     "lat": 41.156789, 
+     "lon": -79.091701
+    }, 
+    {
+     "lat": 41.140106, 
+     "lon": -78.971031
+    }, 
+    {
+     "lat": 41.14264, 
+     "lon": -78.829906
+    }, 
+    {
+     "lat": 41.132152, 
+     "lon": -78.7043
+    }, 
+    {
+     "lat": 41.111115, 
+     "lon": -78.571246
+    }, 
+    {
+     "lat": 41.065653, 
+     "lon": -78.453237
+    }, 
+    {
+     "lat": 41.007717, 
+     "lon": -78.365989
+    }, 
+    {
+     "lat": 40.935168, 
+     "lon": -78.277123
+    }, 
+    {
+     "lat": 40.875362, 
+     "lon": -78.194871
+    }, 
+    {
+     "lat": 40.81444, 
+     "lon": -78.074134
+    }, 
+    {
+     "lat": 40.811104, 
+     "lon": -77.954957
+    }, 
+    {
+     "lat": 40.803959, 
+     "lon": -77.82179
+    }, 
+    {
+     "lat": 40.778586, 
+     "lon": -77.697378
+    }, 
+    {
+     "lat": 40.750931, 
+     "lon": -77.618139
+    }, 
+    {
+     "lat": 40.671119, 
+     "lon": -77.620437
+    }, 
+    {
+     "lat": 40.584695, 
+     "lon": -77.550355
+    }, 
+    {
+     "lat": 40.592679, 
+     "lon": -77.436687
+    }, 
+    {
+     "lat": 40.542332, 
+     "lon": -77.3416
+    }, 
+    {
+     "lat": 40.557557, 
+     "lon": -77.210881
+    }, 
+    {
+     "lat": 40.501527, 
+     "lon": -77.124065
+    }, 
+    {
+     "lat": 40.445662, 
+     "lon": -77.038411
+    }, 
+    {
+     "lat": 40.371979, 
+     "lon": -76.980776
+    }, 
+    {
+     "lat": 40.309967, 
+     "lon": -76.898969
+    }
+   ], 
+   "costing": "auto", 
+   "units": "kilometers"
+  }, 
+  "times_s": [
+   600, 
+   1132, 
+   1428, 
+   2261, 
+   2300, 
+   2502, 
+   2904, 
+   3260, 
+   3948, 
+   4450, 
+   4746, 
+   4821, 
+   5089, 
+   5705, 
+   6466, 
+   6563, 
+   6664, 
+   7026, 
+   7351, 
+   7982, 
+   8075, 
+   9120, 
+   9259, 
+   9401, 
+   9763, 
+   10408, 
+   10785, 
+   11344, 
+   11735, 
+   12979, 
+   13326, 
+   13276, 
+   15693, 
+   14530, 
+   14933, 
+   15997, 
+   18046, 
+   16373, 
+   16199, 
+   16677
+  ], 
+  "distances_km": [
+   6.337, 
+   18.792, 
+   37.455, 
+   49.735, 
+   54.941, 
+   67.562, 
+   79.259, 
+   93.723, 
+   109.564, 
+   123.309, 
+   120.438, 
+   141.032, 
+   151.144, 
+   162.531, 
+   178.026, 
+   189.575, 
+   198.26, 
+   210.74, 
+   222.86, 
+   236.185, 
+   245.687, 
+   267.47, 
+   274.179, 
+   283.611, 
+   293.93, 
+   306.146, 
+   317.719, 
+   332.128, 
+   342.083, 
+   355.547, 
+   383.288, 
+   379.735, 
+   390.98, 
+   406.444, 
+   428.992, 
+   408.903, 
+   444.434, 
+   453.021, 
+   460.815, 
+   472.392
+  ], 
+  "nulls": 0
+ }
+}

@@ -1,0 +1,95 @@
+[
+{
+"name": "B1-seam-z8.3-v1",
+"packs": [
+"pa-261114-z0-15.pmtiles",
+"oh-261114-z0-15.pmtiles"
+],
+"order": "interleaved",
+"variant": "day",
+"zoom": 8.3,
+"lat": 41.1,
+"lon": -80.52
+},
+{
+"name": "B2-seam-z12-v1",
+"packs": [
+"pa-261114-z0-15.pmtiles",
+"oh-261114-z0-15.pmtiles"
+],
+"order": "interleaved",
+"variant": "day",
+"zoom": 12,
+"lat": 41.19,
+"lon": -80.52
+},
+{
+"name": "B3-seam-z15.5-v1",
+"packs": [
+"pa-261114-z0-15.pmtiles",
+"oh-261114-z0-15.pmtiles"
+],
+"order": "interleaved",
+"variant": "day",
+"zoom": 15.5,
+"lat": 41.1946,
+"lon": -80.5195
+},
+{
+"name": "B4-lake-erie-seam-z10-v1",
+"packs": [
+"pa-261114-z0-15.pmtiles",
+"oh-261114-z0-15.pmtiles"
+],
+"order": "interleaved",
+"variant": "day",
+"zoom": 10,
+"lat": 41.95,
+"lon": -80.52
+},
+{
+"name": "B5-seam-z12-night-v1",
+"packs": [
+"pa-261114-z0-15.pmtiles",
+"oh-261114-z0-15.pmtiles"
+],
+"order": "interleaved",
+"variant": "night",
+"zoom": 12,
+"lat": 41.19,
+"lon": -80.52
+},
+{
+"name": "B7-seam-z17-v1",
+"packs": [
+"pa-261114-z0-15.pmtiles",
+"oh-261114-z0-15.pmtiles"
+],
+"order": "interleaved",
+"variant": "day",
+"zoom": 17,
+"lat": 41.1946,
+"lon": -80.5195
+},
+{
+"name": "B6-hosted-base-us-z3.6-day",
+"packs": [
+"base-us-20261114-z0-7.pmtiles"
+],
+"variant": "day",
+"zoom": 3.6,
+"lat": 38.5,
+"lon": -96.5,
+"note": "first round's stand-in cut from Protomaps' hosted build"
+},
+{
+"name": "B8-hosted-base-pa-z7.5-day",
+"packs": [
+"base-us-20261114-z0-7.pmtiles"
+],
+"variant": "day",
+"zoom": 7.5,
+"lat": 41.0,
+"lon": -79.6
+}
+]

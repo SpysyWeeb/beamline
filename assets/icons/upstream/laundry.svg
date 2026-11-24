@@ -1,0 +1,9 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="477.25 599.5 19 19">
+  <!-- Extracted from protomaps/basemaps sprites/refill.svg (commit 42ffaaa4) group '_laundry'. Derived from tangrams/icons, Copyright (c) 2017 Mapzen, MIT License; Protomaps visual design CC0-1.0. See assets/LICENSES.md. -->
+  <g>
+      <rect x="477.75" y="600" width="18" height="18" rx="4" ry="4" stroke-miterlimit="10" stroke="#3f3f3f" fill="#f4f4f4" />
+      <rect x="482.71" y="603.9" width="8.12" height="10.58" stroke="#3f3f3f" stroke-linecap="round" stroke-linejoin="round" fill="#fff" />
+      <circle cx="486.77" cy="610.21" r="2.47" stroke="#3f3f3f" stroke-linecap="round" stroke-linejoin="round" fill="#d3d3d3" />
+      <line x1="482.71" y1="606.25" x2="490.83" y2="606.25" stroke="#3f3f3f" fill="none" stroke-linecap="round" stroke-linejoin="round" />
+   </g>
+</svg>

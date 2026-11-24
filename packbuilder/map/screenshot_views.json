@@ -1,0 +1,23 @@
+[
+ {"name": "01-pa-state-day", "packs": ["pa-261114-z0-15.pmtiles"], "variant": "day", "zoom": 6.6, "lat": 40.95, "lon": -77.7},
+ {"name": "02-pa-state-night", "packs": ["pa-261114-z0-15.pmtiles"], "variant": "night", "zoom": 6.6, "lat": 40.95, "lon": -77.7},
+ {"name": "03-erie-city-day", "packs": ["pa-261114-z0-15.pmtiles"], "variant": "day", "zoom": 11.5, "lat": 42.105, "lon": -80.08},
+ {"name": "04-pittsburgh-city-day", "packs": ["pa-261114-z0-15.pmtiles"], "variant": "day", "zoom": 11.5, "lat": 40.445, "lon": -79.99},
+ {"name": "05-philadelphia-city-day", "packs": ["pa-261114-z0-15.pmtiles"], "variant": "day", "zoom": 11.5, "lat": 39.96, "lon": -75.16},
+ {"name": "06-pittsburgh-city-night", "packs": ["pa-261114-z0-15.pmtiles"], "variant": "night", "zoom": 11.5, "lat": 40.445, "lon": -79.99},
+ {"name": "07-erie-street-day", "packs": ["pa-261114-z0-15.pmtiles"], "variant": "day", "zoom": 16.5, "lat": 42.1265, "lon": -80.0855},
+ {"name": "08-erie-street-night", "packs": ["pa-261114-z0-15.pmtiles"], "variant": "night", "zoom": 16.5, "lat": 42.1265, "lon": -80.0855},
+ {"name": "09-philadelphia-street-day", "packs": ["pa-261114-z0-15.pmtiles"], "variant": "day", "zoom": 16.5, "lat": 39.9515, "lon": -75.1635},
+ {"name": "10-pittsburgh-street-night", "packs": ["pa-261114-z0-15.pmtiles"], "variant": "night", "zoom": 16.5, "lat": 40.4406, "lon": -79.9985},
+ {"name": "11-erie-interstates-shields-day", "packs": ["pa-261114-z0-15.pmtiles"], "variant": "day", "zoom": 11.8, "lat": 42.06, "lon": -80.07},
+ {"name": "12-harrisburg-city-day", "packs": ["pa-261114-z0-15.pmtiles"], "variant": "day", "zoom": 12, "lat": 40.27, "lon": -76.88},
+ {"name": "13-pittsburgh-oakland-cafe-z17-day", "packs": ["pa-261114-z0-15.pmtiles"], "variant": "day", "zoom": 17.3, "lat": 40.4437, "lon": -79.9485, "note": "accented POI names: The Café Carnegie, Crêpes Parisiennes"},
+ {"name": "14-pittsburgh-oakland-cafe-z17-night", "packs": ["pa-261114-z0-15.pmtiles"], "variant": "night", "zoom": 17.3, "lat": 40.4437, "lon": -79.9485},
+ {"name": "15-philadelphia-oneway-z17-day", "packs": ["pa-261114-z0-15.pmtiles"], "variant": "day", "zoom": 17, "lat": 39.9550, "lon": -75.1550, "note": "Chinatown: one-way arrows, Greenland Café, T-Swirl Crêpe"},
+ {"name": "16-state-college-city-day", "packs": ["pa-261114-z0-15.pmtiles"], "variant": "day", "zoom": 13, "lat": 40.7934, "lon": -77.86},
+ {"name": "17-scranton-city-night", "packs": ["pa-261114-z0-15.pmtiles"], "variant": "night", "zoom": 12, "lat": 41.41, "lon": -75.66},
+ {"name": "20-z15-street-z18-philadelphia", "packs": ["pa-261114-z0-15.pmtiles"], "variant": "day", "zoom": 18, "lat": 39.9505, "lon": -75.1625, "note": "z15 pack overzoomed 3 levels"},
+ {"name": "21-z14-street-z18-philadelphia", "packs": ["pa-261114-z0-14.pmtiles"], "variant": "day", "zoom": 18, "lat": 39.9505, "lon": -75.1625, "note": "z14 pack overzoomed 4 levels"},
+ {"name": "22-z15-street-z16-erie", "packs": ["pa-261114-z0-15.pmtiles"], "variant": "day", "zoom": 16, "lat": 42.1265, "lon": -80.0855},
+ {"name": "23-z14-street-z16-erie", "packs": ["pa-261114-z0-14.pmtiles"], "variant": "day", "zoom": 16, "lat": 42.1265, "lon": -80.0855}
+]

@@ -1,0 +1,16 @@
+[
+ {"name": "30-seam-z8-interleaved", "packs": ["pa-261114-z0-15.pmtiles", "oh-261114-z0-15.pmtiles"], "order": "interleaved", "variant": "day", "zoom": 8.3, "lat": 41.1, "lon": -80.52},
+ {"name": "31-seam-z8-merged", "packs": ["pa-oh-261114-z0-15-merged.pmtiles"], "variant": "day", "zoom": 8.3, "lat": 41.1, "lon": -80.52},
+ {"name": "32-seam-z12-interleaved", "packs": ["pa-261114-z0-15.pmtiles", "oh-261114-z0-15.pmtiles"], "order": "interleaved", "variant": "day", "zoom": 12, "lat": 41.19, "lon": -80.52},
+ {"name": "33-seam-z12-grouped", "packs": ["pa-261114-z0-15.pmtiles", "oh-261114-z0-15.pmtiles"], "order": "grouped", "variant": "day", "zoom": 12, "lat": 41.19, "lon": -80.52},
+ {"name": "34-seam-z12-merged", "packs": ["pa-oh-261114-z0-15-merged.pmtiles"], "variant": "day", "zoom": 12, "lat": 41.19, "lon": -80.52},
+ {"name": "35-seam-z15-interleaved", "packs": ["pa-261114-z0-15.pmtiles", "oh-261114-z0-15.pmtiles"], "order": "interleaved", "variant": "day", "zoom": 15.5, "lat": 41.1946, "lon": -80.5195},
+ {"name": "36-seam-z15-merged", "packs": ["pa-oh-261114-z0-15-merged.pmtiles"], "variant": "day", "zoom": 15.5, "lat": 41.1946, "lon": -80.5195},
+ {"name": "37-seam-pa-only-z12", "packs": ["pa-261114-z0-15.pmtiles"], "variant": "day", "zoom": 12, "lat": 41.19, "lon": -80.52},
+ {"name": "38-lowzoom-z5-two-packs", "packs": ["pa-261114-z0-15.pmtiles", "oh-261114-z0-15.pmtiles"], "variant": "day", "zoom": 5, "lat": 40.6, "lon": -80.5},
+ {"name": "39-lowzoom-z5-base-plus-packs", "packs": ["pa-261114-z0-15.pmtiles", "oh-261114-z0-15.pmtiles"], "base": "base-us-20261114-z0-7.pmtiles", "basemax": 8, "variant": "day", "zoom": 5, "lat": 40.6, "lon": -80.5},
+ {"name": "40-z9-base-plus-packs", "packs": ["pa-261114-z0-15.pmtiles", "oh-261114-z0-15.pmtiles"], "base": "base-us-20261114-z0-7.pmtiles", "basemax": 8, "variant": "day", "zoom": 9, "lat": 41.2, "lon": -80.0},
+ {"name": "41-seam-z12-night-interleaved", "packs": ["pa-261114-z0-15.pmtiles", "oh-261114-z0-15.pmtiles"], "order": "interleaved", "variant": "night", "zoom": 12, "lat": 41.19, "lon": -80.52},
+ {"name": "42-lake-erie-seam-z10-merged", "packs": ["pa-oh-261114-z0-15-merged.pmtiles"], "variant": "day", "zoom": 10, "lat": 41.95, "lon": -80.52},
+ {"name": "43-lake-erie-seam-z10-interleaved", "packs": ["pa-261114-z0-15.pmtiles", "oh-261114-z0-15.pmtiles"], "order": "interleaved", "variant": "day", "zoom": 10, "lat": 41.95, "lon": -80.52}
+]

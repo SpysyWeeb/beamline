@@ -1,0 +1,11 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="730.25 599.5 19 19">
+  <!-- Extracted from protomaps/basemaps sprites/refill.svg (commit 42ffaaa4) group '_beauty'. Derived from tangrams/icons, Copyright (c) 2017 Mapzen, MIT License; Protomaps visual design CC0-1.0. See assets/LICENSES.md. -->
+  <g>
+      <rect x="730.75" y="600" width="18" height="18" rx="4" ry="4" stroke-miterlimit="10" stroke="#3f3f3f" fill="#f4f4f4" />
+      <path d="M736.33,614.54l.31-4c.03-.34,.32-.59,.66-.57,.31,.02,.54,.27,.57,.57l.31,4c.04,.51-.34,.95-.85,.99-.51,.04-.95-.34-.99-.85,0-.05,0-.1,0-.14Z" fill="#3f3f3f" />
+      <ellipse cx="737.25" cy="607" rx="3.5" ry="4" stroke="#3f3f3f" stroke-linecap="round" stroke-linejoin="round" fill="#d3d3d3" />
+      <path d="M744.75,610h-2v-3.09c0-.37,0-.71,.33-.9l1.19-.71c.28-.17,.48-.06,.48,.36v4.35Z" stroke="#3f3f3f" stroke-linejoin="round" fill="#d3d3d3" />
+      <rect x="742.75" y="609" width="2" height="4" stroke="#3f3f3f" stroke-linejoin="round" fill="#fdf8f0" />
+      <rect x="742.46" y="611" width="2.58" height="4" stroke="#3f3f3f" stroke-linejoin="round" fill="#fdf8f0" />
+   </g>
+</svg>

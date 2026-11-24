@@ -1,0 +1,32 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- Beamline keeps everything on this phone (docs/architecture-saved-places.md, rule PV4; the
+     lead's decision for integration, 2026-11-16: nothing of the app leaves the phone).
+     saved-places.json, recents.json and trip.json live in no_backup/, which Android never backs up
+     or transfers. allowBackup="false" turns cloud backup off; these rules say the same on Android 12
+     and later, and exclude every domain from a device-to-device transfer as well, the
+     device-protected ones included (nothing of the app uses that storage today; a library that
+     did would not take anything along). -->
+<data-extraction-rules>
+    <cloud-backup>
+        <exclude domain="root" path="." />
+        <exclude domain="file" path="." />
+        <exclude domain="database" path="." />
+        <exclude domain="sharedpref" path="." />
+        <exclude domain="external" path="." />
+        <exclude domain="device_root" path="." />
+        <exclude domain="device_file" path="." />
+        <exclude domain="device_database" path="." />
+        <exclude domain="device_sharedpref" path="." />
+    </cloud-backup>
+    <device-transfer>
+        <exclude domain="root" path="." />
+        <exclude domain="file" path="." />
+        <exclude domain="database" path="." />
+        <exclude domain="sharedpref" path="." />
+        <exclude domain="external" path="." />
+        <exclude domain="device_root" path="." />
+        <exclude domain="device_file" path="." />
+        <exclude domain="device_database" path="." />
+        <exclude domain="device_sharedpref" path="." />
+    </device-transfer>
+</data-extraction-rules>

@@ -1,0 +1,21 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="479.25 8.5 19 19">
+  <!-- Extracted from protomaps/basemaps sprites/refill.svg (commit 42ffaaa4) group '_fire_station'. Derived from tangrams/icons, Copyright (c) 2017 Mapzen, MIT License; Protomaps visual design CC0-1.0. See assets/LICENSES.md. -->
+  <g>
+      <rect x="479.75" y="9" width="18" height="18" rx="4" ry="4" stroke-miterlimit="10" stroke="#3f3f3f" fill="#f4f4f4" />
+      <rect x="484.75" y="23" width="2" height="2" stroke="#3f3f3f" stroke-linecap="round" stroke-linejoin="round" fill="#d3d3d3" />
+      <rect x="490.75" y="23" width="2" height="2" stroke="#3f3f3f" stroke-linecap="round" stroke-linejoin="round" fill="#d3d3d3" />
+      <line x1="482.75" y1="15.5" x2="482.75" y2="18.5" stroke-miterlimit="10" stroke="#3f3f3f" fill="none" />
+      <line x1="494.75" y1="15.5" x2="494.75" y2="18.5" stroke-miterlimit="10" stroke="#3f3f3f" fill="none" />
+      <line x1="485.4" y1="14.12" x2="485.4" y2="14.83" stroke-miterlimit="10" stroke="#3f3f3f" fill="none" stroke-linecap="round" />
+      <line x1="492.21" y1="14.12" x2="492.21" y2="14.89" stroke-miterlimit="10" stroke="#3f3f3f" fill="none" stroke-linecap="round" />
+      <line x1="486.75" y1="10.5" x2="486.75" y2="13.5" stroke-miterlimit="10" stroke="#3f3f3f" fill="none" />
+      <line x1="490.75" y1="10.5" x2="490.75" y2="13.5" stroke-miterlimit="10" stroke="#3f3f3f" fill="none" />
+      <line x1="487.25" y1="12" x2="490.25" y2="12" stroke-miterlimit="10" stroke="#3f3f3f" fill="none" />
+      <rect x="484.75" y="15" width="8" height="8" stroke="#3f3f3f" stroke-linecap="round" stroke-linejoin="round" fill="#d3d3d3" />
+      <line x1="484.75" y1="19" x2="492.75" y2="19" stroke="#3f3f3f" fill="none" stroke-linecap="round" stroke-linejoin="round" />
+      <line x1="488.75" y1="15" x2="488.75" y2="19" stroke="#3f3f3f" fill="none" stroke-linecap="round" stroke-linejoin="round" />
+      <line x1="486.08" y1="20.88" x2="487" y2="20.88" stroke-miterlimit="10" stroke="#3f3f3f" fill="none" />
+      <line x1="490.39" y1="20.88" x2="491.31" y2="20.88" stroke-miterlimit="10" stroke="#3f3f3f" fill="none" />
+      <line x1="487.75" y1="20.88" x2="489.64" y2="20.88" stroke-miterlimit="10" stroke="#3f3f3f" fill="none" />
+   </g>
+</svg>

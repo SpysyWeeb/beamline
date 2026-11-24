@@ -1,0 +1,32 @@
+[
+{
+"name": "R1-lanesdir-braddock-z18",
+"packs": ["pa-261114-z14.pmtiles"],
+"variant": "day",
+"zoom": 18,
+"lat": 40.4121,
+"lon": -79.8759,
+"overlay": "lanesdir",
+"note": "South Braddock Ave near Braddock, OSM way 504762367 (primary, lanes 3, forward 2, backward 1, turn:lanes:forward left|through;right) runs north-west; red > marks show the tile line's direction. Patch v1 merged it into a line running south-east (review finding); render once with --packs data/map/work/patch-v1-packs --prefix v1patch-"
+},
+{
+"name": "R2-lanesdir-peach-downs-z17",
+"packs": ["pa-261114-z14.pmtiles"],
+"variant": "day",
+"zoom": 17,
+"lat": 42.0514,
+"lon": -80.0832,
+"overlay": "lanesdir",
+"note": "the exit 24 / Peach St checkpoints with direction marks"
+},
+{
+"name": "R3-lanesdir-peach-bothways-z17",
+"packs": ["pa-261114-z14.pmtiles"],
+"variant": "day",
+"zoom": 17,
+"lat": 42.0730,
+"lon": -80.0930,
+"overlay": "lanesdir",
+"note": "Peach St / US 19 south of Erie: ways 530832899/530832900/530832915 with a centre two-way left-turn lane (lanes:both_ways 1, turn:lanes:both_ways left)"
+}
+]

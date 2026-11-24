@@ -1,0 +1,8 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="773.1 389.82 19 19">
+  <!-- Extracted from protomaps/basemaps sprites/refill.svg (commit 42ffaaa4) group '_forest'. Derived from tangrams/icons, Copyright (c) 2017 Mapzen, MIT License; Protomaps visual design CC0-1.0. See assets/LICENSES.md. -->
+  <g>
+      <rect x="773.6" y="390.32" width="18" height="18" rx="4" ry="4" stroke-miterlimit="10" stroke="#3f3f3f" fill="#f4f4f4" />
+      <polygon points="782.69 393.65 780.69 396.66 781.92 396.66 779.76 399.91 781.03 399.91 778.49 403.44 786.56 403.44 784.16 399.88 785.49 399.85 783.46 396.72 784.72 396.72 782.69 393.65" stroke="#3f3f3f" stroke-linecap="round" stroke-linejoin="round" fill="#d3d3d3" />
+      <polyline points="781.63 403.44 781.63 405 783.58 405 783.58 403.44" stroke="#3f3f3f" fill="none" stroke-linecap="round" stroke-linejoin="round" />
+   </g>
+</svg>

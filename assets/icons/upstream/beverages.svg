@@ -1,0 +1,18 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="813.27 855.5 19 19">
+  <!-- Extracted from protomaps/basemaps sprites/refill.svg (commit 42ffaaa4) group '_beverages'. Derived from tangrams/icons, Copyright (c) 2017 Mapzen, MIT License; Protomaps visual design CC0-1.0. See assets/LICENSES.md. -->
+  <g>
+      <rect x="813.77" y="856" width="18" height="18" rx="4" ry="4" stroke-miterlimit="10" stroke="#3f3f3f" fill="#f4f4f4" />
+      <g>
+         <g>
+            <path d="M826.72,869.03v-8.15c-.67-.37-1.13-1.06-1.13-1.86h-5.66c0,.8-.46,1.49-1.13,1.86v8.15c.67,.37,1.13,1.06,1.13,1.86h5.66c0-.8,.46-1.49,1.13-1.86Z" fill="#f4f4f4" />
+            <path d="M826.72,869.03v-8.15c-.67-.37-1.13-1.06-1.13-1.86h-5.66c0,.8-.46,1.49-1.13,1.86v8.15c.67,.37,1.13,1.06,1.13,1.86h5.66c0-.8,.46-1.49,1.13-1.86Z" stroke-miterlimit="10" stroke="#3f3f3f" fill="none" />
+         </g>
+         <rect x="819.27" y="861.33" width="7" height="7.17" fill="#969696" />
+         <line x1="818.83" y1="860.95" x2="826.76" y2="860.95" stroke="#3f3f3f" stroke-linecap="round" stroke-linejoin="round" stroke-width=".75" fill="#e0e0e0" />
+         <line x1="818.87" y1="868.95" x2="826.8" y2="868.95" stroke="#3f3f3f" stroke-linecap="round" stroke-linejoin="round" stroke-width=".75" fill="#e0e0e0" />
+         <ellipse cx="821.74" cy="865.13" rx=".65" ry=".62" fill="#d3d3d3" />
+         <ellipse cx="823.83" cy="863.29" rx=".97" ry=".92" fill="#d3d3d3" />
+         <path d="M826.27,868.57c-2.33,0-4.66,0-6.99,0,.01-.77-.01-1.52,0-2.29,.36,.17,1.97,.88,3.94,.41,1.81-.43,2.8-1.59,3.05-1.91,0,1.26,0,2.52,0,3.79Z" fill="#d3d3d3" />
+      </g>
+   </g>
+</svg>

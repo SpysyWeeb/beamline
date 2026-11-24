@@ -1,0 +1,10 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- Night drive launcher icon (docs/design/app-icon/): adaptive, minSdk 26. Background and
+     foreground are bitmaps at every density (the foreground's glow and shadow are Gaussian blurs,
+     which vector drawables cannot draw), rendered by scripts/render_icon.py; the monochrome layer
+     is a vector for themed icons (Android 13+). -->
+<adaptive-icon xmlns:android="http://schemas.android.com/apk/res/android">
+    <background android:drawable="@mipmap/ic_launcher_background" />
+    <foreground android:drawable="@mipmap/ic_launcher_foreground" />
+    <monochrome android:drawable="@drawable/ic_launcher_monochrome" />
+</adaptive-icon>

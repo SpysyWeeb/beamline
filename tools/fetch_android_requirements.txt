@@ -1,0 +1,6 @@
+# Python packages for android/scripts/make_route_gpx.py (reads a pack's map tiles), installed into .venv/android
+#   python -m venv .venv/android
+#   .venv/android/Scripts/python -m pip install -r tools/fetch_android_requirements.txt
+# Build-time and test only; nothing here ships in the app. The pack tools themselves
+# (tools/fetch_android_map_pack.py, android/scripts/read_pack.py) need only the standard library.
+pmtiles==3.8.1  # BSD-3-Clause - read/write PMTiles archives

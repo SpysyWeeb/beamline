@@ -1,0 +1,21 @@
+{
+  "format": "beamline-guidance-banner/1",
+  "note": "Rules of the guidance banner (docs/design/README.md, docs/design/turn-banner.html), read by the app's banner model (android/routing/banner, copied there by android/routing/scripts/sync_data.py; edit this file, not the copy). Maneuver types are Valhalla's (proto/descriptors/directions.proto at 3.9.1). Distances in metres, times in seconds. Distance texts are not made here: every distance on screen comes from units.json through :core:units UnitFormatter (docs/architecture.md 2.9; this file's former distance_text is units.json's imperial table).",
+  "following_turn": {
+    "max_distance_m": 804.672,
+    "max_time_s": 60,
+    "not_a_turn_types": [4, 5, 6],
+    "why": "The following turn sits beside the main instruction when it comes within 0.5 mile (804.672 m) AND within 1 minute of the main one, measured with the route's own length and time estimate of the stretch between the two. Arriving (types 4-6) is not a turn: the banner does not chain to the destination. Valhalla's own verbal_multi_cue is not used: it did not chain the left onto Peach St and the right onto Downs Dr (0.22 mi apart) on the owner's trip."
+  },
+  "lanes": {
+    "row_needs_a_marked_lane": true,
+    "refine_best_lane_for_following_turn": true,
+    "no_side_types": [7, 8, 17, 22],
+    "why": "A lane row is shown only when the engine marked at least one lane valid or active for the maneuver; lanes with none marked (and maneuvers without lane data) get no row, nothing is guessed. Best lane = the engine's active lanes. Valhalla 3.9.1 already narrows them to one lane on the side of the next maneuver when the maneuver is shorter than 0.402 km (src/odin/enhancedtrippath.cc ActivateTurnLanes); when the banner shows a following turn and the engine still marks several lanes, the banner applies the same rule up to the following-turn limit: the active lane nearest the side of the following turn stays best and the other active lanes become 'also allowed'. Following maneuvers of the no_side_types (becomes, continue, ramp straight, stay straight) have no side, as in Valhalla."
+  },
+  "road_abbreviations": {
+    "words": {"Street": "St", "Drive": "Dr", "Avenue": "Ave", "Road": "Rd", "Boulevard": "Blvd", "Highway": "Hwy",
+              "Parkway": "Pkwy", "Lane": "Ln", "Court": "Ct", "Place": "Pl", "Circle": "Cir", "Terrace": "Ter"},
+    "why": "The sketch (docs/design/turn-banner.html) writes road names short: 'US 19 / Peach St', 'onto Downs Dr' (decision 6.26). Only the last word of a road name is abbreviated, and only when another word comes before it: 'Peach Street' -> 'Peach St', 'Street Road' -> 'Street Rd', 'General Strong Vincent Memorial Highway' -> '... Memorial Hwy'; 'Downs Drive Extension' and a name that is the word alone ('Boulevard') stay as they are. Words match exactly (case included); route numbers ('US 19', 'I 90 East') are left alone. Applied to the roads of the main instruction (exit branches and street names), not to the sign's destinations ('toward ...')."
+  }
+}

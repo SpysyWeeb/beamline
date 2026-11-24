@@ -1,0 +1,830 @@
+{
+ "format": "beamline-notices-source/1",
+ "about": "What Beamline ships, one entry per component, each with an SPDX licence (docs/architecture.md 5.1 A, 6.34). scripts/notices.py makes the app's assets/notices/ from it and checks it against what ships (--check). 'covers' names the Maven modules (group:name, a trailing * matches a prefix) an entry accounts for; 'checked' says where the licence was read. Copyright lines are given only where they were read in the component's own licence file.",
+ "not_shipped": [
+  {
+   "covers": "androidx.compose:compose-bom",
+   "why": "a Maven BOM: version constraints only, no code"
+  },
+  {
+   "covers": "com.squareup.okhttp3:okhttp-bom",
+   "why": "a Maven BOM: version constraints only, no code"
+  },
+  {
+   "covers": "org.jetbrains.kotlinx:kotlinx-coroutines-bom",
+   "why": "a Maven BOM: version constraints only, no code"
+  },
+  {
+   "covers": "org.jetbrains.kotlinx:kotlinx-serialization-bom",
+   "why": "a Maven BOM: version constraints only, no code"
+  }
+ ],
+ "native_libraries": {
+  "libandroidx.graphics.path.so": {
+   "from": "androidx.graphics:graphics-path",
+   "components": [
+    "AndroidX libraries (Jetpack, Jetpack Compose)"
+   ],
+   "complete": true,
+   "basis": "the library (10 KB, arm64) links only libc, libdl and libm and holds no third-party marker; its sources (androidx graphics/graphics-path/src/main/cpp, read on androidx-main: Conic, Path, PathIterator, pathway, scalar) are Android Open Source Project files under Apache-2.0"
+  },
+  "libsqliteJni.so": {
+   "from": "androidx.sqlite:sqlite-bundled-android",
+   "components": [
+    "SQLite",
+    "AndroidX libraries (Jetpack, Jetpack Compose)"
+   ],
+   "complete": true,
+   "basis": "sqlite-bundled compiles the SQLite amalgamation with AndroidX's JNI glue (the AAR's own LICENSE.txt is Apache-2.0)"
+  },
+  "libmaplibre.so": {
+   "from": "org.maplibre.gl:android-sdk-opengl",
+   "components": [
+    "MapLibre Android SDK",
+    "MapLibre Native base (mapbox-base)",
+    "kdbush.hpp",
+    "supercluster.hpp",
+    "shelf-pack-cpp",
+    "geojson-vt-cpp",
+    "cheap-ruler-cpp",
+    "Boost",
+    "csscolorparser",
+    "earcut.hpp",
+    "eternal",
+    "parsedate (from curl)",
+    "polylabel",
+    "protozero",
+    "unique_resource",
+    "vector-tile (mvt-cpp)",
+    "wagyu",
+    "expected-lite",
+    "RapidJSON",
+    "geojson.hpp",
+    "geometry.hpp",
+    "variant (mapbox)",
+    "jni.hpp",
+    "unordered_dense",
+    "FreeType",
+    "HarfBuzz",
+    "PMTiles C++ reader",
+    "MapLibre Tile (mlt-cpp)",
+    "FSST",
+    "FastPFOR",
+    "SIMD Everywhere",
+    "ICU",
+    "SQLite",
+    "LLVM libc++"
+   ],
+   "complete": true,
+   "basis": "the OpenGL build of MapLibre Native android-v13.7.1 (org.maplibre.gl:android-sdk-opengl 13.7.1, beamline.mapRenderer=opengl since the owner's decision of 2026-11-16): CMakeLists.txt's mbgl-core link list (kdbush, shelf-pack-cpp, geojson-vt-cpp, cheap-ruler-cpp, boost, earcut, eternal, parsedate, pmtiles, polylabel, protozero, supercluster, unique_resource, vector-tile, wagyu, mlt-cpp with FSST and FastPFOR, csscolorparser as MLN_USE_RUST is off, FreeType and HarfBuzz as MLN_TEXT_SHAPING_HARFBUZZ is on, MapLibreNative::Base with geojson.hpp, geometry.hpp and variant, expected-lite, rapidjson, unordered_dense; tracy and metal-cpp off), platform/android/android.cmake (jni.hpp, ICU, SQLite; zlib, EGL, GLES, log and jnigraphics are the system's); the NDK's libc++ statically. vendor/vulkan.cmake (Vulkan-Headers, VulkanMemoryAllocator, glslang, SPIRV) is linked only by the Vulkan build (org.maplibre.gl:android-sdk), which Beamline does not ship: track A counted 0 glslang, SPIR-V, VMA and Vulkan marker strings in the OpenGL arm64 library. Marker strings in the arm64 library confirm SQLite, ICU 61, FreeType, HarfBuzz, PMTiles, FSST, FastPFOR, protozero, supercluster, Boost and libc++abi. MapLibre's own LICENSE.md omits ICU, SQLite, HarfBuzz, PMTiles, unordered_dense, jni.hpp and the MLT code; those were read at their pinned commits (data/r3-a/notices/upstream/maplibre/)."
+  },
+  "libvalhalla-wrapper.so": {
+   "from": "io.github.rallista:valhalla-mobile",
+   "components": [
+    "valhalla-mobile",
+    "Valhalla",
+    "Protocol Buffers",
+    "Boost",
+    "Abseil",
+    "LZ4",
+    "RapidJSON",
+    "robin-hood-hashing",
+    "unordered_dense",
+    "date (Howard Hinnant)",
+    "IANA Time Zone Database",
+    "cpp-statsd-client",
+    "vtzero",
+    "protozero",
+    "flatbush (C++)",
+    "LLVM libc++"
+   ],
+   "complete": true,
+   "basis": "valhalla-mobile 0.6.4's vcpkg.json (protobuf, boost, robin-hood-hashing, rapidjson, lz4, abseil, unordered-dense; abseil and protobuf build paths are in the arm64 library) and Valhalla 3.9.1's own third_party code on its library's include path (date with the IANA tz data, embedded; cpp-statsd-client; vtzero with protozero; flatbush; unordered_dense; rapidjson). Not in it: OSM-binary (LGPL, used only by the data builder), libosmium, microtar (none of their strings), cxxopts and just_gtfs (tools and GTFS import). zlib is the system's (libz.so); the NDK's libc++ is linked statically."
+  }
+ },
+ "entries": [
+  {
+   "kind": "data",
+   "name": "OpenStreetMap data",
+   "licence": "ODbL-1.0",
+   "copyright": "© OpenStreetMap contributors",
+   "url": "https://www.openstreetmap.org/copyright",
+   "checked": "openstreetmap.org/copyright; the map, routing, search and address parts of every state pack"
+  },
+  {
+   "kind": "data",
+   "name": "Natural Earth",
+   "licence": "LicenseRef-Public-Domain",
+   "copyright": "Made with Natural Earth. Free vector and raster map data @ naturalearthdata.com.",
+   "url": "https://www.naturalearthdata.com/about/terms-of-use/",
+   "checked": "naturalearthdata.com terms of use (public domain); the US overview map (decision 6.1)"
+  },
+  {
+   "kind": "data",
+   "name": "US Census Bureau cartographic boundaries",
+   "licence": "LicenseRef-Public-Domain",
+   "copyright": "US Census Bureau",
+   "url": "https://www.census.gov/geographies/mapping-files.html",
+   "checked": "a work of the US Government (17 U.S.C. 105); the US overview map (decision 6.1)"
+  },
+  {
+   "kind": "data",
+   "name": "US Census Bureau TIGER/Line",
+   "licence": "LicenseRef-Public-Domain",
+   "copyright": "US Census Bureau, TIGER/Line Shapefiles",
+   "url": "https://www.census.gov/geographies/mapping-files/time-series/geo/tiger-line-file.html",
+   "checked": "a work of the US Government (17 U.S.C. 105); house-number ranges of the address part (report 04)"
+  },
+  {
+   "kind": "data",
+   "name": "USDOT National Address Database",
+   "licence": "LicenseRef-Public-Domain",
+   "copyright": "US Department of Transportation, National Address Database",
+   "url": "https://www.transportation.gov/gis/national-address-database",
+   "checked": "USDOT's DCAT record: usa.gov public-domain label (report 04); address points of the address part"
+  },
+  {
+   "kind": "data",
+   "name": "City of Scranton 911 address points",
+   "licence": "PDDL-1.0",
+   "copyright": "City of Scranton GIS",
+   "url": null,
+   "checked": "the ArcGIS item's licenseInfo: PDDL (report 04); address points of the Pennsylvania address part"
+  },
+  {
+   "kind": "art",
+   "name": "Protomaps basemaps style",
+   "version": "5.7.2",
+   "licence": "BSD-3-Clause AND CC0-1.0",
+   "copyright": "Copyright 2019-2023 Protomaps LLC, Kelso Cartography",
+   "url": "https://github.com/protomaps/basemaps",
+   "checked": "LICENSE.md of protomaps/basemaps at 42ffaaa4 (code BSD-3-Clause, visual design CC0-1.0); the style bundle's LICENSES.md"
+  },
+  {
+   "kind": "art",
+   "name": "Map icons (tangrams/icons)",
+   "licence": "MIT",
+   "copyright": "Copyright (c) 2017 Mapzen",
+   "url": "https://github.com/tangrams/icons",
+   "checked": "assets/LICENSES.md (tangrams/icons LICENSE.md at 92510779); the upstream icons and shields of the sprite sheets"
+  },
+  {
+   "kind": "font",
+   "name": "Noto Sans",
+   "licence": "OFL-1.1",
+   "copyright": "Copyright 2022 The Noto Project Authors (https://github.com/notofonts)",
+   "url": "https://notofonts.github.io/",
+   "checked": "glyphs/OFL.txt of the style bundle (the map labels' glyphs)"
+  },
+  {
+   "kind": "library",
+   "name": "AndroidX libraries (Jetpack, Jetpack Compose)",
+   "licence": "Apache-2.0",
+   "copyright": null,
+   "url": "https://developer.android.com/jetpack/androidx",
+   "checked": "each module's POM on Google Maven",
+   "covers": [
+    "androidx.activity:*",
+    "androidx.annotation:*",
+    "androidx.appcompat:*",
+    "androidx.arch.core:*",
+    "androidx.autofill:*",
+    "androidx.collection:*",
+    "androidx.compose.animation:*",
+    "androidx.compose.foundation:*",
+    "androidx.compose.material:*",
+    "androidx.compose.material3:*",
+    "androidx.compose.runtime:*",
+    "androidx.compose.ui:*",
+    "androidx.concurrent:*",
+    "androidx.core:*",
+    "androidx.customview:*",
+    "androidx.emoji2:*",
+    "androidx.fragment:*",
+    "androidx.graphics:*",
+    "androidx.interpolator:*",
+    "androidx.lifecycle:*",
+    "androidx.loader:*",
+    "androidx.navigationevent:*",
+    "androidx.profileinstaller:*",
+    "androidx.savedstate:*",
+    "androidx.sqlite:*",
+    "androidx.startup:*",
+    "androidx.tracing:*",
+    "androidx.vectordrawable:*",
+    "androidx.versionedparcelable:*",
+    "androidx.viewpager:*",
+    "androidx.window:*"
+   ]
+  },
+  {
+   "kind": "library",
+   "name": "Kotlin standard library and reflection",
+   "licence": "Apache-2.0",
+   "copyright": null,
+   "url": "https://kotlinlang.org/",
+   "checked": "POMs on Maven Central",
+   "covers": [
+    "org.jetbrains.kotlin:*"
+   ]
+  },
+  {
+   "kind": "library",
+   "name": "kotlinx.coroutines",
+   "licence": "Apache-2.0",
+   "copyright": null,
+   "url": "https://github.com/Kotlin/kotlinx.coroutines",
+   "checked": "POMs on Maven Central",
+   "covers": [
+    "org.jetbrains.kotlinx:kotlinx-coroutines-*"
+   ]
+  },
+  {
+   "kind": "library",
+   "name": "kotlinx.serialization",
+   "licence": "Apache-2.0",
+   "copyright": null,
+   "url": "https://github.com/Kotlin/kotlinx.serialization",
+   "checked": "POMs on Maven Central",
+   "covers": [
+    "org.jetbrains.kotlinx:kotlinx-serialization-*"
+   ]
+  },
+  {
+   "kind": "library",
+   "name": "JetBrains Java Annotations",
+   "licence": "Apache-2.0",
+   "copyright": null,
+   "url": "https://github.com/JetBrains/java-annotations",
+   "checked": "POM on Maven Central",
+   "covers": [
+    "org.jetbrains:annotations"
+   ]
+  },
+  {
+   "kind": "library",
+   "name": "JSpecify",
+   "version": "1.0.0",
+   "licence": "Apache-2.0",
+   "copyright": null,
+   "url": "https://jspecify.dev/",
+   "checked": "POM on Maven Central; LICENSE at v1.0.0",
+   "covers": [
+    "org.jspecify:jspecify"
+   ]
+  },
+  {
+   "kind": "library",
+   "name": "Gson",
+   "version": "2.10.1",
+   "licence": "Apache-2.0",
+   "copyright": null,
+   "url": "https://github.com/google/gson",
+   "checked": "POM on Maven Central; LICENSE at gson-parent-2.10.1",
+   "covers": [
+    "com.google.code.gson:gson"
+   ]
+  },
+  {
+   "kind": "library",
+   "name": "Guava ListenableFuture",
+   "version": "1.0",
+   "licence": "Apache-2.0",
+   "copyright": null,
+   "url": "https://github.com/google/guava",
+   "checked": "its parent POM (guava-parent) on Maven Central",
+   "covers": [
+    "com.google.guava:listenablefuture"
+   ]
+  },
+  {
+   "kind": "library",
+   "name": "Timber",
+   "version": "5.0.1",
+   "licence": "Apache-2.0",
+   "copyright": null,
+   "url": "https://github.com/JakeWharton/timber",
+   "checked": "POM on Maven Central; LICENSE.txt at 5.0.1",
+   "covers": [
+    "com.jakewharton.timber:timber"
+   ]
+  },
+  {
+   "kind": "library",
+   "name": "Moshi",
+   "version": "1.15.1",
+   "licence": "Apache-2.0",
+   "copyright": null,
+   "url": "https://github.com/square/moshi",
+   "checked": "POMs on Maven Central; LICENSE.txt at 1.15.1",
+   "covers": [
+    "com.squareup.moshi:moshi",
+    "com.squareup.moshi:moshi-adapters",
+    "com.squareup.moshi:moshi-kotlin"
+   ]
+  },
+  {
+   "kind": "library",
+   "name": "OkHttp",
+   "version": "5.3.2",
+   "licence": "Apache-2.0",
+   "copyright": null,
+   "url": "https://square.github.io/okhttp/",
+   "checked": "POMs on Maven Central (also docs/architecture-downloads.md 9.3)",
+   "covers": [
+    "com.squareup.okhttp3:okhttp",
+    "com.squareup.okhttp3:okhttp-android",
+    "com.squareup.okhttp3:okhttp-jvm"
+   ]
+  },
+  {
+   "kind": "library",
+   "name": "Public Suffix List (inside OkHttp)",
+   "licence": "MPL-2.0",
+   "copyright": "Copyright the Public Suffix List contributors (publicsuffix.org, Mozilla)",
+   "url": "https://publicsuffix.org/list/",
+   "checked": "OkHttp 5.3.2 ships Mozilla's Public Suffix List as data (assets/PublicSuffixDatabase.list in okhttp-release.aar, okhttp3/internal/publicsuffix/PublicSuffixDatabase.list in okhttp-jvm-5.3.2.jar; seen in the Gradle cache 2026-11-16); the list is under MPL-2.0 (publicsuffix.org). Covered artifacts stay on the OkHttp entry."
+  },
+  {
+   "kind": "library",
+   "name": "Okio",
+   "version": "3.16.4",
+   "licence": "Apache-2.0",
+   "copyright": null,
+   "url": "https://square.github.io/okio/",
+   "checked": "POMs on Maven Central (also docs/architecture-downloads.md 9.3)",
+   "covers": [
+    "com.squareup.okio:okio",
+    "com.squareup.okio:okio-jvm"
+   ]
+  },
+  {
+   "kind": "library",
+   "name": "OSRM OpenAPI models",
+   "version": "0.0.10",
+   "licence": "BSD-3-Clause",
+   "copyright": "Copyright (c) 2024, Stadia Maps",
+   "url": "https://github.com/stadiamaps/osrm-openapi",
+   "checked": "POM on Maven Central; LICENSE of stadiamaps/osrm-openapi",
+   "covers": [
+    "com.stadiamaps:osrm-openapi"
+   ]
+  },
+  {
+   "kind": "library",
+   "name": "OpeningHoursParser",
+   "version": "0.29.0",
+   "licence": "MIT",
+   "copyright": "Copyright (c) 2015 Simon Poole",
+   "url": "https://github.com/simonpoole/OpeningHoursParser",
+   "checked": "POM on Maven Central (MIT; its one dependency, org.jetbrains:annotations, optional and not shipped); LICENCE.txt of simonpoole/OpeningHoursParser",
+   "covers": [
+    "ch.poole:OpeningHoursParser"
+   ]
+  },
+  {
+   "kind": "library",
+   "name": "valhalla-mobile",
+   "version": "0.6.4",
+   "licence": "MIT",
+   "copyright": "Copyright (c) 2024 Adventure Consortium Inc (dba Rallista)",
+   "url": "https://github.com/Rallista/valhalla-mobile",
+   "checked": "POM on Maven Central; LICENSE.md at tag 0.6.4",
+   "covers": [
+    "io.github.rallista:valhalla-mobile"
+   ]
+  },
+  {
+   "kind": "library",
+   "name": "valhalla-models",
+   "version": "0.6.0",
+   "licence": "MIT",
+   "copyright": "Copyright (c) 2024 Adventure Consortium Inc (dba Rallista)",
+   "url": "https://github.com/Rallista/valhalla-mobile",
+   "checked": "POMs on Maven Central",
+   "covers": [
+    "io.github.rallista:valhalla-models",
+    "io.github.rallista:valhalla-models-config"
+   ]
+  },
+  {
+   "kind": "library",
+   "name": "MapLibre Android SDK",
+   "version": "13.7.1",
+   "licence": "BSD-2-Clause",
+   "copyright": "Copyright (c) 2021 MapLibre contributors; Copyright (c) 2018-2021 MapTiler.com; Copyright (c) 2014-2020 Mapbox",
+   "url": "https://github.com/maplibre/maplibre-native",
+   "checked": "POM on Maven Central (BSD-2-Clause); LICENSE.md of maplibre-native at android-v13.7.1",
+   "covers": [
+    "org.maplibre.gl:android-sdk-opengl"
+   ]
+  },
+  {
+   "kind": "library",
+   "name": "MapLibre GeoJSON and Turf for Android",
+   "version": "6.0.1",
+   "licence": "MIT",
+   "copyright": "Copyright (c) 2018 Mapbox",
+   "url": "https://github.com/maplibre/maplibre-java",
+   "checked": "LICENSE of maplibre/maplibre-java (MIT). The 6.0.1 POMs say Apache-2.0; MIT is recorded because the repository's licence file governs and its notice must be kept (open question in report 17)",
+   "covers": [
+    "org.maplibre.gl:android-sdk-geojson",
+    "org.maplibre.gl:android-sdk-turf"
+   ]
+  },
+  {
+   "kind": "library",
+   "name": "MapLibre Android Gestures",
+   "version": "0.0.4",
+   "licence": "BSD-2-Clause",
+   "copyright": "Copyright (c) 2018, Mapbox; Copyright (c) 2024, MapLibre contributors",
+   "url": "https://github.com/maplibre/maplibre-gestures-android",
+   "checked": "POM on Maven Central (BSD-2-Clause); LICENSE.md of maplibre-gestures-android",
+   "covers": [
+    "org.maplibre.gl:maplibre-android-gestures"
+   ]
+  },
+  {
+   "kind": "native",
+   "name": "SQLite",
+   "licence": "blessing",
+   "copyright": "The SQLite authors dedicated SQLite to the public domain.",
+   "url": "https://sqlite.org/copyright.html",
+   "checked": "sqlite.org/copyright.html; built into libsqliteJni.so of androidx.sqlite:sqlite-bundled and into libmaplibre.so (vendor/sqlite 3.45.3 of MapLibre Native android-v13.7.1, linked by platform/android/android.cmake)"
+  },
+  {
+   "kind": "native",
+   "name": "Valhalla",
+   "version": "3.9.1",
+   "licence": "MIT",
+   "copyright": "Copyright (c) 2018 Valhalla contributors; Copyright (c) 2015-2017 Mapillary AB, Mapzen",
+   "url": "https://github.com/valhalla/valhalla",
+   "checked": "COPYING of valhalla/valhalla; built into libvalhalla-wrapper.so of valhalla-mobile 0.6.4 (version from the version catalog's note)"
+  },
+  {
+   "kind": "native",
+   "name": "Protocol Buffers",
+   "licence": "BSD-3-Clause",
+   "copyright": "Copyright 2008 Google Inc. All rights reserved.",
+   "url": "https://github.com/protocolbuffers/protobuf",
+   "checked": "report 09 (valhalla-mobile's vcpkg.json at 0.6.4); built into libvalhalla-wrapper.so; copyright from LICENSE of protocolbuffers/protobuf (data/r3-a/notices/upstream/copyright/)"
+  },
+  {
+   "kind": "native",
+   "name": "Boost",
+   "licence": "BSL-1.0",
+   "copyright": "Copyright the authors of the Boost C++ Libraries (each source file names its holders)",
+   "url": "https://www.boost.org/",
+   "checked": "report 09 (valhalla-mobile's vcpkg.json at 0.6.4) and platform/android/LICENSE.md of MapLibre Native android-v13.7.1 (data/r3-a/notices/upstream/maplibre-native-android-v13.7.1-platform-android-LICENSE.md) (header-only Boost, maplibre-gl-native-boost); built into libvalhalla-wrapper.so and libmaplibre.so; copyright from the Boost project (its LICENSE_1_0.txt names no holder, its source files name theirs) (data/r3-a/notices/upstream/copyright/)"
+  },
+  {
+   "kind": "native",
+   "name": "Abseil",
+   "licence": "Apache-2.0",
+   "copyright": null,
+   "url": "https://abseil.io/",
+   "checked": "report 09 (valhalla-mobile's vcpkg.json at 0.6.4); built into libvalhalla-wrapper.so"
+  },
+  {
+   "kind": "native",
+   "name": "LZ4",
+   "licence": "BSD-2-Clause",
+   "copyright": "Copyright (c) 2011-2020, Yann Collet",
+   "url": "https://github.com/lz4/lz4",
+   "checked": "report 09 (valhalla-mobile's vcpkg.json at 0.6.4; the library part of LZ4 is BSD-2-Clause); built into libvalhalla-wrapper.so; copyright from lib/LICENSE of lz4/lz4 v1.10.0 (data/r3-a/notices/upstream/copyright/)"
+  },
+  {
+   "kind": "native",
+   "name": "RapidJSON",
+   "licence": "MIT",
+   "copyright": "Copyright (C) 2015 THL A29 Limited, a Tencent company, and Milo Yip.",
+   "url": "https://rapidjson.org/",
+   "checked": "report 09 (valhalla-mobile's vcpkg.json at 0.6.4) and platform/android/LICENSE.md of MapLibre Native android-v13.7.1 (data/r3-a/notices/upstream/maplibre-native-android-v13.7.1-platform-android-LICENSE.md): MIT for RapidJSON itself (its msinttypes part is for MSVC only, its JSON-licensed part is test data); built into libvalhalla-wrapper.so and libmaplibre.so"
+  },
+  {
+   "kind": "native",
+   "name": "robin-hood-hashing",
+   "licence": "MIT",
+   "copyright": "Copyright (c) 2018-2021 Martin Ankerl",
+   "url": "https://github.com/martinus/robin-hood-hashing",
+   "checked": "report 09 (valhalla-mobile's vcpkg.json at 0.6.4); built into libvalhalla-wrapper.so; copyright from LICENSE of martinus/robin-hood-hashing (data/r3-a/notices/upstream/copyright/)"
+  },
+  {
+   "kind": "native",
+   "name": "unordered_dense",
+   "licence": "MIT",
+   "copyright": "Copyright (c) 2022 Martin Leitner-Ankerl",
+   "url": "https://github.com/martinus/unordered_dense",
+   "checked": "LICENSE of martinus/unordered_dense at 729896c7 (MapLibre's submodule); report 09 (valhalla-mobile's vcpkg.json at 0.6.4); built into libvalhalla-wrapper.so (its message is in the arm64 library) and libmaplibre.so (MLN_USE_UNORDERED_DENSE is on)"
+  },
+  {
+   "kind": "native",
+   "name": "LLVM libc++",
+   "licence": "Apache-2.0 WITH LLVM-exception",
+   "copyright": null,
+   "url": "https://libcxx.llvm.org/",
+   "checked": "libc++ and libc++abi of the Android NDK, linked statically into libmaplibre.so and libvalhalla-wrapper.so (their arm64 builds hold libc++abi's strings and need no libc++_shared.so); LLVM's licence since 2019"
+  },
+  {
+   "kind": "native",
+   "name": "MapLibre Native base (mapbox-base)",
+   "licence": "BSD-3-Clause",
+   "copyright": "Copyright (c) MapBox",
+   "url": "https://github.com/maplibre/maplibre-native-base",
+   "checked": "platform/android/LICENSE.md of MapLibre Native android-v13.7.1 (data/r3-a/notices/upstream/maplibre-native-android-v13.7.1-platform-android-LICENSE.md); linked into libmaplibre.so by MapLibre Native android-v13.7.1's CMakeLists.txt (mbgl-core link list) (MapLibreNative::Base)",
+   "source": "curate_natives.py"
+  },
+  {
+   "kind": "native",
+   "name": "kdbush.hpp",
+   "licence": "ISC",
+   "copyright": "Copyright (c) 2016, Vladimir Agafonkin",
+   "url": "https://github.com/mourner/kdbush.hpp",
+   "checked": "platform/android/LICENSE.md of MapLibre Native android-v13.7.1 (data/r3-a/notices/upstream/maplibre-native-android-v13.7.1-platform-android-LICENSE.md); linked into libmaplibre.so by MapLibre Native android-v13.7.1's CMakeLists.txt (mbgl-core link list)",
+   "source": "curate_natives.py"
+  },
+  {
+   "kind": "native",
+   "name": "supercluster.hpp",
+   "licence": "ISC",
+   "copyright": "Copyright (c) 2016, Mapbox",
+   "url": "https://github.com/mapbox/supercluster.hpp",
+   "checked": "platform/android/LICENSE.md of MapLibre Native android-v13.7.1 (data/r3-a/notices/upstream/maplibre-native-android-v13.7.1-platform-android-LICENSE.md); linked into libmaplibre.so by MapLibre Native android-v13.7.1's CMakeLists.txt (mbgl-core link list); its class names are in the arm64 library",
+   "source": "curate_natives.py"
+  },
+  {
+   "kind": "native",
+   "name": "shelf-pack-cpp",
+   "licence": "ISC",
+   "copyright": "Copyright (c) 2017, Mapbox",
+   "url": "https://github.com/mapbox/shelf-pack-cpp",
+   "checked": "platform/android/LICENSE.md of MapLibre Native android-v13.7.1 (data/r3-a/notices/upstream/maplibre-native-android-v13.7.1-platform-android-LICENSE.md); linked into libmaplibre.so by MapLibre Native android-v13.7.1's CMakeLists.txt (mbgl-core link list)",
+   "source": "curate_natives.py"
+  },
+  {
+   "kind": "native",
+   "name": "geojson-vt-cpp",
+   "licence": "ISC",
+   "copyright": "Copyright (c) 2015, Mapbox",
+   "url": "https://github.com/mapbox/geojson-vt-cpp",
+   "checked": "platform/android/LICENSE.md of MapLibre Native android-v13.7.1 (data/r3-a/notices/upstream/maplibre-native-android-v13.7.1-platform-android-LICENSE.md); linked into libmaplibre.so by MapLibre Native android-v13.7.1's CMakeLists.txt (mbgl-core link list)",
+   "source": "curate_natives.py"
+  },
+  {
+   "kind": "native",
+   "name": "cheap-ruler-cpp",
+   "licence": "ISC",
+   "copyright": "Copyright (c) 2017, Mapbox",
+   "url": "https://github.com/mapbox/cheap-ruler-cpp",
+   "checked": "platform/android/LICENSE.md of MapLibre Native android-v13.7.1 (data/r3-a/notices/upstream/maplibre-native-android-v13.7.1-platform-android-LICENSE.md); linked into libmaplibre.so by MapLibre Native android-v13.7.1's CMakeLists.txt (mbgl-core link list)",
+   "source": "curate_natives.py"
+  },
+  {
+   "kind": "native",
+   "name": "csscolorparser",
+   "licence": "MIT",
+   "copyright": "(c) Dean McNamee, 2012. (c) Konstantin Käfer, 2014.",
+   "url": "https://github.com/mapbox/css-color-parser-cpp",
+   "checked": "platform/android/LICENSE.md of MapLibre Native android-v13.7.1 (data/r3-a/notices/upstream/maplibre-native-android-v13.7.1-platform-android-LICENSE.md) (e-mail addresses left out here); linked into libmaplibre.so by MapLibre Native android-v13.7.1's CMakeLists.txt (mbgl-core link list) (MLN_USE_RUST is off)",
+   "source": "curate_natives.py"
+  },
+  {
+   "kind": "native",
+   "name": "earcut.hpp",
+   "licence": "ISC",
+   "copyright": "Copyright (c) 2015, Mapbox",
+   "url": "https://github.com/mapbox/earcut.hpp",
+   "checked": "platform/android/LICENSE.md of MapLibre Native android-v13.7.1 (data/r3-a/notices/upstream/maplibre-native-android-v13.7.1-platform-android-LICENSE.md); linked into libmaplibre.so by MapLibre Native android-v13.7.1's CMakeLists.txt (mbgl-core link list)",
+   "source": "curate_natives.py"
+  },
+  {
+   "kind": "native",
+   "name": "eternal",
+   "licence": "ISC",
+   "copyright": "Copyright (c) 2018, Mapbox",
+   "url": "https://github.com/mapbox/eternal",
+   "checked": "platform/android/LICENSE.md of MapLibre Native android-v13.7.1 (data/r3-a/notices/upstream/maplibre-native-android-v13.7.1-platform-android-LICENSE.md); linked into libmaplibre.so by MapLibre Native android-v13.7.1's CMakeLists.txt (mbgl-core link list)",
+   "source": "curate_natives.py"
+  },
+  {
+   "kind": "native",
+   "name": "parsedate (from curl)",
+   "licence": "curl",
+   "copyright": "Copyright (c) 1996 - 2020, Daniel Stenberg, and many contributors, see the THANKS file.",
+   "url": "https://curl.se/",
+   "checked": "platform/android/LICENSE.md of MapLibre Native android-v13.7.1 (data/r3-a/notices/upstream/maplibre-native-android-v13.7.1-platform-android-LICENSE.md) (curl's licence; e-mail address left out here); linked into libmaplibre.so by MapLibre Native android-v13.7.1's CMakeLists.txt (mbgl-core link list)",
+   "source": "curate_natives.py"
+  },
+  {
+   "kind": "native",
+   "name": "polylabel",
+   "licence": "ISC",
+   "copyright": "Copyright (c) 2016 Mapbox",
+   "url": "https://github.com/mapbox/polylabel",
+   "checked": "platform/android/LICENSE.md of MapLibre Native android-v13.7.1 (data/r3-a/notices/upstream/maplibre-native-android-v13.7.1-platform-android-LICENSE.md); linked into libmaplibre.so by MapLibre Native android-v13.7.1's CMakeLists.txt (mbgl-core link list)",
+   "source": "curate_natives.py"
+  },
+  {
+   "kind": "native",
+   "name": "protozero",
+   "licence": "BSD-2-Clause",
+   "copyright": "protozero copyright (c) Mapbox.",
+   "url": "https://github.com/mapbox/protozero",
+   "checked": "platform/android/LICENSE.md of MapLibre Native android-v13.7.1 (data/r3-a/notices/upstream/maplibre-native-android-v13.7.1-platform-android-LICENSE.md); linked into libmaplibre.so by MapLibre Native android-v13.7.1's CMakeLists.txt (mbgl-core link list); its exception class names are in the arm64 library; also a header-only part of Valhalla 3.9.1 (with vtzero)",
+   "source": "curate_natives.py"
+  },
+  {
+   "kind": "native",
+   "name": "unique_resource",
+   "licence": "BSL-1.0",
+   "copyright": "Copyright (c) 2015 okdshin; Portions Copyright (c) 2020 D3 Engineering, LLC.",
+   "url": "https://github.com/okdshin/unique_resource",
+   "checked": "platform/android/LICENSE.md of MapLibre Native android-v13.7.1 (data/r3-a/notices/upstream/maplibre-native-android-v13.7.1-platform-android-LICENSE.md); copyright from the header of unique_resource.hpp (okdshin/unique_resource master, data/r3-a/notices/upstream/copyright/unique_resource.hpp); linked into libmaplibre.so by MapLibre Native android-v13.7.1's CMakeLists.txt (mbgl-core link list)",
+   "source": "curate_natives.py"
+  },
+  {
+   "kind": "native",
+   "name": "vector-tile (mvt-cpp)",
+   "licence": "ISC",
+   "copyright": "Copyright (c) 2016, Mapbox",
+   "url": "https://github.com/maplibre/mvt-cpp",
+   "checked": "platform/android/LICENSE.md of MapLibre Native android-v13.7.1 (data/r3-a/notices/upstream/maplibre-native-android-v13.7.1-platform-android-LICENSE.md); linked into libmaplibre.so by MapLibre Native android-v13.7.1's CMakeLists.txt (mbgl-core link list)",
+   "source": "curate_natives.py"
+  },
+  {
+   "kind": "native",
+   "name": "wagyu",
+   "licence": "BSL-1.0",
+   "copyright": "Copyright (c) 2010-2015, Angus Johnson; Copyright (c) 2016, Mapbox",
+   "url": "https://github.com/mapbox/wagyu",
+   "checked": "platform/android/LICENSE.md of MapLibre Native android-v13.7.1 (data/r3-a/notices/upstream/maplibre-native-android-v13.7.1-platform-android-LICENSE.md) (derived from the Clipper library, Boost Software License); linked into libmaplibre.so by MapLibre Native android-v13.7.1's CMakeLists.txt (mbgl-core link list)",
+   "source": "curate_natives.py"
+  },
+  {
+   "kind": "native",
+   "name": "expected-lite",
+   "licence": "BSL-1.0",
+   "copyright": "Copyright (C) 2016-2025 Martin Moene.",
+   "url": "https://github.com/martinmoene/expected-lite",
+   "checked": "platform/android/LICENSE.md of MapLibre Native android-v13.7.1 (data/r3-a/notices/upstream/maplibre-native-android-v13.7.1-platform-android-LICENSE.md); copyright from the header of include/nonstd/expected.hpp (martinmoene/expected-lite master, data/r3-a/notices/upstream/copyright/expected-lite-expected.hpp); linked into libmaplibre.so by MapLibre Native android-v13.7.1's CMakeLists.txt (mbgl-core link list)",
+   "source": "curate_natives.py"
+  },
+  {
+   "kind": "native",
+   "name": "geojson.hpp",
+   "licence": "ISC",
+   "copyright": "Copyright (c) 2016, Mapbox",
+   "url": "https://github.com/mapbox/geojson-cpp",
+   "checked": "platform/android/LICENSE.md of MapLibre Native android-v13.7.1 (data/r3-a/notices/upstream/maplibre-native-android-v13.7.1-platform-android-LICENSE.md); linked into libmaplibre.so by MapLibre Native android-v13.7.1's CMakeLists.txt (mbgl-core link list)",
+   "source": "curate_natives.py"
+  },
+  {
+   "kind": "native",
+   "name": "geometry.hpp",
+   "licence": "ISC",
+   "copyright": "Copyright (c) 2016, Mapbox",
+   "url": "https://github.com/mapbox/geometry.hpp",
+   "checked": "platform/android/LICENSE.md of MapLibre Native android-v13.7.1 (data/r3-a/notices/upstream/maplibre-native-android-v13.7.1-platform-android-LICENSE.md); linked into libmaplibre.so by MapLibre Native android-v13.7.1's CMakeLists.txt (mbgl-core link list)",
+   "source": "curate_natives.py"
+  },
+  {
+   "kind": "native",
+   "name": "variant (mapbox)",
+   "licence": "BSD-3-Clause",
+   "copyright": "Copyright (c) MapBox",
+   "url": "https://github.com/mapbox/variant",
+   "checked": "platform/android/LICENSE.md of MapLibre Native android-v13.7.1 (data/r3-a/notices/upstream/maplibre-native-android-v13.7.1-platform-android-LICENSE.md); linked into libmaplibre.so by MapLibre Native android-v13.7.1's CMakeLists.txt (mbgl-core link list)",
+   "source": "curate_natives.py"
+  },
+  {
+   "kind": "native",
+   "name": "jni.hpp",
+   "licence": "ISC",
+   "copyright": "Copyright © 2016, Mapbox",
+   "url": "https://github.com/mapbox/jni.hpp",
+   "checked": "LICENSE.txt of mapbox/jni.hpp at 57ca9ed4 (maplibre-native-base/deps, data/r3-a/notices/upstream/maplibre/jni.hpp-LICENSE.txt); linked by platform/android/android.cmake (MapLibreNative::Base::jni.hpp)",
+   "source": "curate_natives.py"
+  },
+  {
+   "kind": "native",
+   "name": "FreeType",
+   "version": "2.13.3",
+   "licence": "FTL AND MIT",
+   "upstream_licence": "(FTL OR GPL-2.0-or-later) AND MIT",
+   "copyright": "Portions of this software are copyright © 2024 The FreeType Project (www.freetype.org). All rights reserved.; BDF driver: Copyright 2000 Computing Research Labs, New Mexico State University; Copyright 2001-2002, 2011 Francesco Zappa Nardelli; PCF driver: Copyright (C) 2000 by Francesco Zappa Nardelli",
+   "url": "https://freetype.org/",
+   "checked": "LICENSE.TXT, docs/FTL.TXT, src/bdf/README and src/pcf/README of freetype at 42608f77 (2.13.3, 2024-Aug-11 in docs/CHANGES; data/r3-a/notices/upstream/maplibre/freetype-*): FTL or GPL-2.0-or-later at the user's choice (Beamline takes FTL), the BDF and PCF drivers under an MIT-style licence; vendor/freetype.cmake compiles bdf and pcf and sets FT_DISABLE_ZLIB; linked because MLN_TEXT_SHAPING_HARFBUZZ is on; FT_ symbols are in the arm64 library",
+   "source": "curate_natives.py"
+  },
+  {
+   "kind": "native",
+   "name": "HarfBuzz",
+   "licence": "MIT-Modern-Variant AND MIT",
+   "copyright": "Copyright © 2010-2022 Google, Inc.; Copyright © 2015-2020 Ebrahim Byagowi; Copyright © 2019,2020 Facebook, Inc.; Copyright © 2012,2015 Mozilla Foundation; Copyright © 2011 Codethink Limited; Copyright © 2008,2010 Nokia Corporation and/or its subsidiary(-ies); Copyright © 2009 Keith Stribley; Copyright © 2011 Martin Hosken and SIL International; Copyright © 2007 Chris Wilson; Copyright © 2005,2006,2020,2021,2022,2023 Behdad Esfahbod; Copyright © 2004,2007,2008,2009,2010,2013,2021,2022,2023 Red Hat, Inc.; Copyright © 1998-2005 David Turner and Werner Lemberg; Copyright © 2016 Igalia S.L.; Copyright © 2022 Matthias Clasen; Copyright © 2018,2021 Khaled Hosny; Copyright © 2018,2019,2020 Adobe, Inc; Copyright © 2013-2015 Alexei Podtelezhnikov; src/ms-use: Copyright (c) Microsoft Corporation.",
+   "url": "https://harfbuzz.github.io/",
+   "checked": "COPYING ('Old MIT') and src/ms-use/COPYING (MIT) of harfbuzz at c1eb66d4 (data/r3-a/notices/upstream/maplibre/harfbuzz-*); linked because MLN_TEXT_SHAPING_HARFBUZZ is on (vendor/harfbuzz.cmake); its HB_OPTIONS string is in the arm64 library; missing from MapLibre's own LICENSE.md",
+   "source": "curate_natives.py"
+  },
+  {
+   "kind": "native",
+   "name": "PMTiles C++ reader",
+   "licence": "BSD-3-Clause",
+   "copyright": "Copyright 2021 Protomaps LLC",
+   "url": "https://github.com/protomaps/PMTiles",
+   "checked": "LICENSE of protomaps/PMTiles at e232df55 (data/r3-a/notices/upstream/maplibre/pmtiles-LICENSE); MLN_WITH_PMTILES is on; its messages are in the arm64 library; missing from MapLibre's own LICENSE.md",
+   "source": "curate_natives.py"
+  },
+  {
+   "kind": "native",
+   "name": "MapLibre Tile (mlt-cpp)",
+   "licence": "MIT",
+   "upstream_licence": "MIT OR Apache-2.0",
+   "copyright": "Copyright (c) 2024 MapLibre contributors",
+   "url": "https://github.com/maplibre/maplibre-tile-spec",
+   "checked": "README.md and LICENSE-MIT of maplibre/maplibre-tile-spec at 751ebb18 (code dual licensed, data/r3-a/notices/upstream/maplibre/mlt-*); linked into libmaplibre.so by MapLibre Native android-v13.7.1's CMakeLists.txt (mbgl-core link list) (mlt-cpp, without its JSON support)",
+   "source": "curate_natives.py"
+  },
+  {
+   "kind": "native",
+   "name": "FSST",
+   "licence": "MIT",
+   "copyright": "Copyright (c) 2018-2020, CWI, TU Munich, FSU Jena",
+   "url": "https://github.com/cwida/fsst",
+   "checked": "platform/android/LICENSE.md of MapLibre Native android-v13.7.1 (data/r3-a/notices/upstream/maplibre-native-android-v13.7.1-platform-android-LICENSE.md); compiled by mlt-cpp (cpp/vendor/fsst.cmake at 751ebb18); its messages are in the arm64 library",
+   "source": "curate_natives.py"
+  },
+  {
+   "kind": "native",
+   "name": "FastPFOR",
+   "licence": "Apache-2.0",
+   "copyright": null,
+   "url": "https://github.com/fast-pack/FastPFOR",
+   "checked": "platform/android/LICENSE.md of MapLibre Native android-v13.7.1 (data/r3-a/notices/upstream/maplibre-native-android-v13.7.1-platform-android-LICENSE.md); mlt-cpp compiles its bitpacking.cpp (cpp/vendor/fastpfor.cmake at 751ebb18); its name is in the arm64 library",
+   "source": "curate_natives.py"
+  },
+  {
+   "kind": "native",
+   "name": "SIMD Everywhere",
+   "licence": "MIT",
+   "copyright": "Copyright (c) 2017 Evan Nemerson",
+   "url": "https://github.com/simd-everywhere/simde",
+   "checked": "platform/android/LICENSE.md of MapLibre Native android-v13.7.1 (data/r3-a/notices/upstream/maplibre-native-android-v13.7.1-platform-android-LICENSE.md) (MapLibre lists it with FastPFOR; its use on Android was not checked; e-mail address left out here)",
+   "source": "curate_natives.py"
+  },
+  {
+   "kind": "native",
+   "name": "ICU",
+   "version": "61.1",
+   "licence": "Unicode-DFS-2016 AND ICU",
+   "copyright": "Copyright © 1991-2018 Unicode, Inc. All rights reserved.; Copyright (c) 1995-2016 International Business Machines Corporation and others",
+   "url": "https://icu.unicode.org/",
+   "checked": "vendor/icu/LICENSE and version.txt of MapLibre Native android-v13.7.1 (ICU 61.1: the ICU 58-and-later notice and the older ICU licence; data/r3-a/notices/upstream/maplibre/icu-*); vendor/icu.cmake compiles only bidi, shaping and string files (no dictionary, time zone or double-conversion data); linked by platform/android/android.cmake; ubidi_*_61 symbols are in the arm64 library; missing from MapLibre's own LICENSE.md",
+   "source": "curate_natives.py"
+  },
+  {
+   "kind": "native",
+   "name": "date (Howard Hinnant)",
+   "licence": "MIT",
+   "copyright": "Copyright (c) 2015, 2016, 2017 Howard Hinnant; Copyright (c) 2015 Ville Voutilainen; Copyright (c) 2016 Adrian Colomitchi; Copyright (c) 2016 Alexander Kormanovsky; Copyright (c) 2016, 2017 Jiangang Zhuang; Copyright (c) 2017 Florian Dang; Copyright (c) 2017 Paul Thompson; Copyright (c) 2017 Nicolas Veloz Savino; Copyright (c) 2017 Aaron Bishop; Copyright (c) 2017, 2018, 2019 Tomasz Kamiński",
+   "url": "https://github.com/HowardHinnant/date",
+   "checked": "LICENSE.txt and the headers of include/date/date.h, include/date/tz.h and src/tz.cpp of HowardHinnant/date at b2e917ce, Valhalla 3.9.1's third_party/date (data/r3-a/notices/upstream/valhalla/); its message ' not found in timezone database' is in the arm64 libvalhalla-wrapper.so",
+   "source": "curate_natives.py"
+  },
+  {
+   "kind": "native",
+   "name": "IANA Time Zone Database",
+   "licence": "LicenseRef-Public-Domain",
+   "copyright": null,
+   "url": "https://www.iana.org/time-zones",
+   "checked": "LICENSE of eggert/tz at d633fe7e, Valhalla 3.9.1's third_party/tz ('all files in the tz code and data ... are in the public domain'; the BSD-licensed date.c, newstrftime.3 and strftime.c are code, not data); the tz data files with their comments are embedded in the arm64 libvalhalla-wrapper.so",
+   "source": "curate_natives.py"
+  },
+  {
+   "kind": "native",
+   "name": "cpp-statsd-client",
+   "licence": "MIT",
+   "copyright": "Copyright (c) 2017 Vincent Thiery",
+   "url": "https://github.com/vthiery/cpp-statsd-client",
+   "checked": "LICENSE.md at b60bc7bb, Valhalla 3.9.1's third_party/cpp-statsd-client (header-only; src/CMakeLists.txt includes it); the statsd.* configuration keys Valhalla's worker reads are in the arm64 libvalhalla-wrapper.so",
+   "source": "curate_natives.py"
+  },
+  {
+   "kind": "native",
+   "name": "vtzero",
+   "licence": "BSD-2-Clause",
+   "copyright": "Copyright (c) 2017, Mapbox",
+   "url": "https://github.com/mapbox/vtzero",
+   "checked": "LICENSE at d4e8e099, Valhalla 3.9.1's third_party/vtzero (header-only, with protozero; used by the tile action, whose loki.service_defaults.mvt_* keys are in the arm64 libvalhalla-wrapper.so; the stripped library names no vtzero class, so this is listed so nothing is missed)",
+   "source": "curate_natives.py"
+  },
+  {
+   "kind": "native",
+   "name": "flatbush (C++)",
+   "licence": "MIT",
+   "copyright": "Copyright (c) 2021 Alex E.",
+   "url": "https://github.com/chusitoo/flatbush",
+   "checked": "LICENSE at b7a28a07, Valhalla 3.9.1's third_party/flatbush (header-only; on the include path of Valhalla's library; whether it is compiled in could not be told from the stripped library, so it is listed so nothing is missed)",
+   "source": "curate_natives.py"
+  }
+ ]
+}

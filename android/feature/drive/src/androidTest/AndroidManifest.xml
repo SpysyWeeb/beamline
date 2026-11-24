@@ -1,0 +1,12 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- Track D's device tests: an extra host activity in the test APK only (no permission, nothing shipped). -->
+<manifest xmlns:android="http://schemas.android.com/apk/res/android">
+    <application>
+        <!-- DriveLandscapeTest: the overlay with the phone on its side, without touching the device's rotation settings. -->
+        <activity
+            android:name="io.github.spysyweeb.beamline.feature.drive.LandscapeHostActivity"
+            android:exported="false"
+            android:screenOrientation="landscape"
+            android:theme="@android:style/Theme.Material.Light.NoActionBar" />
+    </application>
+</manifest>

@@ -1,0 +1,19 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="1066.25 8.5 19 19">
+  <!-- Extracted from protomaps/basemaps sprites/refill.svg (commit 42ffaaa4) group '_townhall'. Derived from tangrams/icons, Copyright (c) 2017 Mapzen, MIT License; Protomaps visual design CC0-1.0. See assets/LICENSES.md. -->
+  <g>
+      <rect x="1066.75" y="9" width="18" height="18" rx="4" ry="4" stroke-miterlimit="10" stroke="#3f3f3f" fill="#f4f4f4" />
+      <path d="M1070.3,15h10.92c.29,0,.53,.24,.53,.53v7.47h-12v-7.45c0-.3,.25-.55,.55-.55Z" stroke="#3f3f3f" stroke-linecap="round" stroke-linejoin="round" fill="#d3d2d1" />
+      <rect x="1072.75" y="15.15" width="6" height="5.65" fill="#fff" />
+      <line x1="1072.75" y1="15" x2="1072.75" y2="21" stroke="#3f3f3f" fill="none" stroke-linecap="round" stroke-linejoin="round" />
+      <line x1="1074.75" y1="15" x2="1074.75" y2="21" stroke="#3f3f3f" fill="none" stroke-linecap="round" stroke-linejoin="round" />
+      <line x1="1076.75" y1="15" x2="1076.75" y2="21" stroke="#3f3f3f" fill="none" stroke-linecap="round" stroke-linejoin="round" />
+      <line x1="1078.75" y1="15" x2="1078.75" y2="21" stroke="#3f3f3f" fill="none" stroke-linecap="round" stroke-linejoin="round" />
+      <g>
+         <polygon points="1075.72 11.39 1071.19 15 1080.25 15 1075.72 11.39" fill="#fff" />
+         <polygon points="1075.72 11.39 1071.19 15 1080.25 15 1075.72 11.39" stroke="#3f3f3f" fill="none" stroke-linecap="round" stroke-linejoin="round" />
+      </g>
+      <line x1="1069.75" y1="21" x2="1081.75" y2="21" stroke="#3f3f3f" fill="none" stroke-linecap="round" stroke-linejoin="round" />
+      <circle cx="1075.75" cy="13.5" r=".69" fill="#3f3f3f" />
+      <rect x="1070.25" y="21.5" width="11" height="1" fill="#fff" />
+   </g>
+</svg>

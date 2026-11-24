@@ -1,0 +1,8 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="437.25 9.5 19 19">
+  <!-- Extracted from protomaps/basemaps sprites/refill.svg (commit 42ffaaa4) group '_police'. Derived from tangrams/icons, Copyright (c) 2017 Mapzen, MIT License; Protomaps visual design CC0-1.0. See assets/LICENSES.md. -->
+  <g>
+      <rect x="437.75" y="10" width="18" height="18" rx="4" ry="4" stroke-miterlimit="10" stroke="#3f3f3f" fill="#f4f4f4" />
+      <path d="M446.8,24.98c1.76-.44,3.77-1.74,4.42-3.5,.38-1.03,.02-1.92-.39-2.88-.46-1.06-.52-1.7,.17-2.64l-1.5-1.63c-1.31,.85-2.83,.71-2.83,.71h.17s-1.52,.14-2.83-.71l-1.5,1.63c.63,.86,.66,1.49,.23,2.49s-.86,1.94-.46,3.03c.65,1.77,2.66,3.06,4.42,3.5h.11Z" stroke="#3f3f3f" stroke-linecap="round" stroke-linejoin="round" fill="#d3d3d3" />
+      <polygon points="446.84 17.13 446.22 18.95 444.35 19.01 445.82 20.17 445.29 21.98 446.84 20.96 448.47 22.04 447.91 20.2 449.29 18.98 447.5 18.98 446.84 17.13" stroke="#3f3f3f" stroke-linecap="round" stroke-linejoin="round" fill="#efefef" />
+   </g>
+</svg>

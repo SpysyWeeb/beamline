@@ -1,0 +1,125 @@
+{
+  "_comment": "Inputs and choices for the offline style bundle. generate_style.mjs and fetch_style_inputs.py read this file.",
+  "fonts": [
+    "Noto Sans Regular",
+    "Noto Sans Medium",
+    "Noto Sans Italic"
+  ],
+  "font_replacements": {
+    "Noto Sans Devanagari Regular v1": "Noto Sans Regular"
+  },
+  "glyph_ranges_real": [
+    "0-255",
+    "256-511",
+    "768-1023",
+    "8192-8447"
+  ],
+  "_glyph_ranges_note": "Real glyphs are shipped for these ranges only (Basic Latin, Latin-1 Supplement incl. e-acute, Latin Extended-A, Combining Diacritical Marks + Greek, General Punctuation such as curly quotes and dashes). Every other range of the Basic Multilingual Plane gets a tiny valid-but-empty PBF so that a rare name in another script renders without those characters instead of failing the whole tile. See docs/experiments/02-map.md for the coverage measured on the PA names.",
+  "sprites": [
+    "light",
+    "dark"
+  ],
+  "flavors": {
+    "day": {
+      "protomaps_flavor": "light",
+      "sprite": "light"
+    },
+    "night": {
+      "protomaps_flavor": "dark",
+      "sprite": "dark"
+    }
+  },
+  "lang": "en",
+  "placeholders": {
+    "pack_url": "{{PACK_URL}}",
+    "style_base_url": "{{STYLE_BASE_URL}}"
+  },
+  "attribution": "<a href=\"https://www.openstreetmap.org/copyright\">© OpenStreetMap contributors</a>",
+  "label_overrides": {
+    "_note": "Paint overrides on top of the Protomaps flavors, so that street, address and place names are readable while driving. generate_style.mjs checks the WCAG contrast ratio of text-color against text-halo-color (the colour directly around the letters) and stops if it is below min_contrast (or the layer's own _min_contrast). Night street labels (roads_labels_major, roads_labels_minor) must reach 7:1, the level the map engineer measured; the generator stops otherwise.",
+    "min_contrast": 4.5,
+    "day": {
+      "roads_labels_major": {
+        "text-color": "#6e6668"
+      },
+      "roads_labels_minor": {
+        "text-color": "#6e6668"
+      },
+      "address_label": {
+        "text-color": "#746c6f"
+      }
+    },
+    "night": {
+      "roads_labels_major": {
+        "text-color": "#c8c8c8",
+        "text-halo-width": 1.5,
+        "_min_contrast": 7.0
+      },
+      "roads_labels_minor": {
+        "text-color": "#b4b4b4",
+        "text-halo-width": 1.5,
+        "_min_contrast": 7.0
+      },
+      "address_label": {
+        "text-color": "#9a9a9a"
+      },
+      "places_subplace": {
+        "text-color": "#9a9a9a"
+      },
+      "places_locality": {
+        "text-color": "#d0d0d0"
+      },
+      "earth_label_islands": {
+        "text-color": "#9a9a9a"
+      },
+      "places_region": {
+        "text-color": "#7a7a7a",
+        "_min_contrast": 3.0
+      }
+    },
+    "stock_pois": {
+      "_note": "Text colours of the stock pois layer (a case expression by kind group), old -> new, chosen by lowering (day) or raising (night) only the OKLCH lightness until the colour reaches 4.6:1 against the POI halo. generate_style.mjs replaces them and checks every colour the expression can produce against min_contrast.",
+      "day": {
+        "#20834D": "#00713C",
+        "#315BCF": "#2F59CD",
+        "#1A8CBD": "#006897",
+        "#CB6704": "#A54400",
+        "#EF56BA": "#B51387"
+      },
+      "night": {
+        "#2B5CEA": "#4981FF"
+      }
+    }
+  },
+  "driving_tweaks": {
+    "oneway_arrows_minzoom": 15,
+    "oneway_reverse_values": [
+      "-1"
+    ],
+    "_oneway_reverse_note": "roads whose oneway value means 'against the drawing direction' get a second arrow layer rotated by 180 degrees. 'alternating' and 'reversible' have no fixed direction and get no arrow.",
+    "missing_icon_fallback": "building",
+    "_driving_pois_note": "The driving POI layer (pois_driving) takes its kinds, icons and the kinds shown early from assets/poi_icons.json. early_kinds are shown early_kinds_zoom_advance zoom levels before their min_zoom attribute. Measured (count_pois.py): rest areas and service plazas from z12-13 on the highway, parking from z13-14 in town, fuel and charging from z15 (named fuel stations are only in the z15 tiles of a z0-15 pack, so z15 is the earliest for them without a tile-profile change).",
+    "early_kinds_zoom_advance": 1,
+    "stock_poi_min_zoom": {
+      "_note": "Shops and cafes of the stock pois layer are not shown before this zoom, whatever their min_zoom, so that fuel and charging (z15) come before them. Without it supermarkets appeared at z14.",
+      "kinds": ["supermarket", "convenience", "books", "beauty", "electronics", "clothes", "cafe"],
+      "zoom": 16
+    },
+    "poi_halo": {
+      "day": "#e2dfda",
+      "night": "#1f1f1f"
+    }
+  },
+  "shield_style": {
+    "_note": "Route shields: icon-size 1 and text-size 10 (stock: 0.8 and 8, the same ratio, 25 % larger for reading while driving). Shield art and network rules: assets/shields/shields.json.",
+    "icon_size": 1,
+    "text_size": 10
+  },
+  "overview_legibility": {
+    "_note": "Round 3 (track P): below below_zoom only the overview map is drawn (z0-7 tiles; state packs start at z8), and the stock flavors draw interstates there as a hairline in the road colour (white on the light earth by day: contrast 1.3:1) without casing, and state lines 0.4 px wide, so neither could be seen at z3-5. Below below_zoom, roads_highway gets the colour and widths here and the boundaries layer (state lines and smaller) the colour and width here; from below_zoom up the stock paint is unchanged. generate_style.mjs checks each colour against the flavor's earth colour (min_contrast, the WCAG 1.4.11 non-text minimum).",
+    "below_zoom": 7,
+    "min_contrast": 3,
+    "highway": {"day": "#a8693a", "night": "#a97c4f", "width": [[3, 0.6], [5, 1.0], [6.9, 1.4]]},
+    "state_lines": {"day": "#7d7d7d", "night": "#808a9c", "width": [[3, 0.9], [6.9, 1.0]]}
+  }
+}

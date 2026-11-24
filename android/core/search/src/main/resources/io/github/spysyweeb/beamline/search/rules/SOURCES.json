@@ -1,0 +1,40 @@
+{
+  "_doc": "Written by android/scripts/copy_search_rules.py. Do not edit the files in this folder: edit the source in packbuilder/ and run the script again.",
+  "files": {
+    "abbreviations.json": {
+      "source": "packbuilder/search/abbreviations.json",
+      "sha256_lf": "928c43827f6f1bd444c0da240412d3ae66fdf1b56ad3612cf75c044128fcfeb8",
+      "used_by": "search key normaliser: abbreviations, stopwords, state names, street types, connectors"
+    },
+    "ranking.json": {
+      "source": "packbuilder/search/ranking.json",
+      "sha256_lf": "162b3725cf2410f22ce186919ddb19519fe1b36f605aa95109e1763186c82b5d",
+      "used_by": "search engine: every ranking weight and search limit, the house-number join config"
+    },
+    "us_street_norm.json": {
+      "source": "packbuilder/addresses/addrlib/us_street_norm.json",
+      "sha256_lf": "07793bc384e30797a56790a270ddc393479579637046fdac2d6cdb76b8db64a5",
+      "used_by": "address normaliser and parser: street types, directionals, units, states, ordinals"
+    },
+    "lookup_config.json": {
+      "source": "packbuilder/addresses/addrlib/lookup_config.json",
+      "sha256_lf": "02d10f91f0e55e69443d117e71f97719bf3e8443985e61c7e90c15a8d1a70a4f",
+      "used_by": "address lookup: locality, match, accuracy and source scores"
+    },
+    "search_app.json": {
+      "source": "packbuilder/search/search_app.json",
+      "sha256_lf": "cea386acce2eaf36608b456e3afc033bbf3e76729137eb9349528fd77119d46f",
+      "used_by": "search screen and saved places: near, typing, merge, recents, saved, shortcuts"
+    },
+    "fingerprint_spellings.json": {
+      "source": "packbuilder/addresses/addrlib/fingerprint_spellings.json",
+      "sha256_lf": "3b24908195ad29e75f9f48d8943bc419a05fd214ff9f8d24751f90e218491b33",
+      "used_by": "fingerprint check at open: the spellings of the street-key fingerprint"
+    },
+    "poi_icons.json": {
+      "source": "assets/poi_icons.json",
+      "sha256_lf": "a65e9fc7f9a12832ff0f9944254d8316f26e9706f3eef4c71156ab0cbd89355f",
+      "used_by": "search rows and the place sheet: search category id -> sprite icon name"
+    }
+  }
+}

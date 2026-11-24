@@ -1,0 +1,14 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="477.25 50.5 19 19">
+  <!-- Extracted from protomaps/basemaps sprites/refill.svg (commit 42ffaaa4) group '_rail_metro'. Derived from tangrams/icons, Copyright (c) 2017 Mapzen, MIT License; Protomaps visual design CC0-1.0. See assets/LICENSES.md. -->
+  <g>
+      <rect x="477.75" y="51" width="18" height="18" rx="4" ry="4" stroke-miterlimit="10" stroke="#3f3f3f" fill="#f4f4f4" />
+      <g>
+         <rect x="482.59" y="54.17" width="8.33" height="10.5" rx="3" ry="3" stroke="#3f3f3f" stroke-linecap="round" stroke-linejoin="round" fill="#bfbfbf" />
+         <polygon points="489.31 65.34 488.18 65.34 489.56 66.59 490.7 66.59 489.31 65.34" fill="#3f3f3f" />
+         <polygon points="484.27 65.34 485.4 65.34 484.01 66.59 482.88 66.59 484.27 65.34" fill="#3f3f3f" />
+         <path d="M486.09,62.01c0,1.13-1.7,1.13-1.7,0,0-1.13,1.7-1.13,1.7,0Z" fill="#fff" />
+         <path d="M489.12,62.01c0,1.13-1.7,1.13-1.7,0s1.7-1.13,1.7,0Z" fill="#fff" />
+         <path d="M485.84,56h1.82c.6,0,1.09,.49,1.09,1.09v2.91h-4v-2.91c0-.6,.49-1.09,1.09-1.09Z" stroke-miterlimit="10" stroke="#3f3f3f" fill="#fff" />
+      </g>
+   </g>
+</svg>

@@ -1,0 +1,11 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="519.25 178.5 19 19">
+  <!-- Extracted from protomaps/basemaps sprites/refill.svg (commit 42ffaaa4) group '_clinic'. Derived from tangrams/icons, Copyright (c) 2017 Mapzen, MIT License; Protomaps visual design CC0-1.0. See assets/LICENSES.md. -->
+  <g>
+      <rect x="519.75" y="179" width="18" height="18" rx="4" ry="4" stroke-miterlimit="10" stroke="#3f3f3f" fill="#f4f4f4" />
+      <g>
+         <rect x="524.26" y="184.34" width="9" height="9" stroke="#3f3f3f" stroke-linecap="round" stroke-linejoin="round" fill="#fff" />
+         <polygon points="522.65 184.34 535.14 184.34 528.86 181.49 522.65 184.34" stroke="#3f3f3f" stroke-linecap="round" stroke-linejoin="round" fill="#d3d3d3" />
+         <polygon points="531.91 187.49 530.11 187.49 530.11 185.69 527.41 185.69 527.41 187.49 525.61 187.49 525.61 190.19 527.41 190.19 527.41 191.99 530.11 191.99 530.11 190.19 531.91 190.19 531.91 187.49" fill="#707070" />
+      </g>
+   </g>
+</svg>

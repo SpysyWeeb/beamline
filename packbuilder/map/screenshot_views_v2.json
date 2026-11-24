@@ -1,0 +1,469 @@
+[
+{
+"name": "L1-lanes-exit24-z17-z15pack",
+"packs": [
+"pa-261114-z15.pmtiles"
+],
+"variant": "day",
+"zoom": 17,
+"lat": 42.0493,
+"lon": -80.0815,
+"overlay": "lanes",
+"note": "exit 24 interchange, I-90 x Peach St; width = 2.5 px x lanes, label = lanes: turn:lanes"
+},
+{
+"name": "L2-lanes-exit24-z17-z14pack",
+"packs": [
+"pa-261114-z14.pmtiles"
+],
+"variant": "day",
+"zoom": 17,
+"lat": 42.0493,
+"lon": -80.0815,
+"overlay": "lanes"
+},
+{
+"name": "L3-lanes-peach-downs-z17.5-z14pack",
+"packs": [
+"pa-261114-z14.pmtiles"
+],
+"variant": "day",
+"zoom": 17.5,
+"lat": 42.0514,
+"lon": -80.0832,
+"overlay": "lanes",
+"note": "Peach St northbound at Downs Dr"
+},
+{
+"name": "L4-lanes-i90-z14-z14pack",
+"packs": [
+"pa-261114-z14.pmtiles"
+],
+"variant": "day",
+"zoom": 14,
+"lat": 42.052,
+"lon": -80.083,
+"overlay": "lanes"
+},
+{
+"name": "L5-lanes-erie-z12-z14pack",
+"packs": [
+"pa-261114-z14.pmtiles"
+],
+"variant": "day",
+"zoom": 12,
+"lat": 42.08,
+"lon": -80.08,
+"overlay": "lanes",
+"note": "lane attributes start at z14: nothing at z12"
+},
+{
+"name": "S1-erie-street-z16.5-z15pack",
+"packs": [
+"pa-261114-z15.pmtiles"
+],
+"variant": "day",
+"zoom": 16.5,
+"lat": 42.1265,
+"lon": -80.0855
+},
+{
+"name": "S2-erie-street-z16.5-z14pack",
+"packs": [
+"pa-261114-z14.pmtiles"
+],
+"variant": "day",
+"zoom": 16.5,
+"lat": 42.1265,
+"lon": -80.0855
+},
+{
+"name": "S3-philadelphia-z18-z15pack",
+"packs": [
+"pa-261114-z15.pmtiles"
+],
+"variant": "day",
+"zoom": 18,
+"lat": 39.9505,
+"lon": -75.1625
+},
+{
+"name": "S4-philadelphia-z18-z14pack",
+"packs": [
+"pa-261114-z14.pmtiles"
+],
+"variant": "day",
+"zoom": 18,
+"lat": 39.9505,
+"lon": -75.1625
+},
+{
+"name": "S5-erie-housenumbers-z18-z15pack",
+"packs": [
+"pa-261114-z15.pmtiles"
+],
+"variant": "day",
+"zoom": 18.2,
+"lat": 42.1195,
+"lon": -80.07
+},
+{
+"name": "S6-erie-housenumbers-z18-z14pack",
+"packs": [
+"pa-261114-z14.pmtiles"
+],
+"variant": "day",
+"zoom": 18.2,
+"lat": 42.1195,
+"lon": -80.07
+},
+{
+"name": "S7-erie-street-z16.5-z14pack-night",
+"packs": [
+"pa-261114-z14.pmtiles"
+],
+"variant": "night",
+"zoom": 16.5,
+"lat": 42.1265,
+"lon": -80.0855
+},
+{
+"name": "S8-pittsburgh-z17-z14pack-night",
+"packs": [
+"pa-261114-z14.pmtiles"
+],
+"variant": "night",
+"zoom": 17.3,
+"lat": 40.4437,
+"lon": -79.9485
+},
+{
+"name": "S9-pa-state-z6.6-z14pack",
+"packs": [
+"pa-261114-z14.pmtiles"
+],
+"variant": "day",
+"zoom": 6.6,
+"lat": 40.95,
+"lon": -77.7
+},
+{
+"name": "O1-overview-us-z3.6-day",
+"packs": [
+"us-overview-ne512-tiger2026-z0-7.pmtiles"
+],
+"variant": "day",
+"zoom": 3.6,
+"lat": 38.5,
+"lon": -96.5
+},
+{
+"name": "O2-overview-us-z3.6-night",
+"packs": [
+"us-overview-ne512-tiger2026-z0-7.pmtiles"
+],
+"variant": "night",
+"zoom": 3.6,
+"lat": 38.5,
+"lon": -96.5
+},
+{
+"name": "O3-overview-east-z5.5-day",
+"packs": [
+"us-overview-ne512-tiger2026-z0-7.pmtiles"
+],
+"variant": "day",
+"zoom": 5.5,
+"lat": 40.5,
+"lon": -79.0
+},
+{
+"name": "O4-overview-pa-z7.5-day",
+"packs": [
+"us-overview-ne512-tiger2026-z0-7.pmtiles"
+],
+"variant": "day",
+"zoom": 7.5,
+"lat": 41.0,
+"lon": -79.6
+},
+{
+"name": "O5-takeover-z7.9-day",
+"packs": [
+"pa-261114-z14.pmtiles",
+"oh-261114-z14.pmtiles"
+],
+"variant": "day",
+"zoom": 7.9,
+"lat": 41.0,
+"lon": -80.3,
+"base": "us-overview-ne512-tiger2026-z0-7.pmtiles",
+"basemax": "8",
+"note": "below z8: overview pack only"
+},
+{
+"name": "O6-takeover-z8.1-day",
+"packs": [
+"pa-261114-z14.pmtiles",
+"oh-261114-z14.pmtiles"
+],
+"variant": "day",
+"zoom": 8.1,
+"lat": 41.0,
+"lon": -80.3,
+"base": "us-overview-ne512-tiger2026-z0-7.pmtiles",
+"basemax": "8",
+"note": "from z8: the state packs"
+},
+{
+"name": "O7-takeover-z8.1-night",
+"packs": [
+"pa-261114-z14.pmtiles",
+"oh-261114-z14.pmtiles"
+],
+"variant": "night",
+"zoom": 8.1,
+"lat": 41.0,
+"lon": -80.3,
+"base": "us-overview-ne512-tiger2026-z0-7.pmtiles",
+"basemax": "8"
+},
+{
+"name": "O8-overview-us-z4.5-west-day",
+"packs": [
+"us-overview-ne512-tiger2026-z0-7.pmtiles"
+],
+"variant": "day",
+"zoom": 4.5,
+"lat": 38.0,
+"lon": -112.0
+},
+{
+"name": "O9-overview-alaska-hawaii-z3-day",
+"packs": [
+"us-overview-ne512-tiger2026-z0-7.pmtiles"
+],
+"variant": "day",
+"zoom": 3.0,
+"lat": 40.0,
+"lon": -140.0
+},
+{
+"name": "A1-seam-z8.3-v2",
+"packs": [
+"pa-261114-z14.pmtiles",
+"oh-261114-z14.pmtiles"
+],
+"variant": "day",
+"zoom": 8.3,
+"lat": 41.1,
+"lon": -80.52,
+"order": "interleaved"
+},
+{
+"name": "A2-seam-z12-v2",
+"packs": [
+"pa-261114-z14.pmtiles",
+"oh-261114-z14.pmtiles"
+],
+"variant": "day",
+"zoom": 12,
+"lat": 41.19,
+"lon": -80.52,
+"order": "interleaved"
+},
+{
+"name": "A3-seam-z15.5-v2",
+"packs": [
+"pa-261114-z14.pmtiles",
+"oh-261114-z14.pmtiles"
+],
+"variant": "day",
+"zoom": 15.5,
+"lat": 41.1946,
+"lon": -80.5195,
+"order": "interleaved",
+"note": "compare B3: Ohio Street labelled twice before"
+},
+{
+"name": "A4-lake-erie-seam-z10-v2",
+"packs": [
+"pa-261114-z14.pmtiles",
+"oh-261114-z14.pmtiles"
+],
+"variant": "day",
+"zoom": 10,
+"lat": 41.95,
+"lon": -80.52,
+"order": "interleaved"
+},
+{
+"name": "A5-seam-z12-night-v2",
+"packs": [
+"pa-261114-z14.pmtiles",
+"oh-261114-z14.pmtiles"
+],
+"variant": "night",
+"zoom": 12,
+"lat": 41.19,
+"lon": -80.52,
+"order": "interleaved"
+},
+{
+"name": "A6-lowzoom-z5-overview-plus-packs",
+"packs": [
+"pa-261114-z14.pmtiles",
+"oh-261114-z14.pmtiles"
+],
+"variant": "day",
+"zoom": 5,
+"lat": 40.6,
+"lon": -80.5,
+"base": "us-overview-ne512-tiger2026-z0-7.pmtiles",
+"basemax": "8"
+},
+{
+"name": "A7-seam-z17-v2",
+"packs": [
+"pa-261114-z14.pmtiles",
+"oh-261114-z14.pmtiles"
+],
+"variant": "day",
+"zoom": 17,
+"lat": 41.1946,
+"lon": -80.5195,
+"order": "interleaved"
+},
+{
+"name": "M1-mlt-erie-z12",
+"packs": [
+"pa-261114-z14-mlt.pmtiles"
+],
+"variant": "day",
+"zoom": 12,
+"lat": 42.105,
+"lon": -80.08,
+"encoding": "mlt"
+},
+{
+"name": "M2-mlt-erie-street-z16.5",
+"packs": [
+"pa-261114-z14-mlt.pmtiles"
+],
+"variant": "day",
+"zoom": 16.5,
+"lat": 42.1265,
+"lon": -80.0855,
+"encoding": "mlt"
+},
+{
+"name": "M3-mlt-philadelphia-z18",
+"packs": [
+"pa-261114-z14-mlt.pmtiles"
+],
+"variant": "day",
+"zoom": 18,
+"lat": 39.9505,
+"lon": -75.1625,
+"encoding": "mlt"
+},
+{
+"name": "M4-mlt-pa-state-z6.6",
+"packs": [
+"pa-261114-z14-mlt.pmtiles"
+],
+"variant": "day",
+"zoom": 6.6,
+"lat": 40.95,
+"lon": -77.7,
+"encoding": "mlt"
+},
+{
+"name": "M5-mlt-exit24-lanes-z17",
+"packs": [
+"pa-261114-z14-mlt.pmtiles"
+],
+"variant": "day",
+"zoom": 17,
+"lat": 42.0493,
+"lon": -80.0815,
+"encoding": "mlt",
+"overlay": "lanes"
+},
+{
+"name": "M6-mvt-erie-z12",
+"packs": [
+"pa-261114-z14.pmtiles"
+],
+"variant": "day",
+"zoom": 12,
+"lat": 42.105,
+"lon": -80.08
+},
+{
+"name": "D4-rowhouses-z17-z15pack",
+"packs": [
+"pa-261114-z15.pmtiles"
+],
+"variant": "day",
+"zoom": 17,
+"lat": 39.9385,
+"lon": -75.172,
+"note": "Philadelphia row houses, South Philly"
+},
+{
+"name": "D5-rowhouses-z17-z14pack",
+"packs": [
+"pa-261114-z14.pmtiles"
+],
+"variant": "day",
+"zoom": 17,
+"lat": 39.9385,
+"lon": -75.172,
+"note": "Philadelphia row houses, South Philly"
+},
+{
+"name": "D6-rowhouses-z17-z14bdetail",
+"packs": [
+"pa-261114-z14-bdetail.pmtiles"
+],
+"variant": "day",
+"zoom": 17,
+"lat": 39.9385,
+"lon": -75.172,
+"note": "Philadelphia row houses, South Philly"
+},
+{
+"name": "D1-suburb-z17-z15pack",
+"packs": [
+"pa-261114-z15.pmtiles"
+],
+"variant": "day",
+"zoom": 17,
+"lat": 40.379,
+"lon": -80.044,
+"note": "Mt. Lebanon (Pittsburgh suburb): detached houses"
+},
+{
+"name": "D2-suburb-z17-z14pack",
+"packs": [
+"pa-261114-z14.pmtiles"
+],
+"variant": "day",
+"zoom": 17,
+"lat": 40.379,
+"lon": -80.044,
+"note": "Mt. Lebanon (Pittsburgh suburb): detached houses"
+},
+{
+"name": "D3-suburb-z17-z14bdetail",
+"packs": [
+"pa-261114-z14-bdetail.pmtiles"
+],
+"variant": "day",
+"zoom": 17,
+"lat": 40.379,
+"lon": -80.044,
+"note": "Mt. Lebanon (Pittsburgh suburb): detached houses"
+}
+]

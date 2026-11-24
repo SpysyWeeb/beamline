@@ -1,0 +1,43 @@
+{
+ "_doc": [
+  "Route shields of the style bundle, and which road network gets which shield.",
+  "Sprite names follow the bundled sheet: '<shield>-<n>char' for n = 1..5, chosen by the length of the road's shield_text.",
+  "source 'beamline': assets/shields/beamline/<name>.svg, drawn by packbuilder/map/style/draw_shields.py (MIT).",
+  "source 'upstream': assets/shields/upstream/<name>.svg, extracted from Protomaps' refill.svg (tangrams/icons derivative, MIT).",
+  "Colours: the SVGs use template colours (#000 outline, #fff fill; the upstream ones greys). build_sprites.py maps them with the flavor pair named in 'color' (see assets/icons/icons.json for the rule).",
+  "networks: the first rule whose 'networks' list contains the road's network wins; roads with any other network get 'fallback'. Network values as written by the Protomaps profile from OSM route relations (measured in the PA pack, see docs/experiments/06-map-art.md)."
+ ],
+ "flavors": {
+  "light": {"shield_white": ["#1a1a1a", "#ffffff"]},
+  "dark": {"shield_white": ["#0d0d0d", "#d2d2d2"]}
+ },
+ "networks": [
+  {"shield": "US:I", "networks": ["US:I"], "text_color": {"day": "#4a4a4a", "night": "#b4b4b4"}, "halo_check": {"day": "#ffffff", "night": "#000000"}},
+  {"shield": "US:US", "networks": ["US:US", "US:US:Business", "US:US:Truck", "US:US:Alternate", "US:US:Alternate:Truck", "US:US:Alternate:Truck:Business", "US:US:Bypass", "US:US:Spur", "US:US:Connector"], "text_color": {"day": "#1a1a1a", "night": "#1a1a1a"}, "halo_check": {"day": "#ffffff", "night": "#d2d2d2"}},
+  {"shield": "US:PA", "networks": ["US:PA", "US:PA:Business", "US:PA:Truck", "US:PA:Alternate", "US:PA:Bypass", "US:PA:Spur"], "text_color": {"day": "#1a1a1a", "night": "#1a1a1a"}, "halo_check": {"day": "#ffffff", "night": "#d2d2d2"}}
+ ],
+ "fallback": {"shield": "generic_shield", "text_color": {"day": "#4a4a4a", "night": "#b4b4b4"}, "halo_check": {"day": "#ffffff", "night": "#000000"}},
+ "_not_drawn_yet": "Banner plaques (BUSINESS, TRUCK, ALT), the green Interstate business loop, the PA Turnpike keystone (US:PA:Turnpike), Allegheny County belts and other states' shields (Ohio, New York) use the generic fallback.",
+ "shields": {
+  "US:US-1char": {"source": "beamline", "color": "shield_white"},
+  "US:US-2char": {"source": "beamline", "color": "shield_white"},
+  "US:US-3char": {"source": "beamline", "color": "shield_white"},
+  "US:US-4char": {"source": "beamline", "color": "shield_white"},
+  "US:US-5char": {"source": "beamline", "color": "shield_white"},
+  "US:PA-1char": {"source": "beamline", "color": "shield_white"},
+  "US:PA-2char": {"source": "beamline", "color": "shield_white"},
+  "US:PA-3char": {"source": "beamline", "color": "shield_white"},
+  "US:PA-4char": {"source": "beamline", "color": "shield_white"},
+  "US:PA-5char": {"source": "beamline", "color": "shield_white"},
+  "US:I-1char": {"source": "upstream", "color": "base"},
+  "US:I-2char": {"source": "upstream", "color": "base"},
+  "US:I-3char": {"source": "upstream", "color": "base"},
+  "US:I-4char": {"source": "upstream", "color": "base"},
+  "US:I-5char": {"source": "upstream", "color": "base"},
+  "generic_shield-1char": {"source": "upstream", "color": "base"},
+  "generic_shield-2char": {"source": "upstream", "color": "base"},
+  "generic_shield-3char": {"source": "upstream", "color": "base"},
+  "generic_shield-4char": {"source": "upstream", "color": "base"},
+  "generic_shield-5char": {"source": "upstream", "color": "base"}
+ }
+}

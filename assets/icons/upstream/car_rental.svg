@@ -1,0 +1,9 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="518.25 92.5 19 19">
+  <!-- Extracted from protomaps/basemaps sprites/refill.svg (commit 42ffaaa4) group '_car_rental'. Derived from tangrams/icons, Copyright (c) 2017 Mapzen, MIT License; Protomaps visual design CC0-1.0. See assets/LICENSES.md. -->
+  <g>
+      <rect x="518.75" y="93" width="18" height="18" rx="4" ry="4" stroke-miterlimit="10" stroke="#3f3f3f" fill="#f4f4f4" />
+      <polygon points="530.59 97.5 531.85 97 530.59 96.5 527.74 96.5 527.25 96.5 527.25 97.5 527.95 97.5 530.59 97.5" fill="#3f3f3f" />
+      <path d="M531.34,101.68s-.61-.61-1.22-.61h-4.86c-.61,0-1.21,.61-1.21,.61l-1.22,2.07v2.14h9.72v-2.14l-1.22-2.07Zm-8.15,2.2h9.04m-9.4,1.75v.81c0,.67,.54,1.21,1.22,1.21s1.21-.54,1.21-1.21v-2.56m4.86,0v2.56c0,.67,.54,1.21,1.22,1.21s1.22-.54,1.22-1.21v-.67" stroke-miterlimit="10" stroke="#3f3f3f" stroke-linecap="round" fill="#d3d3d3" />
+      <circle cx="525.77" cy="96.92" r="1.42" stroke-miterlimit="10" stroke="#3f3f3f" fill="none" />
+   </g>
+</svg>

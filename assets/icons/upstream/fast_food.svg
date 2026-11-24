@@ -1,0 +1,10 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="478.18 898.14 19 19">
+  <!-- Extracted from protomaps/basemaps sprites/refill.svg (commit 42ffaaa4) group '_fast_food'. Derived from tangrams/icons, Copyright (c) 2017 Mapzen, MIT License; Protomaps visual design CC0-1.0. See assets/LICENSES.md. -->
+  <g>
+      <rect x="478.68" y="898.64" width="18" height="18" rx="4" ry="4" stroke-miterlimit="10" stroke="#3f3f3f" fill="#f4f4f4" />
+      <path d="M482.77,905.97h9.62s-.37-3.81-4.81-3.81-4.81,3.81-4.81,3.81Z" stroke="#3f3f3f" stroke-linecap="round" stroke-linejoin="round" fill="#d3d3d3" />
+      <path d="M492.39,911.67h0c0,.68-.56,1.24-1.24,1.24h-7.14c-.68,0-1.24-.56-1.24-1.24h0v-.56h9.62v.56Z" stroke="#3f3f3f" stroke-linecap="round" stroke-linejoin="round" fill="#d3d3d3" />
+      <line x1="482.77" y1="909.55" x2="492.39" y2="909.55" fill="none" stroke-linecap="round" stroke-linejoin="round" stroke="#686868" />
+      <path d="M482.77,907.49s.99,.5,2.07,.43,.94-.64,2.14-.65,1.19,.75,2.01,.75c1.04,0,1.24-.66,1.84-.78,.99-.21,1.57,.45,1.57,.45" fill="none" stroke-linecap="round" stroke-linejoin="round" stroke="#7c7c7c" />
+   </g>
+</svg>

@@ -1,0 +1,5 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 19 19">
+  <!-- Drawn for Beamline in the frame of the Protomaps/tangrams set (18 x 18 rounded square, 1 px outline). MIT License, see assets/LICENSES.md. Grey template colours: #3f3f3f = category colour, #f4f4f4 / #d3d3d3 / #fff = pale fills; the sprite build maps them per category. -->
+  <rect x="0.5" y="0.5" width="18" height="18" rx="4" ry="4" stroke="#3f3f3f" fill="#f4f4f4" stroke-miterlimit="10"/>
+  <path d="M5.5,15.5V3.5h5a4,4 0 0 1 0,8H9v4Z M9,6.25v2.5h1.4a1.25,1.25 0 0 0 0-2.5Z" fill="#d3d3d3" fill-rule="evenodd" stroke="#3f3f3f" stroke-linejoin="round"/>
+</svg>

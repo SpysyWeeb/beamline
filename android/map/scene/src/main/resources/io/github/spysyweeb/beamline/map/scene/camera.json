@@ -1,0 +1,16 @@
+{
+  "format": "beamline-camera/1",
+  "note": "Camera rules of the map while browsing, choosing a route and guiding (docs/architecture.md 3.7, rules K1-K7), and from which zoom the user's saved places are drawn (docs/architecture-saved-places.md, rules SP40-SP43). Read by android/map/scene (copied there by android/routing/scripts/sync_data.py; edit this file, not the copy). Zoom levels are MapLibre's; pitch and bearing in degrees; times in seconds unless named _ms; icon_scale multiplies the sprite icon's size. Every value is a first guess for the phone test, not a measurement.",
+  "guide": {"pitch_deg": 60, "vehicle_from_bottom": 0.28,
+            "zoom_by_speed_mps": [[0, 17.0], [13.4, 16.5], [24.6, 15.75], [31.3, 15.25]],
+            "approach_within_m": 250, "approach_zoom": 17.0, "bearing_smoothing": 0.3, "bearing_turn_deg": 30,
+            "lean": {"within_m": 120, "within_s": 7, "bearing_share": 0.5, "max_bearing_deg": 55, "zoom_add": 0.5,
+                     "pitch_deg": 50, "min_turn_deg": 30, "look_m": 35, "hold_ms": 4000},
+            "recenter_after_s": 15},
+  "overview": {"return_after_s": 10},
+  "browse": {"follow_zoom": 16},
+  "preview": {"padding_dp": 48},
+  "arrived": {"zoom": 17},
+  "saved_places": {"home_work_min_zoom": 10, "other_min_zoom": 12, "icon_scale": 1.25},
+  "transition_ms": 800
+}

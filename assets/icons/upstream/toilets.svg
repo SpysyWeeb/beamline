@@ -1,0 +1,10 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="1064.25 95.5 19 19">
+  <!-- Extracted from protomaps/basemaps sprites/refill.svg (commit 42ffaaa4) group '_toilets'. Derived from tangrams/icons, Copyright (c) 2017 Mapzen, MIT License; Protomaps visual design CC0-1.0. See assets/LICENSES.md. -->
+  <g>
+      <rect x="1064.75" y="96" width="18" height="18" rx="4" ry="4" stroke-miterlimit="10" stroke="#3f3f3f" fill="#f4f4f4" />
+      <path d="M1070.08,102.88v4.53c0,1.5,1.63,2.71,3.65,2.71s3.65-1.21,3.65-2.71v-4.8c0-1.5-1.63-2.71-3.65-2.71s-3.65,1.21-3.65,2.71v.27Z" fill="#fff" />
+      <ellipse cx="1073.73" cy="102.61" rx="3.65" ry="2.71" stroke="#3f3f3f" fill="none" stroke-linecap="round" stroke-linejoin="round" />
+      <path d="M1070.08,102.88v4.53c0,1.5,1.63,2.71,3.65,2.71s3.65-1.21,3.65-2.71v-4.53" stroke="#3f3f3f" fill="none" stroke-linecap="round" stroke-linejoin="round" />
+      <ellipse cx="1073.73" cy="102.61" rx="1.31" ry=".98" stroke="#3f3f3f" fill="none" stroke-linecap="round" stroke-linejoin="round" />
+   </g>
+</svg>

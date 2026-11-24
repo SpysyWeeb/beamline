@@ -1,0 +1,27 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- Host for track A's device checks of :feature:about (launcher icon with the themed variant,
+     splash and reveal, About, licences, first-run notice; docs/architecture.md 5.1). Not shipped.
+     The icon and the launch theme are :feature:about's, as the app will use them (5.4 item 11).
+     No permission: the demo needs none. -->
+<manifest xmlns:android="http://schemas.android.com/apk/res/android">
+
+    <application
+        android:allowBackup="false"
+        android:icon="@mipmap/ic_launcher"
+        android:roundIcon="@mipmap/ic_launcher_round"
+        android:label="Beamline demo"
+        android:supportsRtl="true"
+        android:theme="@style/Theme.Beamline.Starting">
+
+        <activity
+            android:name=".DemoActivity"
+            android:exported="true"
+            android:configChanges="orientation|screenSize|screenLayout|smallestScreenSize|uiMode|density|keyboardHidden"
+            android:theme="@style/Theme.Beamline.Starting">
+            <intent-filter>
+                <action android:name="android.intent.action.MAIN" />
+                <category android:name="android.intent.category.LAUNCHER" />
+            </intent-filter>
+        </activity>
+    </application>
+</manifest>

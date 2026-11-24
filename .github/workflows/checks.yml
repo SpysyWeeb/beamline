@@ -1,0 +1,83 @@
+# Automatic checks for the app repository.
+#   scans: on every push, about a minute: the network rule, the privacy scans and the contracts.
+#   tests: once a day, and only when something was committed in the last 24 hours (or by hand):
+#          every JVM unit test. Tests that need the state packs or other local data skip themselves,
+#          so this proves the logic, not the data.
+# Minutes are limited while the repository is private: keep the tests off the push trigger.
+name: checks
+
+on:
+  push:
+    branches: [dev, main]
+  schedule:
+    - cron: "30 9 * * *"   # 09:30 UTC, early morning US Eastern
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: checks-${{ github.ref }}-${{ github.event_name }}
+  cancel-in-progress: true
+
+jobs:
+  scans:
+    if: github.event_name != 'schedule'
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - name: Network rule (only the allowed files touch the network)
+        run: python android/scripts/check_network_rule.py scan
+      - name: Privacy (no home-network address in tracked files)
+        run: python android/scripts/check_network_rule.py privacy
+      - name: Private logs (the app never logs a place or a position)
+        run: |
+          python android/scripts/check_private_logs.py selftest
+          python android/scripts/check_private_logs.py scan
+      - name: Contracts and frozen files
+        run: python tools/check_contracts.py
+
+  tests:
+    if: github.event_name != 'push'
+    runs-on: ubuntu-latest
+    timeout-minutes: 45
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 50
+      - name: Anything new in the last 24 hours?
+        id: fresh
+        run: |
+          if [ "${{ github.event_name }}" = "workflow_dispatch" ] || [ -n "$(git log -1 --since='24 hours ago' --format=%H)" ]; then
+            echo "run=true" >> "$GITHUB_OUTPUT"
+          else
+            echo "run=false" >> "$GITHUB_OUTPUT"
+            echo "No commit in the last 24 hours: tests skipped."
+          fi
+      - uses: actions/setup-java@v4
+        if: steps.fresh.outputs.run == 'true'
+        with:
+          distribution: temurin
+          java-version: "25"
+          cache: gradle
+      - name: Android SDK packages the build needs
+        if: steps.fresh.outputs.run == 'true'
+        run: |
+          SDKMANAGER="$ANDROID_HOME/cmdline-tools/latest/bin/sdkmanager"
+          yes | "$SDKMANAGER" --licenses > /dev/null || true
+          "$SDKMANAGER" "platforms;android-36" "platforms;android-37.0" "build-tools;36.0.0" > /dev/null
+      - name: Unit tests
+        if: steps.fresh.outputs.run == 'true'
+        working-directory: android
+        run: bash ./gradlew test -Pbeamline.allowNoOverview=true --continue --no-daemon
+      - name: Keep the test reports on failure
+        if: failure() && steps.fresh.outputs.run == 'true'
+        uses: actions/upload-artifact@v4
+        with:
+          name: test-reports
+          path: android/**/build/reports/tests/
+          retention-days: 7

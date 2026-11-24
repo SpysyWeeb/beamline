@@ -1,0 +1,21 @@
+{
+  "format": "beamline-units/1",
+  "note": "How the app writes distances, durations and clock times (docs/architecture.md 2.9). Read by android/core/units (copied there by android/routing/scripts/sync_data.py; edit this file, not the copy). The imperial table is the one banner.json distance_text used: under 100 ft in steps of 10 ft, up to 500 ft in steps of 50 ft, then tenths of a mile up to 9.9 mi, then whole miles. Each step ends where the next one's first text begins, so a text never goes back up as the distance shrinks (500 ft is followed by 0.1 mi; 9.9 mi by 10 mi). Metric: under 100 m in steps of 10 m, up to 950 m in steps of 50 m, then tenths of a kilometre up to 9.9 km, then whole kilometres. Durations are rounded to the nearest minute. The clock follows the phone's 12/24-hour setting, not the unit system.",
+  "distance": {
+    "imperial": [
+      {"below_m": 30.48, "unit": "ft", "round_to": 10},
+      {"below_m": 152.4, "unit": "ft", "round_to": 50},
+      {"below_m": 16012.9728, "unit": "mi", "decimals": 1},
+      {"unit": "mi", "decimals": 0}
+    ],
+    "metric": [
+      {"below_m": 100, "unit": "m", "round_to": 10},
+      {"below_m": 950, "unit": "m", "round_to": 50},
+      {"below_m": 9950, "unit": "km", "decimals": 1},
+      {"unit": "km", "decimals": 0}
+    ]
+  },
+  "following_prefix": "In ",
+  "duration": {"under_one_minute": "< 1 min", "minutes": "{m} min", "hours_minutes": "{h} h {m} min", "hours": "{h} h"},
+  "clock": {"h12": "h:mm a", "h24": "HH:mm", "locale": "en-US"}
+}

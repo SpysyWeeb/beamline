@@ -1,0 +1,11 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="903.51 1198.08 10.18 10.18">
+  <!-- Extracted from protomaps/basemaps sprites/refill.svg (commit 42ffaaa4) group '_capital-s'. Derived from tangrams/icons, Copyright (c) 2017 Mapzen, MIT License; Protomaps visual design CC0-1.0. See assets/LICENSES.md. -->
+  <g>
+      <g>
+         <circle cx="908.6" cy="1203.17" r="4.59" fill="#fff" />
+         <circle cx="908.6" cy="1203.17" r="4.59" stroke-miterlimit="10" fill="none" stroke="#231f20" stroke-width=".82" />
+         <path d="M908.6,1199.76c1.85,0,3.41,1.56,3.41,3.41s-1.56,3.41-3.41,3.41-3.41-1.56-3.41-3.41,1.56-3.41,3.41-3.41m0-1.18c-2.5,0-4.59,2.09-4.59,4.59s2.09,4.59,4.59,4.59,4.59-2.09,4.59-4.59-2.09-4.59-4.59-4.59h0Z" fill="#231f20" />
+      </g>
+      <path d="M910.6,1203.17c0,2.58-4,2.58-4,0s4-2.58,4,0Z" fill="#231f20" />
+   </g>
+</svg>

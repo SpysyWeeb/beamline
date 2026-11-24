@@ -1,0 +1,5 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- No permissions: the engine reads tiles from the app's own files. valhalla-mobile asks for none;
+     its HTTP tile getter is only attached when the config sets mjolnir.tile_url, which
+     EngineConfig never does. -->
+<manifest />

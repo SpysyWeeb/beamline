@@ -1,0 +1,11 @@
+{
+  "_comment": "How the app puts the map together (read by :core:packs ComposeRules). The style in assets/style is written for this tile schema and major version; packs whose map part differs are refused. With a state pack installed, state layers start at state_min_zoom and the overview map's label layers stop at base_label_max_zoom, so a place is never labelled twice. The overview is not drawn above overview_max_zoom at all: its z0-7 tiles would be overzoomed, which is expensive in MapLibre Native (measured once on a loaded emulator: Pittsburgh z14 panned at 1.8-2.5 frames/s with the overview drawn at every zoom, 10 frames/s with it capped at z10; probably each overzoomed tile draws its whole parent tile). With only the overview installed the camera also stops just below overview_max_zoom (MapLibre hides a layer at zooms >= its maxzoom), so the map is never blank. overview_bounds is the first camera when only the overview map is there (the lower 48).",
+  "tile_source": "protomaps",
+  "schema": "protomaps-basemap",
+  "schema_major": 4,
+  "state_min_zoom": 8,
+  "base_label_max_zoom": 8,
+  "overview_max_zoom": 10,
+  "label_layer_types": ["symbol", "circle"],
+  "overview_bounds": [-125.0, 24.4, -66.9, 49.4]
+}

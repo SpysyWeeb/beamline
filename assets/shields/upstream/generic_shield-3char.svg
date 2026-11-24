@@ -1,0 +1,6 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="615.49 1405.92 32.51 17.5">
+  <!-- Extracted from protomaps/basemaps sprites/refill.svg (commit 42ffaaa4) group '_generic_shield-3char'. Derived from tangrams/icons, Copyright (c) 2017 Mapzen, MIT License; Protomaps visual design CC0-1.0. See assets/LICENSES.md. -->
+  <g>
+      <path d="M639.33,1422.92h-15.17c-4.49,0-8.17-3.71-8.17-8.25h0c0-4.54,3.67-8.25,8.17-8.25h15.17c4.49,0,8.17,3.71,8.17,8.25h0c0,4.54-3.67,8.25-8.17,8.25Z" stroke-linecap="round" stroke-width="1.5" stroke-linejoin="round" fill="#fff" stroke="#686868" />
+   </g>
+</svg>

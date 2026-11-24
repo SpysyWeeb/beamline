@@ -1,0 +1,7 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="478.04 1230.39 19 19">
+  <!-- Extracted from protomaps/basemaps sprites/refill.svg (commit 42ffaaa4) group '_attraction'. Derived from tangrams/icons, Copyright (c) 2017 Mapzen, MIT License; Protomaps visual design CC0-1.0. See assets/LICENSES.md. -->
+  <g>
+      <rect x="478.54" y="1230.89" width="18" height="18" rx="4" ry="4" stroke-miterlimit="10" stroke="#3f3f3f" fill="#f4f4f4" />
+      <path d="M485.18,1241.19l-1.18,3.67c-.06,.18,.15,.34,.31,.22l3.14-2.26c.07-.05,.16-.05,.24,0l3.16,2.27c.16,.11,.37-.04,.31-.23l-1.18-3.65c-.03-.08,0-.17,.07-.22l3.13-2.35c.15-.12,.07-.36-.12-.36h-3.87c-.09,0-.16-.06-.19-.14l-1.24-3.74c-.06-.18-.32-.18-.38,0l-1.22,3.72c-.03,.08-.1,.14-.19,.14h-3.93c-.19,0-.28,.25-.12,.36l3.19,2.35c.07,.05,.1,.14,.07,.22Z" stroke-miterlimit="10" stroke="#3f3f3f" fill="#d3d3d3" />
+   </g>
+</svg>

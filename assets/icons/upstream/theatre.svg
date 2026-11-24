@@ -1,0 +1,14 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="559.87 1025.39 19 19">
+  <!-- Extracted from protomaps/basemaps sprites/refill.svg (commit 42ffaaa4) group '_theatre'. Derived from tangrams/icons, Copyright (c) 2017 Mapzen, MIT License; Protomaps visual design CC0-1.0. See assets/LICENSES.md. -->
+  <g>
+      <rect x="560.37" y="1025.89" width="18" height="18" rx="4" ry="4" stroke-miterlimit="10" stroke="#3f3f3f" fill="#f4f4f4" />
+      <path d="M563.9,1032.61s.52-1.06,2.55-1.4c2.02-.34,2.87,.44,2.87,.44,0,0,.69,1.55,.69,3.37s-.86,3.99-2.16,4.17-2.86-1.79-3.31-2.81c-.53-1.19-.64-3.78-.64-3.78Z" stroke="#3f3f3f" stroke-linecap="round" stroke-linejoin="round" fill="#fff" />
+      <path d="M569.32,1031.65s1.02-.84,2.8-.44c1.78,.4,2.55,1.4,2.55,1.4,0,0,0,2.68-.92,4.32s-1.76,2.42-2.93,2.28c-1.47-.17-1.37-1.5-1.37-1.5,0,0,.67-1.13,.57-2.85-.1-1.56-.7-3.2-.7-3.2Z" stroke="#3f3f3f" stroke-linecap="round" stroke-linejoin="round" fill="#d3d3d3" />
+      <path d="M570.68,1036.93s.3-.09,.53-.06c.33,.04,.53,.32,.53,.32" stroke="#3f3f3f" fill="none" stroke-linecap="round" stroke-linejoin="round" />
+      <circle cx="573.25" cy="1034.24" r=".51" fill="#3f3f3f" />
+      <circle cx="570.29" cy="1033.74" r=".51" fill="#3f3f3f" />
+      <circle cx="568.38" cy="1033.51" r=".51" fill="#3f3f3f" />
+      <circle cx="565.44" cy="1034.02" r=".51" fill="#3f3f3f" />
+      <path d="M566.8,1037.02s.96,.06,1.4-.26" stroke="#3f3f3f" fill="none" stroke-linecap="round" stroke-linejoin="round" />
+   </g>
+</svg>

@@ -1,0 +1,18 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="646.29 349.5 17 17">
+  <!-- Extracted from protomaps/basemaps sprites/refill.svg (commit 42ffaaa4) group '_building'. Derived from tangrams/icons, Copyright (c) 2017 Mapzen, MIT License; Protomaps visual design CC0-1.0. See assets/LICENSES.md. -->
+  <g>
+      <rect x="646.79" y="350" width="16" height="16" rx="4" ry="4" stroke-miterlimit="10" stroke="#3f3f3f" fill="#f4f4f4" />
+      <g>
+         <rect x="650.79" y="359" width="2" height="4" stroke-miterlimit="10" fill="#eaeaea" stroke="#6d6d6c" />
+         <rect x="656.79" y="359" width="2" height="4" stroke-miterlimit="10" fill="#eaeaea" stroke="#6d6d6c" />
+         <polygon points="656.79 363 652.79 363 652.79 353 654.74 353 656.79 353 656.79 363" stroke-miterlimit="10" fill="#eaeaea" stroke="#595958" />
+         <line x1="654.79" y1="362.5" x2="654.79" y2="353.5" stroke-miterlimit="10" fill="none" stroke="#595958" />
+         <line x1="652.29" y1="355" x2="657.29" y2="355" stroke-miterlimit="10" fill="none" stroke="#595958" />
+         <line x1="652.29" y1="357" x2="657.29" y2="357" stroke-miterlimit="10" fill="none" stroke="#595958" />
+         <line x1="651.29" y1="361" x2="652.29" y2="361" stroke-miterlimit="10" fill="none" stroke="#6d6d6c" />
+         <line x1="652.29" y1="359" x2="657.29" y2="359" stroke-miterlimit="10" fill="none" stroke="#595958" />
+         <line x1="657.29" y1="361" x2="658.29" y2="361" stroke-miterlimit="10" fill="none" stroke="#6d6d6c" />
+      </g>
+      <line x1="652.29" y1="361" x2="657.29" y2="361" stroke-miterlimit="10" fill="none" stroke="#595958" />
+   </g>
+</svg>

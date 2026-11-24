@@ -1,0 +1,1058 @@
+{
+ "stops": [
+  "erie_perry_sq", 
+  "youngstown", 
+  "meadville", 
+  "pgh_market_sq", 
+  "sharon", 
+  "franklin", 
+  "hubbard", 
+  "ridgway"
+ ], 
+ "request": {
+  "sources": [
+   {
+    "lat": 42.127, 
+    "lon": -80.0852
+   }, 
+   {
+    "lat": 41.0995, 
+    "lon": -80.6492
+   }, 
+   {
+    "lat": 41.6375, 
+    "lon": -80.1514
+   }, 
+   {
+    "lat": 40.4406, 
+    "lon": -80.0026
+   }, 
+   {
+    "lat": 41.233, 
+    "lon": -80.4932
+   }, 
+   {
+    "lat": 41.3979, 
+    "lon": -79.8314
+   }, 
+   {
+    "lat": 41.1565, 
+    "lon": -80.5693
+   }, 
+   {
+    "lat": 41.4207, 
+    "lon": -78.7286
+   }
+  ], 
+  "targets": [
+   {
+    "lat": 42.127, 
+    "lon": -80.0852
+   }, 
+   {
+    "lat": 41.0995, 
+    "lon": -80.6492
+   }, 
+   {
+    "lat": 41.6375, 
+    "lon": -80.1514
+   }, 
+   {
+    "lat": 40.4406, 
+    "lon": -80.0026
+   }, 
+   {
+    "lat": 41.233, 
+    "lon": -80.4932
+   }, 
+   {
+    "lat": 41.3979, 
+    "lon": -79.8314
+   }, 
+   {
+    "lat": 41.1565, 
+    "lon": -80.5693
+   }, 
+   {
+    "lat": 41.4207, 
+    "lon": -78.7286
+   }
+  ], 
+  "costing": "auto", 
+  "units": "kilometers"
+ }, 
+ "response": {
+  "sources_to_targets": [
+   [
+    {
+     "from_index": 0, 
+     "to_index": 0, 
+     "time": 0, 
+     "distance": 0.0, 
+     "cost": 0.0, 
+     "begin_heading": 63.3, 
+     "end_heading": 63.3, 
+     "begin_lat": 42.127016, 
+     "begin_lon": -80.08521, 
+     "end_lat": 42.127016, 
+     "end_lon": -80.08521
+    }, 
+    {
+     "from_index": 0, 
+     "to_index": 1, 
+     "time": 5710, 
+     "distance": 160.091, 
+     "cost": 6158.291, 
+     "begin_heading": 63.3, 
+     "end_heading": 28.6, 
+     "begin_lat": 42.127016, 
+     "begin_lon": -80.08521, 
+     "end_lat": 41.099372, 
+     "end_lon": -80.648891
+    }, 
+    {
+     "from_index": 0, 
+     "to_index": 2, 
+     "time": 2541, 
+     "distance": 68.089, 
+     "cost": 2518.91, 
+     "begin_heading": 63.3, 
+     "end_heading": 196.6, 
+     "begin_lat": 42.127016, 
+     "begin_lon": -80.08521, 
+     "end_lat": 41.637581, 
+     "end_lon": -80.151765
+    }, 
+    {
+     "from_index": 0, 
+     "to_index": 3, 
+     "time": 7151, 
+     "distance": 207.255, 
+     "cost": 6967.848, 
+     "begin_heading": 63.3, 
+     "end_heading": 296.7, 
+     "begin_lat": 42.127016, 
+     "begin_lon": -80.08521, 
+     "end_lat": 40.440621, 
+     "end_lon": -80.002226
+    }, 
+    {
+     "from_index": 0, 
+     "to_index": 4, 
+     "time": 5048, 
+     "distance": 135.224, 
+     "cost": 4798.982, 
+     "begin_heading": 63.3, 
+     "end_heading": 269.2, 
+     "begin_lat": 42.127016, 
+     "begin_lon": -80.08521, 
+     "end_lat": 41.233023, 
+     "end_lon": -80.4932
+    }, 
+    {
+     "from_index": 0, 
+     "to_index": 5, 
+     "time": 4390, 
+     "distance": 113.887, 
+     "cost": 4134.774, 
+     "begin_heading": 63.3, 
+     "end_heading": 99.6, 
+     "begin_lat": 42.127016, 
+     "begin_lon": -80.08521, 
+     "end_lat": 41.397909, 
+     "end_lon": -79.831397
+    }, 
+    {
+     "from_index": 0, 
+     "to_index": 6, 
+     "time": 5137, 
+     "distance": 150.555, 
+     "cost": 4801.982, 
+     "begin_heading": 63.3, 
+     "end_heading": 269.4, 
+     "begin_lat": 42.127016, 
+     "begin_lon": -80.08521, 
+     "end_lat": 41.156423, 
+     "end_lon": -80.569299
+    }, 
+    {
+     "from_index": 0, 
+     "to_index": 7, 
+     "time": 8069, 
+     "distance": 167.871, 
+     "cost": 7430.693, 
+     "begin_heading": 63.3, 
+     "end_heading": 152.8, 
+     "begin_lat": 42.127016, 
+     "begin_lon": -80.08521, 
+     "end_lat": 41.420744, 
+     "end_lon": -78.728484
+    }
+   ], 
+   [
+    {
+     "from_index": 1, 
+     "to_index": 0, 
+     "time": 5742, 
+     "distance": 160.4, 
+     "cost": 5523.92, 
+     "begin_heading": 208.6, 
+     "end_heading": 63.3, 
+     "begin_lat": 41.099372, 
+     "begin_lon": -80.648891, 
+     "end_lat": 42.127016, 
+     "end_lon": -80.08521
+    }, 
+    {
+     "from_index": 1, 
+     "to_index": 1, 
+     "time": 0, 
+     "distance": 0.0, 
+     "cost": 0.0, 
+     "begin_heading": 208.6, 
+     "end_heading": 208.6, 
+     "begin_lat": 41.099372, 
+     "begin_lon": -80.648891, 
+     "end_lat": 41.099372, 
+     "end_lon": -80.648891
+    }, 
+    {
+     "from_index": 1, 
+     "to_index": 2, 
+     "time": 3797, 
+     "distance": 105.276, 
+     "cost": 3852.553, 
+     "begin_heading": 208.6, 
+     "end_heading": 196.6, 
+     "begin_lat": 41.099372, 
+     "begin_lon": -80.648891, 
+     "end_lat": 41.637581, 
+     "end_lon": -80.151765
+    }, 
+    {
+     "from_index": 1, 
+     "to_index": 3, 
+     "time": 4169, 
+     "distance": 109.606, 
+     "cost": 4478.399, 
+     "begin_heading": 208.6, 
+     "end_heading": 296.7, 
+     "begin_lat": 41.099372, 
+     "begin_lon": -80.648891, 
+     "end_lat": 40.440621, 
+     "end_lon": -80.002226
+    }, 
+    {
+     "from_index": 1, 
+     "to_index": 4, 
+     "time": 1356, 
+     "distance": 23.258, 
+     "cost": 1546.858, 
+     "begin_heading": 208.6, 
+     "end_heading": 89.2, 
+     "begin_lat": 41.099372, 
+     "begin_lon": -80.648891, 
+     "end_lat": 41.233023, 
+     "end_lon": -80.4932
+    }, 
+    {
+     "from_index": 1, 
+     "to_index": 5, 
+     "time": 3543, 
+     "distance": 94.873, 
+     "cost": 3523.817, 
+     "begin_heading": 208.6, 
+     "end_heading": 99.6, 
+     "begin_lat": 41.099372, 
+     "begin_lon": -80.648891, 
+     "end_lat": 41.397909, 
+     "end_lon": -79.831397
+    }, 
+    {
+     "from_index": 1, 
+     "to_index": 6, 
+     "time": 738, 
+     "distance": 10.991, 
+     "cost": 843.602, 
+     "begin_heading": 208.6, 
+     "end_heading": 89.4, 
+     "begin_lat": 41.099372, 
+     "begin_lon": -80.648891, 
+     "end_lat": 41.156423, 
+     "end_lon": -80.569299
+    }, 
+    {
+     "from_index": 1, 
+     "to_index": 7, 
+     "time": 7628, 
+     "distance": 205.47, 
+     "cost": 7212.397, 
+     "begin_heading": 208.6, 
+     "end_heading": 152.8, 
+     "begin_lat": 41.099372, 
+     "begin_lon": -80.648891, 
+     "end_lat": 41.420744, 
+     "end_lon": -78.728484
+    }
+   ], 
+   [
+    {
+     "from_index": 2, 
+     "to_index": 0, 
+     "time": 2549, 
+     "distance": 67.638, 
+     "cost": 2527.384, 
+     "begin_heading": 196.6, 
+     "end_heading": 63.3, 
+     "begin_lat": 41.637581, 
+     "begin_lon": -80.151765, 
+     "end_lat": 42.127016, 
+     "end_lon": -80.08521
+    }, 
+    {
+     "from_index": 2, 
+     "to_index": 1, 
+     "time": 3970, 
+     "distance": 102.582, 
+     "cost": 4529.317, 
+     "begin_heading": 196.6, 
+     "end_heading": 28.6, 
+     "begin_lat": 41.637581, 
+     "begin_lon": -80.151765, 
+     "end_lat": 41.099372, 
+     "end_lon": -80.648891
+    }, 
+    {
+     "from_index": 2, 
+     "to_index": 2, 
+     "time": 0, 
+     "distance": 0.0, 
+     "cost": 0.0, 
+     "begin_heading": 196.6, 
+     "end_heading": 196.6, 
+     "begin_lat": 41.637581, 
+     "begin_lon": -80.151765, 
+     "end_lat": 41.637581, 
+     "end_lon": -80.151765
+    }, 
+    {
+     "from_index": 2, 
+     "to_index": 3, 
+     "time": 5247, 
+     "distance": 148.294, 
+     "cost": 5262.471, 
+     "begin_heading": 196.6, 
+     "end_heading": 296.7, 
+     "begin_lat": 41.637581, 
+     "begin_lon": -80.151765, 
+     "end_lat": 40.440621, 
+     "end_lon": -80.002226
+    }, 
+    {
+     "from_index": 2, 
+     "to_index": 4, 
+     "time": 3143, 
+     "distance": 76.262, 
+     "cost": 3080.254, 
+     "begin_heading": 196.6, 
+     "end_heading": 269.2, 
+     "begin_lat": 41.637581, 
+     "begin_lon": -80.151765, 
+     "end_lat": 41.233023, 
+     "end_lon": -80.4932
+    }, 
+    {
+     "from_index": 2, 
+     "to_index": 5, 
+     "time": 2055, 
+     "distance": 43.634, 
+     "cost": 1968.3, 
+     "begin_heading": 196.6, 
+     "end_heading": 99.6, 
+     "begin_lat": 41.637581, 
+     "begin_lon": -80.151765, 
+     "end_lat": 41.397909, 
+     "end_lon": -79.831397
+    }, 
+    {
+     "from_index": 2, 
+     "to_index": 6, 
+     "time": 3233, 
+     "distance": 91.593, 
+     "cost": 3083.254, 
+     "begin_heading": 196.6, 
+     "end_heading": 269.4, 
+     "begin_lat": 41.637581, 
+     "begin_lon": -80.151765, 
+     "end_lat": 41.156423, 
+     "end_lon": -80.569299
+    }, 
+    {
+     "from_index": 2, 
+     "to_index": 7, 
+     "time": 7586, 
+     "distance": 162.234, 
+     "cost": 6845.116, 
+     "begin_heading": 16.6, 
+     "end_heading": 152.8, 
+     "begin_lat": 41.637581, 
+     "begin_lon": -80.151765, 
+     "end_lat": 41.420744, 
+     "end_lon": -78.728484
+    }
+   ], 
+   [
+    {
+     "from_index": 3, 
+     "to_index": 0, 
+     "time": 7202, 
+     "distance": 207.876, 
+     "cost": 7018.007, 
+     "begin_heading": 116.7, 
+     "end_heading": 63.3, 
+     "begin_lat": 40.440621, 
+     "begin_lon": -80.002226, 
+     "end_lat": 42.127016, 
+     "end_lon": -80.08521
+    }, 
+    {
+     "from_index": 3, 
+     "to_index": 1, 
+     "time": 4168, 
+     "distance": 110.246, 
+     "cost": 5089.866, 
+     "begin_heading": 116.7, 
+     "end_heading": 28.6, 
+     "begin_lat": 40.440621, 
+     "begin_lon": -80.002226, 
+     "end_lat": 41.099372, 
+     "end_lon": -80.648891
+    }, 
+    {
+     "from_index": 3, 
+     "to_index": 2, 
+     "time": 5197, 
+     "distance": 147.424, 
+     "cost": 5215.651, 
+     "begin_heading": 116.7, 
+     "end_heading": 196.6, 
+     "begin_lat": 40.440621, 
+     "begin_lon": -80.002226, 
+     "end_lat": 41.637581, 
+     "end_lon": -80.151765
+    }, 
+    {
+     "from_index": 3, 
+     "to_index": 3, 
+     "time": 0, 
+     "distance": 0.0, 
+     "cost": 0.0, 
+     "begin_heading": 116.7, 
+     "end_heading": 116.7, 
+     "begin_lat": 40.440621, 
+     "begin_lon": -80.002226, 
+     "end_lat": 40.440621, 
+     "end_lon": -80.002226
+    }, 
+    {
+     "from_index": 3, 
+     "to_index": 4, 
+     "time": 4520, 
+     "distance": 116.447, 
+     "cost": 4679.726, 
+     "begin_heading": 116.7, 
+     "end_heading": 89.2, 
+     "begin_lat": 40.440621, 
+     "begin_lon": -80.002226, 
+     "end_lat": 41.233023, 
+     "end_lon": -80.4932
+    }, 
+    {
+     "from_index": 3, 
+     "to_index": 5, 
+     "time": 5004, 
+     "distance": 137.498, 
+     "cost": 4975.934, 
+     "begin_heading": 116.7, 
+     "end_heading": 99.6, 
+     "begin_lat": 40.440621, 
+     "begin_lon": -80.002226, 
+     "end_lat": 41.397909, 
+     "end_lon": -79.831397
+    }, 
+    {
+     "from_index": 3, 
+     "to_index": 6, 
+     "time": 4430, 
+     "distance": 111.623, 
+     "cost": 4535.642, 
+     "begin_heading": 116.7, 
+     "end_heading": 269.4, 
+     "begin_lat": 40.440621, 
+     "begin_lon": -80.002226, 
+     "end_lat": 41.156423, 
+     "end_lon": -80.569299
+    }, 
+    {
+     "from_index": 3, 
+     "to_index": 7, 
+     "time": 8274, 
+     "distance": 189.124, 
+     "cost": 7981.671, 
+     "begin_heading": 116.7, 
+     "end_heading": 152.8, 
+     "begin_lat": 40.440621, 
+     "begin_lon": -80.002226, 
+     "end_lat": 41.420744, 
+     "end_lon": -78.728484
+    }
+   ], 
+   [
+    {
+     "from_index": 4, 
+     "to_index": 0, 
+     "time": 5296, 
+     "distance": 129.481, 
+     "cost": 5055.469, 
+     "begin_heading": 89.2, 
+     "end_heading": 63.3, 
+     "begin_lat": 41.233023, 
+     "begin_lon": -80.4932, 
+     "end_lat": 42.127016, 
+     "end_lon": -80.08521
+    }, 
+    {
+     "from_index": 4, 
+     "to_index": 1, 
+     "time": 1358, 
+     "distance": 23.335, 
+     "cost": 2173.955, 
+     "begin_heading": 269.2, 
+     "end_heading": 28.6, 
+     "begin_lat": 41.233023, 
+     "begin_lon": -80.4932, 
+     "end_lat": 41.099372, 
+     "end_lon": -80.648891
+    }, 
+    {
+     "from_index": 4, 
+     "to_index": 2, 
+     "time": 3112, 
+     "distance": 75.417, 
+     "cost": 3053.814, 
+     "begin_heading": 89.2, 
+     "end_heading": 196.6, 
+     "begin_lat": 41.233023, 
+     "begin_lon": -80.4932, 
+     "end_lat": 41.637581, 
+     "end_lon": -80.151765
+    }, 
+    {
+     "from_index": 4, 
+     "to_index": 3, 
+     "time": 4498, 
+     "distance": 116.332, 
+     "cost": 4658.396, 
+     "begin_heading": 269.2, 
+     "end_heading": 296.7, 
+     "begin_lat": 41.233023, 
+     "begin_lon": -80.4932, 
+     "end_lat": 40.440621, 
+     "end_lon": -80.002226
+    }, 
+    {
+     "from_index": 4, 
+     "to_index": 4, 
+     "time": 0, 
+     "distance": 0.0, 
+     "cost": -0.0, 
+     "begin_heading": 269.2, 
+     "end_heading": 269.2, 
+     "begin_lat": 41.233023, 
+     "begin_lon": -80.4932, 
+     "end_lat": 41.233023, 
+     "end_lon": -80.4932
+    }, 
+    {
+     "from_index": 4, 
+     "to_index": 5, 
+     "time": 2956, 
+     "distance": 76.164, 
+     "cost": 2860.028, 
+     "begin_heading": 269.2, 
+     "end_heading": 99.6, 
+     "begin_lat": 41.233023, 
+     "begin_lon": -80.4932, 
+     "end_lat": 41.397909, 
+     "end_lon": -79.831397
+    }, 
+    {
+     "from_index": 4, 
+     "to_index": 6, 
+     "time": 621, 
+     "distance": 12.346, 
+     "cost": 725.185, 
+     "begin_heading": 269.2, 
+     "end_heading": 269.4, 
+     "begin_lat": 41.233023, 
+     "begin_lon": -80.4932, 
+     "end_lat": 41.156423, 
+     "end_lon": -80.569299
+    }, 
+    {
+     "from_index": 4, 
+     "to_index": 7, 
+     "time": 7057, 
+     "distance": 188.354, 
+     "cost": 6557.002, 
+     "begin_heading": 269.2, 
+     "end_heading": 152.8, 
+     "begin_lat": 41.233023, 
+     "begin_lon": -80.4932, 
+     "end_lat": 41.420744, 
+     "end_lon": -78.728484
+    }
+   ], 
+   [
+    {
+     "from_index": 5, 
+     "to_index": 0, 
+     "time": 4415, 
+     "distance": 113.698, 
+     "cost": 4135.672, 
+     "begin_heading": 279.6, 
+     "end_heading": 63.3, 
+     "begin_lat": 41.397909, 
+     "begin_lon": -79.831397, 
+     "end_lat": 42.127016, 
+     "end_lon": -80.08521
+    }, 
+    {
+     "from_index": 5, 
+     "to_index": 1, 
+     "time": 3661, 
+     "distance": 91.463, 
+     "cost": 4127.958, 
+     "begin_heading": 279.6, 
+     "end_heading": 28.6, 
+     "begin_lat": 41.397909, 
+     "begin_lon": -79.831397, 
+     "end_lat": 41.099372, 
+     "end_lon": -80.648891
+    }, 
+    {
+     "from_index": 5, 
+     "to_index": 2, 
+     "time": 2070, 
+     "distance": 43.725, 
+     "cost": 1931.301, 
+     "begin_heading": 279.6, 
+     "end_heading": 196.6, 
+     "begin_lat": 41.397909, 
+     "begin_lon": -79.831397, 
+     "end_lat": 41.637581, 
+     "end_lon": -80.151765
+    }, 
+    {
+     "from_index": 5, 
+     "to_index": 3, 
+     "time": 5002, 
+     "distance": 137.67, 
+     "cost": 4967.63, 
+     "begin_heading": 279.6, 
+     "end_heading": 296.7, 
+     "begin_lat": 41.397909, 
+     "begin_lon": -79.831397, 
+     "end_lat": 40.440621, 
+     "end_lon": -80.002226
+    }, 
+    {
+     "from_index": 5, 
+     "to_index": 4, 
+     "time": 2896, 
+     "distance": 74.595, 
+     "cost": 2783.373, 
+     "begin_heading": 279.6, 
+     "end_heading": 89.2, 
+     "begin_lat": 41.397909, 
+     "begin_lon": -79.831397, 
+     "end_lat": 41.233023, 
+     "end_lon": -80.4932
+    }, 
+    {
+     "from_index": 5, 
+     "to_index": 5, 
+     "time": 0, 
+     "distance": 0.0, 
+     "cost": 0.0, 
+     "begin_heading": 99.6, 
+     "end_heading": 99.6, 
+     "begin_lat": 41.397909, 
+     "begin_lon": -79.831397, 
+     "end_lat": 41.397909, 
+     "end_lon": -79.831397
+    }, 
+    {
+     "from_index": 5, 
+     "to_index": 6, 
+     "time": 2924, 
+     "distance": 80.472, 
+     "cost": 2696.292, 
+     "begin_heading": 279.6, 
+     "end_heading": 269.4, 
+     "begin_lat": 41.397909, 
+     "begin_lon": -79.831397, 
+     "end_lat": 41.156423, 
+     "end_lon": -80.569299
+    }, 
+    {
+     "from_index": 5, 
+     "to_index": 7, 
+     "time": 5873, 
+     "distance": 128.997, 
+     "cost": 5193.727, 
+     "begin_heading": 99.6, 
+     "end_heading": 152.8, 
+     "begin_lat": 41.397909, 
+     "begin_lon": -79.831397, 
+     "end_lat": 41.420744, 
+     "end_lon": -78.728484
+    }
+   ], 
+   [
+    {
+     "from_index": 6, 
+     "to_index": 0, 
+     "time": 5183, 
+     "distance": 150.984, 
+     "cost": 4843.505, 
+     "begin_heading": 89.4, 
+     "end_heading": 63.3, 
+     "begin_lat": 41.156423, 
+     "begin_lon": -80.569299, 
+     "end_lat": 42.127016, 
+     "end_lon": -80.08521
+    }, 
+    {
+     "from_index": 6, 
+     "to_index": 1, 
+     "time": 737, 
+     "distance": 10.991, 
+     "cost": 1431.662, 
+     "begin_heading": 269.4, 
+     "end_heading": 28.6, 
+     "begin_lat": 41.156423, 
+     "begin_lon": -80.569299, 
+     "end_lat": 41.099372, 
+     "end_lon": -80.648891
+    }, 
+    {
+     "from_index": 6, 
+     "to_index": 2, 
+     "time": 3177, 
+     "distance": 90.532, 
+     "cost": 3026.318, 
+     "begin_heading": 89.4, 
+     "end_heading": 196.6, 
+     "begin_lat": 41.156423, 
+     "begin_lon": -80.569299, 
+     "end_lat": 41.637581, 
+     "end_lon": -80.151765
+    }, 
+    {
+     "from_index": 6, 
+     "to_index": 3, 
+     "time": 4430, 
+     "distance": 111.071, 
+     "cost": 4516.691, 
+     "begin_heading": 89.4, 
+     "end_heading": 296.7, 
+     "begin_lat": 41.156423, 
+     "begin_lon": -80.569299, 
+     "end_lat": 40.440621, 
+     "end_lon": -80.002226
+    }, 
+    {
+     "from_index": 6, 
+     "to_index": 4, 
+     "time": 618, 
+     "distance": 12.269, 
+     "cost": 682.413, 
+     "begin_heading": 89.4, 
+     "end_heading": 89.2, 
+     "begin_lat": 41.156423, 
+     "begin_lon": -80.569299, 
+     "end_lat": 41.233023, 
+     "end_lon": -80.4932
+    }, 
+    {
+     "from_index": 6, 
+     "to_index": 5, 
+     "time": 2923, 
+     "distance": 80.129, 
+     "cost": 2697.582, 
+     "begin_heading": 89.4, 
+     "end_heading": 99.6, 
+     "begin_lat": 41.156423, 
+     "begin_lon": -80.569299, 
+     "end_lat": 41.397909, 
+     "end_lon": -79.831397
+    }, 
+    {
+     "from_index": 6, 
+     "to_index": 6, 
+     "time": 0, 
+     "distance": 0.0, 
+     "cost": 0.0, 
+     "begin_heading": 89.4, 
+     "end_heading": 89.4, 
+     "begin_lat": 41.156423, 
+     "begin_lon": -80.569299, 
+     "end_lat": 41.156423, 
+     "end_lon": -80.569299
+    }, 
+    {
+     "from_index": 6, 
+     "to_index": 7, 
+     "time": 7008, 
+     "distance": 190.726, 
+     "cost": 6386.16, 
+     "begin_heading": 89.4, 
+     "end_heading": 152.8, 
+     "begin_lat": 41.156423, 
+     "begin_lon": -80.569299, 
+     "end_lat": 41.420744, 
+     "end_lon": -78.728484
+    }
+   ], 
+   [
+    {
+     "from_index": 7, 
+     "to_index": 0, 
+     "time": 8085, 
+     "distance": 167.886, 
+     "cost": 7454.378, 
+     "begin_heading": 332.8, 
+     "end_heading": 63.3, 
+     "begin_lat": 41.420744, 
+     "begin_lon": -78.728484, 
+     "end_lat": 42.127016, 
+     "end_lon": -80.08521
+    }, 
+    {
+     "from_index": 7, 
+     "to_index": 1, 
+     "time": 7764, 
+     "distance": 202.11, 
+     "cost": 7819.653, 
+     "begin_heading": 332.8, 
+     "end_heading": 28.6, 
+     "begin_lat": 41.420744, 
+     "begin_lon": -78.728484, 
+     "end_lat": 41.099372, 
+     "end_lon": -80.648891
+    }, 
+    {
+     "from_index": 7, 
+     "to_index": 2, 
+     "time": 7559, 
+     "distance": 161.965, 
+     "cost": 6841.989, 
+     "begin_heading": 332.8, 
+     "end_heading": 196.6, 
+     "begin_lat": 41.420744, 
+     "begin_lon": -78.728484, 
+     "end_lat": 41.637581, 
+     "end_lon": -80.151765
+    }, 
+    {
+     "from_index": 7, 
+     "to_index": 3, 
+     "time": 8306, 
+     "distance": 188.94, 
+     "cost": 7973.401, 
+     "begin_heading": 332.8, 
+     "end_heading": 296.7, 
+     "begin_lat": 41.420744, 
+     "begin_lon": -78.728484, 
+     "end_lat": 40.440621, 
+     "end_lon": -80.002226
+    }, 
+    {
+     "from_index": 7, 
+     "to_index": 4, 
+     "time": 7057, 
+     "distance": 187.379, 
+     "cost": 6511.092, 
+     "begin_heading": 332.8, 
+     "end_heading": 89.2, 
+     "begin_lat": 41.420744, 
+     "begin_lon": -78.728484, 
+     "end_lat": 41.233023, 
+     "end_lon": -80.4932
+    }, 
+    {
+     "from_index": 7, 
+     "to_index": 5, 
+     "time": 5872, 
+     "distance": 128.997, 
+     "cost": 5195.926, 
+     "begin_heading": 332.8, 
+     "end_heading": 279.6, 
+     "begin_lat": 41.420744, 
+     "begin_lon": -78.728484, 
+     "end_lat": 41.397909, 
+     "end_lon": -79.831397
+    }, 
+    {
+     "from_index": 7, 
+     "to_index": 6, 
+     "time": 7027, 
+     "distance": 191.121, 
+     "cost": 6370.885, 
+     "begin_heading": 332.8, 
+     "end_heading": 269.4, 
+     "begin_lat": 41.420744, 
+     "begin_lon": -78.728484, 
+     "end_lat": 41.156423, 
+     "end_lon": -80.569299
+    }, 
+    {
+     "from_index": 7, 
+     "to_index": 7, 
+     "time": 0, 
+     "distance": 0.0, 
+     "cost": -0.0, 
+     "begin_heading": 332.8, 
+     "end_heading": 332.8, 
+     "begin_lat": 41.420744, 
+     "begin_lon": -78.728484, 
+     "end_lat": 41.420744, 
+     "end_lon": -78.728484
+    }
+   ]
+  ], 
+  "sources": [
+   {
+    "lat": 42.127016, 
+    "lon": -80.08521
+   }, 
+   {
+    "lat": 41.099372, 
+    "lon": -80.648891
+   }, 
+   {
+    "lat": 41.637581, 
+    "lon": -80.151765
+   }, 
+   {
+    "lat": 40.440621, 
+    "lon": -80.002226
+   }, 
+   {
+    "lat": 41.233023, 
+    "lon": -80.4932
+   }, 
+   {
+    "lat": 41.397909, 
+    "lon": -79.831397
+   }, 
+   {
+    "lat": 41.156423, 
+    "lon": -80.569299
+   }, 
+   {
+    "lat": 41.420744, 
+    "lon": -78.728484
+   }
+  ], 
+  "targets": [
+   {
+    "lat": 42.127016, 
+    "lon": -80.08521
+   }, 
+   {
+    "lat": 41.099372, 
+    "lon": -80.648891
+   }, 
+   {
+    "lat": 41.637581, 
+    "lon": -80.151765
+   }, 
+   {
+    "lat": 40.440621, 
+    "lon": -80.002226
+   }, 
+   {
+    "lat": 41.233023, 
+    "lon": -80.4932
+   }, 
+   {
+    "lat": 41.397909, 
+    "lon": -79.831397
+   }, 
+   {
+    "lat": 41.156423, 
+    "lon": -80.569299
+   }, 
+   {
+    "lat": 41.420744, 
+    "lon": -78.728484
+   }
+  ], 
+  "units": "kilometers", 
+  "algorithm": "costmatrix"
+ }, 
+ "brute_force": {
+  "keep_last": {
+   "order": [
+    0, 
+    2, 
+    5, 
+    4, 
+    6, 
+    1, 
+    3, 
+    7
+   ], 
+   "time_s": 21293
+  }, 
+  "free_last": {
+   "order": [
+    0, 
+    2, 
+    5, 
+    4, 
+    6, 
+    1, 
+    3, 
+    7
+   ], 
+   "time_s": 21293
+  }
+ }, 
+ "optimized_route": {
+  "order": [
+   0, 
+   2, 
+   5, 
+   4, 
+   6, 
+   1, 
+   3, 
+   7
+  ], 
+  "matrix_time_s": 21293
+ }, 
+ "meta": {
+  "engine": "pyvalhalla 3.9.1", 
+  "device_layout": "tar", 
+  "graph_build": [
+   "261114-pa-oh-v3.9.1-b53087"
+  ], 
+  "packs": [
+   "oh", 
+   "pa"
+  ]
+ }
+}

@@ -1,0 +1,12 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="939.43 347.73 19 19">
+  <!-- Extracted from protomaps/basemaps sprites/refill.svg (commit 42ffaaa4) group '_slipway'. Derived from tangrams/icons, Copyright (c) 2017 Mapzen, MIT License; Protomaps visual design CC0-1.0. See assets/LICENSES.md. -->
+  <g>
+      <rect x="939.93" y="348.23" width="18" height="18" rx="4" ry="4" stroke-miterlimit="10" stroke="#3f3f3f" fill="#f4f4f4" />
+      <polygon points="953.7 361.76 944.13 358.72 944.13 361.76 953.7 361.76" stroke-linecap="round" stroke-linejoin="round" fill="#bababa" stroke-width=".5" stroke="#898989" />
+      <line x1="951.05" y1="359.01" x2="953.47" y2="359.79" stroke-miterlimit="10" fill="none" stroke="#545454" />
+      <line x1="944.06" y1="356.78" x2="947.75" y2="357.96" stroke-miterlimit="10" fill="none" stroke="#545454" />
+      <circle cx="949.43" cy="358.43" r=".85" stroke-miterlimit="10" stroke="#545454" fill="#706f6f" />
+      <path d="M944.53,353.18l9.77,2.94-.61,1.91-2.42-.73s-.28-.64-1.21-.91c-.86-.25-1.48,.05-1.48,.05l-2.46-.78c-1.04-.33-1.59-2.43-1.59-2.43" stroke="#3f3f3f" stroke-linecap="round" stroke-linejoin="round" fill="#d3d3d3" />
+      <line x1="948.57" y1="352.76" x2="946.82" y2="353.87" stroke="#3f3f3f" fill="none" stroke-linecap="round" stroke-linejoin="round" />
+   </g>
+</svg>

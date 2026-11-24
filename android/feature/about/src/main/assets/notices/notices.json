@@ -1,0 +1,654 @@
+{
+ "format": "beamline-notices/1",
+ "full_text": "notices/NOTICES.txt",
+ "entries": [
+  {
+   "name": "City of Scranton 911 address points",
+   "version": null,
+   "licence": "PDDL-1.0",
+   "copyright": "City of Scranton GIS",
+   "url": null,
+   "text": "notices/licences/PDDL-1.0.txt",
+   "kind": "data"
+  },
+  {
+   "name": "Natural Earth",
+   "version": null,
+   "licence": "LicenseRef-Public-Domain",
+   "copyright": "Made with Natural Earth. Free vector and raster map data @ naturalearthdata.com.",
+   "url": "https://www.naturalearthdata.com/about/terms-of-use/",
+   "text": "notices/licences/LicenseRef-Public-Domain.txt",
+   "kind": "data"
+  },
+  {
+   "name": "OpenStreetMap data",
+   "version": null,
+   "licence": "ODbL-1.0",
+   "copyright": "© OpenStreetMap contributors",
+   "url": "https://www.openstreetmap.org/copyright",
+   "text": "notices/licences/ODbL-1.0.txt",
+   "kind": "data"
+  },
+  {
+   "name": "US Census Bureau cartographic boundaries",
+   "version": null,
+   "licence": "LicenseRef-Public-Domain",
+   "copyright": "US Census Bureau",
+   "url": "https://www.census.gov/geographies/mapping-files.html",
+   "text": "notices/licences/LicenseRef-Public-Domain.txt",
+   "kind": "data"
+  },
+  {
+   "name": "US Census Bureau TIGER/Line",
+   "version": null,
+   "licence": "LicenseRef-Public-Domain",
+   "copyright": "US Census Bureau, TIGER/Line Shapefiles",
+   "url": "https://www.census.gov/geographies/mapping-files/time-series/geo/tiger-line-file.html",
+   "text": "notices/licences/LicenseRef-Public-Domain.txt",
+   "kind": "data"
+  },
+  {
+   "name": "USDOT National Address Database",
+   "version": null,
+   "licence": "LicenseRef-Public-Domain",
+   "copyright": "US Department of Transportation, National Address Database",
+   "url": "https://www.transportation.gov/gis/national-address-database",
+   "text": "notices/licences/LicenseRef-Public-Domain.txt",
+   "kind": "data"
+  },
+  {
+   "name": "Map icons (tangrams/icons)",
+   "version": null,
+   "licence": "MIT",
+   "copyright": "Copyright (c) 2017 Mapzen",
+   "url": "https://github.com/tangrams/icons",
+   "text": "notices/licences/MIT.txt",
+   "kind": "art"
+  },
+  {
+   "name": "Protomaps basemaps style",
+   "version": "5.7.2",
+   "licence": "BSD-3-Clause AND CC0-1.0",
+   "copyright": "Copyright 2019-2023 Protomaps LLC, Kelso Cartography",
+   "url": "https://github.com/protomaps/basemaps",
+   "text": "notices/licences/BSD-3-Clause_AND_CC0-1.0.txt",
+   "kind": "art"
+  },
+  {
+   "name": "Noto Sans",
+   "version": null,
+   "licence": "OFL-1.1",
+   "copyright": "Copyright 2022 The Noto Project Authors (https://github.com/notofonts)",
+   "url": "https://notofonts.github.io/",
+   "text": "notices/licences/OFL-1.1.txt",
+   "kind": "font"
+  },
+  {
+   "name": "AndroidX libraries (Jetpack, Jetpack Compose)",
+   "version": null,
+   "licence": "Apache-2.0",
+   "copyright": null,
+   "url": "https://developer.android.com/jetpack/androidx",
+   "text": "notices/licences/Apache-2.0.txt",
+   "kind": "library"
+  },
+  {
+   "name": "Gson",
+   "version": "2.10.1",
+   "licence": "Apache-2.0",
+   "copyright": null,
+   "url": "https://github.com/google/gson",
+   "text": "notices/licences/Apache-2.0.txt",
+   "kind": "library"
+  },
+  {
+   "name": "Guava ListenableFuture",
+   "version": "1.0",
+   "licence": "Apache-2.0",
+   "copyright": null,
+   "url": "https://github.com/google/guava",
+   "text": "notices/licences/Apache-2.0.txt",
+   "kind": "library"
+  },
+  {
+   "name": "JetBrains Java Annotations",
+   "version": null,
+   "licence": "Apache-2.0",
+   "copyright": null,
+   "url": "https://github.com/JetBrains/java-annotations",
+   "text": "notices/licences/Apache-2.0.txt",
+   "kind": "library"
+  },
+  {
+   "name": "JSpecify",
+   "version": "1.0.0",
+   "licence": "Apache-2.0",
+   "copyright": null,
+   "url": "https://jspecify.dev/",
+   "text": "notices/licences/Apache-2.0.txt",
+   "kind": "library"
+  },
+  {
+   "name": "Kotlin standard library and reflection",
+   "version": null,
+   "licence": "Apache-2.0",
+   "copyright": null,
+   "url": "https://kotlinlang.org/",
+   "text": "notices/licences/Apache-2.0.txt",
+   "kind": "library"
+  },
+  {
+   "name": "kotlinx.coroutines",
+   "version": null,
+   "licence": "Apache-2.0",
+   "copyright": null,
+   "url": "https://github.com/Kotlin/kotlinx.coroutines",
+   "text": "notices/licences/Apache-2.0.txt",
+   "kind": "library"
+  },
+  {
+   "name": "kotlinx.serialization",
+   "version": null,
+   "licence": "Apache-2.0",
+   "copyright": null,
+   "url": "https://github.com/Kotlin/kotlinx.serialization",
+   "text": "notices/licences/Apache-2.0.txt",
+   "kind": "library"
+  },
+  {
+   "name": "MapLibre Android Gestures",
+   "version": "0.0.4",
+   "licence": "BSD-2-Clause",
+   "copyright": "Copyright (c) 2018, Mapbox; Copyright (c) 2024, MapLibre contributors",
+   "url": "https://github.com/maplibre/maplibre-gestures-android",
+   "text": "notices/licences/BSD-2-Clause.txt",
+   "kind": "library"
+  },
+  {
+   "name": "MapLibre Android SDK",
+   "version": "13.7.1",
+   "licence": "BSD-2-Clause",
+   "copyright": "Copyright (c) 2021 MapLibre contributors; Copyright (c) 2018-2021 MapTiler.com; Copyright (c) 2014-2020 Mapbox",
+   "url": "https://github.com/maplibre/maplibre-native",
+   "text": "notices/licences/BSD-2-Clause.txt",
+   "kind": "library"
+  },
+  {
+   "name": "MapLibre GeoJSON and Turf for Android",
+   "version": "6.0.1",
+   "licence": "MIT",
+   "copyright": "Copyright (c) 2018 Mapbox",
+   "url": "https://github.com/maplibre/maplibre-java",
+   "text": "notices/licences/MIT.txt",
+   "kind": "library"
+  },
+  {
+   "name": "Moshi",
+   "version": "1.15.1",
+   "licence": "Apache-2.0",
+   "copyright": null,
+   "url": "https://github.com/square/moshi",
+   "text": "notices/licences/Apache-2.0.txt",
+   "kind": "library"
+  },
+  {
+   "name": "OkHttp",
+   "version": "5.3.2",
+   "licence": "Apache-2.0",
+   "copyright": null,
+   "url": "https://square.github.io/okhttp/",
+   "text": "notices/licences/Apache-2.0.txt",
+   "kind": "library"
+  },
+  {
+   "name": "Okio",
+   "version": "3.16.4",
+   "licence": "Apache-2.0",
+   "copyright": null,
+   "url": "https://square.github.io/okio/",
+   "text": "notices/licences/Apache-2.0.txt",
+   "kind": "library"
+  },
+  {
+   "name": "OpeningHoursParser",
+   "version": "0.29.0",
+   "licence": "MIT",
+   "copyright": "Copyright (c) 2015 Simon Poole",
+   "url": "https://github.com/simonpoole/OpeningHoursParser",
+   "text": "notices/licences/MIT.txt",
+   "kind": "library"
+  },
+  {
+   "name": "OSRM OpenAPI models",
+   "version": "0.0.10",
+   "licence": "BSD-3-Clause",
+   "copyright": "Copyright (c) 2024, Stadia Maps",
+   "url": "https://github.com/stadiamaps/osrm-openapi",
+   "text": "notices/licences/BSD-3-Clause.txt",
+   "kind": "library"
+  },
+  {
+   "name": "Public Suffix List (inside OkHttp)",
+   "version": null,
+   "licence": "MPL-2.0",
+   "copyright": "Copyright the Public Suffix List contributors (publicsuffix.org, Mozilla)",
+   "url": "https://publicsuffix.org/list/",
+   "text": "notices/licences/MPL-2.0.txt",
+   "kind": "library"
+  },
+  {
+   "name": "Timber",
+   "version": "5.0.1",
+   "licence": "Apache-2.0",
+   "copyright": null,
+   "url": "https://github.com/JakeWharton/timber",
+   "text": "notices/licences/Apache-2.0.txt",
+   "kind": "library"
+  },
+  {
+   "name": "valhalla-mobile",
+   "version": "0.6.4",
+   "licence": "MIT",
+   "copyright": "Copyright (c) 2024 Adventure Consortium Inc (dba Rallista)",
+   "url": "https://github.com/Rallista/valhalla-mobile",
+   "text": "notices/licences/MIT.txt",
+   "kind": "library"
+  },
+  {
+   "name": "valhalla-models",
+   "version": "0.6.0",
+   "licence": "MIT",
+   "copyright": "Copyright (c) 2024 Adventure Consortium Inc (dba Rallista)",
+   "url": "https://github.com/Rallista/valhalla-mobile",
+   "text": "notices/licences/MIT.txt",
+   "kind": "library"
+  },
+  {
+   "name": "Abseil",
+   "version": null,
+   "licence": "Apache-2.0",
+   "copyright": null,
+   "url": "https://abseil.io/",
+   "text": "notices/licences/Apache-2.0.txt",
+   "kind": "native"
+  },
+  {
+   "name": "Boost",
+   "version": null,
+   "licence": "BSL-1.0",
+   "copyright": "Copyright the authors of the Boost C++ Libraries (each source file names its holders)",
+   "url": "https://www.boost.org/",
+   "text": "notices/licences/BSL-1.0.txt",
+   "kind": "native"
+  },
+  {
+   "name": "cheap-ruler-cpp",
+   "version": null,
+   "licence": "ISC",
+   "copyright": "Copyright (c) 2017, Mapbox",
+   "url": "https://github.com/mapbox/cheap-ruler-cpp",
+   "text": "notices/licences/ISC.txt",
+   "kind": "native"
+  },
+  {
+   "name": "cpp-statsd-client",
+   "version": null,
+   "licence": "MIT",
+   "copyright": "Copyright (c) 2017 Vincent Thiery",
+   "url": "https://github.com/vthiery/cpp-statsd-client",
+   "text": "notices/licences/MIT.txt",
+   "kind": "native"
+  },
+  {
+   "name": "csscolorparser",
+   "version": null,
+   "licence": "MIT",
+   "copyright": "(c) Dean McNamee, 2012. (c) Konstantin Käfer, 2014.",
+   "url": "https://github.com/mapbox/css-color-parser-cpp",
+   "text": "notices/licences/MIT.txt",
+   "kind": "native"
+  },
+  {
+   "name": "date (Howard Hinnant)",
+   "version": null,
+   "licence": "MIT",
+   "copyright": "Copyright (c) 2015, 2016, 2017 Howard Hinnant; Copyright (c) 2015 Ville Voutilainen; Copyright (c) 2016 Adrian Colomitchi; Copyright (c) 2016 Alexander Kormanovsky; Copyright (c) 2016, 2017 Jiangang Zhuang; Copyright (c) 2017 Florian Dang; Copyright (c) 2017 Paul Thompson; Copyright (c) 2017 Nicolas Veloz Savino; Copyright (c) 2017 Aaron Bishop; Copyright (c) 2017, 2018, 2019 Tomasz Kamiński",
+   "url": "https://github.com/HowardHinnant/date",
+   "text": "notices/licences/MIT.txt",
+   "kind": "native"
+  },
+  {
+   "name": "earcut.hpp",
+   "version": null,
+   "licence": "ISC",
+   "copyright": "Copyright (c) 2015, Mapbox",
+   "url": "https://github.com/mapbox/earcut.hpp",
+   "text": "notices/licences/ISC.txt",
+   "kind": "native"
+  },
+  {
+   "name": "eternal",
+   "version": null,
+   "licence": "ISC",
+   "copyright": "Copyright (c) 2018, Mapbox",
+   "url": "https://github.com/mapbox/eternal",
+   "text": "notices/licences/ISC.txt",
+   "kind": "native"
+  },
+  {
+   "name": "expected-lite",
+   "version": null,
+   "licence": "BSL-1.0",
+   "copyright": "Copyright (C) 2016-2025 Martin Moene.",
+   "url": "https://github.com/martinmoene/expected-lite",
+   "text": "notices/licences/BSL-1.0.txt",
+   "kind": "native"
+  },
+  {
+   "name": "FastPFOR",
+   "version": null,
+   "licence": "Apache-2.0",
+   "copyright": null,
+   "url": "https://github.com/fast-pack/FastPFOR",
+   "text": "notices/licences/Apache-2.0.txt",
+   "kind": "native"
+  },
+  {
+   "name": "flatbush (C++)",
+   "version": null,
+   "licence": "MIT",
+   "copyright": "Copyright (c) 2021 Alex E.",
+   "url": "https://github.com/chusitoo/flatbush",
+   "text": "notices/licences/MIT.txt",
+   "kind": "native"
+  },
+  {
+   "name": "FreeType",
+   "version": "2.13.3",
+   "licence": "FTL AND MIT",
+   "copyright": "Portions of this software are copyright © 2024 The FreeType Project (www.freetype.org). All rights reserved.; BDF driver: Copyright 2000 Computing Research Labs, New Mexico State University; Copyright 2001-2002, 2011 Francesco Zappa Nardelli; PCF driver: Copyright (C) 2000 by Francesco Zappa Nardelli",
+   "url": "https://freetype.org/",
+   "text": "notices/licences/FTL_AND_MIT.txt",
+   "kind": "native"
+  },
+  {
+   "name": "FSST",
+   "version": null,
+   "licence": "MIT",
+   "copyright": "Copyright (c) 2018-2020, CWI, TU Munich, FSU Jena",
+   "url": "https://github.com/cwida/fsst",
+   "text": "notices/licences/MIT.txt",
+   "kind": "native"
+  },
+  {
+   "name": "geojson-vt-cpp",
+   "version": null,
+   "licence": "ISC",
+   "copyright": "Copyright (c) 2015, Mapbox",
+   "url": "https://github.com/mapbox/geojson-vt-cpp",
+   "text": "notices/licences/ISC.txt",
+   "kind": "native"
+  },
+  {
+   "name": "geojson.hpp",
+   "version": null,
+   "licence": "ISC",
+   "copyright": "Copyright (c) 2016, Mapbox",
+   "url": "https://github.com/mapbox/geojson-cpp",
+   "text": "notices/licences/ISC.txt",
+   "kind": "native"
+  },
+  {
+   "name": "geometry.hpp",
+   "version": null,
+   "licence": "ISC",
+   "copyright": "Copyright (c) 2016, Mapbox",
+   "url": "https://github.com/mapbox/geometry.hpp",
+   "text": "notices/licences/ISC.txt",
+   "kind": "native"
+  },
+  {
+   "name": "HarfBuzz",
+   "version": null,
+   "licence": "MIT-Modern-Variant AND MIT",
+   "copyright": "Copyright © 2010-2022 Google, Inc.; Copyright © 2015-2020 Ebrahim Byagowi; Copyright © 2019,2020 Facebook, Inc.; Copyright © 2012,2015 Mozilla Foundation; Copyright © 2011 Codethink Limited; Copyright © 2008,2010 Nokia Corporation and/or its subsidiary(-ies); Copyright © 2009 Keith Stribley; Copyright © 2011 Martin Hosken and SIL International; Copyright © 2007 Chris Wilson; Copyright © 2005,2006,2020,2021,2022,2023 Behdad Esfahbod; Copyright © 2004,2007,2008,2009,2010,2013,2021,2022,2023 Red Hat, Inc.; Copyright © 1998-2005 David Turner and Werner Lemberg; Copyright © 2016 Igalia S.L.; Copyright © 2022 Matthias Clasen; Copyright © 2018,2021 Khaled Hosny; Copyright © 2018,2019,2020 Adobe, Inc; Copyright © 2013-2015 Alexei Podtelezhnikov; src/ms-use: Copyright (c) Microsoft Corporation.",
+   "url": "https://harfbuzz.github.io/",
+   "text": "notices/licences/MIT-Modern-Variant_AND_MIT.txt",
+   "kind": "native"
+  },
+  {
+   "name": "IANA Time Zone Database",
+   "version": null,
+   "licence": "LicenseRef-Public-Domain",
+   "copyright": null,
+   "url": "https://www.iana.org/time-zones",
+   "text": "notices/licences/LicenseRef-Public-Domain.txt",
+   "kind": "native"
+  },
+  {
+   "name": "ICU",
+   "version": "61.1",
+   "licence": "Unicode-DFS-2016 AND ICU",
+   "copyright": "Copyright © 1991-2018 Unicode, Inc. All rights reserved.; Copyright (c) 1995-2016 International Business Machines Corporation and others",
+   "url": "https://icu.unicode.org/",
+   "text": "notices/licences/Unicode-DFS-2016_AND_ICU.txt",
+   "kind": "native"
+  },
+  {
+   "name": "jni.hpp",
+   "version": null,
+   "licence": "ISC",
+   "copyright": "Copyright © 2016, Mapbox",
+   "url": "https://github.com/mapbox/jni.hpp",
+   "text": "notices/licences/ISC.txt",
+   "kind": "native"
+  },
+  {
+   "name": "kdbush.hpp",
+   "version": null,
+   "licence": "ISC",
+   "copyright": "Copyright (c) 2016, Vladimir Agafonkin",
+   "url": "https://github.com/mourner/kdbush.hpp",
+   "text": "notices/licences/ISC.txt",
+   "kind": "native"
+  },
+  {
+   "name": "LLVM libc++",
+   "version": null,
+   "licence": "Apache-2.0 WITH LLVM-exception",
+   "copyright": null,
+   "url": "https://libcxx.llvm.org/",
+   "text": "notices/licences/Apache-2.0_WITH_LLVM-exception.txt",
+   "kind": "native"
+  },
+  {
+   "name": "LZ4",
+   "version": null,
+   "licence": "BSD-2-Clause",
+   "copyright": "Copyright (c) 2011-2020, Yann Collet",
+   "url": "https://github.com/lz4/lz4",
+   "text": "notices/licences/BSD-2-Clause.txt",
+   "kind": "native"
+  },
+  {
+   "name": "MapLibre Native base (mapbox-base)",
+   "version": null,
+   "licence": "BSD-3-Clause",
+   "copyright": "Copyright (c) MapBox",
+   "url": "https://github.com/maplibre/maplibre-native-base",
+   "text": "notices/licences/BSD-3-Clause.txt",
+   "kind": "native"
+  },
+  {
+   "name": "MapLibre Tile (mlt-cpp)",
+   "version": null,
+   "licence": "MIT",
+   "copyright": "Copyright (c) 2024 MapLibre contributors",
+   "url": "https://github.com/maplibre/maplibre-tile-spec",
+   "text": "notices/licences/MIT.txt",
+   "kind": "native"
+  },
+  {
+   "name": "parsedate (from curl)",
+   "version": null,
+   "licence": "curl",
+   "copyright": "Copyright (c) 1996 - 2020, Daniel Stenberg, and many contributors, see the THANKS file.",
+   "url": "https://curl.se/",
+   "text": "notices/licences/curl.txt",
+   "kind": "native"
+  },
+  {
+   "name": "PMTiles C++ reader",
+   "version": null,
+   "licence": "BSD-3-Clause",
+   "copyright": "Copyright 2021 Protomaps LLC",
+   "url": "https://github.com/protomaps/PMTiles",
+   "text": "notices/licences/BSD-3-Clause.txt",
+   "kind": "native"
+  },
+  {
+   "name": "polylabel",
+   "version": null,
+   "licence": "ISC",
+   "copyright": "Copyright (c) 2016 Mapbox",
+   "url": "https://github.com/mapbox/polylabel",
+   "text": "notices/licences/ISC.txt",
+   "kind": "native"
+  },
+  {
+   "name": "Protocol Buffers",
+   "version": null,
+   "licence": "BSD-3-Clause",
+   "copyright": "Copyright 2008 Google Inc. All rights reserved.",
+   "url": "https://github.com/protocolbuffers/protobuf",
+   "text": "notices/licences/BSD-3-Clause.txt",
+   "kind": "native"
+  },
+  {
+   "name": "protozero",
+   "version": null,
+   "licence": "BSD-2-Clause",
+   "copyright": "protozero copyright (c) Mapbox.",
+   "url": "https://github.com/mapbox/protozero",
+   "text": "notices/licences/BSD-2-Clause.txt",
+   "kind": "native"
+  },
+  {
+   "name": "RapidJSON",
+   "version": null,
+   "licence": "MIT",
+   "copyright": "Copyright (C) 2015 THL A29 Limited, a Tencent company, and Milo Yip.",
+   "url": "https://rapidjson.org/",
+   "text": "notices/licences/MIT.txt",
+   "kind": "native"
+  },
+  {
+   "name": "robin-hood-hashing",
+   "version": null,
+   "licence": "MIT",
+   "copyright": "Copyright (c) 2018-2021 Martin Ankerl",
+   "url": "https://github.com/martinus/robin-hood-hashing",
+   "text": "notices/licences/MIT.txt",
+   "kind": "native"
+  },
+  {
+   "name": "shelf-pack-cpp",
+   "version": null,
+   "licence": "ISC",
+   "copyright": "Copyright (c) 2017, Mapbox",
+   "url": "https://github.com/mapbox/shelf-pack-cpp",
+   "text": "notices/licences/ISC.txt",
+   "kind": "native"
+  },
+  {
+   "name": "SIMD Everywhere",
+   "version": null,
+   "licence": "MIT",
+   "copyright": "Copyright (c) 2017 Evan Nemerson",
+   "url": "https://github.com/simd-everywhere/simde",
+   "text": "notices/licences/MIT.txt",
+   "kind": "native"
+  },
+  {
+   "name": "SQLite",
+   "version": null,
+   "licence": "blessing",
+   "copyright": "The SQLite authors dedicated SQLite to the public domain.",
+   "url": "https://sqlite.org/copyright.html",
+   "text": "notices/licences/blessing.txt",
+   "kind": "native"
+  },
+  {
+   "name": "supercluster.hpp",
+   "version": null,
+   "licence": "ISC",
+   "copyright": "Copyright (c) 2016, Mapbox",
+   "url": "https://github.com/mapbox/supercluster.hpp",
+   "text": "notices/licences/ISC.txt",
+   "kind": "native"
+  },
+  {
+   "name": "unique_resource",
+   "version": null,
+   "licence": "BSL-1.0",
+   "copyright": "Copyright (c) 2015 okdshin; Portions Copyright (c) 2020 D3 Engineering, LLC.",
+   "url": "https://github.com/okdshin/unique_resource",
+   "text": "notices/licences/BSL-1.0.txt",
+   "kind": "native"
+  },
+  {
+   "name": "unordered_dense",
+   "version": null,
+   "licence": "MIT",
+   "copyright": "Copyright (c) 2022 Martin Leitner-Ankerl",
+   "url": "https://github.com/martinus/unordered_dense",
+   "text": "notices/licences/MIT.txt",
+   "kind": "native"
+  },
+  {
+   "name": "Valhalla",
+   "version": "3.9.1",
+   "licence": "MIT",
+   "copyright": "Copyright (c) 2018 Valhalla contributors; Copyright (c) 2015-2017 Mapillary AB, Mapzen",
+   "url": "https://github.com/valhalla/valhalla",
+   "text": "notices/licences/MIT.txt",
+   "kind": "native"
+  },
+  {
+   "name": "variant (mapbox)",
+   "version": null,
+   "licence": "BSD-3-Clause",
+   "copyright": "Copyright (c) MapBox",
+   "url": "https://github.com/mapbox/variant",
+   "text": "notices/licences/BSD-3-Clause.txt",
+   "kind": "native"
+  },
+  {
+   "name": "vector-tile (mvt-cpp)",
+   "version": null,
+   "licence": "ISC",
+   "copyright": "Copyright (c) 2016, Mapbox",
+   "url": "https://github.com/maplibre/mvt-cpp",
+   "text": "notices/licences/ISC.txt",
+   "kind": "native"
+  },
+  {
+   "name": "vtzero",
+   "version": null,
+   "licence": "BSD-2-Clause",
+   "copyright": "Copyright (c) 2017, Mapbox",
+   "url": "https://github.com/mapbox/vtzero",
+   "text": "notices/licences/BSD-2-Clause.txt",
+   "kind": "native"
+  },
+  {
+   "name": "wagyu",
+   "version": null,
+   "licence": "BSL-1.0",
+   "copyright": "Copyright (c) 2010-2015, Angus Johnson; Copyright (c) 2016, Mapbox",
+   "url": "https://github.com/mapbox/wagyu",
+   "text": "notices/licences/BSL-1.0.txt",
+   "kind": "native"
+  }
+ ]
+}

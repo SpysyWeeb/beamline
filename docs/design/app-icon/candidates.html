@@ -1,0 +1,171 @@
+<title>Beamline App Icons</title>
+<meta name="claude:viewport-fit-sides" content="cover">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Barlow:wght@400;500;600&family=Barlow+Condensed:wght@600&display=swap">
+<style>
+/* Layout: three icon candidates side by side, each with its launcher shapes and home-screen sizes, then a small-size line-up and a pick. */
+:root {
+  --bg: #EEF1F4; --surface: #FFFFFF; --ink: #17212B; --muted: #566575; --line: #D3DAE1; --accent: #2A74D8;
+  /* Icon artwork colours are fixed: they are the app's own palette. */
+  --night-land: #15181B; --night-road: #2C3137; --slate-top: #1B2733; --slate-bottom: #0D1319; --asphalt: #2A3037;
+  --route: #5BAAFF; --route-deep: #2C72CF; --route-night: #4B96EE; --route-night-casing: #1B4A91;
+  --arrow-top: #7CBDFF; --arrow-rear: #3D8CF0; --arrow-under: #1B54A6; --white: #FFFFFF;
+  --paper-facet: #D6E8FF; --paper-under: #8FBEF5; --brake: #FF3B2F; --beam: #FFF3CF; --shadow: #000000;
+  --wall-light-a: #E9EEF5; --wall-light-b: #C6D4E6; --wall-dark-a: #1B2430; --wall-dark-b: #0B0F14;
+  --font-display: "Barlow Condensed", "Arial Narrow", sans-serif;
+  --font-body: "Barlow", "Segoe UI", system-ui, sans-serif;
+}
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) { --bg: #0D1216; --surface: #151C23; --ink: #E7EDF3; --muted: #97A5B4; --line: #28323C; --accent: #5AA5FF; color-scheme: dark; }
+}
+:root[data-theme="dark"] { --bg: #0D1216; --surface: #151C23; --ink: #E7EDF3; --muted: #97A5B4; --line: #28323C; --accent: #5AA5FF; color-scheme: dark; }
+
+body { background: var(--bg); color: var(--ink); font-family: var(--font-body); font-size: 16px; line-height: 1.5; }
+.wrap {
+  max-width: 1040px; margin: 0 auto; padding-block: 28px 56px;
+  padding-left: max(16px, env(safe-area-inset-left, 0px));
+  padding-right: max(16px, env(safe-area-inset-right, 0px));
+  display: flex; flex-direction: column; gap: 40px;
+}
+h1, h2, h3 { font-family: var(--font-display); font-weight: 600; line-height: 1.1; margin: 0; text-wrap: balance; }
+h1 { font-size: 2.6rem; letter-spacing: 0.01em; }
+h2 { font-size: 1.6rem; letter-spacing: 0.02em; }
+h3 { font-size: 1.35rem; letter-spacing: 0.02em; }
+p { margin: 0; }
+.lede { color: var(--muted); max-width: 64ch; margin-top: 8px; }
+
+.cands { display: grid; grid-template-columns: repeat(auto-fit, minmax(250px, 1fr)); gap: 28px; }
+.cand { display: flex; flex-direction: column; gap: 14px; min-width: 0; }
+.cand .big svg { width: min(100%, 190px); height: auto; display: block; }
+.cand p { color: var(--muted); }
+.label { font-size: 0.75rem; font-weight: 600; letter-spacing: 0.08em; text-transform: uppercase; color: var(--muted); }
+.row { display: flex; flex-wrap: wrap; gap: 12px; align-items: center; }
+.row svg { display: block; }
+.wall { display: flex; gap: 14px; align-items: center; padding: 12px 14px; border-radius: 14px; }
+.wall.light { background: linear-gradient(135deg, var(--wall-light-a), var(--wall-light-b)); }
+.wall.dark { background: linear-gradient(135deg, var(--wall-dark-a), var(--wall-dark-b)); }
+
+.lineup { display: flex; flex-wrap: wrap; gap: 14px; margin-top: 14px; }
+.pick { max-width: 68ch; }
+.pick p + p { margin-top: 10px; }
+.pick p { color: var(--muted); }
+.pick strong { color: var(--ink); font-weight: 600; }
+</style>
+
+<div class="wrap">
+  <header>
+    <h1>App icon, three ways</h1>
+    <p class="lede">All three are built on the driving arrow from the app itself, with its brake lights, so the icon and the thing you watch while driving are the same object. No lettering, since the name is not settled.</p>
+  </header>
+
+  <section class="cands" id="cands" aria-label="Icon candidates"></section>
+
+  <section aria-labelledby="small-h">
+    <h2 id="small-h">Side by side at launcher size</h2>
+    <div class="lineup">
+      <div class="wall light" id="line-light"></div>
+      <div class="wall dark" id="line-dark"></div>
+    </div>
+  </section>
+
+  <section class="pick" aria-labelledby="pick-h">
+    <h2 id="pick-h">Which I would pick</h2>
+    <p><strong>Blue field for the launcher.</strong> It reads most clearly at the smallest size, it stands out on both light and dark wallpapers, and it is the simplest shape to recognise at a glance.</p>
+    <p><strong>Night drive is the most "ours".</strong> The beam and the red lights are the app's signature. It would make a good splash screen or store picture, and a fair launcher icon if you prefer a dark one.</p>
+    <p><strong>Lanes tells the best story and reads the worst.</strong> It promises the lane-level map, which does not exist yet, and its details blur when small.</p>
+  </section>
+</div>
+
+<script>
+(function () {
+  var n = 0;
+  var OUT = 'M0 -38 L27 28 L27 34.5 L0 21.5 L-27 34.5 L-27 28 Z';
+  var LENS = '<path d="M25.6 28.9 L16.5 24.5 L16.5 29.9 L25.6 34.3 Z"/><path d="M-25.6 28.9 L-16.5 24.5 L-16.5 29.9 L-25.6 34.3 Z"/>';
+
+  /* The app's arrow. kind "blue": blue facets with a white edge. kind "paper": white facets, no edge. */
+  function arrow(kind, id, tf, glow) {
+    var blue = kind === 'blue';
+    return '<g transform="' + tf + '">' +
+      '<ellipse cy="12" rx="27" ry="30" style="fill:var(--shadow);fill-opacity:' + (blue ? '.35' : '.22') + '" filter="url(#b4' + id + ')"/>' +
+      (glow ? '<g style="fill:var(--brake);fill-opacity:.9" filter="url(#b4' + id + ')">' + LENS + '</g>' : '') +
+      '<path d="' + OUT + '" style="fill:var(' + (blue ? '--arrow-under' : '--paper-under') + ')"/>' +
+      '<path d="M0 -38 L0 15 L-27 28 Z" style="fill:var(' + (blue ? '--arrow-top' : '--white') + ')"/>' +
+      '<path d="M0 -38 L27 28 L0 15 Z" style="fill:var(' + (blue ? '--arrow-rear' : '--paper-facet') + ')"/>' +
+      '<g style="fill:var(--brake)">' + LENS + '</g>' +
+      (blue ? '<path d="' + OUT + '" fill="none" style="stroke:var(--white);stroke-width:4.5;stroke-linejoin:round"/>' : '') +
+      '</g>';
+  }
+  function defs(id) {
+    var fr = ' x="-80%" y="-80%" width="260%" height="260%"';
+    return '<filter id="b4' + id + '"' + fr + '><feGaussianBlur stdDeviation="3.2"/></filter>' +
+      '<filter id="b2' + id + '"' + fr + '><feGaussianBlur stdDeviation="1.6"/></filter>' +
+      '<filter id="b8' + id + '"' + fr + '><feGaussianBlur stdDeviation="5"/></filter>';
+  }
+
+  /* Each candidate draws on Android's 108-unit adaptive canvas; the middle 72 units are what a launcher shows. */
+  var art = [
+    function (id) { /* Night drive */
+      return '<defs>' + defs(id) +
+        '<radialGradient id="bm' + id + '" gradientUnits="userSpaceOnUse" cx="54" cy="50" r="44">' +
+        '<stop offset="0" style="stop-color:var(--beam);stop-opacity:.9"/><stop offset=".5" style="stop-color:var(--beam);stop-opacity:.32"/>' +
+        '<stop offset="1" style="stop-color:var(--beam);stop-opacity:0"/></radialGradient></defs>' +
+        '<rect width="108" height="108" style="fill:var(--night-land)"/>' +
+        '<path d="M54 -4V112M-4 38H112" fill="none" style="stroke:var(--night-road);stroke-width:17"/>' +
+        '<path d="M54 112V-4" fill="none" style="stroke:var(--route-night-casing);stroke-width:9.5"/>' +
+        '<path d="M54 112V-4" fill="none" style="stroke:var(--route-night);stroke-width:6"/>' +
+        '<path d="M54 50 L40 8 A44 44 0 0 1 68 8 Z" fill="url(#bm' + id + ')" filter="url(#b2' + id + ')"/>' +
+        '<ellipse cx="54" cy="82" rx="15" ry="6" style="fill:var(--brake);fill-opacity:.45" filter="url(#b8' + id + ')"/>' +
+        arrow('blue', id, 'translate(54 66) scale(.44)', true);
+    },
+    function (id) { /* Blue field */
+      return '<defs>' + defs(id) +
+        '<linearGradient id="bf' + id + '" x1="0" y1="0" x2="0" y2="1"><stop offset="0" style="stop-color:var(--route)"/><stop offset="1" style="stop-color:var(--route-deep)"/></linearGradient></defs>' +
+        '<rect width="108" height="108" fill="url(#bf' + id + ')"/>' +
+        '<path d="M54 112V60" fill="none" style="stroke:var(--white);stroke-opacity:.22;stroke-width:7;stroke-linecap:round"/>' +
+        arrow('paper', id, 'translate(54 54) scale(.56)', false);
+    },
+    function (id) { /* Lanes */
+      return '<defs>' + defs(id) +
+        '<linearGradient id="sk' + id + '" x1="0" y1="0" x2="0" y2="1"><stop offset="0" style="stop-color:var(--slate-top)"/><stop offset="1" style="stop-color:var(--slate-bottom)"/></linearGradient></defs>' +
+        '<rect width="108" height="108" fill="url(#sk' + id + ')"/>' +
+        '<path d="M8 112 L46 26 H62 L100 112 Z" style="fill:var(--asphalt)"/>' +
+        '<path d="M38.7 112 L51.3 26M69.3 112 L56.7 26" fill="none" style="stroke:var(--white);stroke-opacity:.5;stroke-width:1.5;stroke-dasharray:7 6"/>' +
+        '<path d="M48.5 112 L52.6 26 H55.4 L59.5 112 Z" style="fill:var(--route-night-casing)"/>' +
+        '<path d="M50.2 112 L53.1 26 H54.9 L57.8 112 Z" style="fill:var(--route-night)"/>' +
+        '<ellipse cx="54" cy="84" rx="13" ry="4" style="fill:var(--brake);fill-opacity:.4" filter="url(#b8' + id + ')"/>' +
+        arrow('blue', id, 'translate(54 70) scale(.5 .36)', true);
+    }
+  ];
+  var info = [
+    ['Night drive', 'The arrow on the night map, on its route, with the headlight beam ahead and the brake lights lit. It is a small picture of the app in use.'],
+    ['Blue field', 'The arrow alone in white on the route blue, with only the two red brake lights for detail. The simplest and boldest of the three.'],
+    ['Lanes', 'The tilted driving view: three lanes running to the horizon, the route in the middle lane, the arrow lying flat on it.']
+  ];
+  var masks = {
+    circle: '<circle cx="54" cy="54" r="36"/>',
+    squircle: '<path d="M54 18 C26 18 18 26 18 54 C18 82 26 90 54 90 C82 90 90 82 90 54 C90 26 82 18 54 18 Z"/>',
+    square: '<rect x="18" y="18" width="72" height="72" rx="16"/>'
+  };
+  function icon(i, mask, px) {
+    var id = ++n;
+    return '<svg width="' + px + '" height="' + px + '" viewBox="18 18 72 72" role="img" aria-label="' + info[i][0] + ' icon, ' + mask + ' shape">' +
+      '<defs><clipPath id="cp' + id + '">' + masks[mask] + '</clipPath></defs><g clip-path="url(#cp' + id + ')">' + art[i](id) + '</g></svg>';
+  }
+
+  var host = document.getElementById('cands');
+  info.forEach(function (it, i) {
+    var el = document.createElement('article');
+    el.className = 'cand';
+    el.innerHTML = '<div class="big">' + icon(i, 'squircle', 190) + '</div>' +
+      '<div><h3>' + (i + 1) + '. ' + it[0] + '</h3><p>' + it[1] + '</p></div>' +
+      '<div><div class="label">Launcher shapes</div><div class="row" style="margin-top:8px">' +
+      icon(i, 'circle', 60) + icon(i, 'squircle', 60) + icon(i, 'square', 60) + '</div></div>';
+    host.appendChild(el);
+  });
+  ['line-light', 'line-dark'].forEach(function (id) {
+    var h = document.getElementById(id), s = '';
+    for (var i = 0; i < 3; i++) s += icon(i, 'circle', 48);
+    for (var j = 0; j < 3; j++) s += icon(j, 'circle', 30);
+    h.innerHTML = s;
+  });
+})();
+</script>

@@ -1,0 +1,326 @@
+<title>Beamline Markers</title>
+<meta name="claude:viewport-fit-sides" content="cover">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Barlow:wght@400;500;600&family=Barlow+Condensed:wght@600&display=swap">
+<style>
+/* Layout: one interactive map stage up top, then two specimen rows (puck, arrow), then behaviour notes. */
+:root {
+  --bg: #EEF1F4; --surface: #FFFFFF; --ink: #17212B; --muted: #566575; --line: #D3DAE1;
+  --accent: #2A74D8; --accent-ink: #FFFFFF;
+  /* Map specimen colours are fixed: they depict the app's own day and night maps. */
+  --day-land: #E7E5DF; --day-road: #FFFFFF; --day-edge: #D2CFC7; --day-block: #D9D6CF; --day-label: #878B93; --day-haze: #F3F2EE;
+  --night-land: #15181B; --night-road: #2C3137; --night-edge: #1D2024; --night-block: #1C1F23; --night-label: #808995; --night-haze: #0B0D0F;
+  --route-day: #5BAAFF; --route-day-casing: #2C72CF; --route-night: #4B96EE; --route-night-casing: #1B4A91;
+  --puck-ring: #FFFFFF; --arrow-top: #7CBDFF; --arrow-rear: #3D8CF0; --arrow-under: #1B54A6; --arrow-edge: #FFFFFF;
+  --brake: #FF3B2F; --brake-off: #7A2620; --beam: #FFF3CF; --shadow: #000000;
+  --font-display: "Barlow Condensed", "Arial Narrow", sans-serif;
+  --font-body: "Barlow", "Segoe UI", system-ui, sans-serif;
+}
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) {
+    --bg: #0D1216; --surface: #151C23; --ink: #E7EDF3; --muted: #97A5B4; --line: #28323C;
+    --accent: #5AA5FF; --accent-ink: #06121F; color-scheme: dark;
+  }
+}
+:root[data-theme="dark"] {
+  --bg: #0D1216; --surface: #151C23; --ink: #E7EDF3; --muted: #97A5B4; --line: #28323C;
+  --accent: #5AA5FF; --accent-ink: #06121F; color-scheme: dark;
+}
+
+body { background: var(--bg); color: var(--ink); font-family: var(--font-body); font-size: 16px; line-height: 1.5; }
+.wrap {
+  max-width: 980px; margin: 0 auto; padding-block: 28px 56px;
+  padding-left: max(16px, env(safe-area-inset-left, 0px));
+  padding-right: max(16px, env(safe-area-inset-right, 0px));
+  display: flex; flex-direction: column; gap: 40px;
+}
+h1, h2 { font-family: var(--font-display); font-weight: 600; line-height: 1.1; margin: 0; text-wrap: balance; }
+h1 { font-size: 2.6rem; letter-spacing: 0.01em; }
+h2 { font-size: 1.6rem; letter-spacing: 0.02em; }
+p { margin: 0; }
+.lede { color: var(--muted); max-width: 62ch; margin-top: 8px; }
+.head-note { color: var(--muted); font-size: 0.9rem; margin-top: 4px; }
+
+.lab { display: grid; grid-template-columns: minmax(0, 400px) minmax(0, 1fr); gap: 28px; align-items: start; }
+@media (max-width: 720px) { .lab { grid-template-columns: minmax(0, 1fr); } }
+
+.stage {
+  position: relative; aspect-ratio: 4 / 5; max-width: 100%; border-radius: 16px; overflow: hidden;
+  background: var(--day-land); border: 1px solid var(--line);
+}
+.stage[data-time="night"] { background: var(--night-land); }
+.ground { position: absolute; inset: 0; }
+.ground svg, .spec-map svg { display: block; width: 100%; height: 100%; }
+.stage.tilt .ground {
+  inset: auto; left: -60%; width: 220%; bottom: -2%; aspect-ratio: 600 / 900;
+  transform: perspective(900px) rotateX(50deg); transform-origin: 50% 100%;
+}
+.stage::after {
+  content: ""; position: absolute; inset: 0 0 auto 0; height: 38%; pointer-events: none; opacity: 0;
+  background: linear-gradient(var(--day-haze), transparent);
+}
+.stage.tilt::after { opacity: 1; }
+.stage[data-time="night"]::after { background: linear-gradient(var(--night-haze), transparent); }
+
+.panel { display: flex; flex-direction: column; gap: 18px; min-width: 0; }
+.controls { display: grid; grid-template-columns: max-content minmax(0, 1fr); gap: 10px 14px; align-items: center; }
+.ctl-label { font-size: 0.78rem; font-weight: 600; letter-spacing: 0.08em; text-transform: uppercase; color: var(--muted); }
+.seg { display: inline-flex; flex-wrap: wrap; border: 1px solid var(--line); border-radius: 9px; overflow: hidden; background: var(--surface); width: fit-content; }
+.seg button {
+  font: 500 0.95rem var(--font-body); color: var(--ink); background: transparent; border: 0;
+  padding: 7px 14px; cursor: pointer;
+}
+.seg button + button { border-left: 1px solid var(--line); }
+.seg button[aria-pressed="true"] { background: var(--accent); color: var(--accent-ink); }
+.seg button:disabled { color: var(--muted); opacity: 0.55; cursor: default; }
+.seg button:focus-visible { outline: 2px solid var(--accent); outline-offset: -2px; }
+.now { border-top: 1px solid var(--line); padding-top: 14px; }
+.now strong { display: block; font-weight: 600; }
+.now span { color: var(--muted); }
+
+.specs { display: grid; grid-template-columns: repeat(auto-fill, minmax(150px, 1fr)); gap: 18px; margin-top: 16px; }
+.spec { margin: 0; display: flex; flex-direction: column; gap: 8px; min-width: 0; }
+.spec-map { aspect-ratio: 220 / 260; border-radius: 12px; overflow: hidden; border: 1px solid var(--line); }
+.spec figcaption strong { display: block; font-weight: 600; font-size: 0.95rem; }
+.spec figcaption span { color: var(--muted); font-size: 0.88rem; }
+
+.phone-row { display: flex; flex-wrap: wrap; gap: 18px; margin-top: 16px; }
+.phone-tile { margin: 0; width: 132px; display: flex; flex-direction: column; gap: 8px; }
+.phone-tile .spec-map { aspect-ratio: 162 / 230; }
+.phone-tile figcaption { color: var(--muted); font-size: 0.88rem; }
+
+.notes { display: grid; grid-template-columns: repeat(auto-fit, minmax(280px, 1fr)); gap: 28px 40px; }
+.notes > div { min-width: 0; }
+dl { margin: 12px 0 0; display: grid; grid-template-columns: max-content minmax(0, 1fr); gap: 8px 16px; }
+dt { font-weight: 600; }
+dd { margin: 0; color: var(--muted); }
+ul { margin: 12px 0 0; padding-left: 1.1em; color: var(--muted); display: flex; flex-direction: column; gap: 8px; }
+ul strong { color: var(--ink); font-weight: 600; }
+</style>
+
+<div class="wrap">
+  <header>
+    <h1>Position markers</h1>
+    <p class="lede">Sketches of the two markers you described: a puck for browsing and an arrow for driving. Third pass: a single headlight beam from the tip with no visible lamp, smaller brake lights built into the arrow, and a slightly raised shape. Still a sketch to react to, not final art.</p>
+    <p class="head-note">Street names are from downtown Erie, the test area.</p>
+  </header>
+
+  <section class="lab" aria-label="Interactive preview">
+    <div class="stage tilt" id="stage" data-time="night"><div class="ground" id="ground"></div></div>
+    <div class="panel">
+      <h2>Try the states</h2>
+      <div class="controls">
+        <span class="ctl-label">Marker</span>
+        <div class="seg" data-key="marker"><button type="button" id="marker-puck" data-val="puck">Puck</button><button type="button" id="marker-arrow" data-val="arrow">Arrow</button></div>
+        <span class="ctl-label">Map</span>
+        <div class="seg" data-key="time"><button type="button" id="time-day" data-val="day">Day</button><button type="button" id="time-night" data-val="night">Night</button></div>
+        <span class="ctl-label">Car</span>
+        <div class="seg" data-key="motion"><button type="button" id="motion-moving" data-val="moving">Moving</button><button type="button" id="motion-stopped" data-val="stopped">Stopped</button></div>
+        <span class="ctl-label">View</span>
+        <div class="seg" data-key="view"><button type="button" id="view-top" data-val="top">Top-down</button><button type="button" id="view-tilt" data-val="tilt">Tilted</button></div>
+      </div>
+      <p class="now" id="now" aria-live="polite"></p>
+    </div>
+  </section>
+
+  <section aria-labelledby="puck-h">
+    <h2 id="puck-h">Browsing puck</h2>
+    <div class="specs" id="puck-specs"></div>
+  </section>
+
+  <section aria-labelledby="arrow-h">
+    <h2 id="arrow-h">Driving arrow</h2>
+    <div class="specs" id="arrow-specs"></div>
+  </section>
+
+  <section aria-labelledby="size-h">
+    <h2 id="size-h">At phone size</h2>
+    <p class="lede">Roughly how large the arrow is on a phone screen. Small details have to survive at this size.</p>
+    <div class="phone-row" id="phone-row"></div>
+  </section>
+
+  <section class="notes">
+    <div>
+      <h2>How each part behaves</h2>
+      <dl>
+        <dt>Puck</dt><dd>The route blue with a white ring, so it still reads when it sits on the route line.</dd>
+        <dt>Cone</dt><dd>Points where the phone's compass points and fades out with distance.</dd>
+        <dt>Arrow</dt><dd>Points along the direction of travel. Slightly raised: two facets meet at a centre ridge, with a thin rear face. In the tilted driving view it lies flat on the road.</dd>
+        <dt>Headlight</dt><dd>A soft beam on the road ahead, starting at the tip of the arrow, shown with the night map. There is no visible lamp.</dd>
+        <dt>Brake lights</dt><dd>Two small lenses set into the rear face, dark when off and lit red while the car is stopped.</dd>
+      </dl>
+    </div>
+    <div>
+      <h2>Decided</h2>
+      <ul>
+        <li><strong>Brake lights.</strong> Lit only while the car is stopped, and off as soon as it moves again.</li>
+        <li><strong>Headlight.</strong> Shown with the night map, never on the day map.</li>
+        <li><strong>Arrow shade.</strong> Stays in the same blue family as the route line, as drawn here.</li>
+        <li><strong>Tilted view.</strong> Starts when guidance starts. Browsing stays top-down, even while driving.</li>
+      </ul>
+    </div>
+  </section>
+</div>
+
+<script>
+(function () {
+  var n = 0;
+  var pal = {
+    day: { land: '--day-land', road: '--day-road', edge: '--day-edge', block: '--day-block', label: '--day-label', route: '--route-day', casing: '--route-day-casing' },
+    night: { land: '--night-land', road: '--night-road', edge: '--night-edge', block: '--night-block', label: '--night-label', route: '--route-night', casing: '--route-night-casing' }
+  };
+  function v(t) { return 'var(' + t + ')'; }
+  function rng(seed) { var s = seed; return function () { s = (s * 1664525 + 1013904223) % 4294967296; return s / 4294967296; }; }
+  function line(x1, y1, x2, y2, w, c) {
+    return '<line x1="' + x1 + '" y1="' + y1 + '" x2="' + x2 + '" y2="' + y2 + '" style="stroke:' + v(c) + ';stroke-width:' + w + '"/>';
+  }
+
+  var roadsV = [[110, 26], [300, 40], [490, 26]];
+  var roadsH = [[150, 26], [330, 36], [520, 26], [740, 26]];
+
+  function buildings(p) {
+    var r = rng(7), out = '';
+    var xs = [[-40, 97], [123, 280], [320, 477], [503, 640]];
+    var ys = [[-40, 137], [163, 312], [348, 507], [533, 727], [753, 940]];
+    xs.forEach(function (xr) {
+      ys.forEach(function (yr) {
+        var cols = (xr[1] - xr[0]) > 120 ? 2 : 1, rows = (yr[1] - yr[0]) > 150 ? 2 : 1;
+        var cw = (xr[1] - xr[0] - 16) / cols, ch = (yr[1] - yr[0] - 16) / rows;
+        for (var i = 0; i < cols; i++) for (var j = 0; j < rows; j++) {
+          if (r() < 0.18) continue;
+          var pad = 6 + r() * 10, w = cw - pad * 2, h = ch - pad * 2 - r() * 14;
+          out += '<rect x="' + (xr[0] + 8 + i * cw + pad).toFixed(1) + '" y="' + (yr[0] + 8 + j * ch + pad).toFixed(1) +
+            '" width="' + w.toFixed(1) + '" height="' + h.toFixed(1) + '" rx="5" style="fill:' + v(p.block) + '"/>';
+        }
+      });
+    });
+    return out;
+  }
+  function roads(p) {
+    var e = '', f = '';
+    roadsV.forEach(function (r) { e += line(r[0], -60, r[0], 960, r[1] + 5, p.edge); f += line(r[0], -60, r[0], 960, r[1], p.road); });
+    roadsH.forEach(function (r) { e += line(-60, r[0], 660, r[0], r[1] + 5, p.edge); f += line(-60, r[0], 660, r[0], r[1], p.road); });
+    return e + f;
+  }
+  function labels(p) {
+    var st = 'style="fill:' + v(p.label) + ';font:500 15px var(--font-body);letter-spacing:.02em" text-anchor="middle" dominant-baseline="central"';
+    return '<text x="180" y="330" ' + st + '>W 8th St</text><text x="249" y="520" ' + st + '>W 9th St</text>' +
+      '<text x="180" y="740" ' + st + '>W 10th St</text><text transform="translate(300 225) rotate(-90)" ' + st + '>Peach St</text>';
+  }
+  function route(p) {
+    var d = 'M300 960 L300 330 L660 330', s = ';stroke-linejoin:round;stroke-linecap:round"/>';
+    return '<path d="' + d + '" fill="none" style="stroke:' + v(p.casing) + ';stroke-width:22' + s +
+      '<path d="' + d + '" fill="none" style="stroke:' + v(p.route) + ';stroke-width:14' + s;
+  }
+
+  function puck(x, y, heading, p, id) {
+    return '<defs><radialGradient id="cone' + id + '" gradientUnits="userSpaceOnUse" cx="0" cy="0" r="105">' +
+      '<stop offset="0" style="stop-color:' + v(p.route) + ';stop-opacity:.66"/>' +
+      '<stop offset=".55" style="stop-color:' + v(p.route) + ';stop-opacity:.26"/>' +
+      '<stop offset="1" style="stop-color:' + v(p.route) + ';stop-opacity:0"/></radialGradient></defs>' +
+      '<g transform="translate(' + x + ' ' + y + ')">' +
+      '<g transform="rotate(' + heading + ')"><path d="M0 0 L-60.2 -86 A105 105 0 0 1 60.2 -86 Z" fill="url(#cone' + id + ')"/></g>' +
+      '<circle r="30" style="fill:' + v(p.route) + ';fill-opacity:.14"/>' +
+      '<circle cy="3" r="16" style="fill:var(--shadow);fill-opacity:.3" filter="url(#soft' + id + ')"/>' +
+      '<circle r="14" style="fill:' + v(p.route) + ';stroke:var(--puck-ring);stroke-width:5"/></g>';
+  }
+
+  /* Arrow, pointing up. A raised shape: two top facets meeting at a centre ridge, and a thin
+     rear face below the back edges. The brake lenses are set into that rear face, at the two
+     outer corners. The headlight is only a beam from the tip, with no visible lamp. */
+  function arrow(x, y, o, id) {
+    var outline = 'M0 -38 L27 28 L27 34.5 L0 21.5 L-27 34.5 L-27 28 Z';
+    var lenses = '<path d="M25.6 28.9 L16.5 24.5 L16.5 29.9 L25.6 34.3 Z"/><path d="M-25.6 28.9 L-16.5 24.5 L-16.5 29.9 L-25.6 34.3 Z"/>';
+    var beam = o.night ? '<path d="M0 -37 L-51 -203 A174 174 0 0 1 51 -203 Z" fill="url(#beam' + id + ')" filter="url(#soft' + id + ')"/>' : '';
+    var glow = o.braking ?
+      '<ellipse cy="41" rx="30" ry="12" style="fill:var(--brake);fill-opacity:' + (o.night ? '.34' : '.14') + '" filter="url(#wide' + id + ')"/>' +
+      '<g style="fill:var(--brake);fill-opacity:.9" filter="url(#soft' + id + ')">' + lenses + '</g>' : '';
+    return '<defs>' +
+      '<radialGradient id="beam' + id + '" gradientUnits="userSpaceOnUse" cx="0" cy="-37" r="176">' +
+      '<stop offset="0" style="stop-color:var(--beam);stop-opacity:.85"/><stop offset=".5" style="stop-color:var(--beam);stop-opacity:.3"/>' +
+      '<stop offset="1" style="stop-color:var(--beam);stop-opacity:0"/></radialGradient></defs>' +
+      '<g transform="translate(' + x + ' ' + y + ')">' + beam +
+      '<ellipse cy="11" rx="27" ry="31" style="fill:var(--shadow);fill-opacity:.3" filter="url(#soft' + id + ')"/>' + glow +
+      '<path d="' + outline + '" style="fill:var(--arrow-under)"/>' +
+      '<path d="M0 -38 L0 15 L-27 28 Z" style="fill:var(--arrow-top)"/>' +
+      '<path d="M0 -38 L27 28 L0 15 Z" style="fill:var(--arrow-rear)"/>' +
+      '<path d="M0 -34 L0 14" fill="none" style="stroke:var(--arrow-edge);stroke-opacity:.4;stroke-width:1.2"/>' +
+      '<g style="fill:' + (o.braking ? 'var(--brake)' : 'var(--brake-off)') + '">' + lenses + '</g>' +
+      '<path d="' + outline + '" fill="none" style="stroke:var(--arrow-edge);stroke-width:4;stroke-linejoin:round"/>' +
+      '</g>';
+  }
+
+  function scene(o) {
+    var id = ++n, p = pal[o.time], my = o.my || 640;
+    var marker = o.marker === 'puck' ? puck(300, my, o.heading == null ? 32 : o.heading, p, id)
+      : arrow(300, my, { night: o.time === 'night', braking: o.braking }, id);
+    var fr = ' x="-60%" y="-60%" width="220%" height="220%"';
+    return '<svg viewBox="' + o.vb + '" preserveAspectRatio="xMidYMid slice" role="img" aria-label="' + o.label + '">' +
+      '<defs><filter id="soft' + id + '"' + fr + '><feGaussianBlur stdDeviation="4"/></filter>' +
+      '<filter id="wide' + id + '"' + fr + '><feGaussianBlur stdDeviation="9"/></filter></defs>' +
+      '<rect x="-100" y="-100" width="800" height="1100" style="fill:' + v(p.land) + '"/>' +
+      buildings(p) + roads(p) + labels(p) + (o.route === false ? '' : route(p)) + marker + '</svg>';
+  }
+
+  /* Specimen rows */
+  var crop = '190 440 220 260';
+  function spec(host, o, title, note) {
+    var f = document.createElement('figure');
+    f.className = 'spec';
+    o.vb = crop; o.label = title + '. ' + note;
+    f.innerHTML = '<div class="spec-map">' + scene(o) + '</div><figcaption><strong>' + title + '</strong><span>' + note + '</span></figcaption>';
+    host.appendChild(f);
+  }
+  var ps = document.getElementById('puck-specs');
+  spec(ps, { time: 'day', marker: 'puck', route: false }, 'Day', 'Cone shows the compass direction.');
+  spec(ps, { time: 'night', marker: 'puck', route: false }, 'Night', 'Same puck on the dark map.');
+  spec(ps, { time: 'day', marker: 'puck', heading: 0 }, 'On a route', 'The white ring keeps it apart from the line.');
+  var as = document.getElementById('arrow-specs');
+  spec(as, { time: 'day', marker: 'arrow', braking: false }, 'Day, moving', 'Brake lenses unlit.');
+  spec(as, { time: 'day', marker: 'arrow', braking: true }, 'Day, stopped', 'Brake lenses lit in the rear face.');
+  spec(as, { time: 'night', marker: 'arrow', braking: false }, 'Night, moving', 'Headlight beam ahead from the tip.');
+  spec(as, { time: 'night', marker: 'arrow', braking: true }, 'Night, stopped', 'Headlight and brake lights together.');
+
+  /* The arrow at roughly the size it has on a phone screen. */
+  var pr = document.getElementById('phone-row');
+  [['day', false, 'Day, moving'], ['day', true, 'Day, stopped'], ['night', false, 'Night, moving'], ['night', true, 'Night, stopped']].forEach(function (s) {
+    var f = document.createElement('figure');
+    f.className = 'phone-tile';
+    f.innerHTML = '<div class="spec-map">' + scene({ time: s[0], marker: 'arrow', braking: s[1], vb: '219 470 162 230', label: s[2] + ', at phone size' }) +
+      '</div><figcaption>' + s[2] + '</figcaption>';
+    pr.appendChild(f);
+  });
+
+  /* Interactive stage */
+  var state = { marker: 'arrow', time: 'night', motion: 'stopped', view: 'tilt' };
+  var stage = document.getElementById('stage'), ground = document.getElementById('ground'), now = document.getElementById('now');
+  function describe() {
+    if (state.marker === 'puck') return ['Puck on the ' + state.time + ' map', 'Blue dot with a white ring. The cone fades out along the compass direction.'];
+    var parts = [];
+    if (state.time === 'night') parts.push('headlight beam ahead');
+    if (state.motion === 'stopped') parts.push('brake lights lit in the rear corners');
+    return ['Arrow, ' + state.time + ', ' + state.motion, parts.length ? parts.join(', ').replace(/^./, function (c) { return c.toUpperCase(); }) + '.' : 'Plain arrow with no lights.'];
+  }
+  function render() {
+    var tilt = state.view === 'tilt', d = describe();
+    stage.classList.toggle('tilt', tilt);
+    stage.dataset.time = state.time;
+    ground.innerHTML = scene({
+      time: state.time, marker: state.marker, braking: state.motion === 'stopped',
+      route: state.marker === 'arrow', vb: tilt ? '0 0 600 900' : '100 290 400 500', my: tilt ? 770 : 640,
+      label: d[0] + '. ' + d[1]
+    });
+    now.innerHTML = '<strong>' + d[0] + '</strong><span>' + d[1] + '</span>';
+    document.querySelectorAll('.seg').forEach(function (seg) {
+      var key = seg.dataset.key;
+      seg.querySelectorAll('button').forEach(function (b) {
+        b.setAttribute('aria-pressed', String(state[key] === b.dataset.val));
+        if (key === 'motion') b.disabled = state.marker === 'puck';
+      });
+    });
+  }
+  document.querySelectorAll('.seg button').forEach(function (b) {
+    b.addEventListener('click', function () { state[b.parentNode.dataset.key] = b.dataset.val; render(); });
+  });
+  render();
+})();
+</script>

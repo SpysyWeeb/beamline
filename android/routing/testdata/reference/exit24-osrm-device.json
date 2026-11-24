@@ -1,0 +1,1591 @@
+{
+ "meta": {
+  "engine": "valhalla-mobile 0.6.4 (Valhalla 3.9.1) on the emulator"
+ },
+ "request": {
+  "locations": [
+   {
+    "lat": 42.028694,
+    "lon": -80.128884,
+    "heading": 57,
+    "radius": 60
+   },
+   {
+    "lat": 42.053308,
+    "lon": -80.079579
+   }
+  ],
+  "costing": "auto",
+  "costing_options": {
+   "auto": {}
+  },
+  "format": "osrm",
+  "banner_instructions": true,
+  "voice_instructions": true,
+  "filters": {
+   "action": "include",
+   "attributes": [
+    "shape_attributes.speed",
+    "shape_attributes.speed_limit",
+    "shape_attributes.time",
+    "shape_attributes.length"
+   ]
+  },
+  "units": "miles",
+  "language": "en-US"
+ },
+ "response": {
+  "routes": [
+   {
+    "voiceLocale": "en-US",
+    "weight_name": "auto",
+    "weight": 298.436,
+    "legs": [
+     {
+      "via_waypoints": [],
+      "annotation": {
+       "maxspeed": [
+        {
+         "speed": 89,
+         "unit": "km\/h"
+        },
+        {
+         "speed": 89,
+         "unit": "km\/h"
+        },
+        {
+         "speed": 89,
+         "unit": "km\/h"
+        },
+        {
+         "speed": 89,
+         "unit": "km\/h"
+        },
+        {
+         "speed": 89,
+         "unit": "km\/h"
+        },
+        {
+         "speed": 89,
+         "unit": "km\/h"
+        },
+        {
+         "speed": 89,
+         "unit": "km\/h"
+        },
+        {
+         "speed": 89,
+         "unit": "km\/h"
+        },
+        {
+         "speed": 89,
+         "unit": "km\/h"
+        },
+        {
+         "speed": 89,
+         "unit": "km\/h"
+        },
+        {
+         "speed": 89,
+         "unit": "km\/h"
+        },
+        {
+         "speed": 89,
+         "unit": "km\/h"
+        },
+        {
+         "speed": 89,
+         "unit": "km\/h"
+        },
+        {
+         "speed": 89,
+         "unit": "km\/h"
+        },
+        {
+         "speed": 89,
+         "unit": "km\/h"
+        },
+        {
+         "speed": 89,
+         "unit": "km\/h"
+        },
+        {
+         "speed": 89,
+         "unit": "km\/h"
+        },
+        {
+         "speed": 89,
+         "unit": "km\/h"
+        },
+        {
+         "speed": 89,
+         "unit": "km\/h"
+        },
+        {
+         "speed": 89,
+         "unit": "km\/h"
+        },
+        {
+         "speed": 89,
+         "unit": "km\/h"
+        },
+        {
+         "speed": 89,
+         "unit": "km\/h"
+        },
+        {
+         "speed": 89,
+         "unit": "km\/h"
+        },
+        {
+         "speed": 89,
+         "unit": "km\/h"
+        },
+        {
+         "speed": 89,
+         "unit": "km\/h"
+        },
+        {
+         "speed": 89,
+         "unit": "km\/h"
+        },
+        {
+         "speed": 89,
+         "unit": "km\/h"
+        },
+        {
+         "speed": 89,
+         "unit": "km\/h"
+        },
+        {
+         "speed": 89,
+         "unit": "km\/h"
+        },
+        {
+         "speed": 89,
+         "unit": "km\/h"
+        },
+        {
+         "speed": 89,
+         "unit": "km\/h"
+        },
+        {
+         "speed": 89,
+         "unit": "km\/h"
+        },
+        {
+         "speed": 89,
+         "unit": "km\/h"
+        },
+        {
+         "speed": 89,
+         "unit": "km\/h"
+        },
+        {
+         "speed": 89,
+         "unit": "km\/h"
+        },
+        {
+         "speed": 89,
+         "unit": "km\/h"
+        },
+        {
+         "speed": 89,
+         "unit": "km\/h"
+        },
+        {
+         "speed": 89,
+         "unit": "km\/h"
+        },
+        {
+         "speed": 89,
+         "unit": "km\/h"
+        },
+        {
+         "speed": 89,
+         "unit": "km\/h"
+        },
+        {
+         "unknown": true
+        },
+        {
+         "unknown": true
+        },
+        {
+         "unknown": true
+        },
+        {
+         "unknown": true
+        },
+        {
+         "unknown": true
+        },
+        {
+         "unknown": true
+        },
+        {
+         "unknown": true
+        },
+        {
+         "unknown": true
+        },
+        {
+         "unknown": true
+        },
+        {
+         "unknown": true
+        },
+        {
+         "speed": 72,
+         "unit": "km\/h"
+        },
+        {
+         "speed": 72,
+         "unit": "km\/h"
+        },
+        {
+         "speed": 72,
+         "unit": "km\/h"
+        },
+        {
+         "speed": 72,
+         "unit": "km\/h"
+        },
+        {
+         "speed": 72,
+         "unit": "km\/h"
+        },
+        {
+         "speed": 72,
+         "unit": "km\/h"
+        },
+        {
+         "speed": 72,
+         "unit": "km\/h"
+        },
+        {
+         "speed": 72,
+         "unit": "km\/h"
+        },
+        {
+         "unknown": true
+        },
+        {
+         "unknown": true
+        },
+        {
+         "unknown": true
+        },
+        {
+         "unknown": true
+        },
+        {
+         "unknown": true
+        },
+        {
+         "unknown": true
+        },
+        {
+         "unknown": true
+        },
+        {
+         "unknown": true
+        },
+        {
+         "unknown": true
+        },
+        {
+         "unknown": true
+        },
+        {
+         "unknown": true
+        },
+        {
+         "unknown": true
+        },
+        {
+         "unknown": true
+        },
+        {
+         "unknown": true
+        },
+        {
+         "unknown": true
+        },
+        {
+         "unknown": true
+        },
+        {
+         "unknown": true
+        },
+        {
+         "unknown": true
+        },
+        {
+         "unknown": true
+        }
+       ],
+       "speed": [
+        24.7,
+        24.7,
+        24.7,
+        24.7,
+        24.7,
+        24.7,
+        24.7,
+        24.7,
+        24.7,
+        24.7,
+        24.7,
+        24.7,
+        24.7,
+        24.7,
+        24.7,
+        24.7,
+        24.7,
+        24.7,
+        24.7,
+        24.7,
+        24.7,
+        24.7,
+        24.7,
+        24.7,
+        24.7,
+        24.7,
+        24.7,
+        24.7,
+        24.7,
+        24.7,
+        24.7,
+        24.7,
+        24.7,
+        24.7,
+        24.7,
+        24.7,
+        24.7,
+        24.7,
+        24.7,
+        24.7,
+        13.3,
+        13.3,
+        13.3,
+        13.3,
+        13.3,
+        13.3,
+        13.3,
+        13.3,
+        13.3,
+        24.7,
+        20,
+        20,
+        20,
+        20,
+        20,
+        20,
+        20,
+        20,
+        9.7,
+        9.7,
+        9.7,
+        9.7,
+        9.7,
+        9.7,
+        9.7,
+        9.7,
+        9.7,
+        9.7,
+        9.7,
+        9.7,
+        9.7,
+        9.7,
+        9.7,
+        9.7,
+        9.7,
+        9.7,
+        9.7
+       ],
+       "distance": [
+        24.8,
+        253.2,
+        291.5,
+        104.4,
+        90.9,
+        74.9,
+        262.5,
+        197.2,
+        293.1,
+        40.9,
+        186.7,
+        13.9,
+        178.8,
+        6.7,
+        197.9,
+        31.3,
+        73.2,
+        140,
+        256.4,
+        41.5,
+        12.4,
+        4.9,
+        105,
+        53.6,
+        34.3,
+        69.1,
+        25.3,
+        46.4,
+        62.6,
+        32.2,
+        37,
+        91.4,
+        160.7,
+        109.2,
+        130.4,
+        64.4,
+        41.8,
+        149.7,
+        72.4,
+        109.8,
+        75.2,
+        56.5,
+        42.8,
+        155.7,
+        37.2,
+        15.6,
+        4.9,
+        1.5,
+        8.8,
+        22.2,
+        97.5,
+        18.6,
+        15.8,
+        56.3,
+        13.6,
+        56.2,
+        78.5,
+        19.2,
+        9.7,
+        78.8,
+        9.4,
+        10.6,
+        10.1,
+        10,
+        19.8,
+        8.1,
+        8.4,
+        9.2,
+        72.4,
+        1.6,
+        119.1,
+        1.9,
+        7.8,
+        5,
+        4.6,
+        5.3,
+        0.1
+       ],
+       "duration": [
+        1.004,
+        10.243,
+        11.791,
+        4.222,
+        3.677,
+        3.029,
+        10.616,
+        7.976,
+        11.855,
+        1.656,
+        7.552,
+        0.563,
+        7.231,
+        0.269,
+        8.006,
+        1.265,
+        2.961,
+        5.665,
+        10.371,
+        1.68,
+        0.501,
+        0.199,
+        4.248,
+        2.168,
+        1.388,
+        2.796,
+        1.022,
+        1.878,
+        2.531,
+        1.304,
+        1.497,
+        3.697,
+        6.499,
+        4.417,
+        5.275,
+        2.603,
+        1.693,
+        6.054,
+        2.929,
+        4.441,
+        5.639,
+        4.241,
+        3.211,
+        11.68,
+        2.793,
+        1.168,
+        0.369,
+        0.111,
+        0.663,
+        0.898,
+        4.874,
+        0.931,
+        0.792,
+        2.814,
+        0.679,
+        2.811,
+        3.927,
+        0.959,
+        0.997,
+        8.103,
+        0.97,
+        1.093,
+        1.036,
+        1.026,
+        2.039,
+        0.829,
+        0.867,
+        0.942,
+        7.451,
+        0.168,
+        12.248,
+        0.196,
+        0.805,
+        0.518,
+        0.477,
+        0.543,
+        0.008
+       ]
+      },
+      "steps": [
+       {
+        "voiceInstructions": [
+         {
+          "ssmlAnnouncement": "<speak>Drive northeast on Interstate 90 East, AMVETS Memorial Highway.<\/speak>",
+          "announcement": "Drive northeast on Interstate 90 East, AMVETS Memorial Highway.",
+          "distanceAlongGeometry": 4172.8
+         },
+         {
+          "ssmlAnnouncement": "<speak>In 1 mile, Keep right to take exit 24.<\/speak>",
+          "announcement": "In 1 mile, Keep right to take exit 24.",
+          "distanceAlongGeometry": 865.3
+         },
+         {
+          "ssmlAnnouncement": "<speak>Keep right to take exit 24 onto U.S. 19, Peach Street toward Waterford.<\/speak>",
+          "announcement": "Keep right to take exit 24 onto U.S. 19, Peach Street toward Waterford.",
+          "distanceAlongGeometry": 247.2
+         }
+        ],
+        "intersections": [
+         {
+          "classes": [
+           "motorway"
+          ],
+          "entry": [
+           true
+          ],
+          "out": 0,
+          "weight": 0.929,
+          "geometry_index": 0,
+          "duration": 1.004,
+          "bearings": [
+           58
+          ],
+          "admin_index": 0,
+          "location": [
+           -80.128884,
+           42.028694
+          ]
+         },
+         {
+          "classes": [
+           "motorway"
+          ],
+          "entry": [
+           true,
+           true,
+           false
+          ],
+          "out": 0,
+          "in": 2,
+          "weight": 20.392,
+          "turn_duration": 0.007,
+          "geometry_index": 1,
+          "duration": 22.052,
+          "bearings": [
+           58,
+           63,
+           238
+          ],
+          "admin_index": 0,
+          "location": [
+           -80.128631,
+           42.028814
+          ]
+         },
+         {
+          "classes": [
+           "motorway"
+          ],
+          "entry": [
+           true,
+           false,
+           false
+          ],
+          "out": 0,
+          "turn_weight": 1.5,
+          "in": 2,
+          "duration": 4.214,
+          "weight": 5.391,
+          "location": [
+           -80.123055,
+           42.03142
+          ],
+          "turn_duration": 0.007,
+          "bearings": [
+           58,
+           234,
+           238
+          ],
+          "admin_index": 0,
+          "geometry_index": 3
+         },
+         {
+          "classes": [
+           "motorway"
+          ],
+          "entry": [
+           true,
+           true,
+           false
+          ],
+          "out": 0,
+          "in": 2,
+          "weight": 3.405,
+          "turn_duration": 0.021,
+          "geometry_index": 4,
+          "duration": 3.702,
+          "bearings": [
+           57,
+           63,
+           238
+          ],
+          "admin_index": 0,
+          "location": [
+           -80.121987,
+           42.03192
+          ]
+         },
+         {
+          "classes": [
+           "motorway"
+          ],
+          "entry": [
+           true,
+           false
+          ],
+          "out": 0,
+          "in": 1,
+          "weight": 20.017,
+          "geometry_index": 5,
+          "duration": 21.64,
+          "bearings": [
+           56,
+           237
+          ],
+          "admin_index": 0,
+          "location": [
+           -80.12106,
+           42.032359
+          ]
+         },
+         {
+          "classes": [
+           "motorway"
+          ],
+          "entry": [
+           true,
+           false,
+           false
+          ],
+          "out": 0,
+          "turn_weight": 1.5,
+          "in": 2,
+          "duration": 82.322,
+          "weight": 77.641,
+          "location": [
+           -80.115612,
+           42.034944
+          ],
+          "turn_duration": 0.007,
+          "bearings": [
+           58,
+           234,
+           238
+          ],
+          "admin_index": 0,
+          "geometry_index": 8
+         },
+         {
+          "classes": [
+           "motorway"
+          ],
+          "entry": [
+           true,
+           false
+          ],
+          "out": 0,
+          "in": 1,
+          "weight": 19.444,
+          "geometry_index": 32,
+          "duration": 20.467,
+          "bearings": [
+           64,
+           245
+          ],
+          "admin_index": 0,
+          "location": [
+           -80.094632,
+           42.044478
+          ]
+         },
+         {
+          "classes": [
+           "motorway"
+          ],
+          "entry": [
+           true,
+           false
+          ],
+          "out": 0,
+          "in": 1,
+          "bearings": [
+           64,
+           246
+          ],
+          "admin_index": 0,
+          "geometry_index": 37,
+          "location": [
+           -80.08912,
+           42.046464
+          ]
+         }
+        ],
+        "speedLimitUnit": "mph",
+        "maneuver": {
+         "type": "depart",
+         "bearing_after": 58,
+         "bearing_before": 0,
+         "instruction": "Drive northeast on I 90 East\/AMVETS Memorial Highway.",
+         "location": [
+          -80.128884,
+          42.028694
+         ]
+        },
+        "speedLimitSign": "mutcd",
+        "name": "AMVETS Memorial Highway",
+        "weight": 159.977,
+        "distance": 4172.832,
+        "bannerInstructions": [
+         {
+          "primary": {
+           "type": "fork",
+           "modifier": "slight right",
+           "text": "US 19: Peach Street, Waterford",
+           "components": [
+            {
+             "text": "Exit",
+             "type": "exit"
+            },
+            {
+             "text": "24",
+             "type": "exit-number"
+            },
+            {
+             "text": "US 19: Peach Street, Waterford",
+             "type": "text"
+            }
+           ]
+          },
+          "distanceAlongGeometry": 4172.832
+         }
+        ],
+        "driving_side": "right",
+        "ref": "I 90 East",
+        "duration": 168.83,
+        "mode": "driving",
+        "geometry": "khfdoAfvtywCoFyN}jAy`D}uAuyDg^waAmZ}x@mV_n@wmAufDkz@y|B}vAgzDiKcYaw@gvBeC{Gut@eqB_AgCqz@i}BkH_SaUum@_i@oxA}kAybDmKqYwB{Fo@cBs^_bAsNsa@aIcUqRcl@yEwOqKw]mOyh@gGuTmH}WuTs}@yf@_lB_ZciA__@uwAyNwj@oH}[ad@qdB}Pcp@eZoiA"
+       },
+       {
+        "voiceInstructions": [
+         {
+          "ssmlAnnouncement": "<speak>Turn left onto U.S. 19, Peach Street.<\/speak>",
+          "announcement": "Turn left onto U.S. 19, Peach Street.",
+          "distanceAlongGeometry": 116.7
+         }
+        ],
+        "intersections": [
+         {
+          "entry": [
+           true,
+           true,
+           false
+          ],
+          "out": 1,
+          "in": 2,
+          "weight": 12.141,
+          "turn_duration": 0.009,
+          "geometry_index": 40,
+          "duration": 13.134,
+          "bearings": [
+           62,
+           68,
+           244
+          ],
+          "admin_index": 0,
+          "location": [
+           -80.085517,
+           42.047779
+          ]
+         },
+         {
+          "entry": [
+           true,
+           false
+          ],
+          "out": 0,
+          "in": 1,
+          "weight": 10.822,
+          "geometry_index": 43,
+          "duration": 11.7,
+          "bearings": [
+           70,
+           249
+          ],
+          "admin_index": 0,
+          "location": [
+           -80.08355,
+           42.048349
+          ]
+         },
+         {
+          "entry": [
+           true,
+           false
+          ],
+          "out": 0,
+          "in": 1,
+          "weight": 4.717,
+          "geometry_index": 44,
+          "duration": 5.1,
+          "bearings": [
+           70,
+           250
+          ],
+          "admin_index": 0,
+          "location": [
+           -80.08178,
+           42.048828
+          ]
+         },
+         {
+          "entry": [
+           true,
+           true,
+           false,
+           false
+          ],
+          "out": 0,
+          "in": 2,
+          "location": [
+           -80.081007,
+           42.049038
+          ],
+          "turn_weight": 8,
+          "turn_duration": 2.007,
+          "lanes": [
+           {
+            "indications": [
+             "left"
+            ],
+            "valid_indication": "left",
+            "valid": true,
+            "active": false
+           },
+           {
+            "indications": [
+             "left",
+             "straight"
+            ],
+            "valid_indication": "left",
+            "valid": true,
+            "active": true
+           },
+           {
+            "indications": [
+             "right"
+            ],
+            "valid": false,
+            "active": false
+           }
+          ],
+          "bearings": [
+           69,
+           142,
+           250,
+           321
+          ],
+          "admin_index": 0,
+          "geometry_index": 49
+         }
+        ],
+        "exits": "24",
+        "destinations": "US 19: Peach Street, Waterford",
+        "speedLimitUnit": "mph",
+        "maneuver": {
+         "modifier": "slight right",
+         "type": "fork",
+         "bearing_after": 68,
+         "bearing_before": 64,
+         "instruction": "Keep right to take exit 24 onto US 19\/Peach Street toward Waterford.",
+         "location": [
+          -80.085517,
+          42.047779
+         ]
+        },
+        "speedLimitSign": "mutcd",
+        "name": "",
+        "weight": 36.504,
+        "distance": 421,
+        "bannerInstructions": [
+         {
+          "primary": {
+           "type": "turn",
+           "modifier": "left",
+           "text": "Peach Street; General Strong Vincent Memorial Highway",
+           "components": [
+            {
+             "text": "Peach Street; General Strong Vincent Memorial Highway",
+             "type": "text"
+            },
+            {
+             "text": "\/",
+             "type": "delimiter"
+            },
+            {
+             "text": "US 19",
+             "type": "text"
+            }
+           ]
+          },
+          "distanceAlongGeometry": 421
+         },
+         {
+          "distanceAlongGeometry": 400,
+          "primary": {
+           "type": "turn",
+           "modifier": "left",
+           "text": "Peach Street; General Strong Vincent Memorial Highway",
+           "components": [
+            {
+             "text": "Peach Street; General Strong Vincent Memorial Highway",
+             "type": "text"
+            },
+            {
+             "text": "\/",
+             "type": "delimiter"
+            },
+            {
+             "text": "US 19",
+             "type": "text"
+            }
+           ]
+          },
+          "sub": {
+           "text": "",
+           "components": [
+            {
+             "directions": [
+              "left"
+             ],
+             "active": false,
+             "text": "",
+             "active_direction": "left",
+             "type": "lane"
+            },
+            {
+             "directions": [
+              "left",
+              "straight"
+             ],
+             "active": true,
+             "text": "",
+             "active_direction": "left",
+             "type": "lane"
+            },
+            {
+             "directions": [
+              "right"
+             ],
+             "active": false,
+             "text": "",
+             "type": "lane"
+            }
+           ]
+          }
+         }
+        ],
+        "driving_side": "right",
+        "duration": 32.831,
+        "mode": "driving",
+        "geometry": "eqkeoAx_`wwCoN{s@uJwf@mGi]}\\smBeFmY_BaJ]oBGa@w@gEmCuN"
+       },
+       {
+        "voiceInstructions": [
+         {
+          "ssmlAnnouncement": "<speak>Turn right onto Downs Drive.<\/speak>",
+          "announcement": "Turn right onto Downs Drive.",
+          "distanceAlongGeometry": 188.3
+         }
+        ],
+        "intersections": [
+         {
+          "lanes": [
+           {
+            "indications": [
+             "left"
+            ],
+            "valid_indication": "left",
+            "valid": true,
+            "active": false
+           },
+           {
+            "indications": [
+             "left",
+             "straight"
+            ],
+            "valid_indication": "left",
+            "valid": true,
+            "active": true
+           },
+           {
+            "indications": [
+             "right"
+            ],
+            "valid": false,
+            "active": false
+           }
+          ],
+          "entry": [
+           true,
+           false,
+           false,
+           true
+          ],
+          "out": 3,
+          "turn_weight": 17,
+          "in": 2,
+          "duration": 14.685,
+          "weight": 22.365,
+          "location": [
+           -80.080756,
+           42.049109
+          ],
+          "turn_duration": 8.885,
+          "bearings": [
+           53,
+           139,
+           249,
+           320
+          ],
+          "admin_index": 0,
+          "geometry_index": 50
+         },
+         {
+          "lanes": [
+           {
+            "indications": [
+             "left"
+            ],
+            "valid": false,
+            "active": false
+           },
+           {
+            "indications": [
+             "left"
+            ],
+            "valid": false,
+            "active": false
+           },
+           {
+            "indications": [
+             "straight"
+            ],
+            "valid_indication": "straight",
+            "valid": true,
+            "active": false
+           },
+           {
+            "indications": [
+             "straight"
+            ],
+            "valid_indication": "straight",
+            "valid": true,
+            "active": true
+           }
+          ],
+          "entry": [
+           false,
+           false,
+           true,
+           true
+          ],
+          "out": 3,
+          "turn_weight": 11,
+          "in": 1,
+          "duration": 5.607,
+          "weight": 14.33,
+          "location": [
+           -80.081662,
+           42.049906
+          ],
+          "turn_duration": 2.007,
+          "bearings": [
+           68,
+           140,
+           248,
+           319
+          ],
+          "admin_index": 0,
+          "geometry_index": 52
+         },
+         {
+          "entry": [
+           true,
+           false,
+           true
+          ],
+          "out": 2,
+          "in": 1,
+          "weight": 0.665,
+          "turn_duration": 0.007,
+          "geometry_index": 54,
+          "duration": 0.707,
+          "bearings": [
+           51,
+           138,
+           318
+          ],
+          "admin_index": 0,
+          "location": [
+           -80.082243,
+           42.050389
+          ]
+         },
+         {
+          "entry": [
+           true,
+           false,
+           true
+          ],
+          "out": 2,
+          "in": 1,
+          "weight": 2.66,
+          "turn_duration": 0.007,
+          "geometry_index": 55,
+          "duration": 2.807,
+          "bearings": [
+           48,
+           138,
+           318
+          ],
+          "admin_index": 0,
+          "location": [
+           -80.082354,
+           42.050479
+          ]
+         },
+         {
+          "entry": [
+           true,
+           false,
+           true
+          ],
+          "out": 2,
+          "in": 1,
+          "location": [
+           -80.082811,
+           42.050853
+          ],
+          "turn_weight": 5,
+          "turn_duration": 0.008,
+          "bearings": [
+           51,
+           138,
+           320
+          ],
+          "admin_index": 0,
+          "geometry_index": 56
+         }
+        ],
+        "speedLimitUnit": "mph",
+        "maneuver": {
+         "modifier": "left",
+         "type": "turn",
+         "bearing_after": 320,
+         "bearing_before": 69,
+         "instruction": "Turn left onto US 19\/Peach Street\/General Strong Vincent Memorial Highway.",
+         "location": [
+          -80.080756,
+          42.049109
+         ]
+        },
+        "speedLimitSign": "mutcd",
+        "name": "Peach Street; General Strong Vincent Memorial Highway",
+        "weight": 49.675,
+        "distance": 356,
+        "bannerInstructions": [
+         {
+          "sub": {
+           "text": "",
+           "components": [
+            {
+             "directions": [
+              "left"
+             ],
+             "active": false,
+             "text": "",
+             "type": "lane"
+            },
+            {
+             "directions": [
+              "straight"
+             ],
+             "active": false,
+             "text": "",
+             "type": "lane"
+            },
+            {
+             "directions": [
+              "straight"
+             ],
+             "active": false,
+             "text": "",
+             "type": "lane"
+            },
+            {
+             "directions": [
+              "straight",
+              "right"
+             ],
+             "active": true,
+             "text": "",
+             "active_direction": "right",
+             "type": "lane"
+            }
+           ]
+          },
+          "primary": {
+           "type": "turn",
+           "modifier": "right",
+           "text": "Downs Drive",
+           "components": [
+            {
+             "text": "Downs Drive",
+             "type": "text"
+            }
+           ]
+          },
+          "distanceAlongGeometry": 356
+         }
+        ],
+        "driving_side": "right",
+        "ref": "US 19",
+        "duration": 28.715,
+        "mode": "driving",
+        "geometry": "idneoAfvvvwCyh@pn@_G`HyEtFkVr[sD|EkVp[u`@he@mG~G"
+       },
+       {
+        "voiceInstructions": [
+         {
+          "ssmlAnnouncement": "<speak>In a quarter mile, You will arrive at your destination.<\/speak>",
+          "announcement": "In a quarter mile, You will arrive at your destination.",
+          "distanceAlongGeometry": 333.1
+         },
+         {
+          "ssmlAnnouncement": "<speak>You have arrived at your destination.<\/speak>",
+          "announcement": "You have arrived at your destination.",
+          "distanceAlongGeometry": 97
+         }
+        ],
+        "intersections": [
+         {
+          "lanes": [
+           {
+            "indications": [
+             "left"
+            ],
+            "valid": false,
+            "active": false
+           },
+           {
+            "indications": [
+             "straight"
+            ],
+            "valid": false,
+            "active": false
+           },
+           {
+            "indications": [
+             "straight"
+            ],
+            "valid": false,
+            "active": false
+           },
+           {
+            "indications": [
+             "straight",
+             "right"
+            ],
+            "valid_indication": "right",
+            "valid": true,
+            "active": true
+           }
+          ],
+          "entry": [
+           true,
+           false,
+           true,
+           true
+          ],
+          "out": 0,
+          "turn_weight": 5,
+          "in": 1,
+          "duration": 11.157,
+          "weight": 13.599,
+          "location": [
+           -80.083568,
+           42.051527
+          ],
+          "turn_duration": 2.105,
+          "bearings": [
+           52,
+           141,
+           234,
+           317
+          ],
+          "admin_index": 0,
+          "geometry_index": 58
+         },
+         {
+          "lanes": [
+           {
+            "indications": [
+             "left"
+            ],
+            "valid": false,
+            "active": false
+           },
+           {
+            "indications": [
+             "straight",
+             "right"
+            ],
+            "valid_indication": "straight",
+            "valid": true,
+            "active": true
+           }
+          ],
+          "entry": [
+           true,
+           true,
+           false,
+           true
+          ],
+          "out": 0,
+          "turn_weight": 6,
+          "in": 2,
+          "duration": 16.464,
+          "weight": 21.634,
+          "location": [
+           -80.082734,
+           42.052025
+          ],
+          "turn_duration": 0.007,
+          "bearings": [
+           51,
+           132,
+           231,
+           320
+          ],
+          "admin_index": 0,
+          "geometry_index": 60
+         },
+         {
+          "entry": [
+           true,
+           true,
+           false
+          ],
+          "out": 0,
+          "in": 2,
+          "weight": 13.128,
+          "location": [
+           -80.081167,
+           42.052825
+          ],
+          "turn_weight": 1.5,
+          "turn_duration": 0.021,
+          "bearings": [
+           64,
+           153,
+           245
+          ],
+          "admin_index": 0,
+          "duration": 12.261,
+          "geometry_index": 70
+         },
+         {
+          "entry": [
+           true,
+           true,
+           false
+          ],
+          "out": 0,
+          "in": 2,
+          "location": [
+           -80.079867,
+           42.053286
+          ],
+          "turn_weight": 1.5,
+          "turn_duration": 0.013,
+          "bearings": [
+           73,
+           153,
+           244
+          ],
+          "admin_index": 0,
+          "geometry_index": 71
+         }
+        ],
+        "speedLimitUnit": "mph",
+        "maneuver": {
+         "modifier": "right",
+         "type": "turn",
+         "bearing_after": 52,
+         "bearing_before": 321,
+         "instruction": "Turn right onto Downs Drive.",
+         "location": [
+          -80.083568,
+          42.051527
+         ]
+        },
+        "speedLimitSign": "mutcd",
+        "name": "Downs Drive",
+        "weight": 52.28,
+        "distance": 391.759,
+        "bannerInstructions": [
+         {
+          "primary": {
+           "type": "arrive",
+           "text": "You have arrived at your destination.",
+           "components": [
+            {
+             "text": "You have arrived at your destination.",
+             "type": "text"
+            }
+           ]
+          },
+          "distanceAlongGeometry": 391.759
+         }
+        ],
+        "driving_side": "right",
+        "duration": 42.441,
+        "mode": "driving",
+        "geometry": "m{reoA~e|vwCiByDyZim@iBqDuBiEyBsDaCeDuGkHkBaCyAcDqA_EiPqp@Kc@y[gpAMi@o@qDOwBDoBZyB?A"
+       },
+       {
+        "intersections": [
+         {
+          "entry": [
+           true
+          ],
+          "in": 0,
+          "bearings": [
+           274
+          ],
+          "admin_index": 0,
+          "geometry_index": 77,
+          "location": [
+           -80.079579,
+           42.053308
+          ]
+         }
+        ],
+        "voiceInstructions": [],
+        "speedLimitUnit": "mph",
+        "maneuver": {
+         "type": "arrive",
+         "bearing_after": 0,
+         "bearing_before": 94,
+         "instruction": "You have arrived at your destination.",
+         "location": [
+          -80.079579,
+          42.053308
+         ]
+        },
+        "speedLimitSign": "mutcd",
+        "name": "Downs Drive",
+        "weight": 0,
+        "distance": 0,
+        "bannerInstructions": [],
+        "driving_side": "right",
+        "duration": 0,
+        "mode": "driving",
+        "geometry": "wjveoAtltvwC??"
+       }
+      ],
+      "admins": [
+       {
+        "iso_3166_1_alpha3": "USA",
+        "iso_3166_1": "US"
+       }
+      ],
+      "weight": 298.436,
+      "duration": 272.816,
+      "distance": 5341.591,
+      "summary": "I 90 East, Downs Drive"
+     }
+    ],
+    "duration": 272.816,
+    "distance": 5341.591,
+    "geometry": "khfdoAfvtywCoFyN}jAy`D}uAuyDg^waAmZ}x@mV_n@wmAufDkz@y|B}vAgzDiKcYaw@gvBeC{Gut@eqB_AgCqz@i}BkH_SaUum@_i@oxA}kAybDmKqYwB{Fo@cBs^_bAsNsa@aIcUqRcl@yEwOqKw]mOyh@gGuTmH}WuTs}@yf@_lB_ZciA__@uwAyNwj@oH}[ad@qdB}Pcp@eZoiAoN{s@uJwf@mGi]}\\smBeFmY_BaJ]oBGa@w@gEmCuNyh@pn@_G`HyEtFkVr[sD|EkVp[u`@he@mG~GiByDyZim@iBqDuBiEyBsDaCeDuGkHkBaCyAcDqA_EiPqp@Kc@y[gpAMi@o@qDOwBDoBZyB?A"
+   }
+  ],
+  "waypoints": [
+   {
+    "name": "I 90 East",
+    "distance": 0.063,
+    "location": [
+     -80.128884,
+     42.028694
+    ]
+   },
+   {
+    "name": "Downs Drive",
+    "distance": 0.038,
+    "location": [
+     -80.079579,
+     42.053308
+    ]
+   }
+  ],
+  "code": "Ok"
+ }
+}

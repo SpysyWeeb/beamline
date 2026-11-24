@@ -1,0 +1,9 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="647.25 516.5 19 19">
+  <!-- Extracted from protomaps/basemaps sprites/refill.svg (commit 42ffaaa4) group '_sports'. Derived from tangrams/icons, Copyright (c) 2017 Mapzen, MIT License; Protomaps visual design CC0-1.0. See assets/LICENSES.md. -->
+  <g>
+      <rect x="647.75" y="517" width="18" height="18" rx="4" ry="4" stroke-miterlimit="10" stroke="#3f3f3f" fill="#f4f4f4" />
+      <circle cx="661.04" cy="530.26" r="1.42" stroke-miterlimit="10" stroke="#3f3f3f" fill="#fff" />
+      <rect x="651.26" y="526.31" width="5.31" height="2.29" transform="translate(-161.35 730.32) rotate(-52.86)" stroke="#3f3f3f" stroke-linejoin="round" fill="#c6c6c6" />
+      <circle cx="656.43" cy="524.36" r="4.09" stroke="#3f3f3f" stroke-linejoin="round" fill="#bababa" />
+   </g>
+</svg>

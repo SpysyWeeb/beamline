@@ -1,0 +1,85 @@
+{
+  "manifest_version": 3,
+  "pack_id": "us-pa",
+  "pack_version": 202611160400,
+  "name": "Pennsylvania",
+  "country": "US",
+  "state": "PA",
+  "osm_snapshot": "2026-11-14",
+  "created_utc": "2026-11-16T04:00:00Z",
+  "bounds": [
+    -80.52,
+    39.66,
+    -74.69,
+    42.52
+  ],
+  "attribution": "© OpenStreetMap contributors",
+  "parts": {
+    "routing_index": {
+      "file": "routing.json",
+      "format": "beamline-routing-pack",
+      "format_version": 1,
+      "bytes": 1234,
+      "sha256": "0000000000000000000000000000000000000000000000000000000000000000",
+      "attribution": "© OpenStreetMap contributors"
+    },
+    "search": {
+      "file": "search.sqlite",
+      "format": "beamline-search-sqlite",
+      "format_version": 1,
+      "addr_key_table_version": 2,
+      "addr_key_fingerprint": "97c8d281115ec4d4b186051b18efe3f15bb5b1c74d60902854665f83d228d73a",
+      "ranking_sha256": "989553d1507d63aebc9c4ab0e52d22abd789f541130070693483a73ef7dfbbfb",
+      "bytes": 1234,
+      "sha256": "0000000000000000000000000000000000000000000000000000000000000000",
+      "attribution": "© OpenStreetMap contributors"
+    },
+    "addresses": {
+      "file": "addresses.sqlite",
+      "format": "beamline-addresses-sqlite",
+      "format_version": 1,
+      "normalisation_table_version": 2,
+      "key_fingerprint": "97c8d281115ec4d4b186051b18efe3f15bb5b1c74d60902854665f83d228d73a",
+      "variant": "slim",
+      "bytes": 1234,
+      "sha256": "0000000000000000000000000000000000000000000000000000000000000000",
+      "attribution": "© OpenStreetMap contributors; U.S. Census Bureau TIGER/Line; USDOT National Address Database; City of Scranton GIS"
+    },
+    "map": {
+      "file": "map.pmtiles",
+      "format": "pmtiles",
+      "format_version": 3,
+      "schema": "protomaps-basemap",
+      "schema_version": "4.15.2",
+      "min_zoom": 0,
+      "max_zoom": 14,
+      "tile_type": "mvt",
+      "schema_extensions": {"lanes_minzoom": 14, "top_zoom": 14},
+      "clip": {"file": "tl_2026_us_state.zip", "sha256": "2e17ea40dff3e00163eec87a26efa0b0ff7e8fe364a191bf1a7754dcb49ea326", "state": "PA"},
+      "bytes": 1234,
+      "sha256": "0000000000000000000000000000000000000000000000000000000000000000",
+      "attribution": "© OpenStreetMap contributors"
+    },
+    "routing": {
+      "file": "routing.tar",
+      "format": "valhalla-tar",
+      "format_version": 1,
+      "valhalla_version": "3.9.1",
+      "graph_build": "261114-pa-oh-v3.9.1-b53087",
+      "bytes": 1234,
+      "sha256": "0000000000000000000000000000000000000000000000000000000000000000",
+      "attribution": "© OpenStreetMap contributors"
+    },
+    "future_part": {
+      "file": "future.bin",
+      "format": "something-new",
+      "format_version": 7,
+      "bytes": 1234,
+      "sha256": "0000000000000000000000000000000000000000000000000000000000000000",
+      "note": "a part this app does not know: copied, checked, kept"
+    }
+  },
+  "builder": {
+    "note": "unknown top-level keys are ignored"
+  }
+}

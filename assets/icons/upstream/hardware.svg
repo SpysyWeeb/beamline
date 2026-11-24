@@ -1,0 +1,9 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="435.95 516.71 19 19">
+  <!-- Extracted from protomaps/basemaps sprites/refill.svg (commit 42ffaaa4) group '_hardware'. Derived from tangrams/icons, Copyright (c) 2017 Mapzen, MIT License; Protomaps visual design CC0-1.0. See assets/LICENSES.md. -->
+  <g>
+      <rect x="436.45" y="517.21" width="18" height="18" rx="4" ry="4" stroke-miterlimit="10" stroke="#3f3f3f" fill="#f4f4f4" />
+      <path d="M444.79,523.02l-.37,8.12c0,1.31,2.04,1.31,2.04,0l-.22-8.12" stroke="#3f3f3f" stroke-linecap="round" stroke-linejoin="round" fill="#d3d3d3" />
+      <rect x="441.51" y="520.65" width="1.95" height="3.31" stroke="#3f3f3f" stroke-linecap="round" stroke-linejoin="round" fill="#aaa9a9" />
+      <path d="M447.09,523.23h-3.63v-1.86h3.55c1.24,0,2.74,1,2.74,3.25,0,0-1.16-1.33-2.66-1.39Z" stroke="#3f3f3f" stroke-linecap="round" stroke-linejoin="round" fill="#aaa9a9" />
+   </g>
+</svg>

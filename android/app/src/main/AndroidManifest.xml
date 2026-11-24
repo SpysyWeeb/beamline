@@ -1,0 +1,76 @@
+<?xml version="1.0" encoding="utf-8"?>
+<manifest xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:tools="http://schemas.android.com/tools">
+
+    <!-- Offline-first: maps, routing and search never use the network. The network is used only to
+         fetch the list of states and the state packs, by one class (docs/architecture-downloads.md,
+         section 4); :feature:states declares INTERNET and ACCESS_NETWORK_STATE for it. MapLibre's AAR also
+         declares ACCESS_WIFI_STATE, which nothing needs: remove it from the merged manifest. -->
+    <uses-permission
+        android:name="android.permission.ACCESS_WIFI_STATE"
+        tools:node="remove" />
+
+    <!-- Location: foreground only ("while in use"), asked for when the user taps my-location,
+         Directions or a saved place's one-tap route. Both are requested together so Android 12+ can
+         offer "approximate". There is no ACCESS_BACKGROUND_LOCATION: guidance runs in a foreground
+         service of type location started while the app is visible (docs/architecture.md 4). -->
+    <uses-permission android:name="android.permission.ACCESS_COARSE_LOCATION" />
+    <uses-permission android:name="android.permission.ACCESS_FINE_LOCATION" />
+    <uses-permission android:name="android.permission.FOREGROUND_SERVICE" />
+    <uses-permission android:name="android.permission.FOREGROUND_SERVICE_LOCATION" />
+    <!-- The guidance notification (Android 13+), asked once at the first Start unless the download
+         flow asked already. -->
+    <uses-permission android:name="android.permission.POST_NOTIFICATIONS" />
+    <!-- The map works without any location hardware, so do not let stores filter on it. -->
+    <uses-feature
+        android:name="android.hardware.location"
+        android:required="false" />
+    <uses-feature
+        android:name="android.hardware.location.gps"
+        android:required="false" />
+
+    <!-- allowBackup="false" and the extraction rules: nothing of the app leaves the phone, neither in a
+         cloud backup nor in a device-to-device transfer (docs/architecture-saved-places.md PV4; the
+         lead's decision of 2026-11-16 for integration). -->
+    <application
+        android:name=".BeamlineApplication"
+        android:allowBackup="false"
+        android:dataExtractionRules="@xml/data_extraction_rules"
+        android:icon="@mipmap/ic_launcher"
+        android:roundIcon="@mipmap/ic_launcher_round"
+        android:label="${appName}"
+        android:supportsRtl="true"
+        android:theme="@style/Theme.Beamline">
+
+        <!-- configChanges: the map keeps its GPU surface and camera, and guidance its screen, through
+             rotation, day/night switches and changes of font size, bold text, language and layout
+             direction; Compose redraws itself from the new configuration.
+             Theme.Beamline.Starting (:feature:about): the system splash with the Night drive icon. -->
+        <activity
+            android:name=".MainActivity"
+            android:configChanges="orientation|screenSize|screenLayout|smallestScreenSize|keyboard|keyboardHidden|navigation|uiMode|density|fontScale|locale|layoutDirection|colorMode|fontWeightAdjustment"
+            android:exported="true"
+            android:launchMode="singleTask"
+            android:theme="@style/Theme.Beamline.Starting"
+            android:windowSoftInputMode="adjustResize">
+            <intent-filter>
+                <action android:name="android.intent.action.MAIN" />
+                <category android:name="android.intent.category.LAUNCHER" />
+            </intent-filter>
+            <!-- Batch O2 (docs/online-design.md 4.4): the end of OSM's sign-in comes back here. The app
+                 accepts it only for a sign-in it started (the state it made, once, within 15 minutes). -->
+            <intent-filter>
+                <action android:name="android.intent.action.VIEW" />
+                <category android:name="android.intent.category.DEFAULT" />
+                <category android:name="android.intent.category.BROWSABLE" />
+                <data android:scheme="io.github.spysyweeb.beamline" android:host="oauth" />
+            </intent-filter>
+        </activity>
+
+        <!-- Keeps the process at foreground priority while a trip is guided (docs/architecture.md 4). -->
+        <service
+            android:name=".guidance.GuidanceService"
+            android:exported="false"
+            android:foregroundServiceType="location" />
+    </application>
+</manifest>

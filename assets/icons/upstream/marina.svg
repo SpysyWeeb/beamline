@@ -1,0 +1,12 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="940.23 265.45 19 19">
+  <!-- Extracted from protomaps/basemaps sprites/refill.svg (commit 42ffaaa4) group '_marina'. Derived from tangrams/icons, Copyright (c) 2017 Mapzen, MIT License; Protomaps visual design CC0-1.0. See assets/LICENSES.md. -->
+  <g>
+      <rect x="940.73" y="265.95" width="18" height="18" rx="4" ry="4" stroke-miterlimit="10" stroke="#3f3f3f" fill="#f4f4f4" />
+      <path d="M950.76,271.5c0,1.35-2.08,1.32-2.07,0s2.07-1.35,2.07,0Z" stroke="#3f3f3f" fill="none" stroke-linecap="round" stroke-linejoin="round" />
+      <line x1="949.72" y1="272.65" x2="949.72" y2="280.23" stroke="#3f3f3f" fill="none" stroke-linecap="round" stroke-linejoin="round" />
+      <line x1="947.21" y1="274.85" x2="952.23" y2="274.85" stroke="#3f3f3f" fill="none" stroke-linecap="round" stroke-linejoin="round" />
+      <path d="M953.68,277.07s-1.37,3.16-3.96,3.16h0c-2.59,0-3.96-3.16-3.96-3.16" stroke="#3f3f3f" fill="none" stroke-linecap="round" stroke-linejoin="round" />
+      <polyline points="945.18 278.01 945.62 276.73 946.85 277.14" stroke="#3f3f3f" fill="none" stroke-linecap="round" stroke-linejoin="round" />
+      <polyline points="954.24 278.01 953.8 276.73 952.57 277.14" stroke="#3f3f3f" fill="none" stroke-linecap="round" stroke-linejoin="round" />
+   </g>
+</svg>

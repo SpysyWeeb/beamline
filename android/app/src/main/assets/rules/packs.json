@@ -1,0 +1,4 @@
+{
+  "_comment": "Pack install rules (read by :core:packs InstallRules). An install is refused before any copy unless the phone has the pack's size plus free_space_margin_mb (decimal MB) free, so the phone is never filled to the last byte.",
+  "free_space_margin_mb": 200
+}

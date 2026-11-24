@@ -1,0 +1,261 @@
+{
+ "_doc": "Names and their SP26 name keys (docs/architecture-saved-places.md 10.1 item 16): written by packbuilder/search/saved_places.py name_key(); android/core/search's SavedPlacesTest and packbuilder/search/tests/test_saved_places.py both check every pair, so the Kotlin and Python keys are equal.",
+ "names": [
+  {
+   "name": "",
+   "key": ""
+  },
+  {
+   "name": "  ",
+   "key": ""
+  },
+  {
+   "name": "***",
+   "key": ""
+  },
+  {
+   "name": "Mom's",
+   "key": "moms"
+  },
+  {
+   "name": "moms",
+   "key": "moms"
+  },
+  {
+   "name": "Caf\u00e9",
+   "key": "cafe"
+  },
+  {
+   "name": "cafe",
+   "key": "cafe"
+  },
+  {
+   "name": "\u0414\u043e\u043c",
+   "key": "\u0434\u043e\u043c"
+  },
+  {
+   "name": "\u0434\u043e\u043c",
+   "key": "\u0434\u043e\u043c"
+  },
+  {
+   "name": "\u0434\u043e",
+   "key": "\u0434\u043e"
+  },
+  {
+   "name": "\u5bb6",
+   "key": "\u5bb6"
+  },
+  {
+   "name": "\ud83c\udfe0",
+   "key": "\ud83c\udfe0"
+  },
+  {
+   "name": "\ud83c\udfe1",
+   "key": "\ud83c\udfe1"
+  },
+  {
+   "name": "HOME",
+   "key": "home"
+  },
+  {
+   "name": "work ",
+   "key": "work"
+  },
+  {
+   "name": "Home!",
+   "key": "home"
+  },
+  {
+   "name": "Home",
+   "key": "home"
+  },
+  {
+   "name": "Work",
+   "key": "work"
+  },
+  {
+   "name": "Mom's House",
+   "key": "moms house"
+  },
+  {
+   "name": "Momo Sushi",
+   "key": "momo sushi"
+  },
+  {
+   "name": "Gym",
+   "key": "gym"
+  },
+  {
+   "name": "\u00c4pfel",
+   "key": "apfel"
+  },
+  {
+   "name": "apple",
+   "key": "apple"
+  },
+  {
+   "name": "\ud83d\udc68\u200d\ud83d\udc69\u200d\ud83d\udc67\u200d\ud83d\udc66",
+   "key": "\ud83d\udc68\ud83d\udc69\ud83d\udc67\ud83d\udc66"
+  },
+  {
+   "name": "\ud83d\udc68\u200d\ud83d\udc69\u200d\ud83d\udc67\u200d\ud83d\udc66\ud83d\udc68\u200d\ud83d\udc69\u200d\ud83d\udc67\u200d\ud83d\udc66\ud83d\udc68\u200d\ud83d\udc69\u200d\ud83d\udc67\u200d\ud83d\udc66\ud83d\udc68\u200d\ud83d\udc69\u200d\ud83d\udc67\u200d\ud83d\udc66\ud83d\udc68\u200d\ud83d\udc69\u200d\ud83d\udc67\u200d\ud83d\udc66\ud83d\udc68\u200d\ud83d\udc69\u200d\ud83d\udc67\u200d\ud83d\udc66\ud83d\udc68\u200d\ud83d\udc69\u200d\ud83d\udc67\u200d\ud83d\udc66\ud83d\udc68\u200d\ud83d\udc69\u200d\ud83d\udc67\u200d\ud83d\udc66\ud83d\udc68\u200d\ud83d\udc69\u200d\ud83d\udc67\u200d\ud83d\udc66\ud83d\udc68\u200d\ud83d\udc69\u200d\ud83d\udc67\u200d\ud83d\udc66\ud83d\udc68\u200d\ud83d\udc69\u200d\ud83d\udc67\u200d\ud83d\udc66\ud83d\udc68\u200d\ud83d\udc69\u200d\ud83d\udc67\u200d\ud83d\udc66\ud83d\udc68\u200d\ud83d\udc69\u200d\ud83d\udc67\u200d\ud83d\udc66\ud83d\udc68\u200d\ud83d\udc69\u200d\ud83d\udc67\u200d\ud83d\udc66\ud83d\udc68\u200d\ud83d\udc69\u200d\ud83d\udc67\u200d\ud83d\udc66\ud83d\udc68\u200d\ud83d\udc69\u200d\ud83d\udc67\u200d\ud83d\udc66\ud83d\udc68\u200d\ud83d\udc69\u200d\ud83d\udc67\u200d\ud83d\udc66\ud83d\udc68\u200d\ud83d\udc69\u200d\ud83d\udc67\u200d\ud83d\udc66\ud83d\udc68\u200d\ud83d\udc69\u200d\ud83d\udc67\u200d\ud83d\udc66\ud83d\udc68\u200d\ud83d\udc69\u200d\ud83d\udc67\u200d\ud83d\udc66\ud83d\udc68\u200d\ud83d\udc69\u200d\ud83d\udc67\u200d\ud83d\udc66\ud83d\udc68\u200d\ud83d\udc69\u200d\ud83d\udc67\u200d\ud83d\udc66\ud83d\udc68\u200d\ud83d\udc69\u200d\ud83d\udc67\u200d\ud83d\udc66\ud83d\udc68\u200d\ud83d\udc69\u200d\ud83d\udc67\u200d\ud83d\udc66\ud83d\udc68\u200d\ud83d\udc69\u200d\ud83d\udc67\u200d\ud83d\udc66\ud83d\udc68\u200d\ud83d\udc69\u200d\ud83d\udc67\u200d\ud83d\udc66\ud83d\udc68\u200d\ud83d\udc69\u200d\ud83d\udc67\u200d\ud83d\udc66\ud83d\udc68\u200d\ud83d\udc69\u200d\ud83d\udc67\u200d\ud83d\udc66\ud83d\udc68\u200d\ud83d\udc69\u200d\ud83d\udc67\u200d\ud83d\udc66\ud83d\udc68\u200d\ud83d\udc69\u200d\ud83d\udc67\u200d\ud83d\udc66\ud83d\udc68\u200d\ud83d\udc69\u200d\ud83d\udc67\u200d\ud83d\udc66\ud83d\udc68\u200d\ud83d\udc69\u200d\ud83d\udc67\u200d\ud83d\udc66\ud83d\udc68\u200d\ud83d\udc69\u200d\ud83d\udc67\u200d\ud83d\udc66\ud83d\udc68\u200d\ud83d\udc69\u200d\ud83d\udc67\u200d\ud83d\udc66\ud83d\udc68\u200d\ud83d\udc69\u200d\ud83d\udc67\u200d\ud83d\udc66\ud83d\udc68\u200d\ud83d\udc69\u200d\ud83d\udc67\u200d\ud83d\udc66\ud83d\udc68\u200d\ud83d\udc69\u200d\ud83d\udc67\u200d\ud83d\udc66\ud83d\udc68\u200d\ud83d\udc69\u200d\ud83d\udc67\u200d\ud83d\udc66\ud83d\udc68\u200d\ud83d\udc69\u200d\ud83d\udc67\u200d\ud83d\udc66\ud83d\udc68\u200d\ud83d\udc69\u200d\ud83d\udc67\u200d\ud83d\udc66",
+   "key": "\ud83d\udc68\ud83d\udc69\ud83d\udc67\ud83d\udc66\ud83d\udc68\ud83d\udc69\ud83d\udc67\ud83d\udc66\ud83d\udc68\ud83d\udc69\ud83d\udc67\ud83d\udc66\ud83d\udc68\ud83d\udc69\ud83d\udc67\ud83d\udc66\ud83d\udc68\ud83d\udc69\ud83d\udc67\ud83d\udc66\ud83d\udc68\ud83d\udc69\ud83d\udc67\ud83d\udc66\ud83d\udc68\ud83d\udc69\ud83d\udc67\ud83d\udc66\ud83d\udc68\ud83d\udc69\ud83d\udc67\ud83d\udc66\ud83d\udc68\ud83d\udc69\ud83d\udc67\ud83d\udc66\ud83d\udc68\ud83d\udc69\ud83d\udc67\ud83d\udc66\ud83d\udc68\ud83d\udc69\ud83d\udc67\ud83d\udc66\ud83d\udc68\ud83d\udc69\ud83d\udc67\ud83d\udc66\ud83d\udc68\ud83d\udc69\ud83d\udc67\ud83d\udc66\ud83d\udc68\ud83d\udc69\ud83d\udc67\ud83d\udc66\ud83d\udc68\ud83d\udc69\ud83d\udc67\ud83d\udc66\ud83d\udc68\ud83d\udc69\ud83d\udc67\ud83d\udc66\ud83d\udc68\ud83d\udc69\ud83d\udc67\ud83d\udc66\ud83d\udc68\ud83d\udc69\ud83d\udc67\ud83d\udc66\ud83d\udc68\ud83d\udc69\ud83d\udc67\ud83d\udc66\ud83d\udc68\ud83d\udc69\ud83d\udc67\ud83d\udc66\ud83d\udc68\ud83d\udc69\ud83d\udc67\ud83d\udc66\ud83d\udc68\ud83d\udc69\ud83d\udc67\ud83d\udc66\ud83d\udc68\ud83d\udc69\ud83d\udc67\ud83d\udc66\ud83d\udc68\ud83d\udc69\ud83d\udc67\ud83d\udc66\ud83d\udc68\ud83d\udc69\ud83d\udc67\ud83d\udc66\ud83d\udc68\ud83d\udc69\ud83d\udc67\ud83d\udc66\ud83d\udc68\ud83d\udc69\ud83d\udc67\ud83d\udc66\ud83d\udc68\ud83d\udc69\ud83d\udc67\ud83d\udc66\ud83d\udc68\ud83d\udc69\ud83d\udc67\ud83d\udc66\ud83d\udc68\ud83d\udc69\ud83d\udc67\ud83d\udc66\ud83d\udc68\ud83d\udc69\ud83d\udc67\ud83d\udc66\ud83d\udc68\ud83d\udc69\ud83d\udc67\ud83d\udc66\ud83d\udc68\ud83d\udc69\ud83d\udc67\ud83d\udc66\ud83d\udc68\ud83d\udc69\ud83d\udc67\ud83d\udc66\ud83d\udc68\ud83d\udc69\ud83d\udc67\ud83d\udc66\ud83d\udc68\ud83d\udc69\ud83d\udc67\ud83d\udc66\ud83d\udc68\ud83d\udc69\ud83d\udc67\ud83d\udc66\ud83d\udc68\ud83d\udc69\ud83d\udc67\ud83d\udc66\ud83d\udc68\ud83d\udc69\ud83d\udc67\ud83d\udc66\ud83d\udc68\ud83d\udc69\ud83d\udc67\ud83d\udc66"
+  },
+  {
+   "name": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+   "key": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"
+  },
+  {
+   "name": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+   "key": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"
+  },
+  {
+   "name": "Mom's\nPlace",
+   "key": "moms place"
+  },
+  {
+   "name": "Line1\tLine2",
+   "key": "line1 line2"
+  },
+  {
+   "name": "Rock & Roll",
+   "key": "rock and roll"
+  },
+  {
+   "name": "A&W",
+   "key": "a and w"
+  },
+  {
+   "name": "it\u2019s",
+   "key": "its"
+  },
+  {
+   "name": "`quoted`",
+   "key": "quoted"
+  },
+  {
+   "name": "e\u0301cole",
+   "key": "ecole"
+  },
+  {
+   "name": "\uff37\uff41\uff4c\uff4d\uff41\uff52\uff54",
+   "key": "walmart"
+  },
+  {
+   "name": "\ufb01sh",
+   "key": "fish"
+  },
+  {
+   "name": "stra\u00dfe",
+   "key": "stra\u00dfe"
+  },
+  {
+   "name": "\u0130stanbul",
+   "key": "istanbul"
+  },
+  {
+   "name": "x\u200dy",
+   "key": "xy"
+  },
+  {
+   "name": "\u2665\ufe0f",
+   "key": "\u2665"
+  },
+  {
+   "name": "  Mom's   Place  ",
+   "key": "moms place"
+  },
+  {
+   "name": "\uff11\uff12\uff13",
+   "key": "123"
+  },
+  {
+   "name": "\u216b",
+   "key": "xii"
+  },
+  {
+   "name": "\u00bd",
+   "key": "1\u20442"
+  },
+  {
+   "name": "\u00d1and\u00fa",
+   "key": "nandu"
+  },
+  {
+   "name": "Quokka Shop",
+   "key": "quokka shop"
+  },
+  {
+   "name": "Millcreek Mall",
+   "key": "millcreek mall"
+  },
+  {
+   "name": "Erie Maritime Museum",
+   "key": "erie maritime museum"
+  },
+  {
+   "name": "ho mo",
+   "key": "ho mo"
+  },
+  {
+   "name": "h",
+   "key": "h"
+  },
+  {
+   "name": "mom",
+   "key": "mom"
+  },
+  {
+   "name": "xyz",
+   "key": "xyz"
+  },
+  {
+   "name": "\u03a3\u03af\u03c3\u03c5\u03c6\u03bf\u03c2",
+   "key": "\u03c3\u03b9\u03c3\u03c5\u03c6\u03bf\u03c2"
+  },
+  {
+   "name": "\u039f\u0394\u039f\u03a3",
+   "key": "\u03bf\u03b4\u03bf\u03c2"
+  },
+  {
+   "name": "\u6771\u4eac\u30bf\u30ef\u30fc",
+   "key": "\u6771\u4eac\u30bf\u30ef\u30fc"
+  },
+  {
+   "name": "\uc11c\uc6b8",
+   "key": "\u1109\u1165\u110b\u116e\u11af"
+  },
+  {
+   "name": "\u0645\u0643\u062a\u0628",
+   "key": "\u0645\u0643\u062a\u0628"
+  },
+  {
+   "name": "\u05e9\u05dc\u05d5\u05dd",
+   "key": "\u05e9\u05dc\u05d5\u05dd"
+  },
+  {
+   "name": "C++ & C#",
+   "key": "c++ and c"
+  },
+  {
+   "name": "$5 Pizza",
+   "key": "$5 pizza"
+  },
+  {
+   "name": "100% Gym",
+   "key": "100 gym"
+  },
+  {
+   "name": "\u2116 5",
+   "key": "no 5"
+  },
+  {
+   "name": "St. Mary's",
+   "key": "st marys"
+  },
+  {
+   "name": "O'Neil's Pub",
+   "key": "oneils pub"
+  }
+ ]
+}

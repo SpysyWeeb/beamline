@@ -1,0 +1,41 @@
+{
+  "_comment": "Places where lanes_check.py compares the lane attributes in a pack's roads layer with the OSM ways in the extract the pack was built from (Geofabrik pennsylvania-261114). Way ids were looked up in that extract on 2026-11-15; expected values are what OSM has there.",
+  "pa": [
+    {
+      "name": "I-90 near exit 24 (Peach St / US 19), south of Erie",
+      "lon": -80.0814, "lat": 42.0496,
+      "ways": [58662962, 58662963, 58662966, 145551802, 145551804, 1182123155, 145551787, 145551791, 145551773, 145551803, 145551800]
+    },
+    {
+      "name": "Exit 24 eastbound off-ramp, end at Peach St / US 19",
+      "lon": -80.0814, "lat": 42.0489,
+      "ways": [530545210],
+      "expect": {"530545210": {"lanes": 3, "turn:lanes": "left|left;through|right"}}
+    },
+    {
+      "name": "Peach St / US 19 northbound at Downs Dr",
+      "lon": -80.0832, "lat": 42.0512,
+      "ways": [530545218],
+      "expect": {"530545218": {"lanes": 4, "turn:lanes": "left|through|through|through;right"}}
+    },
+    {
+      "name": "Peach St / US 19 two-way section north of I-90 (lanes:forward/backward, turn:lanes:backward)",
+      "lon": -80.0926, "lat": 42.0593,
+      "ways": [530545035],
+      "expect": {"530545035": {"lanes": 6, "lanes:forward": 2, "lanes:backward": 4, "turn:lanes:backward": "left|through|through|through;right"}}
+    },
+    {
+      "name": "Peach St / US 19 south of Erie with a centre two-way left-turn lane (lanes:both_ways, turn:lanes:both_ways; added 2026-11-15 in the review round)",
+      "lon": -80.0920, "lat": 42.0750,
+      "ways": [121593871, 530832900],
+      "expect": {"121593871": {"lanes": 5, "lanes:forward": 2, "lanes:backward": 2, "lanes:both_ways": 1, "turn:lanes:both_ways": "left"},
+                 "530832900": {"lanes": 6, "lanes:forward": 2, "lanes:backward": 3, "lanes:both_ways": 1, "turn:lanes:both_ways": "left", "turn:lanes:backward": "left;through|through|right"}}
+    },
+    {
+      "name": "South Braddock Ave near Pittsburgh, two-way with lanes:forward/backward and turn:lanes:forward (the line merge of profile patch 1 reversed it; review round)",
+      "lon": -79.8759, "lat": 40.4120,
+      "ways": [504762367],
+      "expect": {"504762367": {"lanes": 3, "lanes:forward": 2, "lanes:backward": 1, "turn:lanes:forward": "left|through;right"}}
+    }
+  ]
+}

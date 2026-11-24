@@ -1,0 +1,7 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 19 19">
+  <!-- Drawn for Beamline in the frame of the Protomaps/tangrams set (18 x 18 rounded square, 1 px outline), filled for the user's own places (docs/architecture-saved-places.md 8; a draft for the owner's approval). MIT License, see assets/LICENSES.md. Template colours: #000 = the 'saved' colour, #fff = its partner (white). -->
+  <rect x="0.5" y="0.5" width="18" height="18" rx="4" ry="4" fill="#000000" stroke="#ffffff" stroke-miterlimit="10"/>
+  <path d="M7.25,6.5V5.25a1,1 0 0 1 1-1h2.5a1,1 0 0 1 1,1V6.5" fill="none" stroke="#ffffff" stroke-width="1.25"/>
+  <rect x="4" y="6.5" width="11" height="8.25" rx="1.25" fill="#ffffff"/>
+  <path d="M4,10.25h11" stroke="#000000"/>
+</svg>

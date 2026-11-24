@@ -1,0 +1,13 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="939.43 431.5 19 19">
+  <!-- Extracted from protomaps/basemaps sprites/refill.svg (commit 42ffaaa4) group '_tyres'. Derived from tangrams/icons, Copyright (c) 2017 Mapzen, MIT License; Protomaps visual design CC0-1.0. See assets/LICENSES.md. -->
+  <g>
+      <rect x="939.93" y="432" width="18" height="18" rx="4" ry="4" stroke-miterlimit="10" stroke="#3f3f3f" fill="#f4f4f4" />
+      <g>
+         <circle cx="948.93" cy="441" r="6.12" stroke-linecap="round" stroke-linejoin="round" fill="#848484" stroke="#5e5e5e" />
+         <circle cx="948.93" cy="441" r="3.47" stroke-linecap="round" stroke-linejoin="round" stroke="#c4c4c4" fill="#514f4f" />
+         <line x1="947.42" y1="443.68" x2="950.43" y2="438.47" fill="none" stroke-linecap="round" stroke-linejoin="round" stroke="#c4c4c4" />
+         <line x1="951.94" y1="441.07" x2="945.91" y2="441.07" fill="none" stroke-linecap="round" stroke-linejoin="round" stroke="#c4c4c4" />
+         <line x1="947.42" y1="438.47" x2="950.43" y2="443.68" fill="none" stroke-linecap="round" stroke-linejoin="round" stroke="#c4c4c4" />
+      </g>
+   </g>
+</svg>

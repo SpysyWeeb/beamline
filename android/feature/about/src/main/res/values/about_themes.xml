@@ -1,0 +1,21 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <!-- The launch theme (docs/architecture.md 2.8 and 5.4 item 11): the activity's theme in the
+         manifest. Splash.install switches to postSplashScreenTheme. The system splash shows the
+         Night drive icon in a 192 dp circle on the icon's land colour; SplashReveal then opens the
+         circle over the splash scene. -->
+    <style name="Theme.Beamline.Starting" parent="Theme.SplashScreen">
+        <item name="windowSplashScreenBackground">@color/about_splash_land</item>
+        <item name="windowSplashScreenAnimatedIcon">@drawable/splash_icon</item>
+        <item name="postSplashScreenTheme">@style/Theme.Beamline.AfterSplash</item>
+    </style>
+
+    <!-- The theme after the system splash: the window keeps the land colour, so nothing flashes
+         between the system splash and the reveal's first frame. An app overrides this style by
+         defining one of the same name (for example with its own Theme.Beamline as parent). -->
+    <style name="Theme.Beamline.AfterSplash" parent="android:Theme.Material.NoActionBar">
+        <item name="android:windowBackground">@color/about_splash_land</item>
+        <item name="android:statusBarColor">@android:color/transparent</item>
+        <item name="android:navigationBarColor">@android:color/transparent</item>
+    </style>
+</resources>
