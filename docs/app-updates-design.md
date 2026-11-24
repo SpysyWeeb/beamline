@@ -3,8 +3,11 @@
 The owner, 2026-11-24: "Next we'll work on having app updates run like openpilot, pulling from
 GitHub when available." The owner answered section 7's questions on 2026-11-24. *Built so far (2026-11-24):* the release script
 `tools/release.py` (section 5; a dry run builds and checks both APKs, `--publish` makes the release),
-the `-Pbeamline.abi` build property, and `AppUpdate` (`:core:download`: reads `update.json`, picks the
-phone's APK, never a downgrade; tests). Still to build: the app's check, download and install (section 4).
+the `-Pbeamline.abi` build property, `AppUpdate` (`:core:download`: reads `update.json`, picks the
+phone's APK, never a downgrade) and `AppUpdater` (`:core:download`: the daily check and the download
+through `PackHttp`, so under its network rules, with the size and SHA-256 checked; tests against a local
+server). Still to build in the app: the switch, the Wi-Fi rule, the signing-certificate check, the
+install with `PackageInstaller`, the chip and the "Updated to" note (section 4).
 
 ## 1. What it does
 
