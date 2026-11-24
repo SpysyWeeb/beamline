@@ -39,6 +39,9 @@ val osmTestClientId = "kboFIWlThtxHpIJhBrXal-6iNmQVNTXoB6BmZZi0Mvc"
 // 2026-11-22, so a release reads its catalog unless an https beamline.catalogUrl (android/local.properties,
 // git-ignored, or a -P property) names another; the owner, 2026-11-24: the phone gets the weekly packs.
 // Debug builds read only the configured address (the PC's test server for the emulator, 10.0.2.2).
+// App updates (docs/app-updates-design.md 5): tools/release.py builds the universal APK and one
+// for each ABI with -Pbeamline.abi=arm64-v8a (only that ABI's native libraries).
+val releaseAbi: String? = providers.gradleProperty("beamline.abi").orNull?.trim()?.takeIf { it.isNotEmpty() }
 val publicCatalogUrl = "https://github.com/SpysyWeeb/beamline-packs/releases/download/catalog/catalog.json"
 val localProperties = Properties().apply {
     providers.fileContents(rootProject.layout.projectDirectory.file("local.properties")).asText.orNull
@@ -98,6 +101,7 @@ android {
         versionName = "0.1.25"
         manifestPlaceholders["appName"] = appName
         buildConfigField("String", "MAP_RENDERER", "\"$mapRenderer\"")
+        releaseAbi?.let { abi -> ndk { abiFilters.clear(); abiFilters += abi } }
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
     }
 

@@ -792,8 +792,9 @@ not break across two lines in the banner; the results view shows at most the 20 
     `updates_seen`). Nothing downloads by itself.
 41. **App updates from GitHub, like openpilot** (owner, 2026-11-24: "Next we'll work on having app
     updates run like openpilot, pulling from GitHub when available"). The repository is public since
-    2026-11-24, so the phone can read its releases without a login. Design draft with the owner's
-    questions: `docs/app-updates-design.md`.
+    2026-11-24, so the phone can read its releases without a login. Design with the owner's
+    answers: `docs/app-updates-design.md`. *Started 2026-11-24:* `tools/release.py`, `AppUpdate`; the app
+    side (check, download, install) is next.
 
 ## Later (not the next round)
 

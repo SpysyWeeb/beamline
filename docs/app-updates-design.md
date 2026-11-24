@@ -1,7 +1,10 @@
 # App updates from GitHub (item 41) — design draft
 
 The owner, 2026-11-24: "Next we'll work on having app updates run like openpilot, pulling from
-GitHub when available." The owner answered section 7's questions on 2026-11-24; nothing is built yet.
+GitHub when available." The owner answered section 7's questions on 2026-11-24. *Built so far (2026-11-24):* the release script
+`tools/release.py` (section 5; a dry run builds and checks both APKs, `--publish` makes the release),
+the `-Pbeamline.abi` build property, and `AppUpdate` (`:core:download`: reads `update.json`, picks the
+phone's APK, never a downgrade; tests). Still to build: the app's check, download and install (section 4).
 
 ## 1. What it does
 
