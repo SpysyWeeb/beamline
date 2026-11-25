@@ -191,6 +191,8 @@ class WeeklyTest(unittest.TestCase):
                      "DATA": data, "COMMA_DATA": data / "comma", "MAPD_TOOL": data / "comma" / "mapd-tool",
                      "COMMA_SETUP": data / "comma" / "setup.json"}.items():
             self.patch(weekly, k, v)
+        # a faked failed request never makes the log look at a real server's addresses (no network here)
+        self.patch(weekly, "reach", lambda url, every_s=20.0: None)
         self.old_epoch = os.environ.get("SOURCE_DATE_EPOCH")
         os.environ["SOURCE_DATE_EPOCH"] = str(common.utc_epoch(fixtures.CREATED))
         # The made-up pack's search.sqlite is not a search file: check.py's question to the search code
@@ -1055,3 +1057,41 @@ class SystemPackages(unittest.TestCase):
 
 if __name__ == "__main__":
     unittest.main()
+
+
+class ReachTest(unittest.TestCase):
+    """weekly.reach (2026-11-24): after a request failed without an HTTP answer, the log names what each
+    address of the server answers. Local sockets only."""
+
+    def setUp(self):
+        weekly._REACH_LAST.clear()
+
+    def test_an_address_that_listens_connects(self):
+        import socket
+        with socket.socket(socket.AF_INET, socket.SOCK_STREAM) as srv:
+            srv.bind(("127.0.0.1", 0))
+            srv.listen(1)
+            port = srv.getsockname()[1]
+            r = weekly.reach(f"http://127.0.0.1:{port}/x.md5")
+        self.assertRegex(r, rf"^127\.0\.0\.1 port {port}: IPv4 127\.0\.0\.1 connects \(\d+\.\d s\)$")
+
+    def test_a_closed_port_names_the_errno_and_a_host_is_looked_at_once_per_round(self):
+        import socket
+        with socket.socket(socket.AF_INET, socket.SOCK_STREAM) as srv:
+            srv.bind(("127.0.0.1", 0))
+            port = srv.getsockname()[1]   # bound, not listening: refused
+            r = weekly.reach(f"https://127.0.0.1:{port}/")
+            self.assertRegex(r, r"IPv4 127\.0\.0\.1 ConnectionRefusedError \[Errno \d+\]")
+            self.assertIsNone(weekly.reach(f"https://127.0.0.1:{port}/other"), "the same host again within 20 s")
+
+    def test_a_name_that_does_not_resolve(self):
+        r = weekly.reach("https://no-such-host.invalid/x")
+        self.assertIn("no-such-host.invalid: the name lookup failed", r)
+
+    def test_an_http_answer_needs_no_look(self):
+        import urllib.error
+        out = io.StringIO()
+        with contextlib.redirect_stdout(out):
+            weekly.log_reach("https://127.0.0.1:9/x", urllib.error.HTTPError("https://127.0.0.1:9/x", 503, "busy", {}, None))
+        self.assertEqual("", out.getvalue())
+
