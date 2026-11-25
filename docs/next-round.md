@@ -805,6 +805,18 @@ not break across two lines in the banner; the results view shows at most the 20 
     an install button next to the check for updates button"): my-location holds the compass (K1a), and
     Settings shows Install beside "Check for an update now" when an update is downloaded.
 
+43. **Everyday searches that found nothing nearby** (a tester, 2026-11-24: "antique stores" found two
+    shops near Philadelphia and none of Erie's). The search knew 104 hand-written categories; a search
+    outside them fell back to names. *Built 2026-11-24:* `packbuilder/search/extend_categories.py` adds
+    a category for every one-tag iD preset (shop, amenity, craft, office, healthcare, leisure, tourism)
+    with at least 15 places in Pennsylvania that no category matched (178), with everyday forms
+    (plural, with "store"/"shop"), iD's aliases and terms (minus words too general: old, used, new,
+    keyboard, drum) and a few everyday words iD lacks (barber shop, nail salon, bike shop, antique
+    mall). `tests/everyday_searches.json`: 20 everyday searches from Erie that must find nearby places;
+    all pass on the rebuilt pack ("antique stores": eight antique shops within 7 km). Data only: the
+    app reads categories from the pack, so the new search pack is the whole change. Left for later:
+    plural folding in name matching, the same list from other towns.
+
 ## Later (not the next round)
 
 - **Linking Beamline to the real vehicle through the comma 3X** (owner, 2026-11-16). The driving

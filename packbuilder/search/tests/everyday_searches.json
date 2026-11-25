@@ -1,0 +1,27 @@
+{
+  "_doc": "Everyday searches (docs/next-round.md item 43; a tester, 2026-11-24: \"antique stores\"). Each query must be read as the category named (or one of those listed), and from Erie (Perry Square) at least min_near of the first 10 results must be within near_km. Run by tests/test_everyday.py against a built pack.",
+  "from": [42.1292, -80.0851],
+  "near_km": 30,
+  "searches": [
+    {"q": "antique stores", "category": "shop_antiques", "min_near": 5},
+    {"q": "antiques", "category": "shop_antiques", "min_near": 5},
+    {"q": "antique mall", "category": "shop_antiques", "min_near": 3},
+    {"q": "thrift store", "category": "shop_second_hand", "min_near": 8},
+    {"q": "consignment store", "category": "shop_second_hand", "min_near": 5},
+    {"q": "bookstore", "category": "shop_books", "min_near": 4},
+    {"q": "book store", "category": "shop_books", "min_near": 4},
+    {"q": "florist", "category": "shop_florist", "min_near": 6},
+    {"q": "barber shop", "category": "shop_hairdresser", "min_near": 8},
+    {"q": "hair salon", "category": "shop_hairdresser", "min_near": 8},
+    {"q": "nail salon", "category": "shop_beauty", "min_near": 8},
+    {"q": "furniture store", "category": "shop_furniture", "min_near": 8},
+    {"q": "music store", "category": ["shop_music", "shop_musical_instrument"], "min_near": 1},
+    {"q": "bike shop", "category": "shop_bicycle", "min_near": 2},
+    {"q": "craft store", "category": "shop_craft", "min_near": 2},
+    {"q": "jewelry store", "category": "shop_jewelry", "min_near": 8},
+    {"q": "bowling alley", "category": "leisure_bowling_alley", "min_near": 2},
+    {"q": "hardware store", "category": "hardware", "min_near": 8},
+    {"q": "car wash", "category": "car_wash", "min_near": 8},
+    {"q": "library", "category": "library", "min_near": 8}
+  ]
+}
