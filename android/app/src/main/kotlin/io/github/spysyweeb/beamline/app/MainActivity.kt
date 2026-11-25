@@ -199,6 +199,7 @@ class MainActivity : ComponentActivity(), Host {
 
     override fun onStart() {
         super.onStart()
+        graph.appUpdates.foreground = true
         graph.clock24h.value = DateFormat.is24HourFormat(this)
         refreshPermissions()
         if (graph.positions.hasPermission()) graph.puck.start(graph.scope) // foreground only
@@ -238,6 +239,7 @@ class MainActivity : ComponentActivity(), Host {
         }
         graph.puck.stop()
         // Item 41: leaving the app installs a downloaded update when Android lets it be silent (never while guiding)
+        graph.appUpdates.foreground = false
         graph.appUpdates.install(null, graph.guiding())
         super.onStop()
     }

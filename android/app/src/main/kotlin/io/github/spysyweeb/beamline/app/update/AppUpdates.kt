@@ -59,6 +59,14 @@ class AppUpdates(private val app: android.content.Context, private val scope: Co
     /** The last install problem in words (a bad file, a refused install), for Settings; null when none. */
     val problem: StateFlow<String?> = _problem.asStateFlow()
 
+    /** True while an activity of the app is started (MainActivity.onStart to onStop): Android's dialog may open. */
+    @Volatile var foreground: Boolean = false
+
+    /** An install session is committed and its result not back yet (UpdateReceiver). */
+    private val installing = java.util.concurrent.atomic.AtomicBoolean(false)
+    /** Failed installs of a version in this process; the second failure refuses the version. */
+    private val failures = HashMap<Long, Int>()
+
     fun dismissUpdatedNote() {
         _updatedNote.value = null
     }
@@ -92,8 +100,9 @@ class AppUpdates(private val app: android.content.Context, private val scope: Co
      * guiding.
      */
     fun install(activity: Activity?, guiding: Boolean) {
-        val ready = state.value as? AppUpdater.State.Ready ?: return
-        if (guiding) return
+        val u = updater ?: return
+        if (state.value !is AppUpdater.State.Ready) return
+        if (guiding || installing.get()) return
         if (activity == null && !canBeSilent()) return
         val pm = app.packageManager
         if (!pm.canRequestPackageInstalls()) {
@@ -101,22 +110,29 @@ class AppUpdates(private val app: android.content.Context, private val scope: Co
             activity?.startActivity(Intent(Settings.ACTION_MANAGE_UNKNOWN_APP_SOURCES, Uri.parse("package:${app.packageName}")))
             return
         }
-        scope.launch(Dispatchers.IO) {
+        scope.launch(Dispatchers.IO) { lock.withLock {
+            // under the lock: no check or download runs meanwhile, and the state is read again
+            val ready = u.state.value as? AppUpdater.State.Ready ?: return@withLock
+            if (!installing.compareAndSet(false, true)) return@withLock
             val bad = checkFile(ready.file)
             if (bad != null) {
                 _problem.value = bad
-                ready.file.delete()
-                return@launch
+                u.refuse(ready.update.versionCode, ready.file)
+                installing.set(false)
+                return@withLock
             }
             _problem.value = null
+            var id = -1
             try {
                 val installer = pm.packageInstaller
+                // a session left by an earlier attempt (the process ended, a dialog never opened) goes first
+                installer.mySessions.forEach { s -> try { installer.abandonSession(s.sessionId) } catch (_: Exception) {} }
                 val params = PackageInstaller.SessionParams(PackageInstaller.SessionParams.MODE_FULL_INSTALL).apply {
                     setAppPackageName(app.packageName)
                     setSize(ready.file.length())
                     if (Build.VERSION.SDK_INT >= 31) setRequireUserAction(PackageInstaller.SessionParams.USER_ACTION_NOT_REQUIRED)
                 }
-                val id = installer.createSession(params)
+                id = installer.createSession(params)
                 installer.openSession(id).use { s ->
                     s.openWrite("beamline.apk", 0, ready.file.length()).use { out ->
                         ready.file.inputStream().use { it.copyTo(out) }
@@ -128,9 +144,26 @@ class AppUpdates(private val app: android.content.Context, private val scope: Co
                 }
             } catch (e: Exception) {
                 Log.w(TAG, "install failed", e)
+                if (id >= 0) try { pm.packageInstaller.abandonSession(id) } catch (_: Exception) {}
                 _problem.value = TEXT_INSTALL_FAILED
+                installing.set(false)
             }
-        }
+        } }
+    }
+
+    /**
+     * UpdateReceiver: Android answered the install. [aborted]: the user said no or the dialog could not
+     * open (the chip stays for another try); otherwise a failure: shown, and a second failure of the same
+     * version refuses it (a newer release replaces it). Success needs nothing: Android replaced the app.
+     */
+    fun installEnded(success: Boolean, aborted: Boolean) {
+        installing.set(false)
+        if (success || aborted) return
+        val ready = state.value as? AppUpdater.State.Ready ?: return
+        _problem.value = TEXT_INSTALL_FAILED
+        val n = (failures[ready.update.versionCode] ?: 0) + 1
+        failures[ready.update.versionCode] = n
+        if (n >= 2) scope.launch(Dispatchers.IO) { lock.withLock { updater?.refuse(ready.update.versionCode, ready.file) } }
     }
 
     /** Silent installs need Android 12+ and Beamline as the app that installed the current version. */

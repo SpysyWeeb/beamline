@@ -14,20 +14,32 @@ import android.util.Log
  */
 class UpdateReceiver : BroadcastReceiver() {
     override fun onReceive(context: Context, intent: Intent) {
+        val updates = (context.applicationContext as? io.github.spysyweeb.beamline.app.BeamlineApplication)?.graph?.appUpdates
         when (val status = intent.getIntExtra(PackageInstaller.EXTRA_STATUS, PackageInstaller.STATUS_FAILURE)) {
             PackageInstaller.STATUS_PENDING_USER_ACTION -> {
                 val confirm = if (Build.VERSION.SDK_INT >= 33) intent.getParcelableExtra(Intent.EXTRA_INTENT, Intent::class.java)
                 else @Suppress("DEPRECATION") intent.getParcelableExtra(Intent.EXTRA_INTENT)
-                confirm?.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)?.let {
-                    try {
-                        context.startActivity(it)
-                    } catch (e: RuntimeException) {
-                        Log.w("Beamline.update", "the install dialog could not open", e)
-                    }
+                // Android 10+ opens no activity for an app in the background: then the session is dropped
+                // and the chip offers the update again when the user is back
+                val opened = updates?.foreground == true && confirm != null && try {
+                    context.startActivity(confirm.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK))
+                    true
+                } catch (e: RuntimeException) {
+                    Log.w("Beamline.update", "the install dialog could not open", e)
+                    false
+                }
+                if (!opened) {
+                    val id = intent.getIntExtra(PackageInstaller.EXTRA_SESSION_ID, -1)
+                    if (id >= 0) try { context.packageManager.packageInstaller.abandonSession(id) } catch (_: Exception) {}
+                    updates?.installEnded(success = false, aborted = true)
                 }
             }
-            PackageInstaller.STATUS_SUCCESS -> Unit
-            else -> Log.w("Beamline.update", "install status $status: ${intent.getStringExtra(PackageInstaller.EXTRA_STATUS_MESSAGE)}")
+            PackageInstaller.STATUS_SUCCESS -> updates?.installEnded(success = true, aborted = false)
+            PackageInstaller.STATUS_FAILURE_ABORTED -> updates?.installEnded(success = false, aborted = true)
+            else -> {
+                Log.w("Beamline.update", "install status $status: ${intent.getStringExtra(PackageInstaller.EXTRA_STATUS_MESSAGE)}")
+                updates?.installEnded(success = false, aborted = false)
+            }
         }
     }
 }

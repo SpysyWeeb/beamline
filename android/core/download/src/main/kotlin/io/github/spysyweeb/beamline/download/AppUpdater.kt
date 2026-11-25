@@ -45,6 +45,10 @@ class AppUpdater(
     val state: StateFlow<State> = _state.asStateFlow()
 
     private val checkFile = File(dir, "update-check.json")
+    /** The last update.json that answered, so a new process knows what it found. */
+    private val keptFile = File(dir, "update.json")
+    /** Version codes refused by the app (comma-separated). */
+    private val refusedFile = File(dir, "update-refused.txt")
 
     /** When the last check answered (epoch ms), or null. */
     fun lastCheckMs(): Long? = try {
@@ -53,14 +57,48 @@ class AppUpdater(
         null
     }
 
+    /** The version codes the app refused after download (a wrong file, a failed install): never downloaded again. */
+    fun refused(): Set<Long> = try {
+        refusedFile.takeIf { it.isFile }?.readText()?.split(',')?.mapNotNull { it.trim().toLongOrNull() }?.toSet().orEmpty()
+    } catch (_: IOException) {
+        emptySet()
+    }
+
     /**
-     * Asks for update.json when [force], when there was no check yet, or when the last one is [everyMs]
-     * old or more (or lies in the future: the clock was set back); else keeps the state it has.
+     * The app refused [file] of version [versionCode] (AppUpdates: not this app, not newer, another
+     * signer, or Android refused the install): the file is deleted, the version is never fetched again,
+     * and the state goes back to Idle, so the next start asks again (a newer release replaces it).
+     */
+    fun refuse(versionCode: Long, file: File?) {
+        file?.delete()
+        dir.mkdirs()
+        refusedFile.writeText((refused() + versionCode).sorted().joinToString(","))
+        _state.value = State.Idle
+    }
+
+    /**
+     * Asks for update.json when [force], when there was no check yet, when the last one is [everyMs]
+     * old or more (or lies in the future: the clock was set back), or when the last attempt failed. Else
+     * it keeps its state, and a new process rebuilds it from the update.json kept on disk (an update
+     * found or downloaded earlier today is not forgotten when Android ends the app).
      */
     fun check(force: Boolean, everyMs: Long = DAY_MS): State {
         val now = clock()
         val last = lastCheckMs()
-        if (!force && last != null && now - last < everyMs && last <= now) return _state.value
+        val current = _state.value
+        if (!force && last != null && now - last < everyMs && last <= now && current !is State.Failed) {
+            if (current != State.Idle) return current
+            val kept = try {
+                keptFile.takeIf { it.isFile }?.readText()?.let(AppUpdate::parse)
+            } catch (_: Exception) {
+                null
+            }
+            if (kept != null) {
+                val restored = decide(kept, last)
+                _state.value = restored
+                return restored
+            }
+        }
         _state.value = State.Checking
         val next = try {
             val text = http.get(PackRequest(address.url)).use { r ->
@@ -78,13 +116,9 @@ class AppUpdater(
             }.decodeToString()
             val update = AppUpdate.parse(text)
             dir.mkdirs()
+            keptFile.writeText(text)
             checkFile.writeText("{\"checked_ms\":$now}")
-            val pick = update.apkFor(supportedAbis)
-            when {
-                !update.isNewerThan(installedVersionCode) || update.minSdk > sdkInt -> State.UpToDate(now)
-                pick == null -> State.Failed("no APK for this phone", update)
-                else -> readyFile(update, pick.second)?.let { State.Ready(update, it) } ?: State.Available(update, pick.first, pick.second)
-            }
+            decide(update, now)
         } catch (e: IllegalArgumentException) {
             State.Failed(e.message ?: "update.json", null)
         } catch (e: Exception) {
@@ -131,6 +165,17 @@ class AppUpdater(
         }
         _state.value = next
         return next
+    }
+
+    /** What [update] means for this phone: nothing to do, a version refused before, an APK to get, or one already here. */
+    private fun decide(update: AppUpdate, checkedMs: Long): State {
+        val pick = update.apkFor(supportedAbis)
+        return when {
+            !update.isNewerThan(installedVersionCode) || update.minSdk > sdkInt -> State.UpToDate(checkedMs)
+            update.versionCode in refused() -> State.UpToDate(checkedMs)
+            pick == null -> State.Failed("no APK for this phone", update)
+            else -> readyFile(update, pick.second)?.let { State.Ready(update, it) } ?: State.Available(update, pick.first, pick.second)
+        }
     }
 
     /** An APK already downloaded for [apk] whose size and SHA-256 still match, or null. */

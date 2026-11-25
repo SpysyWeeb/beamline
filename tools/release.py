@@ -72,13 +72,21 @@ def build(out: Path, name: str) -> dict[str, Path]:
     return files
 
 
-def check_apk(path: Path, abi: str, signer: Path) -> None:
+def check_apk(path: Path, abi: str, signer: Path, code: int, name: str) -> None:
     res = subprocess.run([str(signer), "verify", "--print-certs", str(path)], capture_output=True, text=True)
     if res.returncode != 0 or f"certificate SHA-256 digest: {OWNER_CERT_SHA256}" not in res.stdout:
         raise SystemExit(f"{path.name}: not signed by the owner's certificate (is android/local.properties' key set?)")
     abis = {n.split("/")[1] for n in zipfile.ZipFile(path).namelist() if n.startswith("lib/") and n.count("/") >= 2}
     if abi != "universal" and abis != {abi}:
         raise SystemExit(f"{path.name}: native code for {sorted(abis)}, expected only {abi}")
+    if abi == "universal" and ABI not in abis:
+        raise SystemExit(f"{path.name}: the universal APK lacks {ABI}")
+    # the APK's own version, so update.json never names another build (a stale file, --skip-build)
+    badging = subprocess.run([str(signer.parent / ("aapt2.exe" if signer.name.endswith(".bat") else "aapt2")), "dump", "badging", str(path)],
+                             capture_output=True, text=True, encoding="utf-8", errors="replace").stdout
+    m = re.search(r"versionCode='(\d+)' versionName='([^']*)'", badging)
+    if not m or (int(m.group(1)), m.group(2)) != (code, name):
+        raise SystemExit(f"{path.name}: version {m.groups() if m else '?'} is not {name} ({code}) of build.gradle.kts: build again")
 
 
 def latest_published() -> int | None:
@@ -130,7 +138,7 @@ def main() -> int:
     for abi, p in files.items():
         if not p.is_file():
             raise SystemExit(f"{p} missing: build first (leave out --skip-build)")
-        check_apk(p, abi, signer)
+        check_apk(p, abi, signer, code, name)
     update = {
         "format": "beamline-update/1",
         "version_code": code,

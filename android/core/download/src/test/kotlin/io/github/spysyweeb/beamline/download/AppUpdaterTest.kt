@@ -43,10 +43,32 @@ class AppUpdaterTest {
         assertFalse(File(r.file.path + ".part").exists())
         // within a day: no new request; a new process finds the downloaded file again
         val asked = server.requests("/releases/latest/download/update.json").size
-        assertTrue(updater().check(force = false) is AppUpdater.State.Idle, "checked less than a day ago: nothing asked")
+        assertTrue(updater().check(force = false) is AppUpdater.State.Ready, "a new process the same day: the kept update.json and the file, nothing asked")
         assertEquals(asked, server.requests("/releases/latest/download/update.json").size)
         now += AppUpdater.DAY_MS
         assertTrue(updater().check(force = false) is AppUpdater.State.Ready, "the APK on disk still matches")
+    }
+
+    @Test
+    fun aRefusedVersionIsNeverFetchedAgainButANewerOneIs() {
+        publish(29)
+        val u = updater()
+        u.check(force = false)
+        val r = u.download() as AppUpdater.State.Ready
+        u.refuse(29, r.file)
+        assertFalse(r.file.exists())
+        assertEquals(AppUpdater.State.Idle, u.state.value)
+        assertTrue(updater().check(force = true) is AppUpdater.State.UpToDate, "29 was refused: no new download")
+        publish(30)
+        assertTrue(updater().check(force = true) is AppUpdater.State.Available, "a newer release replaces it")
+    }
+
+    @Test
+    fun aFailedCheckIsTriedAgainAtTheNextStart() {
+        val u = updater()
+        assertTrue(u.check(force = false) is AppUpdater.State.Failed, "nothing published yet: 404")
+        publish(29)
+        assertTrue(u.check(force = false) is AppUpdater.State.Available, "a failure does not wait a day")
     }
 
     @Test

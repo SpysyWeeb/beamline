@@ -48,12 +48,18 @@ and switches to it on the next start.
 ## 4. When it checks, downloads and installs
 
 - **Check**: once a day when the app opens, under Settings, Online features, "Check for app
-  updates" (on with the main switch, like "Check for map updates"); and from About, "Check now".
+  updates" (on with the main switch, like "Check for map updates"); and "Check for an update now" in
+  the same section of Settings (with a line saying what it found).
 - **Download**: on Wi-Fi by itself; on mobile data only after a tap (the downloads rule). Never
-  while guiding. Kept in the app's own cache until installed or replaced.
-- **Install**: never while guiding. The map shows a chip "Beamline 0.1.25 is ready" (About shows
-  the notes); a tap installs, and the app restarts into the new version. Optional, like openpilot:
-  "install when I leave the app".
+  while guiding. Kept in the app's cache; the last `update.json` is kept too, so an update found or
+  downloaded earlier is not forgotten when Android ends the app (a cache Android clears is fetched
+  again). A failed check is tried again at the next start; a version the app or Android refused is
+  never fetched again (a newer release replaces it).
+- **Install**: never while guiding, one at a time. The map shows a chip "Beamline 0.1.25 is ready ·
+  Install"; a tap installs (the release notes are on the release page, not in the app yet). Leaving
+  the app also installs, but only when it can be silent (not a setting: the owner's answer 2); on
+  Android 8-11 only the tap installs. If Android still asks while the app is in the background, the
+  dialog cannot open there: the session is dropped and the chip offers it again.
 - Android asks the user to allow "Install unknown apps" for Beamline once (Settings opens at the
   right page). The first update is confirmed by the user in a system dialog. From then on, on
   Android 12 and later, Beamline is the app that installed itself, so it can ask Android to install
