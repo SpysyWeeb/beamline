@@ -647,6 +647,8 @@ internal class Layers(context: Context, private val map: MapLibreMap) {
             val fit = target.fit
             val centre = target.center
             when {
+                // K1a: no centre and no zoom: a turn in place (the compass button), keeping the padding
+                fit == null && centre == null && target.zoom == null -> CameraUpdateFactory.bearingTo(target.bearingDeg)
                 fit != null -> CameraUpdateFactory.newLatLngBounds(
                     LatLngBounds.from(fit.north, fit.east, fit.south, fit.west),
                     target.bearingDeg, target.pitchDeg, l.toInt(), t.toInt(), r.toInt(), b.toInt(),

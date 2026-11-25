@@ -155,10 +155,22 @@ private class MapHost(context: Context, private val g: AppGraph, private val flo
                 if (cameraPlaced) {
                     cp.target?.let { flows.onCameraRest(GeoPoint(it.latitude, it.longitude), cp.zoom) } ?: run { flows.cameraZoom = cp.zoom }
                 }
+                // K1a: the bearing the camera stopped at (browsing keeps a user's own turn)
+                g.director.onMapBearing(cp.bearing)
                 // One line per camera stop, for the emulator checks: zoom, pitch and bearing, never where (PV2).
                 Log.i(TAG, "camera idle z=%.2f pitch=%.0f bearing=%.0f".format(cp.zoom, cp.tilt, cp.bearing)) // log-ok: zoom, pitch and bearing (numbers)
             }
-            m.addOnCameraMoveListener { if (cameraPlaced) flows.cameraZoom = m.cameraPosition.zoom }
+            m.addOnCameraMoveListener {
+                if (cameraPlaced) flows.cameraZoom = m.cameraPosition.zoom
+                // K1a: the compass button's needle turns with the map, frame by frame
+                g.mapBearing.value = m.cameraPosition.bearing.toFloat()
+            }
+            // K1a: a two-finger turn by the user ends the compass's lead
+            m.addOnRotateListener(object : org.maplibre.android.maps.MapLibreMap.OnRotateListener {
+                override fun onRotateBegin(detector: org.maplibre.android.gestures.RotateGestureDetector) = g.director.onUserRotate()
+                override fun onRotate(detector: org.maplibre.android.gestures.RotateGestureDetector) = Unit
+                override fun onRotateEnd(detector: org.maplibre.android.gestures.RotateGestureDetector) = Unit
+            })
             // Builds for testing: the camera MapLibre applies while guiding, once a second (in the
             // middle of the follow eases, where "camera idle" never comes): numbers only (PV2).
             if (BuildConfig.TEST_EXTRAS) {
@@ -176,13 +188,13 @@ private class MapHost(context: Context, private val g: AppGraph, private val flo
                 pendingStyle = null
                 setStyle(it)
             }
-            // K1: browsing stays top-down and north up (no rotate or tilt gestures); while guiding
-            // the director tilts and turns the map and a user's gesture goes to GUIDE_FREE (K4).
+            // K1: browsing stays top-down (no tilt gesture); K1a (2026-11-24): it may be turned with two
+            // fingers. While guiding the director tilts and turns the map and a user's gesture goes to
+            // GUIDE_FREE (K4).
+            m.uiSettings.isRotateGesturesEnabled = true
             scope.launch {
                 g.session.state.collect { s ->
-                    val guiding = g.driving(s.phase)
-                    m.uiSettings.isRotateGesturesEnabled = guiding
-                    m.uiSettings.isTiltGesturesEnabled = guiding
+                    m.uiSettings.isTiltGesturesEnabled = g.driving(s.phase)
                 }
             }
             // The scene and the camera director's moves (M's wiring, 5.4 item 4).

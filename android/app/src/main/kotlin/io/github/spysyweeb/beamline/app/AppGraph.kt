@@ -417,6 +417,8 @@ class AppGraph(context: Context, val dataDir: File, val locationLog: Boolean) {
 
     // ------------------------------------------------------------------ the map surface
     val director = CameraDirector(CameraRules.bundled(), clock)
+    /** K1a: the map's bearing now (PackMap, on every camera move), for the compass button's needle. */
+    val mapBearing = MutableStateFlow(0f)
     val mapper = MapSceneMapper()
 
     /**

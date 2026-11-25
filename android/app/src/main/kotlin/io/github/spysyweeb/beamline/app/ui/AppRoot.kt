@@ -282,13 +282,22 @@ fun AppRoot(g: AppGraph, flows: AppFlows, frameRate: FrameRateRequest, screenMax
                         modifier = Modifier.weight(1f).padding(end = AppRules.creditEndPaddingDp(driving, recenterShown, density.fontScale).dp),
                     )
                     if (!driving) {
-                        RoundButton(
-                            icon = if (camera.mode == io.github.spysyweeb.beamline.api.map.CameraMode.BROWSE_FOLLOW) BeamlineIcons.MyLocationFollowing else BeamlineIcons.MyLocation,
-                            label = "Show my position",
-                            night = night,
-                            large = true,
-                            onClick = actions.myLocation,
-                        )
+                        Column(horizontalAlignment = Alignment.CenterHorizontally, verticalArrangement = Arrangement.spacedBy(10.dp)) {
+                            // K1a: the compass above my-location, while browsing (a route choice stays north up)
+                            val browsingCamera = camera.mode == io.github.spysyweeb.beamline.api.map.CameraMode.BROWSE ||
+                                camera.mode == io.github.spysyweeb.beamline.api.map.CameraMode.BROWSE_FOLLOW
+                            if (browsingCamera) {
+                                val compassFollow by g.director.compassFollow.collectAsState()
+                                CompassButton(g.mapBearing, compassFollow, night) { g.director.onCompass() }
+                            }
+                            RoundButton(
+                                icon = if (camera.mode == io.github.spysyweeb.beamline.api.map.CameraMode.BROWSE_FOLLOW) BeamlineIcons.MyLocationFollowing else BeamlineIcons.MyLocation,
+                                label = "Show my position",
+                                night = night,
+                                large = true,
+                                onClick = actions.myLocation,
+                            )
+                        }
                     }
                 }
             }

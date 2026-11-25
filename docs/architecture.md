@@ -1422,6 +1422,14 @@ class CameraDirector(rules: CameraRules, clock: Clock) {
     /** The picked place's sheet closed or another place replaced it, or the results on the map closed: the camera stays where it is (K1, S11). */
     fun onPlaceLeft(): Unit = TODO("track M")
     fun tick(): Unit = TODO("track M")
+    /** K1a: the compass button, while browsing: a turned map goes north up, a map north up follows the phone's compass. */
+    fun onCompass(): Unit = TODO("track M")
+    /** K1a: the map's bearing when the camera stopped (browsing keeps a user's own turn). */
+    fun onMapBearing(deg: Double): Unit = TODO("track M")
+    /** K1a: the user began turning the map with two fingers: the compass no longer leads. */
+    fun onUserRotate(): Unit = TODO("track M")
+    /** K1a: true while browsing follows the phone's compass. */
+    val compassFollow: StateFlow<Boolean> get() = TODO("track M")
 }
 ```
 
@@ -3236,6 +3244,19 @@ Every rule id below needs at least one JVM test in `:nav:session` (N's definitio
   a position (location not allowed, off or not known yet) a cold start shows the map where it was
   left last time (`last-camera.txt`, 2.12, capped outside the states), the whole installed set only
   on the very first open; the one-off "<state> is ready." fit after an install is kept.
+- **K1a** Turning while browsing (0.1.27; the owner, 2026-11-24: "allow users to rotate the map, with a
+  compass in the bottom right corner above the location button"). Browsing may be turned with two
+  fingers (still no tilt). A compass button sits above my-location while the camera browses; its
+  needle points to north on the screen. A tap on a turned map (by hand or by the compass) turns it
+  north up; a tap on a map north up (within 2 degrees) lets it follow the phone's compass (the puck's
+  smoothed heading, smoothed again with weight 0.2, the map turning in steps of 1.5 degrees or more,
+  250 ms each; turning in place, the centre kept); the next tap goes north up again. A two-finger turn
+  ends the following. Browsing's own moves (my-location's follow, a picked place) keep the bearing
+  browsing has (the user's turn or the compass's) instead of north up. A new phase group (a route
+  choice, guidance, arrival, back to browsing) starts north up with the compass not leading; route
+  choices stay north up (the compass shows only while browsing). Without a compass reading a tap
+  only turns the map north up. The constants are `Director`'s (NORTH_TOLERANCE_DEG, COMPASS_SMOOTHING,
+  COMPASS_STEP_DEG, COMPASS_ANIMATE_MS).
 - **K2** PLANNING/CHOOSING → PREVIEW: top-down, north up, fit all choices' bounds plus the origin and
   stops, padded by `padding_dp` plus the overlay insets.
 - **K3** GUIDING or REROUTING → GUIDE_FOLLOW: pitch `pitch_deg` (60), bearing = vehicle bearing

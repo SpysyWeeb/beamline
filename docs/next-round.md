@@ -797,6 +797,11 @@ not break across two lines in the banner; the results view shows at most the 20 
     `AppUpdater`, `AppUpdates` (switch, daily check, Wi-Fi download, certificate check, install, chips);
     the install is tried on the phone with the first two releases (design section 8).
 
+42. **Turn the map, and a compass** (owner, 2026-11-24: "allow users to rotate the map, with a compass
+    in the bottom right corner above the location button ... when they click on it, it will point
+    north, if they click it again, it points in the direction the phone compass is pointing (with
+    some smoothing so it's not so jittery)"). *Built in 0.1.27:* rule K1a.
+
 ## Later (not the next round)
 
 - **Linking Beamline to the real vehicle through the comma 3X** (owner, 2026-11-16). The driving

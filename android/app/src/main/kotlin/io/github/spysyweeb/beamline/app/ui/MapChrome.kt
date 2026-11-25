@@ -23,6 +23,9 @@ import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.collectAsState
+import androidx.compose.runtime.getValue
+import androidx.compose.ui.graphics.drawscope.rotate
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
@@ -60,6 +63,40 @@ internal fun RoundButton(
     ) {
         Box(contentAlignment = Alignment.Center) {
             Icon(icon, contentDescription = null, modifier = Modifier.size(if (large) 28.dp else 24.dp))
+        }
+    }
+}
+
+/**
+ * K1a (the owner, 2026-11-24): the compass above my-location. Its needle points to north on the
+ * screen whatever the map's bearing ([bearing]: the map's, frame by frame); a tap turns the map north
+ * up, the next lets it follow the phone's compass ([following]: then ringed in the route's blue).
+ */
+@Composable
+internal fun CompassButton(bearing: kotlinx.coroutines.flow.StateFlow<Float>, following: Boolean, night: Boolean, onClick: () -> Unit) {
+    val deg by bearing.collectAsState()
+    val label = if (following) "Compass, following your direction. Tap for north up"
+    else "Compass. Tap to turn the map north up, tap again to follow your direction"
+    val blue = if (night) Color(0xFF3A80F0) else Color(0xFF4A8CF7)
+    Surface(
+        onClick = onClick,
+        shape = CircleShape,
+        color = panel(night),
+        shadowElevation = 3.dp,
+        border = if (following) androidx.compose.foundation.BorderStroke(2.dp, blue) else null,
+        modifier = Modifier.size(46.dp).semantics { contentDescription = label },
+    ) {
+        androidx.compose.foundation.Canvas(Modifier.padding(9.dp).size(28.dp)) {
+            val turn = -deg
+            rotate(turn) {
+                val cx = size.width / 2
+                val cy = size.height / 2
+                val w = size.width * 0.2f
+                val north = androidx.compose.ui.graphics.Path().apply { moveTo(cx, 0f); lineTo(cx + w, cy); lineTo(cx - w, cy); close() }
+                val south = androidx.compose.ui.graphics.Path().apply { moveTo(cx, size.height); lineTo(cx + w, cy); lineTo(cx - w, cy); close() }
+                drawPath(north, Color(0xFFE53935))
+                drawPath(south, if (night) Color(0xFFAAB4C2) else Color(0xFF7D8796))
+            }
         }
     }
 }
