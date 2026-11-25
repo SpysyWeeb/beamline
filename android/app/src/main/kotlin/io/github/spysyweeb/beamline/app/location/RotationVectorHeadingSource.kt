@@ -25,6 +25,8 @@ import kotlinx.coroutines.flow.callbackFlow
  */
 class RotationVectorHeadingSource(
     private val context: Context,
+    /** SensorManager's delay: SENSOR_DELAY_UI for the puck's cone, SENSOR_DELAY_GAME for the compass-turned map (K1a). */
+    private val delay: Int = SensorManager.SENSOR_DELAY_UI,
     private val lastLocation: () -> Location?,
 ) : HeadingSource {
 
@@ -52,7 +54,7 @@ class RotationVectorHeadingSource(
 
             override fun onAccuracyChanged(sensor: Sensor?, accuracy: Int) = Unit
         }
-        sm.registerListener(listener, sensor, SensorManager.SENSOR_DELAY_UI)
+        sm.registerListener(listener, sensor, delay)
         awaitClose { sm.unregisterListener(listener) }
     }
 

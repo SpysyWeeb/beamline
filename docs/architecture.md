@@ -1425,6 +1425,8 @@ class CameraDirector(rules: CameraRules, clock: Clock) {
     fun tick(): Unit = TODO("track M")
     /** K1a: the map's bearing when the camera stopped (browsing keeps a user's own turn). */
     fun onMapBearing(deg: Double): Unit = TODO("track M")
+    /** K1a: a compass reading from the sensor while [compassFollow]: the map turns with it at once. */
+    fun onHeading(deg: Float): Unit = TODO("track M")
     /** K1a: the user began turning the map with two fingers: the compass no longer leads. */
     fun onUserRotate(): Unit = TODO("track M")
     /** K1a: true while browsing follows the phone's compass. */
@@ -3248,15 +3250,17 @@ Every rule id below needs at least one JVM test in `:nav:session` (N's definitio
   direction the phone compass is pointing"; one button since 0.1.28: "the screen rotating with the
   phone's compass without being centered on the user is a bit odd"). Browsing may be turned with two
   fingers (still no tilt). My-location holds the compass: not following -> following, north up;
-  following -> following turned by the phone's compass (the puck's smoothed heading, smoothed again
-  with weight 0.2, the map turning in steps of 1.5 degrees or more, 250 ms each; the button shows a
-  needle pointing to north on the screen, ringed in the route's blue); turned by the compass ->
-  following, north up. A drag ends the following and the compass turn (the map stays as it is); a
-  two-finger turn ends only the compass turn. While the map is turned and not by the compass, a small
-  red mark on the button's rim points to north. Browsing's own moves (a picked place) keep the
+  following -> following turned by the phone's compass (the button shows a needle pointing to north
+  on the screen, ringed in the route's blue); turned by the compass -> following, north up. Since
+  0.1.29 (the owner: "The goal is to keep the map up to speed with the user") the map takes the
+  rotation-vector sensor's reading straight, at the game rate and only while it turns with the
+  compass: no smoothing, no animation, a change of 0.5 degrees or more. A drag ends the following
+  and the compass turn (the map stays as it is); a two-finger turn ends only the compass turn.
+  Otherwise a small red mark on the button's rim always points to north (since 0.1.29). The map
+  fills the whole screen, behind the status bar and the navigation bar (0.1.29). Browsing's own moves (a picked place) keep the
   bearing browsing has. A new phase group (a route choice, guidance, arrival, back to browsing) starts
   north up with the compass not leading. Without a compass reading the second tap keeps following
-  north up. The constants are `Director`'s (COMPASS_SMOOTHING, COMPASS_STEP_DEG, COMPASS_ANIMATE_MS).
+  north up. The constant is `Director`'s COMPASS_STEP_DEG.
 - **K2** PLANNING/CHOOSING → PREVIEW: top-down, north up, fit all choices' bounds plus the origin and
   stops, padded by `padding_dp` plus the overlay insets.
 - **K3** GUIDING or REROUTING → GUIDE_FOLLOW: pitch `pitch_deg` (60), bearing = vehicle bearing

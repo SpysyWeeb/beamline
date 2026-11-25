@@ -114,6 +114,8 @@ class CameraDirector(rules: CameraRules, clock: Clock) {
     fun tick(): Unit = director.tick()
     /** K1a: the map's bearing when the camera stopped (browsing keeps a user's own turn). */
     fun onMapBearing(deg: Double): Unit = director.onMapBearing(deg)
+    /** K1a: a compass reading from the sensor while [compassFollow]: the map turns with it at once. */
+    fun onHeading(deg: Float): Unit = director.onHeading(deg)
     /** K1a: the user began turning the map with two fingers: the compass no longer leads. */
     fun onUserRotate(): Unit = director.onUserRotate()
     /** K1a: true while browsing follows the phone's compass. */

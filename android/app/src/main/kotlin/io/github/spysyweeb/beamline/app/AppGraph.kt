@@ -93,6 +93,7 @@ import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.StateFlow
+import kotlinx.coroutines.flow.collectLatest
 import kotlinx.coroutines.flow.combine
 import kotlinx.coroutines.flow.distinctUntilChanged
 import kotlinx.coroutines.flow.filter
@@ -568,6 +569,12 @@ class AppGraph(context: Context, val dataDir: File, val locationLog: Boolean) {
         // The camera director follows the trip and the puck, and ticks once a second (M's wiring).
         scope.launch { session.state.collect { director.onTrip(it) } }
         scope.launch { puck.puck.collect { director.onPuck(it) } }
+        // K1a: while the map turns with the compass, the sensor at the game rate straight to the camera
+        scope.launch {
+            val fast = io.github.spysyweeb.beamline.app.location.RotationVectorHeadingSource(
+                app, android.hardware.SensorManager.SENSOR_DELAY_GAME) { positions.lastLocation }
+            director.compassFollow.collectLatest { on -> if (on) fast.headings().collect { director.onHeading(it.degrees) } }
+        }
         scope.launch {
             while (isActive) {
                 delay(1000)

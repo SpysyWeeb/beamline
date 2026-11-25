@@ -32,15 +32,14 @@ class CompassTest {
         val t = cam.target.value!!
         assertEquals(90.0, t.bearingDeg, 0.5, "turned to the phone's direction")
         assertEquals(Fx.ORIGIN.lat, t.center!!.lat, 1e-9, "still centred on the user")
-        // the phone turns: the map follows, smoothed, in steps
-        cam.onPuck(Fx.puck(Fx.ORIGIN, cone = 120f))
-        val b = cam.target.value!!.bearingDeg
-        assertTrue(b > 90.0 && b < 120.0, "smoothed toward 120: $b")
-        repeat(40) { cam.onPuck(Fx.puck(Fx.ORIGIN, cone = 120f)) }
-        val settled = cam.target.value!!.bearingDeg
-        assertEquals(120.0, settled, 1.6, "settled near the phone's direction")
-        cam.onPuck(Fx.puck(Fx.ORIGIN, cone = 120.5f))
-        assertEquals(settled, cam.target.value!!.bearingDeg, "a jitter under the step does not move the camera")
+        // the phone turns: the map keeps up at once (0.1.29: no smoothing, no animation)
+        cam.onHeading(120f)
+        assertEquals(120.0, cam.target.value!!.bearingDeg, 1e-9)
+        assertEquals(0, cam.target.value!!.animateMs, "no animation to wait for")
+        cam.onHeading(120.3f)
+        assertEquals(120.0, cam.target.value!!.bearingDeg, 1e-9, "a change under half a degree (sensor noise) does not move the camera")
+        cam.onPuck(Fx.puck(Fx.ORIGIN, cone = 200f))
+        assertEquals(120.0, cam.target.value!!.bearingDeg, 1e-9, "the puck's smoothed cone does not steer the camera")
         cam.onMyLocation()
         assertFalse(cam.compassFollow.value)
         assertEquals(CameraMode.BROWSE_FOLLOW, mode)
@@ -75,6 +74,14 @@ class CompassTest {
         assertTrue(cam.compassFollow.value)
         cam.onTrip(TripState(phase = Phase.CHOOSING))
         assertFalse(cam.compassFollow.value)
+    }
+
+    @Test
+    fun `a heading while the map does not turn with the compass changes nothing`() {
+        cam.onPuck(Fx.puck(Fx.ORIGIN, cone = 90f))
+        cam.onMyLocation()
+        cam.onHeading(45f)
+        assertEquals(0.0, cam.target.value!!.bearingDeg, "following north up")
     }
 
     @Test

@@ -209,10 +209,8 @@ fun AppRoot(g: AppGraph, flows: AppFlows, frameRate: FrameRateRequest, screenMax
         Box(Modifier.fillMaxSize()) {
             PackMap(g, flows, frameRate, Modifier.fillMaxSize())
 
-            // Opaque bands behind the system bars keep their icons readable over the map.
-            val scrim = if (night) Color(0xFF101418) else Color(0xFFFFFFFF)
-            Box(Modifier.align(Alignment.TopStart).fillMaxWidth().windowInsetsTopHeight(WindowInsets.statusBars).background(scrim))
-            Box(Modifier.align(Alignment.BottomStart).fillMaxWidth().windowInsetsBottomHeight(WindowInsets.navigationBars).background(scrim))
+            // The map fills the whole screen, behind the status bar and the navigation bar (the owner,
+            // 2026-11-24: "We want to take up the full screen"); the bars' icons follow the map's theme.
 
             if (mapStyle is MapStyleState.Failed) {
                 MessageCard((mapStyle as MapStyleState.Failed).message, night, "States" to flows::openStates, onDismiss = {})

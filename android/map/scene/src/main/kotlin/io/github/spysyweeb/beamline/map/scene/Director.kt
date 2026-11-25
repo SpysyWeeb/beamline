@@ -12,7 +12,6 @@ import io.github.spysyweeb.beamline.api.nav.Origin
 import io.github.spysyweeb.beamline.api.nav.Phase
 import io.github.spysyweeb.beamline.api.nav.TripState
 import io.github.spysyweeb.beamline.location.Clock
-import io.github.spysyweeb.beamline.location.HeadingSmoother
 import io.github.spysyweeb.beamline.location.PuckState
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
@@ -53,7 +52,6 @@ internal class Director(private val rules: CameraRules, private val clock: Clock
     private var browseBearing = 0.0
     /** The map's bearing when the camera last stopped (PackMap). */
     private var mapBearing = 0.0
-    private val compassSmoother = HeadingSmoother(COMPASS_SMOOTHING)
     private val _compassFollow = MutableStateFlow(false)
     /** True while browsing follows the phone's compass (the compass button shows it). */
     val compassFollow: StateFlow<Boolean> = _compassFollow.asStateFlow()
@@ -165,16 +163,6 @@ internal class Director(private val rules: CameraRules, private val clock: Clock
             puckAtMs = now
         }
         puck = p
-        // K1a: the map follows the phone's compass, smoothed, in steps of COMPASS_STEP_DEG at least
-        val cone = p?.coneDeg
-        if (_compassFollow.value && cone != null && mode == CameraMode.BROWSE_FOLLOW) {
-            val s = compassSmoother.add(cone).toDouble()
-            if (kotlin.math.abs(signedDiff(s, browseBearing)) >= COMPASS_STEP_DEG) {
-                browseBearing = s
-                // a new position moves the camera below, with the new bearing
-                if (!changed) publish(COMPASS_ANIMATE_MS)
-            }
-        }
         when (mode) {
             CameraMode.BROWSE_FOLLOW -> if (changed || _target.value == null) {
                 val anim = if (followFirst) rules.transitionMs else puckGlideMs
@@ -219,8 +207,7 @@ internal class Director(private val rules: CameraRules, private val clock: Clock
                 // compass (when it has one); turned by the compass -> following north up
                 val heading = puck?.coneDeg
                 if (mode == CameraMode.BROWSE_FOLLOW && !_compassFollow.value && heading != null) {
-                    compassSmoother.reset()
-                    browseBearing = compassSmoother.add(heading).toDouble()
+                    browseBearing = heading.toDouble()
                     _compassFollow.value = true
                 } else {
                     _compassFollow.value = false
@@ -258,6 +245,19 @@ internal class Director(private val rules: CameraRules, private val clock: Clock
     fun onMapBearing(deg: Double) {
         mapBearing = deg
         if (!_compassFollow.value && browsing()) browseBearing = deg
+    }
+
+    /**
+     * K1a: a compass reading straight from the sensor (the app reads it only while [compassFollow]):
+     * the map keeps up with the phone (0.1.29, the owner: "so if they want to look in a direction, it's
+     * not making the user dizzy waiting for the screen to keep up"), no smoothing and no animation,
+     * only changes of COMPASS_STEP_DEG or more (the sensor's own noise is smaller).
+     */
+    fun onHeading(deg: Float) {
+        if (!_compassFollow.value || mode != CameraMode.BROWSE_FOLLOW) return
+        if (kotlin.math.abs(signedDiff(deg.toDouble(), browseBearing)) < COMPASS_STEP_DEG) return
+        browseBearing = deg.toDouble()
+        publish(0)
     }
 
     /** K1a: the user began turning the map with two fingers: the compass no longer leads. */
@@ -629,12 +629,8 @@ internal class Director(private val rules: CameraRules, private val clock: Clock
     private companion object {
         /** A fit box smaller than this (about 50 m) in both directions is one point. */
         const val POINT_SPAN_DEG = 0.0005
-        /** K1a: the weight of each compass reading in the camera's own smoothing (the puck's reading is smoothed already). */
-        const val COMPASS_SMOOTHING = 0.2
-        /** K1a: the map turns with the compass only by this much or more at a time (no shiver). */
-        const val COMPASS_STEP_DEG = 1.5
-        /** K1a: how long each such turn takes. */
-        const val COMPASS_ANIMATE_MS = 250
+        /** K1a: the map turns with the compass by this much or more at a time (below it the sensor's noise). */
+        const val COMPASS_STEP_DEG = 0.5
     }
 }
 

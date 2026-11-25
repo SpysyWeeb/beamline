@@ -71,14 +71,12 @@ internal fun RoundButton(
 /**
  * K1/K1a (the owner, 2026-11-24): my-location, which also holds the compass. Not following: an
  * outline crosshair; following: a filled one; following turned by the phone's compass ([compass]): a
- * needle pointing to north on the screen, ringed in the route's blue. While the map is turned and not
- * by the compass, a small red mark on the rim points to north ([bearing]: the map's, frame by frame).
+ * needle pointing to north on the screen, ringed in the route's blue. Otherwise a small red mark on
+ * the rim always points to north ([bearing]: the map's, frame by frame; the owner, 2026-11-24).
  */
 @Composable
 internal fun LocationButton(following: Boolean, compass: Boolean, bearing: kotlinx.coroutines.flow.StateFlow<Float>, night: Boolean, onClick: () -> Unit) {
     val deg by bearing.collectAsState()
-    val signed = ((deg % 360f) + 360f) % 360f
-    val turned = kotlin.math.abs(if (signed > 180f) signed - 360f else signed) > 2f
     val label = when {
         compass -> "Following your position, turned by your phone's compass. Tap for north up"
         following -> "Following your position. Tap to turn the map with your phone's compass"
@@ -110,7 +108,7 @@ internal fun LocationButton(following: Boolean, compass: Boolean, bearing: kotli
                 }
             } else {
                 Icon(if (following) BeamlineIcons.MyLocationFollowing else BeamlineIcons.MyLocation, contentDescription = null, modifier = Modifier.size(28.dp))
-                if (turned) {
+                run {
                     androidx.compose.foundation.Canvas(Modifier.size(56.dp)) {
                         rotate(-deg) {
                             val cx = size.width / 2
