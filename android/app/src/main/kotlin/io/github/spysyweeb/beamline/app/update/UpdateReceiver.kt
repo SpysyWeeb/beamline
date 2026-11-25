@@ -25,7 +25,7 @@ class UpdateReceiver : BroadcastReceiver() {
                     context.startActivity(confirm.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK))
                     true
                 } catch (e: RuntimeException) {
-                    Log.w("Beamline.update", "the install dialog could not open", e)
+                    Log.w("Beamline.update", "the install dialog could not open: ${e.javaClass.simpleName}") // log-ok: an exception's class
                     false
                 }
                 if (!opened) {
@@ -37,7 +37,7 @@ class UpdateReceiver : BroadcastReceiver() {
             PackageInstaller.STATUS_SUCCESS -> updates?.installEnded(success = true, aborted = false)
             PackageInstaller.STATUS_FAILURE_ABORTED -> updates?.installEnded(success = false, aborted = true)
             else -> {
-                Log.w("Beamline.update", "install status $status: ${intent.getStringExtra(PackageInstaller.EXTRA_STATUS_MESSAGE)}")
+                Log.w("Beamline.update", "install status $status") // log-ok: a PackageInstaller status number
                 updates?.installEnded(success = false, aborted = false)
             }
         }

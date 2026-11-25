@@ -143,7 +143,7 @@ class AppUpdates(private val app: android.content.Context, private val scope: Co
                     s.commit(pi.intentSender)
                 }
             } catch (e: Exception) {
-                Log.w(TAG, "install failed", e)
+                Log.w(TAG, "install failed: ${e.javaClass.simpleName}") // log-ok: an exception's class
                 if (id >= 0) try { pm.packageInstaller.abandonSession(id) } catch (_: Exception) {}
                 _problem.value = TEXT_INSTALL_FAILED
                 installing.set(false)
