@@ -800,7 +800,10 @@ not break across two lines in the banner; the results view shows at most the 20 
 42. **Turn the map, and a compass** (owner, 2026-11-24: "allow users to rotate the map, with a compass
     in the bottom right corner above the location button ... when they click on it, it will point
     north, if they click it again, it points in the direction the phone compass is pointing (with
-    some smoothing so it's not so jittery)"). *Built in 0.1.27:* rule K1a.
+    some smoothing so it's not so jittery)"). *Built in 0.1.27:* rule K1a. *0.1.28* (owner, after the first
+    self-update: "Maybe we should combine the compass and location button ... I think we should also add
+    an install button next to the check for updates button"): my-location holds the compass (K1a), and
+    Settings shows Install beside "Check for an update now" when an update is downloaded.
 
 ## Later (not the next round)
 

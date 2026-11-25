@@ -47,8 +47,8 @@ internal class Director(private val rules: CameraRules, private val clock: Clock
     private var trip = TripState()
     private var puck: PuckState? = null
 
-    // K1a (the owner, 2026-11-24): browsing may be turned; the compass button turns it north up or
-    // lets it follow the phone's compass.
+    // K1a (the owner, 2026-11-24): browsing may be turned; my-location steps through following,
+    // following turned by the phone's compass, and following north up (0.1.28: one button).
     /** The bearing browsing's own moves use: 0 (north up), the user's own turn, or the compass's. */
     private var browseBearing = 0.0
     /** The map's bearing when the camera last stopped (PackMap). */
@@ -167,12 +167,12 @@ internal class Director(private val rules: CameraRules, private val clock: Clock
         puck = p
         // K1a: the map follows the phone's compass, smoothed, in steps of COMPASS_STEP_DEG at least
         val cone = p?.coneDeg
-        if (_compassFollow.value && cone != null && browsing()) {
+        if (_compassFollow.value && cone != null && mode == CameraMode.BROWSE_FOLLOW) {
             val s = compassSmoother.add(cone).toDouble()
             if (kotlin.math.abs(signedDiff(s, browseBearing)) >= COMPASS_STEP_DEG) {
                 browseBearing = s
-                // a new position in BROWSE_FOLLOW moves the camera below, with the new bearing
-                if (!(mode == CameraMode.BROWSE_FOLLOW && changed)) publish(COMPASS_ANIMATE_MS, rotate = true)
+                // a new position moves the camera below, with the new bearing
+                if (!changed) publish(COMPASS_ANIMATE_MS)
             }
         }
         when (mode) {
@@ -193,6 +193,8 @@ internal class Director(private val rules: CameraRules, private val clock: Clock
                 browseReset = null
                 place = null
                 results = null
+                // K1a: a map no longer centred on the user does not turn with the compass
+                _compassFollow.value = false
                 setMode(CameraMode.BROWSE)
             }
             CameraMode.PREVIEW, CameraMode.ARRIVED -> {
@@ -213,7 +215,18 @@ internal class Director(private val rules: CameraRules, private val clock: Clock
                 browseReset = null
                 place = null
                 results = null
-                followFirst = true
+                // K1a: not following -> following north up; following -> also turned by the phone's
+                // compass (when it has one); turned by the compass -> following north up
+                val heading = puck?.coneDeg
+                if (mode == CameraMode.BROWSE_FOLLOW && !_compassFollow.value && heading != null) {
+                    compassSmoother.reset()
+                    browseBearing = compassSmoother.add(heading).toDouble()
+                    _compassFollow.value = true
+                } else {
+                    _compassFollow.value = false
+                    browseBearing = 0.0
+                    followFirst = true
+                }
                 setMode(CameraMode.BROWSE_FOLLOW)
             }
             CameraMode.PREVIEW, CameraMode.ARRIVED -> {
@@ -250,24 +263,6 @@ internal class Director(private val rules: CameraRules, private val clock: Clock
     /** K1a: the user began turning the map with two fingers: the compass no longer leads. */
     fun onUserRotate() {
         _compassFollow.value = false
-    }
-
-    /**
-     * K1a: the compass button, while browsing. A turned map (by hand or by the compass) goes north up;
-     * a map north up follows the phone's compass (smoothed), when the phone has one.
-     */
-    fun onCompass() {
-        if (!browsing()) return
-        val heading = puck?.coneDeg
-        if (_compassFollow.value || kotlin.math.abs(signedDiff(mapBearing, 0.0)) > NORTH_TOLERANCE_DEG || heading == null) {
-            _compassFollow.value = false
-            browseBearing = 0.0
-        } else {
-            compassSmoother.reset()
-            browseBearing = compassSmoother.add(heading).toDouble()
-            _compassFollow.value = true
-        }
-        publish(rules.transitionMs, rotate = true)
     }
 
     private fun browsing() = mode == CameraMode.BROWSE || mode == CameraMode.BROWSE_FOLLOW
@@ -423,15 +418,13 @@ internal class Director(private val rules: CameraRules, private val clock: Clock
 
     // ---- targets --------------------------------------------------------------------------
 
-    /** [rotate]: K1a, a bearing change while browsing; with nothing else to move to, the map turns in place. */
-    private fun publish(animateMs: Int, rotate: Boolean = false) {
+    private fun publish(animateMs: Int) {
         val t = when (mode) {
             CameraMode.BROWSE -> browseReset?.let {
                 CameraTarget(center = it, zoom = null, bearingDeg = browseBearing, pitchDeg = 0.0, padding = insets, animateMs = animateMs)
             } ?: place?.let {
                 CameraTarget(center = it, zoom = rules.browseFollowZoom, bearingDeg = browseBearing, pitchDeg = 0.0, padding = insets, animateMs = animateMs)
             } ?: results?.let { resultsTarget(it, animateMs) }
-            ?: if (rotate) CameraTarget(center = null, zoom = null, bearingDeg = browseBearing, pitchDeg = 0.0, padding = insets, animateMs = animateMs) else null
             CameraMode.BROWSE_FOLLOW -> puckPoint()?.let {
                 followFirst = false
                 CameraTarget(center = it, zoom = rules.browseFollowZoom, bearingDeg = browseBearing, pitchDeg = 0.0, padding = insets, animateMs = animateMs)
@@ -636,8 +629,6 @@ internal class Director(private val rules: CameraRules, private val clock: Clock
     private companion object {
         /** A fit box smaller than this (about 50 m) in both directions is one point. */
         const val POINT_SPAN_DEG = 0.0005
-        /** K1a: a map within this of north counts as north up (the compass button then starts following). */
-        const val NORTH_TOLERANCE_DEG = 2.0
         /** K1a: the weight of each compass reading in the camera's own smoothing (the puck's reading is smoothed already). */
         const val COMPASS_SMOOTHING = 0.2
         /** K1a: the map turns with the compass only by this much or more at a time (no shiver). */

@@ -97,6 +97,7 @@ class CameraDirector(rules: CameraRules, clock: Clock) {
     fun onTrip(trip: TripState): Unit = director.onTrip(trip)
     fun onPuck(puck: PuckState?): Unit = director.onPuck(puck)
     fun onGesture(gesture: MapGesture): Unit = director.onGesture(gesture)
+    /** K1/K1a: my-location: not following -> following north up -> following turned by the phone's compass -> following north up. */
     fun onMyLocation(): Unit = director.onMyLocation()
     fun onRecenter(): Unit = director.onRecenter()
     fun onOverview(): Unit = director.onOverview()
@@ -111,8 +112,6 @@ class CameraDirector(rules: CameraRules, clock: Clock) {
     /** The picked place's sheet closed or another place replaced it, or the results on the map closed: the camera stays where it is (K1, S11). */
     fun onPlaceLeft(): Unit = director.onPlaceLeft()
     fun tick(): Unit = director.tick()
-    /** K1a: the compass button, while browsing: a turned map goes north up, a map north up follows the phone's compass. */
-    fun onCompass(): Unit = director.onCompass()
     /** K1a: the map's bearing when the camera stopped (browsing keeps a user's own turn). */
     fun onMapBearing(deg: Double): Unit = director.onMapBearing(deg)
     /** K1a: the user began turning the map with two fingers: the compass no longer leads. */

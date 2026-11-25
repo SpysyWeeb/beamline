@@ -23,6 +23,7 @@ import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
+import io.github.spysyweeb.beamline.ui.theme.BeamlineIcons
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.ui.graphics.drawscope.rotate
@@ -68,34 +69,58 @@ internal fun RoundButton(
 }
 
 /**
- * K1a (the owner, 2026-11-24): the compass above my-location. Its needle points to north on the
- * screen whatever the map's bearing ([bearing]: the map's, frame by frame); a tap turns the map north
- * up, the next lets it follow the phone's compass ([following]: then ringed in the route's blue).
+ * K1/K1a (the owner, 2026-11-24): my-location, which also holds the compass. Not following: an
+ * outline crosshair; following: a filled one; following turned by the phone's compass ([compass]): a
+ * needle pointing to north on the screen, ringed in the route's blue. While the map is turned and not
+ * by the compass, a small red mark on the rim points to north ([bearing]: the map's, frame by frame).
  */
 @Composable
-internal fun CompassButton(bearing: kotlinx.coroutines.flow.StateFlow<Float>, following: Boolean, night: Boolean, onClick: () -> Unit) {
+internal fun LocationButton(following: Boolean, compass: Boolean, bearing: kotlinx.coroutines.flow.StateFlow<Float>, night: Boolean, onClick: () -> Unit) {
     val deg by bearing.collectAsState()
-    val label = if (following) "Compass, following your direction. Tap for north up"
-    else "Compass. Tap to turn the map north up, tap again to follow your direction"
+    val signed = ((deg % 360f) + 360f) % 360f
+    val turned = kotlin.math.abs(if (signed > 180f) signed - 360f else signed) > 2f
+    val label = when {
+        compass -> "Following your position, turned by your phone's compass. Tap for north up"
+        following -> "Following your position. Tap to turn the map with your phone's compass"
+        else -> "Show my position"
+    }
     val blue = if (night) Color(0xFF3A80F0) else Color(0xFF4A8CF7)
+    val red = Color(0xFFE53935)
     Surface(
         onClick = onClick,
         shape = CircleShape,
         color = panel(night),
+        contentColor = panelText(night),
         shadowElevation = 3.dp,
-        border = if (following) androidx.compose.foundation.BorderStroke(2.dp, blue) else null,
-        modifier = Modifier.size(46.dp).semantics { contentDescription = label },
+        border = if (compass) androidx.compose.foundation.BorderStroke(2.dp, blue) else null,
+        modifier = Modifier.size(56.dp).semantics { contentDescription = label },
     ) {
-        androidx.compose.foundation.Canvas(Modifier.padding(9.dp).size(28.dp)) {
-            val turn = -deg
-            rotate(turn) {
-                val cx = size.width / 2
-                val cy = size.height / 2
-                val w = size.width * 0.2f
-                val north = androidx.compose.ui.graphics.Path().apply { moveTo(cx, 0f); lineTo(cx + w, cy); lineTo(cx - w, cy); close() }
-                val south = androidx.compose.ui.graphics.Path().apply { moveTo(cx, size.height); lineTo(cx + w, cy); lineTo(cx - w, cy); close() }
-                drawPath(north, Color(0xFFE53935))
-                drawPath(south, if (night) Color(0xFFAAB4C2) else Color(0xFF7D8796))
+        Box(contentAlignment = Alignment.Center) {
+            if (compass) {
+                androidx.compose.foundation.Canvas(Modifier.size(30.dp)) {
+                    rotate(-deg) {
+                        val cx = size.width / 2
+                        val cy = size.height / 2
+                        val w = size.width * 0.2f
+                        val north = androidx.compose.ui.graphics.Path().apply { moveTo(cx, 0f); lineTo(cx + w, cy); lineTo(cx - w, cy); close() }
+                        val south = androidx.compose.ui.graphics.Path().apply { moveTo(cx, size.height); lineTo(cx + w, cy); lineTo(cx - w, cy); close() }
+                        drawPath(north, red)
+                        drawPath(south, if (night) Color(0xFFAAB4C2) else Color(0xFF7D8796))
+                    }
+                }
+            } else {
+                Icon(if (following) BeamlineIcons.MyLocationFollowing else BeamlineIcons.MyLocation, contentDescription = null, modifier = Modifier.size(28.dp))
+                if (turned) {
+                    androidx.compose.foundation.Canvas(Modifier.size(56.dp)) {
+                        rotate(-deg) {
+                            val cx = size.width / 2
+                            val tip = 3.dp.toPx()
+                            val base = 10.dp.toPx()
+                            val half = 4.dp.toPx()
+                            drawPath(androidx.compose.ui.graphics.Path().apply { moveTo(cx, tip); lineTo(cx + half, base); lineTo(cx - half, base); close() }, red)
+                        }
+                    }
+                }
             }
         }
     }

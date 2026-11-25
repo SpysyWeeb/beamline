@@ -56,7 +56,7 @@ and switches to it on the next start.
   again). A failed check is tried again at the next start; a version the app or Android refused is
   never fetched again (a newer release replaces it).
 - **Install**: never while guiding, one at a time. The map shows a chip "Beamline 0.1.25 is ready ·
-  Install"; a tap installs (the release notes are on the release page, not in the app yet). Leaving
+  Install", and Settings an Install button beside "Check for an update now" (0.1.28); a tap installs (the release notes are on the release page, not in the app yet). Leaving
   the app also installs, but only when it can be silent (not a setting: the owner's answer 2); on
   Android 8-11 only the tap installs. If Android still asks while the app is in the background, the
   dialog cannot open there: the session is dropped and the chip offers it again.

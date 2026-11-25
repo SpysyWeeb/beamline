@@ -16,7 +16,7 @@ object UpdateTexts {
         is AppUpdater.State.UpToDate -> "Beamline ${BuildConfig.VERSION_NAME} is the newest"
         is AppUpdater.State.Available -> "Beamline ${s.update.versionName} is available (${mb(s.apk.size)}); it downloads on Wi-Fi, or tap"
         is AppUpdater.State.Downloading -> "Downloading Beamline ${s.update.versionName} · ${percent(s.doneBytes, s.apk.size)} %"
-        is AppUpdater.State.Ready -> "Beamline ${s.update.versionName} is ready: tap the note on the map to install"
+        is AppUpdater.State.Ready -> "Beamline ${s.update.versionName} is ready to install"
         is AppUpdater.State.Failed -> "Could not get the update. Beamline will try again."
     }
 

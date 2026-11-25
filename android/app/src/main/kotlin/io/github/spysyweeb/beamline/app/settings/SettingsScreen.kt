@@ -67,6 +67,9 @@ fun SettingsScreen(
     onCheckAppUpdates: (Boolean) -> Unit,
     appUpdateLine: String,
     onCheckAppNow: () -> Unit,
+    /** Item 41: an update is downloaded: Install beside the line. */
+    appUpdateReady: Boolean,
+    onInstallApp: () -> Unit,
     reportsText: String,
     /** Batch O2 (4.4): the OSM account line: the signed-in name, or null for "Sign in to OpenStreetMap". */
     accountName: String?,
@@ -133,7 +136,14 @@ fun SettingsScreen(
                 if (appUpdates) {
                     SwitchRow(OnlineTexts.SETTINGS_APP_UPDATES, OnlineTexts.SETTINGS_APP_UPDATES_TEXT, online.appUpdatesAllowed,
                         enabled = online.online, tag = "switch-app-updates", indent = true, onChange = onCheckAppUpdates)
-                    LinkRow("Check for an update now", appUpdateLine, enabled = online.online && !driving, onClick = onCheckAppNow)
+                    Row(verticalAlignment = Alignment.CenterVertically) {
+                        Column(Modifier.weight(1f)) {
+                            LinkRow("Check for an update now", appUpdateLine, enabled = online.online && !driving, onClick = onCheckAppNow)
+                        }
+                        if (appUpdateReady && !driving) {
+                            androidx.compose.material3.Button(onClick = onInstallApp, modifier = Modifier.padding(start = 8.dp)) { Text("Install") }
+                        }
+                    }
                 }
                 HorizontalDivider(Modifier.padding(top = 10.dp))
                 Heading("About")
