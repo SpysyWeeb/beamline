@@ -3482,7 +3482,7 @@ Every rule id below needs at least one JVM test in `:nav:session` (N's definitio
   pins and list with searches in that window"). While results show, a drag or zoom of the map by
   the user offers "Search this area" first below the search bar once the camera rests. A tap asks
   the results' words again around the map's centre (on_map.candidates rows) and keeps the places in
-  the part of the map the user sees (the window less the camera's padding: the search bar, the
+  the part of the map the user sees (the window less what the app draws over it now, `cameraInsets`: the search bar, the
   list; a turned map: the box around it): the places already shown and still there first (a tester,
   2026-11-25: pins still in sight were dropped), then the nearest the centre, at most
   on_map.max_results, listed nearest the centre first. They

@@ -153,7 +153,7 @@ private class MapHost(context: Context, private val g: AppGraph, private val flo
                 val cp = m.cameraPosition
                 // Before the camera is placed the map sits at its default view: not a place the user chose.
                 if (cameraPlaced) {
-                    cp.target?.let { flows.onCameraRest(GeoPoint(it.latitude, it.longitude), cp.zoom, freeBounds(m, cp.padding)) } ?: run { flows.cameraZoom = cp.zoom }
+                    cp.target?.let { flows.onCameraRest(GeoPoint(it.latitude, it.longitude), cp.zoom, freeBounds(m, flows.cameraInsets)) } ?: run { flows.cameraZoom = cp.zoom }
                 }
                 // K1a: the bearing the camera stopped at (browsing keeps a user's own turn)
                 g.director.onMapBearing(cp.bearing)
@@ -338,18 +338,19 @@ private class MapHost(context: Context, private val g: AppGraph, private val flo
     }
 
     /**
-     * S11b: the map's window at rest, less the camera's padding (the search bar, a results list: the
-     * part the user sees), as a box of latitudes and longitudes (a turned map: the box around it).
+     * S11b: the map's window at rest, less what the app draws over it now ([insets]: the search bar,
+     * a results list; the owner's screenshots, 2026-11-25: the camera's padding, used before, kept the
+     * last fit's tall list and margins, so places in plain sight were left out), as a box of latitudes
+     * and longitudes (a turned map: the box around it).
      */
-    private fun freeBounds(m: MapLibreMap, padding: DoubleArray?): Bounds? {
+    private fun freeBounds(m: MapLibreMap, insets: io.github.spysyweeb.beamline.api.map.EdgeInsetsDp): Bounds? {
         val w = view.width.toFloat()
         val h = view.height.toFloat()
         if (w <= 0f || h <= 0f) return null
-        fun pad(i: Int) = (padding?.getOrNull(i) ?: 0.0).toFloat().coerceAtLeast(0f)
-        var left = pad(0).coerceAtMost(w)
-        var top = pad(1).coerceAtMost(h)
-        var right = (w - pad(2)).coerceAtLeast(left)
-        var bottom = (h - pad(3)).coerceAtLeast(top)
+        var left = (insets.start * density).coerceIn(0f, w)
+        var top = (insets.top * density).coerceIn(0f, h)
+        var right = (w - insets.end * density).coerceAtLeast(left)
+        var bottom = (h - insets.bottom * density).coerceAtLeast(top)
         if (right - left < w / 5 || bottom - top < h / 5) { left = 0f; top = 0f; right = w; bottom = h }
         val corners = listOf(android.graphics.PointF(left, top), android.graphics.PointF(right, top),
             android.graphics.PointF(left, bottom), android.graphics.PointF(right, bottom)).map { m.projection.fromScreenLocation(it) }
