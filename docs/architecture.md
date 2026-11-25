@@ -1532,7 +1532,13 @@ enum class NearSource { GPS, MAP_CENTER, NONE }
  * [accuracyM]: the fix's horizontal accuracy (GPS only; null when unknown): "Use my position" needs
  * it at most saved.position_max_accuracy_m (SP23).
  */
-data class SearchContext(val near: GeoPoint?, val source: NearSource, val accuracyM: Double? = null)
+data class SearchContext(
+    val near: GeoPoint?,
+    val source: NearSource,
+    val accuracyM: Double? = null,
+    /** S1b: the user's position when [near] is the map centre (results ranked there, distances from the user). */
+    val distanceFrom: GeoPoint? = null,
+)
 
 data class ShortcutUi(val id: String, val label: String, val iconName: String)
 
@@ -3466,6 +3472,11 @@ Every rule id below needs at least one JVM test in `:nav:session` (N's definitio
   driving; elsewhere a list as before); Back from a grid type's results opens the grid again. While
   the results show, the map's search bar holds their words and an X that ends them; a tap on the
   words opens the search with them typed (`SearchBar(query, onClear)`).
+- **S1b** A moved map is searched (0.1.31; the owner, 2026-11-25). A search for a place (GO_TO) opened
+  while the part of the map the user sees (S11b's window, at the last rest) does not hold their
+  position ranks from the map's centre instead of the fix ("Near the map center"); the rows'
+  distances stay from the user (`SearchContext.distanceFrom`). The position in sight, the camera not
+  yet at rest, or a search for a start, a stop or a save: S1 as before (`AppFlows.searchContextFor`).
 - **S11b** Search this area (0.1.30; the owner, 2026-11-24: "when they drag the map to a different
   area, a button should pop up below the search bar that says "Search this area" that updates the
   pins and list with searches in that window"). While results show, a drag or zoom of the map by

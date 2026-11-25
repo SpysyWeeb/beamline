@@ -244,8 +244,8 @@ internal fun covered(set: InstalledSet, p: GeoPoint): Boolean = set.routing?.cov
 
 /** The distance text: only with a GPS position (SP10). */
 internal fun distanceText(c: SearchContext, p: GeoPoint, units: UnitFormatter): String? {
-    if (c.source != NearSource.GPS) return null
-    val n = c.near ?: return null
+    // S1b: searching the map's area, distances are still from the user
+    val n = c.distanceFrom ?: (if (c.source == NearSource.GPS) c.near else null) ?: return null
     return units.distance(Geo.haversineKm(n.lat, n.lon, p.lat, p.lon) * 1000.0)
 }
 

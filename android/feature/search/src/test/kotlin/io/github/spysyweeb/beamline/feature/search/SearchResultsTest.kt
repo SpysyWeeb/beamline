@@ -59,6 +59,24 @@ class SearchResultsTest {
             SearchFeatureTest.ZOO.lat + i * 0.01, SearchFeatureTest.ZOO.lon, km, null, null, 10.0 - i, "t", tier),
     )
 
+    /** S1b (the owner, 2026-11-25): a moved map is searched around its centre; the distances stay from the user. */
+    @Test
+    fun aMovedMapIsSearchedWithDistancesFromTheUser() {
+        fake.answers = { (1..3).map { i -> store(i, km = i.toDouble()) } }
+        val zoo = SearchFeatureTest.ZOO
+        val far = GeoPoint(zoo.lat + 1.0, zoo.lon)
+        f.open(SearchMode.GO_TO, SearchContext(far, NearSource.MAP_CENTER, distanceFrom = zoo))
+        f.onEvent(SearchEvent.QueryChanged("sheetz"))
+        scope.testScheduler.advanceUntilIdle()
+        assertEquals(far, fake.nears.last(), "ranked from the map's centre")
+        assertTrue(f.ui.value.results.isNotEmpty() && f.ui.value.results.all { it.distanceText != null }, "distances from the user")
+        // the map centre without the user's position (no fix): no distances, as before
+        f.open(SearchMode.GO_TO, SearchContext(far, NearSource.MAP_CENTER))
+        f.onEvent(SearchEvent.QueryChanged("sheetz"))
+        scope.testScheduler.advanceUntilIdle()
+        assertTrue(f.ui.value.results.isNotEmpty() && f.ui.value.results.all { it.distanceText == null })
+    }
+
     /** S11b (the owner, 2026-11-24): "Search this area" asks again around the map's centre and keeps the places in the window. */
     @Test
     fun searchThisAreaKeepsThePlacesInTheWindow() {

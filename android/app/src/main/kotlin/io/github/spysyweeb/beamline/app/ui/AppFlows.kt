@@ -297,13 +297,30 @@ class AppFlows(private val g: AppGraph) {
         return SearchContext(null, NearSource.NONE)
     }
 
+    /**
+     * S1b (the owner, 2026-11-25: "If the user drags the map to a different area and searches for
+     * something, does the app drag the map back to the user and search, or does it leave the map
+     * where it is and search that area?"): a search for a place (GO_TO) on a map moved so that the
+     * user's position is out of sight searches the map instead: near its centre ("Near the map
+     * center"), distances still from the user. The position in sight, the camera not yet at rest, or
+     * another kind of search (a start, a stop, a save): [searchContext] as before.
+     */
+    private fun searchContextFor(mode: SearchMode): SearchContext {
+        val ctx = searchContext()
+        if (mode != SearchMode.GO_TO || ctx.source != NearSource.GPS) return ctx
+        val me = ctx.near ?: return ctx
+        val seen = cameraBounds ?: return ctx
+        val center = cameraCenter ?: return ctx
+        return if (seen.contains(me)) ctx else SearchContext(center, NearSource.MAP_CENTER, distanceFrom = me)
+    }
+
     private fun destinationFor(mode: SearchMode): Place? =
         if (mode == SearchMode.SET_START) g.session.state.value.stops.lastOrNull()?.place else null
 
     /** Search in GO_TO (the pill), ADD_STOP (DriveEvent.SearchForStop) or SET_START (DriveEvent.ChooseStart). */
     fun openSearch(mode: SearchMode, typed: String? = null) {
         val layer = Layer.Search(nextSearchId++, mode, forSave = false)
-        g.search.open(mode, searchContext(), driving = g.driving(), destination = destinationFor(mode))
+        g.search.open(mode, searchContextFor(mode), driving = g.driving(), destination = destinationFor(mode))
         searchOwner = layer.id
         stack.add(layer)
         // from the bar that holds the words of the results on the map: the search opens with them typed
@@ -385,7 +402,7 @@ class AppFlows(private val g: AppGraph) {
     private fun reopenTopSearch() {
         val top = stack.lastOrNull()
         if (top is Layer.Search && top.id != searchOwner && !top.forSave) {
-            g.search.open(top.mode, searchContext(), driving = g.driving(), destination = destinationFor(top.mode))
+            g.search.open(top.mode, searchContextFor(top.mode), driving = g.driving(), destination = destinationFor(top.mode))
             searchOwner = top.id
         }
     }
