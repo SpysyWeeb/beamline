@@ -21,6 +21,7 @@ import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.Immutable
+import androidx.compose.runtime.getValue
 import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -208,13 +209,20 @@ internal fun LaneStrip(lanes: List<LaneUi>, palette: BannerPalette, distanceM: D
         if (d > start[0]) start[0] = d
         if (start[0] <= 0.0) 1f else (1.0 - d / start[0]).toFloat().coerceIn(0f, 1f)
     }
+    // the owner, 2026-11-25: "The progress bar jumps / ticks when it should be smooth": each new
+    // distance (about one a second) glides in over a second instead of jumping
+    val shown by androidx.compose.animation.core.animateFloatAsState(
+        targetValue = progress ?: 0f,
+        animationSpec = androidx.compose.animation.core.tween(durationMillis = 1000, easing = androidx.compose.animation.core.LinearEasing),
+        label = "laneProgress",
+    )
     Column(verticalArrangement = Arrangement.spacedBy(10.dp)) {
         Row(Modifier.fillMaxWidth().height(64.dp), horizontalArrangement = Arrangement.spacedBy(6.dp)) {
             for (lane in lanes) LaneStripBox(lane, palette, Modifier.weight(1f))
         }
-        progress?.let { p ->
+        if (progress != null) {
             Box(Modifier.fillMaxWidth().height(4.dp).background(palette.line, RoundedCornerShape(2.dp))) {
-                Box(Modifier.fillMaxWidth(p).height(4.dp).background(palette.lanePreferred, RoundedCornerShape(2.dp)))
+                Box(Modifier.fillMaxWidth(shown).height(4.dp).background(palette.lanePreferred, RoundedCornerShape(2.dp)))
             }
         }
     }

@@ -130,27 +130,35 @@ internal object DriveIcons {
         }
         if (painted == setOf(LaneArrow.LEFT, LaneArrow.THROUGH)) return SketchPaths.LEFT_STRAIGHT
         if (painted == setOf(LaneArrow.THROUGH, LaneArrow.RIGHT)) return SketchPaths.STRAIGHT_RIGHT
-        val out = ArrayList<String>()
-        if (LaneArrow.THROUGH in painted) out += SketchPaths.STRAIGHT else out += "M12 20v-7"
-        for (a in painted.sorted()) if (a != LaneArrow.THROUGH) out += branch(a)
-        return out
+        return listOf(stem(painted)) + painted.sorted().flatMap(::branch)
     }
 
+    /**
+     * The stem of a lane of several arrows (the owner's screenshot, 2026-11-25: "the arrows are
+     * meshing together"): the arrows that go up (straight, bear, merge, U-turn) leave it at its top
+     * (y 12), the left and right turns lower down (y 17), so their heads stay apart as on the signs.
+     */
+    private fun stem(painted: Set<LaneArrow>): String =
+        if (painted.any { it in UPWARD }) "M12 21V12" else "M12 21V17"
+
+    private val UPWARD = setOf(
+        LaneArrow.THROUGH, LaneArrow.SLIGHT_LEFT, LaneArrow.SLIGHT_RIGHT,
+        LaneArrow.MERGE_TO_LEFT, LaneArrow.MERGE_TO_RIGHT, LaneArrow.REVERSE,
+    )
+
     /** One painted arrow of a lane drawn on the stem's top ("M12 20v-7"): a branch, or the through arrow's upper half. */
-    private fun branch(a: LaneArrow): List<String> {
-        return when (a) {
-            LaneArrow.LEFT -> listOf("M12 13H5", "M7.5 10.5 5 13l2.5 2.5")
-            LaneArrow.RIGHT -> listOf("M12 13h7", "M16.5 10.5 19 13l-2.5 2.5")
-            LaneArrow.SLIGHT_LEFT -> listOf("M12 13 6 7", "M6 11V7h4")
-            LaneArrow.SLIGHT_RIGHT -> listOf("M12 13l6-6", "M18 11V7h-4")
-            LaneArrow.SHARP_LEFT -> listOf("M12 13l-6 6", "M6 14v5h5")
-            LaneArrow.SHARP_RIGHT -> listOf("M12 13l6 6", "M18 14v5h-5")
-            LaneArrow.REVERSE -> listOf("M12 13V9a3 3 0 0 0-6 0v6", "M3.5 12.5 6 15l2.5-2.5")
-            LaneArrow.MERGE_TO_LEFT -> listOf("M12 13 7 8")
-            LaneArrow.MERGE_TO_RIGHT -> listOf("M12 13l5-5")
-            LaneArrow.THROUGH -> listOf("M12 13V4", "M8.5 7.5 12 4l3.5 3.5")
-            LaneArrow.NONE -> emptyList()
-        }
+    private fun branch(a: LaneArrow): List<String> = when (a) {
+        LaneArrow.THROUGH -> listOf("M12 12V4", "M8.5 7.5 12 4l3.5 3.5")
+        LaneArrow.LEFT -> listOf("M12 17H5", "M7.5 14.5 5 17l2.5 2.5")
+        LaneArrow.RIGHT -> listOf("M12 17h7", "M16.5 14.5 19 17l-2.5 2.5")
+        LaneArrow.SLIGHT_LEFT -> listOf("M12 12 6 6", "M6 10V6h4")
+        LaneArrow.SLIGHT_RIGHT -> listOf("M12 12l6-6", "M18 10V6h-4")
+        LaneArrow.SHARP_LEFT -> listOf("M12 15l-6 5", "M6 15.5V20h4.5")
+        LaneArrow.SHARP_RIGHT -> listOf("M12 15l6 5", "M18 15.5V20h-4.5")
+        LaneArrow.REVERSE -> listOf("M12 12V9a3 3 0 0 0-6 0v6", "M3.5 12.5 6 15l2.5-2.5")
+        LaneArrow.MERGE_TO_LEFT -> listOf("M12 12 7 7")
+        LaneArrow.MERGE_TO_RIGHT -> listOf("M12 12l5-5")
+        LaneArrow.NONE -> emptyList()
     }
 
     private val splitCache = HashMap<Pair<Set<LaneArrow>, LaneArrow>, Pair<ImageVector, ImageVector>>()
@@ -167,7 +175,7 @@ internal object DriveIcons {
         return synchronized(splitCache) {
             splitCache.getOrPut(painted to used) {
                 val name = "lane_" + painted.sorted().joinToString("_") { it.name.lowercase() } + "_used_" + used.name.lowercase()
-                icon(name, listOf("M12 20v-7") + branch(used), SMALL_STROKE) to
+                icon(name, listOf(stem(painted)) + branch(used), SMALL_STROKE) to
                     icon(name + "_other", painted.sorted().filter { it != used }.flatMap(::branch), SMALL_STROKE)
             }
         }
