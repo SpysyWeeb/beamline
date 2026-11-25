@@ -21,10 +21,13 @@ import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.Immutable
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.BlurredEdgeTreatment
+import androidx.compose.ui.draw.blur
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.luminance
 import androidx.compose.ui.platform.LocalDensity
@@ -216,9 +219,20 @@ internal fun LaneStrip(lanes: List<LaneUi>, palette: BannerPalette, distanceM: D
         animationSpec = androidx.compose.animation.core.tween(durationMillis = 1000, easing = androidx.compose.animation.core.LinearEasing),
         label = "laneProgress",
     )
+    // 0.1.35 (the owner, 2026-11-25: the arrow should "simply pulse the light of the arrow"; the
+    // concept's "arrow light pulse"): the arrow the route uses in the best lanes glows twice when the
+    // strip appears and twice more near the maneuver, then rests. No growing, no rings, no endless loop.
+    val glow = remember(key) { androidx.compose.animation.core.Animatable(0f) }
+    val near = (progress ?: 0f) >= LANE_PULSE_NEAR
+    LaunchedEffect(key, near) {
+        repeat(2) {
+            glow.animateTo(1f, androidx.compose.animation.core.tween(320, easing = androidx.compose.animation.core.FastOutSlowInEasing))
+            glow.animateTo(0f, androidx.compose.animation.core.tween(380, easing = androidx.compose.animation.core.FastOutSlowInEasing))
+        }
+    }
     Column(verticalArrangement = Arrangement.spacedBy(10.dp)) {
         Row(Modifier.fillMaxWidth().height(64.dp), horizontalArrangement = Arrangement.spacedBy(6.dp)) {
-            for (lane in lanes) LaneStripBox(lane, palette, Modifier.weight(1f))
+            for (lane in lanes) LaneStripBox(lane, palette, Modifier.weight(1f), glow.value)
         }
         if (progress != null) {
             Box(Modifier.fillMaxWidth().height(4.dp).background(palette.line, RoundedCornerShape(2.dp))) {
@@ -229,7 +243,7 @@ internal fun LaneStrip(lanes: List<LaneUi>, palette: BannerPalette, distanceM: D
 }
 
 @Composable
-private fun LaneStripBox(lane: LaneUi, palette: BannerPalette, modifier: Modifier) {
+private fun LaneStripBox(lane: LaneUi, palette: BannerPalette, modifier: Modifier, glow: Float = 0f) {
     val shape = RoundedCornerShape(10.dp)
     val (fill, edge) = when (lane.mark) {
         LaneMark.BEST -> palette.lanePreferred to palette.lanePreferred
@@ -246,6 +260,13 @@ private fun LaneStripBox(lane: LaneUi, palette: BannerPalette, modifier: Modifie
             .testTag(DriveTags.lane(lane.mark)),
         contentAlignment = Alignment.Center,
     ) {
+        // the light pulse: a soft white glow of the arrow the route uses (best lanes only), under it
+        if (glow > 0f && lane.mark == LaneMark.BEST) {
+            Icon(
+                main, contentDescription = null, tint = Color.White.copy(alpha = glow),
+                modifier = Modifier.size(40.dp).blur(7.dp, BlurredEdgeTreatment.Unbounded),
+            )
+        }
         other?.let { Icon(it, contentDescription = null, tint = ink.copy(alpha = 0.4f), modifier = Modifier.size(40.dp)) }
         Icon(main, contentDescription = null, tint = ink, modifier = Modifier.size(40.dp))
         if (lane.mark == LaneMark.BEST) {
@@ -277,3 +298,6 @@ internal fun LaneBox(lane: LaneUi, palette: BannerPalette, metrics: LaneMetrics 
         Icon(DriveIcons.lane(lane.arrows), contentDescription = null, tint = ink, modifier = Modifier.size(metrics.iconDp.dp))
     }
 }
+
+/** 0.1.35: the arrow's light pulses again once the strip's bar is this far (four-fifths of the way to the maneuver). */
+private const val LANE_PULSE_NEAR = 0.8f

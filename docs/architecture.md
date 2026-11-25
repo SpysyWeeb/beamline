@@ -3555,6 +3555,9 @@ Every rule id below needs at least one JVM test in `:nav:session` (N's definitio
   the maneuver (`BannerUi.laneDistanceM`, the largest distance seen for that maneuver is the start).
   No car is drawn in a lane: the phone cannot tell its lane. No lane to choose: the small row as
   before. The banner grows and shrinks without a jump (`animateContentSize`). B9's line stays under it.
+  Since 0.1.35 (the owner: "simply pulse the light of the arrow") the arrow the route uses in the best
+  lanes glows twice (a soft white light, no growing, no rings) when the strip appears and twice more
+  when the bar is four-fifths full, then rests; the bar glides between distances.
 - **D8** Speed-limit sign and speed (batch A; the owner, 2026-11-17, docs/next-round.md item 11).
   `Guidance.speedLimitKmh` is the posted limit of the stretch being driven: the session reads
   `legs[].annotation.maxspeed` of the engine's OSRM-format answer (`SpeedLimits` in `:nav:session`,
