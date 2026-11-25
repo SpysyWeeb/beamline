@@ -98,8 +98,8 @@ android {
         applicationId = appId
         minSdk = libs.versions.android.minSdk.get().toInt()
         targetSdk = libs.versions.android.targetSdk.get().toInt()
-        versionCode = 34
-        versionName = "0.1.31"
+        versionCode = 35
+        versionName = "0.1.32"
         manifestPlaceholders["appName"] = appName
         buildConfigField("String", "MAP_RENDERER", "\"$mapRenderer\"")
         releaseAbi?.let { abi -> ndk { abiFilters.clear(); abiFilters += abi } }

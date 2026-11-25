@@ -801,7 +801,8 @@ sends) with its own hosts, request and switch, as the table says and its KDoc sp
   background service); and it refuses every request, before any connection, while its switch is
   off (sign-out then only deletes the token on the phone). With
   "Offline only" no request but the pack downloads ever leaves. `PackHttp`: only after a user action: the first-run picker or the States screen opening
-  (one catalog fetch, then at most every 6 h while it stays open, once more when a network appears
+  (one catalog fetch, made at every opening unless the list is under a minute old (0.1.32, the owner:
+  "check if the user opens the states tab"), then at most every 6 h while it stays open, once more when a network appears
   while it shows a failed list, or "Check again"); a download,
   update or continue the user started, including its automatic continuation (network back, app
   reopened). Nothing at app start, nothing in the background, no analytics, no crash reports.

@@ -254,14 +254,18 @@ internal class GetPacksCore(
     }
 
     /**
-     * The screen opened: the cache first, then one fetch when the cache is missing or older than 6 h (N4).
-     * The updates it then lists count as seen (item 40): the map's chip stops naming them.
+     * The screen opened: the cache first, then a fetch of the list unless it is under
+     * [SCREEN_FRESH_MS] old (0.1.32, the owner, 2026-11-25: "Maybe we can have it check if the user
+     * opens the states tab?": so each state's Update button is there at once; before, a list up to
+     * 6 h old (N4) hid a new pack until "Check again"). The updates it then lists count as seen (item
+     * 40): the map's chip stops naming them.
      */
     fun screenOpened() {
         val s = source ?: return
         scope.launch {
             s.loadCache()
-            s.refresh(force = false)
+            val checked = (catalog.value as? CatalogState.Ready)?.view?.checkedAtMs
+            s.refresh(force = listIsStale(checked, System.currentTimeMillis(), SCREEN_FRESH_MS))
             markUpdatesSeen()
         }
     }
@@ -282,8 +286,7 @@ internal class GetPacksCore(
         scope.launch {
             s.loadCache()
             val checked = (catalog.value as? CatalogState.Ready)?.view?.checkedAtMs
-            val now = System.currentTimeMillis()
-            if (checked == null || now - checked >= UPDATE_CHECK_AFTER_MS || checked > now) s.refresh(force = true)
+            if (listIsStale(checked, System.currentTimeMillis(), UPDATE_CHECK_AFTER_MS)) s.refresh(force = true)
         }
     }
 
@@ -528,5 +531,12 @@ internal class GetPacksCore(
         const val TAG = "Beamline.states"
         /** Item 40: the daily map-update check fetches the list at most this often. */
         const val UPDATE_CHECK_AFTER_MS = 24L * 60 * 60 * 1000
+
+        /** The States screen fetches the list again on opening unless it is younger than this (0.1.32). */
+        const val SCREEN_FRESH_MS = 60L * 1000
     }
 }
+
+/** A list of states last fetched at [checkedAtMs] is to be fetched again: none yet, [maxAgeMs] old or more, or from the future (a clock moved back). */
+internal fun listIsStale(checkedAtMs: Long?, nowMs: Long, maxAgeMs: Long): Boolean =
+    checkedAtMs == null || nowMs - checkedAtMs >= maxAgeMs || checkedAtMs > nowMs
