@@ -823,6 +823,14 @@ not break across two lines in the banner; the results view shows at most the 20 
     window"). *Built for 0.1.30:* rule S11b. With it, K1a: my-location on a map turned by hand and not
     following turns it north up where it is first; the next tap follows.
 
+45. **Lane strip** (the owner, 2026-11-25: "When approaching an intersection that needs more
+    instruction, I think we should have a small window drop down from the top ... showing what lane to
+    be in"). Concepts A-C, three Sonnet design critiques (driver safety, visual design, honesty), then
+    a revised design on the owner's design canvas; the owner chose "the progress bar, as drawn" over
+    the car's arrow moving in a lane. *Built for 0.1.30:* rule D9b. Left for later: lanes trimmed to
+    the relevant ones ("+3") on wide highways, per-lane destinations (OSM destination:street:lanes,
+    e.g. Parade St at the Pine Ave fork), a swipe to hide it, the car's real lane from a comma 3X.
+
 ## Later (not the next round)
 
 - **Linking Beamline to the real vehicle through the comma 3X** (owner, 2026-11-16). The driving

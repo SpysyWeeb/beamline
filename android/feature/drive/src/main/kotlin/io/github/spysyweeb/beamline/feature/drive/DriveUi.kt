@@ -78,6 +78,12 @@ data class BannerUi(
      * this line is shown under them ("Right lane turns right: keep left for Peach St").
      */
     val laneNote: String? = null,
+    /**
+     * The lane strip (the owner, 2026-11-25; docs/next-round.md item 45): the live distance to the
+     * maneuver in metres while [lanes] show, so the strip's bar runs from where they appeared to the
+     * maneuver. Null: no bar.
+     */
+    val laneDistanceM: Double? = null,
 )
 
 sealed interface GuidanceStatusUi {

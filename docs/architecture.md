@@ -2020,6 +2020,12 @@ data class BannerUi(
      * this line is shown under them ("Right lane turns right: keep left for Peach St").
      */
     val laneNote: String? = null,
+    /**
+     * The lane strip (the owner, 2026-11-25; docs/next-round.md item 45): the live distance to the
+     * maneuver in metres while [lanes] show, so the strip's bar runs from where they appeared to the
+     * maneuver. Null: no bar.
+     */
+    val laneDistanceM: Double? = null,
 )
 
 sealed interface GuidanceStatusUi {
@@ -3517,6 +3523,16 @@ Every rule id below needs at least one JVM test in `:nav:session` (N's definitio
   lanes and `BannerUi.laneNote` its line, drawn under the lane row in the banner's ink (semibold, at
   most two lines; test tag `lane-note`); the banner's maneuver, distance and chip stay. Gone with the
   warning.
+- **D9b** Lane strip (0.1.30; the owner, 2026-11-25, docs/next-round.md item 45; three design
+  critiques chose it over a separate window, a driver's-eye view and a drawn intersection). When the
+  lane row shows (B5's window) and a lane is wrong for the route while another is right
+  (`laneChoice`), the row becomes a strip: lanes 64 dp tall filling the banner's width; best lanes
+  filled blue with a white bar along the bottom (told apart without colour), allowed lanes outlined
+  in blue, the others dim; in a lane of several arrows the arrow the route uses bright and the
+  others at 40 % (`DriveIcons.laneSplit`). Under the lanes a bar fills from where they appeared to
+  the maneuver (`BannerUi.laneDistanceM`, the largest distance seen for that maneuver is the start).
+  No car is drawn in a lane: the phone cannot tell its lane. No lane to choose: the small row as
+  before. The banner grows and shrinks without a jump (`animateContentSize`). B9's line stays under it.
 - **D8** Speed-limit sign and speed (batch A; the owner, 2026-11-17, docs/next-round.md item 11).
   `Guidance.speedLimitKmh` is the posted limit of the stretch being driven: the session reads
   `legs[].annotation.maxspeed` of the engine's OSRM-format answer (`SpeedLimits` in `:nav:session`,

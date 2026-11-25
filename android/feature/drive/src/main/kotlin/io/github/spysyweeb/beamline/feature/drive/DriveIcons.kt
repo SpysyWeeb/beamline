@@ -132,7 +132,13 @@ internal object DriveIcons {
         if (painted == setOf(LaneArrow.THROUGH, LaneArrow.RIGHT)) return SketchPaths.STRAIGHT_RIGHT
         val out = ArrayList<String>()
         if (LaneArrow.THROUGH in painted) out += SketchPaths.STRAIGHT else out += "M12 20v-7"
-        for (a in painted.sorted()) out += when (a) {
+        for (a in painted.sorted()) if (a != LaneArrow.THROUGH) out += branch(a)
+        return out
+    }
+
+    /** One painted arrow of a lane drawn on the stem's top ("M12 20v-7"): a branch, or the through arrow's upper half. */
+    private fun branch(a: LaneArrow): List<String> {
+        return when (a) {
             LaneArrow.LEFT -> listOf("M12 13H5", "M7.5 10.5 5 13l2.5 2.5")
             LaneArrow.RIGHT -> listOf("M12 13h7", "M16.5 10.5 19 13l-2.5 2.5")
             LaneArrow.SLIGHT_LEFT -> listOf("M12 13 6 7", "M6 11V7h4")
@@ -142,9 +148,29 @@ internal object DriveIcons {
             LaneArrow.REVERSE -> listOf("M12 13V9a3 3 0 0 0-6 0v6", "M3.5 12.5 6 15l2.5-2.5")
             LaneArrow.MERGE_TO_LEFT -> listOf("M12 13 7 8")
             LaneArrow.MERGE_TO_RIGHT -> listOf("M12 13l5-5")
-            LaneArrow.THROUGH, LaneArrow.NONE -> emptyList()
+            LaneArrow.THROUGH -> listOf("M12 13V4", "M8.5 7.5 12 4l3.5 3.5")
+            LaneArrow.NONE -> emptyList()
         }
-        return out
+    }
+
+    private val splitCache = HashMap<Pair<Set<LaneArrow>, LaneArrow>, Pair<ImageVector, ImageVector>>()
+
+    /**
+     * The lane strip (item 45): a lane of several arrows as two drawings, the stem with the arrow the
+     * route uses ([used]) and the lane's other arrows, so the strip draws the others dim (the owner's
+     * signs, 2026-11-25: "left or bear left" with the route bearing left). One arrow, or none used:
+     * the whole lane first and null.
+     */
+    fun laneSplit(arrows: Set<LaneArrow>, used: LaneArrow?): Pair<ImageVector, ImageVector?> {
+        val painted = arrows - LaneArrow.NONE
+        if (used == null || used !in painted || painted.size < 2) return lane(arrows) to null
+        return synchronized(splitCache) {
+            splitCache.getOrPut(painted to used) {
+                val name = "lane_" + painted.sorted().joinToString("_") { it.name.lowercase() } + "_used_" + used.name.lowercase()
+                icon(name, listOf("M12 20v-7") + branch(used), SMALL_STROKE) to
+                    icon(name + "_other", painted.sorted().filter { it != used }.flatMap(::branch), SMALL_STROKE)
+            }
+        }
     }
 
     val close = icon("close", SketchPaths.CLOSE, UI_STROKE)

@@ -1,5 +1,6 @@
 package io.github.spysyweeb.beamline.feature.drive
 
+import androidx.compose.animation.animateContentSize
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.layout.Arrangement
@@ -8,6 +9,7 @@ import androidx.compose.foundation.layout.BoxWithConstraints
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
+import androidx.compose.foundation.layout.fillMaxHeight
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
@@ -19,6 +21,7 @@ import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.Immutable
+import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
@@ -83,6 +86,8 @@ internal fun TurnBanner(banner: BannerUi, modifier: Modifier = Modifier, palette
         modifier
             .fillMaxWidth()
             .background(palette.background)
+            // item 45: the lane row or strip comes and goes without a jump
+            .animateContentSize()
             .testTag(DriveTags.BANNER),
     ) {
         Row(
@@ -136,8 +141,12 @@ internal fun TurnBanner(banner: BannerUi, modifier: Modifier = Modifier, palette
                     .semantics(mergeDescendants = true) { contentDescription = DriveTexts.lanesDescription(lanes) },
             ) {
                 val metrics = laneMetrics(maxWidth.value, lanes.size, pxPerDp = LocalDensity.current.density)
-                Row(horizontalArrangement = Arrangement.spacedBy(metrics.gapDp.dp), verticalAlignment = Alignment.CenterVertically) {
-                    for (lane in lanes) LaneBox(lane, palette, metrics)
+                if (laneChoice(lanes)) {
+                    LaneStrip(lanes, palette, banner.laneDistanceM, key = listOf(banner.kind, banner.primary, banner.roadsText))
+                } else {
+                    Row(horizontalArrangement = Arrangement.spacedBy(metrics.gapDp.dp), verticalAlignment = Alignment.CenterVertically) {
+                        for (lane in lanes) LaneBox(lane, palette, metrics)
+                    }
                 }
             }
             // rule B9: a lane that ends in a turn, one line under its lane row
@@ -181,6 +190,62 @@ internal fun ThenChip(then: ThenUi, palette: BannerPalette) {
         )
         Icon(DriveIcons.maneuverSmall(then.kind), contentDescription = null, tint = palette.ink, modifier = Modifier.size(28.dp))
         Text(then.distanceText, color = palette.ink, fontSize = 13.sp, fontWeight = FontWeight.SemiBold, lineHeight = 14.sp, maxLines = 1)
+    }
+}
+
+/**
+ * The lane strip (the owner, 2026-11-25; docs/next-round.md item 45, after three design critiques):
+ * when there is a lane to choose, the lane row grows. Taller lanes fill the banner's width; the best
+ * lanes filled blue with a white bar (told apart without colour too); allowed lanes outlined; the
+ * others dim; in a lane of several arrows the one the route uses bright, the others dim. Under them
+ * a bar fills from where the lanes appeared to the maneuver ([distanceM], the live distance; the
+ * largest seen for [key] is the start). No position of the car in a lane: the phone cannot know it.
+ */
+@Composable
+internal fun LaneStrip(lanes: List<LaneUi>, palette: BannerPalette, distanceM: Double?, key: Any) {
+    val start = remember(key) { DoubleArray(1) }
+    val progress = distanceM?.let { d ->
+        if (d > start[0]) start[0] = d
+        if (start[0] <= 0.0) 1f else (1.0 - d / start[0]).toFloat().coerceIn(0f, 1f)
+    }
+    Column(verticalArrangement = Arrangement.spacedBy(10.dp)) {
+        Row(Modifier.fillMaxWidth().height(64.dp), horizontalArrangement = Arrangement.spacedBy(6.dp)) {
+            for (lane in lanes) LaneStripBox(lane, palette, Modifier.weight(1f))
+        }
+        progress?.let { p ->
+            Box(Modifier.fillMaxWidth().height(4.dp).background(palette.line, RoundedCornerShape(2.dp))) {
+                Box(Modifier.fillMaxWidth(p).height(4.dp).background(palette.lanePreferred, RoundedCornerShape(2.dp)))
+            }
+        }
+    }
+}
+
+@Composable
+private fun LaneStripBox(lane: LaneUi, palette: BannerPalette, modifier: Modifier) {
+    val shape = RoundedCornerShape(10.dp)
+    val (fill, edge) = when (lane.mark) {
+        LaneMark.BEST -> palette.lanePreferred to palette.lanePreferred
+        LaneMark.ALLOWED -> palette.line to palette.lanePreferred
+        LaneMark.NOT_FOR_ROUTE -> palette.line to Color.Transparent
+    }
+    val ink = if (lane.mark == LaneMark.NOT_FOR_ROUTE) palette.laneOff else palette.ink
+    val (main, other) = DriveIcons.laneSplit(lane.arrows, lane.usedArrow.takeIf { lane.mark != LaneMark.NOT_FOR_ROUTE })
+    Box(
+        modifier
+            .fillMaxHeight()
+            .background(fill, shape)
+            .border(2.dp, edge, shape)
+            .testTag(DriveTags.lane(lane.mark)),
+        contentAlignment = Alignment.Center,
+    ) {
+        other?.let { Icon(it, contentDescription = null, tint = ink.copy(alpha = 0.4f), modifier = Modifier.size(40.dp)) }
+        Icon(main, contentDescription = null, tint = ink, modifier = Modifier.size(40.dp))
+        if (lane.mark == LaneMark.BEST) {
+            Box(
+                Modifier.align(Alignment.BottomCenter).fillMaxWidth().padding(start = 12.dp, end = 12.dp, bottom = 6.dp)
+                    .height(4.dp).background(palette.ink, RoundedCornerShape(2.dp)),
+            )
+        }
     }
 }
 

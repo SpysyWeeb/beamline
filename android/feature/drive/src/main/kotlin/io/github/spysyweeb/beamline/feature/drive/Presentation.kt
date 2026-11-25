@@ -250,6 +250,7 @@ internal object Presentation {
             towardsText = towardsText(v.towards.map(::keepTogether)),
             then = v.following?.let { ThenUi(it.kind, units.distanceIn(it.distanceM)) },
             lanes = if (live.showLanes) v.lanes?.takeIf { it.isNotEmpty() }?.map { LaneUi(it.arrows, it.mark, it.usedArrow) } else null,
+            laneDistanceM = if (live.showLanes && !v.lanes.isNullOrEmpty()) live.distanceM else null,
         )
     }
 

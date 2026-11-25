@@ -2,6 +2,7 @@ package io.github.spysyweeb.beamline.feature.drive
 
 import kotlin.math.abs
 import kotlin.math.floor
+import io.github.spysyweeb.beamline.api.nav.LaneMark
 
 // Two layout rules that are plain arithmetic, kept apart from the composables so the JVM tests can
 // call them (a file with an Android call in a top-level value cannot be loaded there).
@@ -64,3 +65,7 @@ internal fun sheetRestingScroll(top: Int, viewport: Int, maxScroll: Int, lines: 
         .sortedBy { abs(it - top) }
         .firstOrNull(::keepsCard)
 }
+
+/** Item 45: a lane row becomes the strip when a lane is wrong for the route and another is right (a choice to make). */
+internal fun laneChoice(lanes: List<LaneUi>): Boolean =
+    lanes.any { it.mark == LaneMark.NOT_FOR_ROUTE } && lanes.any { it.mark != LaneMark.NOT_FOR_ROUTE }
