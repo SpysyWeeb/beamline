@@ -56,6 +56,13 @@ internal class Director(private val rules: CameraRules, private val clock: Clock
 
     /** K1a: browsing, my-location turned the map north up where it was; the next tap follows (until a gesture). */
     private var browseNorth = false
+
+    /**
+     * K1a (0.1.33, the owner: "the rotation should be done in less than a second, but it should be
+     * smooth"): a turn my-location started runs until this time; the follow updates and the compass
+     * readings wait for it (before, each 1 Hz fix re-timed it and stretched it past a second).
+     */
+    private var turnUntilMs = 0L
     private val _compassFollow = MutableStateFlow(false)
     /** True while browsing follows the phone's compass (the compass button shows it). */
     val compassFollow: StateFlow<Boolean> = _compassFollow.asStateFlow()
@@ -168,7 +175,7 @@ internal class Director(private val rules: CameraRules, private val clock: Clock
         }
         puck = p
         when (mode) {
-            CameraMode.BROWSE_FOLLOW -> if (changed || _target.value == null) {
+            CameraMode.BROWSE_FOLLOW -> if ((changed || _target.value == null) && now >= turnUntilMs) {
                 val anim = if (followFirst) rules.transitionMs else puckGlideMs
                 publish(anim)
             }
@@ -188,6 +195,7 @@ internal class Director(private val rules: CameraRules, private val clock: Clock
                 // K1a: a map no longer centred on the user does not turn with the compass
                 _compassFollow.value = false
                 browseNorth = false
+                turnUntilMs = 0L
                 setMode(CameraMode.BROWSE)
             }
             CameraMode.PREVIEW, CameraMode.ARRIVED -> {
@@ -213,13 +221,15 @@ internal class Director(private val rules: CameraRules, private val clock: Clock
                 if (mode == CameraMode.BROWSE && !browseNorth && kotlin.math.abs(signedDiff(0.0, mapBearing)) >= NORTH_TOLERANCE_DEG) {
                     browseBearing = 0.0
                     browseNorth = true
-                    publish(rules.transitionMs)
+                    publish(startTurn(mapBearing, 0.0), ease = true)
                     return
                 }
                 browseNorth = false
                 // K1a: not following -> following north up; following -> also turned by the phone's
                 // compass (when it has one); turned by the compass -> following north up
                 val heading = puck?.coneDeg
+                val from = browseBearing
+                val wasFollowing = mode == CameraMode.BROWSE_FOLLOW
                 if (mode == CameraMode.BROWSE_FOLLOW && !_compassFollow.value && heading != null) {
                     browseBearing = heading.toDouble()
                     compassFilter.reset()
@@ -230,6 +240,9 @@ internal class Director(private val rules: CameraRules, private val clock: Clock
                     followFirst = true
                 }
                 setMode(CameraMode.BROWSE_FOLLOW)
+                // already following: a turn in place, timed by its angle; else the move to the user
+                publish(if (wasFollowing) startTurn(from, browseBearing) else rules.transitionMs, ease = true)
+                return
             }
             CameraMode.PREVIEW, CameraMode.ARRIVED -> {
                 val here = trip.guidance?.vehicle?.point ?: puck?.let { GeoPoint(it.lat, it.lon) }
@@ -273,6 +286,7 @@ internal class Director(private val rules: CameraRules, private val clock: Clock
     fun onHeading(deg: Float) {
         if (!_compassFollow.value || mode != CameraMode.BROWSE_FOLLOW) return
         val smoothed = compassFilter.next(deg.toDouble(), clock.elapsedMs())
+        if (clock.elapsedMs() < turnUntilMs) return // the turn to the compass runs first
         if (kotlin.math.abs(signedDiff(smoothed, browseBearing)) < COMPASS_STEP_DEG) return
         browseBearing = smoothed
         publish(0)
@@ -282,6 +296,7 @@ internal class Director(private val rules: CameraRules, private val clock: Clock
     fun onUserRotate() {
         _compassFollow.value = false
         browseNorth = false
+        turnUntilMs = 0L
     }
 
     private fun browsing() = mode == CameraMode.BROWSE || mode == CameraMode.BROWSE_FOLLOW
@@ -438,17 +453,24 @@ internal class Director(private val rules: CameraRules, private val clock: Clock
 
     // ---- targets --------------------------------------------------------------------------
 
-    private fun publish(animateMs: Int) {
+    /** K1a (0.1.33): the time of a turn from [from] to [to] degrees, held from now (follow updates and compass readings wait). */
+    private fun startTurn(from: Double, to: Double): Int {
+        val ms = (TURN_BASE_MS + TURN_MS_PER_DEG * kotlin.math.abs(signedDiff(to, from))).toInt().coerceAtMost(TURN_MAX_MS)
+        turnUntilMs = clock.elapsedMs() + ms
+        return ms
+    }
+
+    private fun publish(animateMs: Int, ease: Boolean = false) {
         val t = when (mode) {
             CameraMode.BROWSE -> browseReset?.let {
-                CameraTarget(center = it, zoom = null, bearingDeg = browseBearing, pitchDeg = 0.0, padding = insets, animateMs = animateMs)
+                CameraTarget(center = it, zoom = null, bearingDeg = browseBearing, pitchDeg = 0.0, padding = insets, animateMs = animateMs, ease = ease)
             } ?: place?.let {
-                CameraTarget(center = it, zoom = rules.browseFollowZoom, bearingDeg = browseBearing, pitchDeg = 0.0, padding = insets, animateMs = animateMs)
+                CameraTarget(center = it, zoom = rules.browseFollowZoom, bearingDeg = browseBearing, pitchDeg = 0.0, padding = insets, animateMs = animateMs, ease = ease)
             } ?: results?.let { resultsTarget(it, animateMs) }
-                ?: if (browseNorth) CameraTarget(center = null, zoom = null, bearingDeg = 0.0, pitchDeg = 0.0, padding = insets, animateMs = animateMs) else null
+                ?: if (browseNorth) CameraTarget(center = null, zoom = null, bearingDeg = 0.0, pitchDeg = 0.0, padding = insets, animateMs = animateMs, ease = ease) else null
             CameraMode.BROWSE_FOLLOW -> puckPoint()?.let {
                 followFirst = false
-                CameraTarget(center = it, zoom = rules.browseFollowZoom, bearingDeg = browseBearing, pitchDeg = 0.0, padding = insets, animateMs = animateMs)
+                CameraTarget(center = it, zoom = rules.browseFollowZoom, bearingDeg = browseBearing, pitchDeg = 0.0, padding = insets, animateMs = animateMs, ease = ease)
             }
             CameraMode.PREVIEW -> lookAtTarget(animateMs) ?: if (userMoved) null else previewTarget(animateMs)
             CameraMode.GUIDE_FOLLOW -> followTarget(animateMs)
@@ -655,6 +677,11 @@ internal class Director(private val rules: CameraRules, private val clock: Clock
 
         /** K1a: a hand-turned map within this of north counts as north up (my-location then follows at once). */
         const val NORTH_TOLERANCE_DEG = 0.5
+
+        /** K1a (0.1.33): a turn my-location starts takes TURN_BASE_MS plus TURN_MS_PER_DEG a degree, at most TURN_MAX_MS. */
+        const val TURN_BASE_MS = 250
+        const val TURN_MS_PER_DEG = 1.6
+        const val TURN_MAX_MS = 550
     }
 }
 

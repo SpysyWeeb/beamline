@@ -58,7 +58,8 @@ class CameraDirectorTest {
         cam.onPuck(Fx.puck(Fx.ORIGIN))
         cam.onMyLocation()
         assertEquals(CameraMode.BROWSE_FOLLOW, mode)
-        assertEquals(CameraTarget(center = Fx.ORIGIN, zoom = 16.0, bearingDeg = 0.0, pitchDeg = 0.0, padding = insets, animateMs = 800), target)
+        // eased since 0.1.33 (a move the user started)
+        assertEquals(CameraTarget(center = Fx.ORIGIN, zoom = 16.0, bearingDeg = 0.0, pitchDeg = 0.0, padding = insets, animateMs = 800, ease = true), target)
         clock.advanceS(1.0)
         cam.onPuck(Fx.puck(Fx.ROUTE[1]))
         // the time between the two puck updates, so the camera keeps moving between 1 Hz fixes

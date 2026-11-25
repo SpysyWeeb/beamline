@@ -669,7 +669,7 @@ internal class Layers(context: Context, private val map: MapLibreMap) {
             Log.w(TAG, "camera not moved: target refused")
             return
         }
-        if (target.animateMs > 0) map.easeCamera(update, target.animateMs, false) else map.moveCamera(update)
+        if (target.animateMs > 0) map.easeCamera(update, target.animateMs, target.ease) else map.moveCamera(update)
     }
 
     // ---- gestures ---------------------------------------------------------------------------

@@ -33,7 +33,9 @@ class CompassTest {
         val t = cam.target.value!!
         assertEquals(90.0, t.bearingDeg, 0.5, "turned to the phone's direction")
         assertEquals(Fx.ORIGIN.lat, t.center!!.lat, 1e-9, "still centred on the user")
-        // the compass's first reading: the map takes it at once, without animation
+        assertTrue(t.ease, "the turn to the phone's direction speeds up and slows down")
+        // once the turn is done (0.1.33), the compass's first reading: the map takes it at once, without animation
+        now += CameraDirectorTurn.WAIT
         cam.onHeading(120f)
         assertEquals(120.0, cam.target.value!!.bearingDeg, 1e-9)
         assertEquals(0, cam.target.value!!.animateMs, "no animation to wait for")
@@ -50,6 +52,7 @@ class CompassTest {
         cam.onPuck(Fx.puck(Fx.ORIGIN, cone = 90f))
         cam.onMyLocation()
         cam.onMyLocation()
+        now += CameraDirectorTurn.WAIT
         cam.onHeading(120f)
         fun bearing() = cam.target.value!!.bearingDeg
         // held still, a sensor wobbling 0.3 degree either way (every 8 ms): the map about a third of it
@@ -81,6 +84,37 @@ class CompassTest {
         }
         assertTrue(truth < 90, "the turn went past north")
         assertEquals(0.0, signedDiff(truth, bearing()), 0.15)
+    }
+
+    @Test
+    fun `a turn my-location starts is quick, eased, timed by its angle, and not re-timed by the next fix (0_1_33)`() {
+        cam.onPuck(Fx.puck(Fx.ORIGIN, cone = 90f))
+        cam.onMyLocation()
+        val follow = cam.target.value!!
+        assertTrue(follow.ease, "the move to the user is eased too")
+        cam.onMyLocation()
+        val turn = cam.target.value!!
+        assertEquals(90.0, turn.bearingDeg, 0.5)
+        assertEquals(250 + (1.6 * 90).toInt(), turn.animateMs, "a quarter-second plus 1.6 ms a degree")
+        assertTrue(turn.ease)
+        // a fix during the turn does not re-time it
+        now += 200
+        cam.onPuck(Fx.puck(Fx.ORIGIN.copy(lat = Fx.ORIGIN.lat + 0.0001), cone = 90f))
+        assertEquals(turn, cam.target.value, "the turn runs on")
+        // after it, the next fix glides as before
+        now += 400
+        cam.onPuck(Fx.puck(Fx.ORIGIN.copy(lat = Fx.ORIGIN.lat + 0.0002), cone = 90f))
+        assertEquals(Fx.ORIGIN.lat + 0.0002, cam.target.value!!.center!!.lat, 1e-9)
+        assertFalse(cam.target.value!!.ease, "following glides at one speed")
+        // compass to north up: a half turn is capped
+        cam.onHeading(270f)
+        now += 600
+        cam.onHeading(270f)
+        assertEquals(270.0, cam.target.value!!.bearingDeg, 0.5)
+        cam.onMyLocation()
+        assertEquals(0.0, cam.target.value!!.bearingDeg)
+        assertEquals(250 + (1.6 * 90).toInt(), cam.target.value!!.animateMs, "270 to 0 is a 90-degree turn")
+        assertTrue(cam.target.value!!.animateMs <= 550)
     }
 
     @Test
@@ -154,4 +188,9 @@ class CompassTest {
         assertFalse(cam.compassFollow.value)
         assertEquals(0.0, cam.target.value!!.bearingDeg)
     }
+}
+
+/** How long a test waits for a my-location turn to finish (the longest is Director.TURN_MAX_MS). */
+private object CameraDirectorTurn {
+    const val WAIT = 600L
 }

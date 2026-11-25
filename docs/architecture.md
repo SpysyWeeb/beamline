@@ -1277,7 +1277,10 @@ sealed interface VehicleMarker {
 
 enum class CameraMode { BROWSE, BROWSE_FOLLOW, PREVIEW, GUIDE_FOLLOW, GUIDE_FREE, GUIDE_OVERVIEW, ARRIVED }
 
-/** One camera move: [center] (with [zoom]) or [fit]. */
+/**
+ * One camera move: [center] (with [zoom]) or [fit]. [ease]: the move speeds up and slows down (a
+ * turn the user started, K1a since 0.1.33); otherwise it runs at one speed (following glides).
+ */
 data class CameraTarget(
     val center: GeoPoint? = null,
     val fit: Bounds? = null,
@@ -1286,6 +1289,7 @@ data class CameraTarget(
     val pitchDeg: Double = 0.0,
     val padding: EdgeInsetsDp = EdgeInsetsDp(),
     val animateMs: Int = 0,
+    val ease: Boolean = false,
 )
 
 data class CameraState(val mode: CameraMode = CameraMode.BROWSE, val showRecenter: Boolean = false)
@@ -3279,7 +3283,12 @@ Every rule id below needs at least one JVM test in `:nav:session` (N's definitio
   beta 2, derivative cut-off 3 Hz), calms it in place of 0.1.29's half-degree steps. Simulated:
   turning at a steady speed the map is under 0.1 degree behind; when a turn starts from still at
   most about 0.4 degree (2 ms at a quick turn); held still it wobbles about half as much as the
-  sensor. Moves under 0.02 degree are skipped. A drag ends the following
+  sensor. Moves under 0.02 degree are skipped. Since 0.1.33 (the owner: "the rotation should be done in
+  less than a second, but it should be smooth, so maybe a ramp up and down for speed") a move
+  my-location starts is eased (`CameraTarget.ease`: speeds up and slows down; following glides stay at
+  one speed); a turn in place takes 250 ms plus 1.6 ms a degree, at most 550 ms
+  (`Director.TURN_*`), and the follow updates and compass readings wait for it (before, each 1 Hz fix
+  re-timed it past a second). A drag ends the following
   and the compass turn (the map stays as it is); a two-finger turn ends only the compass turn.
   Otherwise a small red mark on the button's rim always points to north (since 0.1.29). The button's look is
   option A of the owner's choice (2026-11-24): a bold crosshair, blue with a dot while following, a

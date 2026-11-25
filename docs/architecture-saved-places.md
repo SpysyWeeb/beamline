@@ -1232,7 +1232,13 @@ enum class NearSource { GPS, MAP_CENTER, NONE }
  * [accuracyM]: the fix's horizontal accuracy (GPS only; null when unknown): "Use my position" needs
  * it at most saved.position_max_accuracy_m (SP23).
  */
-data class SearchContext(val near: GeoPoint?, val source: NearSource, val accuracyM: Double? = null)
+data class SearchContext(
+    val near: GeoPoint?,
+    val source: NearSource,
+    val accuracyM: Double? = null,
+    /** S1b: the user's position when [near] is the map centre (results ranked there, distances from the user). */
+    val distanceFrom: GeoPoint? = null,
+)
 
 data class ShortcutUi(val id: String, val label: String, val iconName: String)
 
@@ -1406,7 +1412,13 @@ The place actions and the sheet:
  * [accuracyM]: the fix's horizontal accuracy (GPS only; null when unknown): "Use my position" needs
  * it at most saved.position_max_accuracy_m (SP23).
  */
-data class SearchContext(val near: GeoPoint?, val source: NearSource, val accuracyM: Double? = null)
+data class SearchContext(
+    val near: GeoPoint?,
+    val source: NearSource,
+    val accuracyM: Double? = null,
+    /** S1b: the user's position when [near] is the map centre (results ranked there, distances from the user). */
+    val distanceFrom: GeoPoint? = null,
+)
 
 data class ShortcutUi(val id: String, val label: String, val iconName: String)
 

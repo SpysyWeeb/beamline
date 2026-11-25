@@ -71,7 +71,10 @@ sealed interface VehicleMarker {
 
 enum class CameraMode { BROWSE, BROWSE_FOLLOW, PREVIEW, GUIDE_FOLLOW, GUIDE_FREE, GUIDE_OVERVIEW, ARRIVED }
 
-/** One camera move: [center] (with [zoom]) or [fit]. */
+/**
+ * One camera move: [center] (with [zoom]) or [fit]. [ease]: the move speeds up and slows down (a
+ * turn the user started, K1a since 0.1.33); otherwise it runs at one speed (following glides).
+ */
 data class CameraTarget(
     val center: GeoPoint? = null,
     val fit: Bounds? = null,
@@ -80,6 +83,7 @@ data class CameraTarget(
     val pitchDeg: Double = 0.0,
     val padding: EdgeInsetsDp = EdgeInsetsDp(),
     val animateMs: Int = 0,
+    val ease: Boolean = false,
 )
 
 data class CameraState(val mode: CameraMode = CameraMode.BROWSE, val showRecenter: Boolean = false)
