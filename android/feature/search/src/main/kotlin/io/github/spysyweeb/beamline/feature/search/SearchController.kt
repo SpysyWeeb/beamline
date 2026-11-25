@@ -1,6 +1,7 @@
 package io.github.spysyweeb.beamline.feature.search
 
 import io.github.spysyweeb.beamline.api.data.InstalledSet
+import io.github.spysyweeb.beamline.api.model.Bounds
 import io.github.spysyweeb.beamline.api.model.GeoPoint
 import io.github.spysyweeb.beamline.api.model.Place
 import io.github.spysyweeb.beamline.api.model.PlaceSource
@@ -443,6 +444,38 @@ internal class SearchController(
                 laterFlow.tryEmit(SearchOutput.ShowResults(shown.places))
             }
         }
+    }
+
+    /**
+     * S11b (the owner, 2026-11-24: "when they drag the map to a different area, a button should pop up
+     * below the search bar that says "Search this area" that updates the pins and list with searches in
+     * that window"): the results' words again around [center], only the places inside [area], nearest
+     * the center first, at most on_map.max_results. They replace the results (none selected; the rows'
+     * distances stay from the user's position). The number found: 0 leaves the results as they were;
+     * null when the results ended or changed meanwhile, or no pack could be read.
+     */
+    suspend fun searchArea(center: GeoPoint, area: Bounds): Int? {
+        val cur = resultsState.value ?: return null
+        val text = cur.query
+        val set = installed.value
+        val r = withContext(searchDispatcher) {
+            try {
+                if (!searcher.hasSearchData(set)) null
+                else searcher.search(set, text, center, maxOf(rules.mergeLimit, rules.mapCandidates)).let { all ->
+                    all.copy(results = all.results.filter { area.contains(GeoPoint(it.result.lat, it.result.lon)) }
+                        .sortedBy { it.result.distanceKm ?: Double.MAX_VALUE })
+                }.also { fetchDetails(set, it) }
+            } catch (_: Exception) {
+                null // a pack that cannot be read now (the exception and its text are dropped, PV2)
+            }
+        } ?: return null
+        val now = resultsState.value
+        if (now == null || now.query != text || now.places != cur.places) return null
+        val rows = (ownRows(text).filter { area.contains(it.second.point) } + rowsOf(r).filter { (_, p) -> !hiddenByOwn(p) })
+            .take(rules.mapMaxResults)
+        if (rows.isEmpty()) return 0
+        resultsState.value = ResultsUi(text, rows.map { it.first }, rows.map { it.second })
+        return rows.size
     }
 
     /** S11: the results end when a state one of them came from is no longer installed; true when they ended. */

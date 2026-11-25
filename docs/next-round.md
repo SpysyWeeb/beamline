@@ -817,6 +817,12 @@ not break across two lines in the banner; the results view shows at most the 20 
     app reads categories from the pack, so the new search pack is the whole change. Left for later:
     plural folding in name matching, the same list from other towns.
 
+44. **Search this area** (the owner, 2026-11-24: "When searching for parks, it searches for parks near
+    the user, but when they drag the map to a different area, a button should pop up below the
+    search bar that says "Search this area" that updates the pins and list with searches in that
+    window"). *Built for 0.1.30:* rule S11b. With it, K1a: my-location on a map turned by hand and not
+    following turns it north up where it is first; the next tap follows.
+
 ## Later (not the next round)
 
 - **Linking Beamline to the real vehicle through the comma 3X** (owner, 2026-11-16). The driving

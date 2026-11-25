@@ -1496,6 +1496,7 @@ class RecentPlaces(file: File, max: Int = 30) {
 package io.github.spysyweeb.beamline.feature.search
 
 import io.github.spysyweeb.beamline.api.data.InstalledSet
+import io.github.spysyweeb.beamline.api.model.Bounds
 import io.github.spysyweeb.beamline.api.model.GeoPoint
 import io.github.spysyweeb.beamline.api.model.Place
 import io.github.spysyweeb.beamline.api.model.SavedKind
@@ -1833,6 +1834,8 @@ class SearchFeature(
     fun onResultsEvent(event: ResultsEvent): SearchOutput? = impl.onResultsEvent(event)
     /** S11: ends the results when a state one of them came from is no longer in [set] (removed while they show); true when they ended. */
     fun closeResultsGoneFrom(set: InstalledSet): Boolean = impl.closeResultsGoneFrom(set)
+    /** S11b: "Search this area": the results' words again around [center], only places inside [area]; they replace the results, the camera stays. The number found (0: the results stay as they were); null when they ended or changed meanwhile, or no pack could be read. */
+    suspend fun searchArea(center: GeoPoint, area: Bounds): Int? = impl.searchArea(center, area)
     /** Counts up when hours, phone or website of a place arrived from its pack: a place sheet made before is made again (S10). */
     val detailsLoaded: StateFlow<Int> get() = impl.detailsLoaded
     /** Recomputes the statuses of the results rows at the clock (the app calls it each minute, S10). */
@@ -3252,6 +3255,10 @@ Every rule id below needs at least one JVM test in `:nav:session` (N's definitio
   fingers (still no tilt). My-location holds the compass: not following -> following, north up;
   following -> following turned by the phone's compass (the button shows a needle pointing to north
   on the screen, ringed in the route's blue); turned by the compass -> following, north up. Since
+  0.1.30 (the owner: "if the user rotates the map, taping the compass button should set the map to
+  face north first (leaving the map where it's at), and pressing the button again should bring the
+  map to the users location") a map turned by hand and not following turns north up where it is
+  first (within 0.5 degree of north counts as north up); the next tap follows. Since
   0.1.29 (the owner: "The goal is to keep the map up to speed with the user") the map takes the
   rotation-vector sensor's reading without animation, only while it turns with the compass. Since
   0.1.30 (the owner: "a little bit of snapping when the compass is moving 1 degree at a time ... a
@@ -3453,6 +3460,17 @@ Every rule id below needs at least one JVM test in `:nav:session` (N's definitio
   driving; elsewhere a list as before); Back from a grid type's results opens the grid again. While
   the results show, the map's search bar holds their words and an X that ends them; a tap on the
   words opens the search with them typed (`SearchBar(query, onClear)`).
+- **S11b** Search this area (0.1.30; the owner, 2026-11-24: "when they drag the map to a different
+  area, a button should pop up below the search bar that says "Search this area" that updates the
+  pins and list with searches in that window"). While results show, a drag or zoom of the map by
+  the user offers "Search this area" first below the search bar once the camera rests. A tap asks
+  the results' words again around the map's centre (on_map.candidates rows) and keeps the places in
+  the part of the map the user sees (the window less the camera's padding: the search bar, the
+  list; a turned map: the box around it), nearest the centre first, at most on_map.max_results. They
+  replace the pins and the list (none selected, an open place sheet closes; the rows' distances stay
+  from the user); the camera stays where the user put it. None there: "Nothing found in this area"
+  and the results stay, until the map moves again. Other results, or none, end the offer
+  (`SearchFeature.searchArea`, `AppFlows.areaSearch`).
 
 ### 3.9 Drive presentation (D)
 

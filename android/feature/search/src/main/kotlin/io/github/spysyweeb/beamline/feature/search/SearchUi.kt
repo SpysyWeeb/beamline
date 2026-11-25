@@ -2,6 +2,7 @@
 package io.github.spysyweeb.beamline.feature.search
 
 import io.github.spysyweeb.beamline.api.data.InstalledSet
+import io.github.spysyweeb.beamline.api.model.Bounds
 import io.github.spysyweeb.beamline.api.model.GeoPoint
 import io.github.spysyweeb.beamline.api.model.Place
 import io.github.spysyweeb.beamline.api.model.SavedKind
@@ -339,6 +340,8 @@ class SearchFeature(
     fun onResultsEvent(event: ResultsEvent): SearchOutput? = impl.onResultsEvent(event)
     /** S11: ends the results when a state one of them came from is no longer in [set] (removed while they show); true when they ended. */
     fun closeResultsGoneFrom(set: InstalledSet): Boolean = impl.closeResultsGoneFrom(set)
+    /** S11b: "Search this area": the results' words again around [center], only places inside [area]; they replace the results, the camera stays. The number found (0: the results stay as they were); null when they ended or changed meanwhile, or no pack could be read. */
+    suspend fun searchArea(center: GeoPoint, area: Bounds): Int? = impl.searchArea(center, area)
     /** Counts up when hours, phone or website of a place arrived from its pack: a place sheet made before is made again (S10). */
     val detailsLoaded: StateFlow<Int> get() = impl.detailsLoaded
     /** Recomputes the statuses of the results rows at the clock (the app calls it each minute, S10). */

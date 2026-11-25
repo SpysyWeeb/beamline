@@ -81,6 +81,8 @@ internal fun LocationButton(following: Boolean, compass: Boolean, bearing: kotli
     val label = when {
         compass -> "Following your position, turned by your phone's compass. Tap for north up"
         following -> "Following your position. Tap to turn the map with your phone's compass"
+        // K1a (0.1.30): a map turned by hand turns north up first, where it is
+        ((deg % 360f) + 360f) % 360f in 0.5f..359.5f -> "Turn the map north up. Tap again for your position"
         else -> "Show my position"
     }
     val blue = if (night) Color(0xFF3A80F0) else Color(0xFF4A8CF7)

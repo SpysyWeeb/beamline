@@ -53,6 +53,9 @@ internal class Director(private val rules: CameraRules, private val clock: Clock
     private var browseBearing = 0.0
     /** The map's bearing when the camera last stopped (PackMap). */
     private var mapBearing = 0.0
+
+    /** K1a: browsing, my-location turned the map north up where it was; the next tap follows (until a gesture). */
+    private var browseNorth = false
     private val _compassFollow = MutableStateFlow(false)
     /** True while browsing follows the phone's compass (the compass button shows it). */
     val compassFollow: StateFlow<Boolean> = _compassFollow.asStateFlow()
@@ -184,6 +187,7 @@ internal class Director(private val rules: CameraRules, private val clock: Clock
                 results = null
                 // K1a: a map no longer centred on the user does not turn with the compass
                 _compassFollow.value = false
+                browseNorth = false
                 setMode(CameraMode.BROWSE)
             }
             CameraMode.PREVIEW, CameraMode.ARRIVED -> {
@@ -204,6 +208,15 @@ internal class Director(private val rules: CameraRules, private val clock: Clock
                 browseReset = null
                 place = null
                 results = null
+                // K1a (the owner, 2026-11-24): a map turned by hand and not following turns north up
+                // first, where it is; the next tap goes to the user
+                if (mode == CameraMode.BROWSE && !browseNorth && kotlin.math.abs(signedDiff(0.0, mapBearing)) >= NORTH_TOLERANCE_DEG) {
+                    browseBearing = 0.0
+                    browseNorth = true
+                    publish(rules.transitionMs)
+                    return
+                }
+                browseNorth = false
                 // K1a: not following -> following north up; following -> also turned by the phone's
                 // compass (when it has one); turned by the compass -> following north up
                 val heading = puck?.coneDeg
@@ -268,6 +281,7 @@ internal class Director(private val rules: CameraRules, private val clock: Clock
     /** K1a: the user began turning the map with two fingers: the compass no longer leads. */
     fun onUserRotate() {
         _compassFollow.value = false
+        browseNorth = false
     }
 
     private fun browsing() = mode == CameraMode.BROWSE || mode == CameraMode.BROWSE_FOLLOW
@@ -363,6 +377,7 @@ internal class Director(private val rules: CameraRules, private val clock: Clock
         // K1a: a new phase group starts north up, the compass not leading
         browseBearing = 0.0
         _compassFollow.value = false
+        browseNorth = false
         userMoved = false
         lookAt = null
         place = null
@@ -430,6 +445,7 @@ internal class Director(private val rules: CameraRules, private val clock: Clock
             } ?: place?.let {
                 CameraTarget(center = it, zoom = rules.browseFollowZoom, bearingDeg = browseBearing, pitchDeg = 0.0, padding = insets, animateMs = animateMs)
             } ?: results?.let { resultsTarget(it, animateMs) }
+                ?: if (browseNorth) CameraTarget(center = null, zoom = null, bearingDeg = 0.0, pitchDeg = 0.0, padding = insets, animateMs = animateMs) else null
             CameraMode.BROWSE_FOLLOW -> puckPoint()?.let {
                 followFirst = false
                 CameraTarget(center = it, zoom = rules.browseFollowZoom, bearingDeg = browseBearing, pitchDeg = 0.0, padding = insets, animateMs = animateMs)
@@ -636,6 +652,9 @@ internal class Director(private val rules: CameraRules, private val clock: Clock
         const val POINT_SPAN_DEG = 0.0005
         /** K1a: the map turns with the compass by this much or more at a time (below it the sensor's noise). */
         const val COMPASS_STEP_DEG = 0.02
+
+        /** K1a: a hand-turned map within this of north counts as north up (my-location then follows at once). */
+        const val NORTH_TOLERANCE_DEG = 0.5
     }
 }
 

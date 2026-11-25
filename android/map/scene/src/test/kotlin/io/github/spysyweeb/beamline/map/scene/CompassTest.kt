@@ -100,13 +100,38 @@ class CompassTest {
     }
 
     @Test
-    fun `my-location on a turned map centres north up, and a route choice starts with the compass off`() {
+    fun `my-location on a map turned by hand turns it north up where it is, then follows`() {
         cam.onPuck(Fx.puck(Fx.ORIGIN, cone = 90f))
+        cam.onGesture(MapGesture.CameraMovedByUser)
         cam.onUserRotate()
         cam.onMapBearing(40.0)
         cam.onMyLocation()
+        assertEquals(CameraMode.BROWSE, mode, "not following yet")
+        val north = cam.target.value!!
+        assertEquals(0.0, north.bearingDeg, "north up")
+        assertEquals(null, north.center, "the map stays where it is")
+        assertEquals(null, north.zoom)
+        cam.onMyLocation()
+        assertEquals(CameraMode.BROWSE_FOLLOW, mode, "the second tap goes to the user (before the camera reported north)")
+        assertEquals(Fx.ORIGIN.lat, cam.target.value!!.center!!.lat, 1e-9)
+        assertEquals(0.0, cam.target.value!!.bearingDeg)
+        // turned again and dragged: north first again; a map already north up follows at once
+        cam.onGesture(MapGesture.CameraMovedByUser)
+        cam.onUserRotate()
+        cam.onMapBearing(300.0)
+        cam.onMyLocation()
+        assertEquals(CameraMode.BROWSE, mode)
+        cam.onMapBearing(0.0)
+        cam.onGesture(MapGesture.CameraMovedByUser)
+        cam.onMyLocation()
+        assertEquals(CameraMode.BROWSE_FOLLOW, mode, "north up already: straight to the user")
+    }
+
+    @Test
+    fun `a route choice starts with the compass off`() {
+        cam.onPuck(Fx.puck(Fx.ORIGIN, cone = 90f))
+        cam.onMyLocation()
         assertEquals(CameraMode.BROWSE_FOLLOW, mode)
-        assertEquals(0.0, cam.target.value!!.bearingDeg, "turned by hand: following north up")
         cam.onMyLocation()
         assertTrue(cam.compassFollow.value)
         cam.onTrip(TripState(phase = Phase.CHOOSING))

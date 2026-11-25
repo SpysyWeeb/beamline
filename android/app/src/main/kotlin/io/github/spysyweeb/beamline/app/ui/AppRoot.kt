@@ -225,6 +225,8 @@ fun AppRoot(g: AppGraph, flows: AppFlows, frameRate: FrameRateRequest, screenMax
                             // while a search's results show, the bar keeps its words and an X that ends them
                             SearchBar(onClick = { flows.openSearch(SearchMode.GO_TO, typed = results?.query) }, modifier = Modifier.fillMaxWidth(),
                                 query = results?.query, onClear = flows::closeResults)
+                            // S11b: the map dragged over results: "Search this area" (the owner, 2026-11-24)
+                            results?.let { r -> flows.areaSearch?.let { a -> ChipButton(areaChip(a, r.query), night) { flows.onSearchArea() } } }
                             ProblemNotice(set.issues, night)
                             chip?.let { c -> ChipButton(c, night) { flows.openStates() } }
                             // outside every installed state, zoomed in: say why the map is plain, one tap to States
@@ -619,6 +621,13 @@ private fun pickBarRoom(ui: MapPickUi): Dp {
 
 /** Rule R4's bar (docs/architecture.md 3.10). */
 /** The chip over a part of the map no installed state covers (AppFlows.noMapHere); a tap opens States. */
+/** S11b: the words of "Search this area" for [state] and the results' [query]. */
+internal fun areaChip(state: AppFlows.AreaSearch, query: String) = when (state) {
+    AppFlows.AreaSearch.OFFERED -> io.github.spysyweeb.beamline.feature.states.MapChip("Search this area", "Search this area for $query")
+    AppFlows.AreaSearch.SEARCHING -> io.github.spysyweeb.beamline.feature.states.MapChip("Searching this area…", "Searching this area for $query")
+    AppFlows.AreaSearch.NONE_HERE -> io.github.spysyweeb.beamline.feature.states.MapChip("Nothing found in this area", "Nothing found for $query in this area. Move the map to search again")
+}
+
 internal val NO_MAP_HERE = io.github.spysyweeb.beamline.feature.states.MapChip("No map for this area. Add a state.", "No map for this area. Add a state. Opens States")
 /** From this zoom on the plain overview is all a place outside the installed states shows. */
 internal const val NO_MAP_FROM_ZOOM = 9.0

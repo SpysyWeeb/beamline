@@ -1,5 +1,6 @@
 package io.github.spysyweeb.beamline.feature.search
 
+import io.github.spysyweeb.beamline.api.model.Bounds
 import io.github.spysyweeb.beamline.api.model.GeoPoint
 import io.github.spysyweeb.beamline.search.PackResult
 import io.github.spysyweeb.beamline.search.PoiDetails
@@ -57,6 +58,43 @@ class SearchResultsTest {
         SearchResult(100L + i, SearchResult.Kind.POI, "Sheetz", "Erie", "fuel", "Gas station",
             SearchFeatureTest.ZOO.lat + i * 0.01, SearchFeatureTest.ZOO.lon, km, null, null, 10.0 - i, "t", tier),
     )
+
+    /** S11b (the owner, 2026-11-24): "Search this area" asks again around the map's centre and keeps the places in the window. */
+    @Test
+    fun searchThisAreaKeepsThePlacesInTheWindow() {
+        fake.answers = { (1..25).map { i -> store(i, km = (26 - i).toDouble()) } }
+        f.open(SearchMode.GO_TO, SearchFeatureTest.gps)
+        f.onEvent(SearchEvent.QueryChanged("sheetz"))
+        scope.testScheduler.advanceUntilIdle()
+        f.onEvent(SearchEvent.Submit)
+        scope.testScheduler.advanceUntilIdle()
+        f.onResultsEvent(ResultsEvent.Select(0))
+        val zoo = SearchFeatureTest.ZOO
+        // the window holds stores 3 to 7 (0.03 to 0.07 degrees north of the zoo)
+        val window = Bounds(west = zoo.lon - 0.01, south = zoo.lat + 0.025, east = zoo.lon + 0.01, north = zoo.lat + 0.075)
+        val centre = GeoPoint(zoo.lat + 0.05, zoo.lon)
+        var found: Int? = -1
+        scope.launch { found = f.searchArea(centre, window) }
+        scope.testScheduler.advanceUntilIdle()
+        assertEquals(5, found)
+        assertEquals(centre, fake.nears.last(), "asked around the map's centre")
+        val after = f.results.value!!
+        assertEquals("sheetz", after.query)
+        assertEquals((107 downTo 103).map { "r:us-pa:$it" }, after.rows.map { it.key }, "only the window's, nearest first")
+        assertNull(after.selected, "a new list: nothing selected")
+        // a window with none of them: the results stay as they were
+        val far = Bounds(west = zoo.lon + 1.0, south = zoo.lat + 1.0, east = zoo.lon + 1.1, north = zoo.lat + 1.1)
+        scope.launch { found = f.searchArea(GeoPoint(zoo.lat + 1.05, zoo.lon + 1.05), far) }
+        scope.testScheduler.advanceUntilIdle()
+        assertEquals(0, found)
+        assertEquals(after, f.results.value)
+        // the results closed: nothing to search again
+        f.onResultsEvent(ResultsEvent.Close)
+        scope.launch { found = f.searchArea(centre, window) }
+        scope.testScheduler.advanceUntilIdle()
+        assertNull(found)
+        assertNull(f.results.value)
+    }
 
     /** The owner, 2026-11-21: the list while typing and the map after Enter show the same places in the same order. */
     @Test

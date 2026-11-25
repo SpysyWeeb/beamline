@@ -50,9 +50,11 @@ internal class FakeSearcher : PackSearcher {
         asked.add(text)
         during(text)
         limits.add(limit)
+        nears.add(near)
         return MultiSearchResponse(text, answers(text).take(limit), listOf("us-pa"), true, null, false, 1.0)
     }
     val limits = ArrayList<Int>()
+    val nears = ArrayList<GeoPoint?>()
     /** Rule S10: details by search id (pack us-pa). */
     var details: Map<Long, io.github.spysyweeb.beamline.search.PoiDetails> = emptyMap()
     override fun details(set: InstalledSet, packId: String, ids: Collection<Long>) = details.filterKeys { it in ids }

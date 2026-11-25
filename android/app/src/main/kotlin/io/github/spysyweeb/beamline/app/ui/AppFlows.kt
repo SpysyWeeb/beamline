@@ -21,6 +21,7 @@ import androidx.compose.runtime.setValue
 import io.github.spysyweeb.beamline.api.map.CameraTarget
 import io.github.spysyweeb.beamline.api.map.EdgeInsetsDp
 import io.github.spysyweeb.beamline.api.map.MapGesture
+import io.github.spysyweeb.beamline.api.model.Bounds
 import io.github.spysyweeb.beamline.api.model.GeoPoint
 import io.github.spysyweeb.beamline.api.model.Place
 import io.github.spysyweeb.beamline.api.model.PlaceSource
@@ -191,11 +192,47 @@ class AppFlows(private val g: AppGraph) {
     var noMapHere by mutableStateOf(false)
         private set
 
-    /** Where the camera came to rest (the map's idle callback, once the camera was placed). */
-    fun onCameraRest(center: GeoPoint, zoom: Double) {
+    /** S11b: "Search this area" below the search bar while results show: offered, searching, or found nothing there. */
+    enum class AreaSearch { OFFERED, SEARCHING, NONE_HERE }
+
+    /** S11b: null while not offered (no results, or the map not moved by the user since they showed). */
+    var areaSearch by mutableStateOf<AreaSearch?>(null)
+        private set
+
+    /** S11b: the part of the map the user sees, as last at rest. */
+    @Volatile private var cameraBounds: Bounds? = null
+
+    /** S11b: the user moved the map since these results showed. */
+    private var movedOverResults = false
+
+    /** Where the camera came to rest (the map's idle callback, once the camera was placed); [bounds]: the part the user sees. */
+    fun onCameraRest(center: GeoPoint, zoom: Double, bounds: Bounds? = null) {
         cameraCenter = center
         cameraZoom = zoom
+        cameraBounds = bounds
         refreshNoMapHere()
+        // S11b: the user dragged or zoomed the map over results: offer them again in this window
+        if (movedOverResults && bounds != null && g.search.results.value != null && areaSearch != AreaSearch.SEARCHING) {
+            areaSearch = AreaSearch.OFFERED
+        }
+    }
+
+    /** S11b: the tap on "Search this area": the results' words in the window as it rests now; the camera stays. */
+    fun onSearchArea() {
+        if (areaSearch != AreaSearch.OFFERED) return
+        val center = cameraCenter ?: return
+        val area = cameraBounds ?: return
+        areaSearch = AreaSearch.SEARCHING
+        movedOverResults = false
+        g.scope.launch {
+            val found = g.search.searchArea(center, area)
+            if (found != null && found > 0 && g.sheetPlace.value != null) {
+                // the list of the new results shows, not the sheet of an old one
+                g.director.onPlaceLeft()
+                g.sheetPlace.value = null
+            }
+            areaSearch = if (found == 0) AreaSearch.NONE_HERE else null
+        }
     }
 
     /** [noMapHere] for where the camera rests and what is installed now (nothing is said before the first scan). */
@@ -222,6 +259,17 @@ class AppFlows(private val g: AppGraph) {
         g.scope.launch {
             g.session.state.collect { s ->
                 if (s.phase != Phase.IDLE && s.phase != Phase.RESUME_OFFERED && g.search.results.value != null) closeResults()
+            }
+        }
+        // S11b: other results, or none, start without "Search this area" (a selection keeps it)
+        g.scope.launch {
+            var shownPlaces: List<Place>? = null
+            g.search.results.collect { r ->
+                if (r == null || r.places !== shownPlaces) {
+                    shownPlaces = r?.places
+                    movedOverResults = false
+                    if (areaSearch != AreaSearch.SEARCHING) areaSearch = null
+                }
             }
         }
         // S11: a state removed while its results show ends them (the camera stays)
@@ -536,6 +584,7 @@ class AppFlows(private val g: AppGraph) {
 
     fun onGesture(gesture: MapGesture) {
         g.director.onGesture(gesture)
+        if (gesture == MapGesture.CameraMovedByUser && g.search.results.value != null) movedOverResults = true
         creditUntilMs = 0L // the first touch of the map fades the credit (item 8)
         val picking = g.savedFeature.ui.value.mapPick != null
         when (gesture) {
