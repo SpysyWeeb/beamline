@@ -831,6 +831,12 @@ not break across two lines in the banner; the results view shows at most the 20 
     the relevant ones ("+3") on wide highways, per-lane destinations (OSM destination:street:lanes,
     e.g. Parade St at the Pine Ave fork), a swipe to hide it, the car's real lane from a comma 3X.
 
+46. **Map style button** (the owner, 2026-11-25: "the map style section in settings could have it's own
+    button and UI on the map screen"). Concept on the design canvas's "Map style" page, approved.
+    *Built for 0.1.34:* a round button under Settings (not while guiding) opens a sheet of four picture
+    tiles (Automatic, Same as phone, Day, Night); a tap writes the setting at once, so the map changes
+    behind the sheet; Settings keeps the same section (`app/ui/MapStyleSheet.kt`).
+
 ## Later (not the next round)
 
 - **Linking Beamline to the real vehicle through the comma 3X** (owner, 2026-11-16). The driving

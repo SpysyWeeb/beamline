@@ -1,5 +1,6 @@
 package io.github.spysyweeb.beamline.app.ui
 
+import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import io.github.spysyweeb.beamline.app.online.EditNoticeDialog
 import io.github.spysyweeb.beamline.api.model.PlaceSource
 import io.github.spysyweeb.beamline.app.online.AddPlaceScreen
@@ -113,6 +114,8 @@ class RootActions(
 @Composable
 fun AppRoot(g: AppGraph, flows: AppFlows, frameRate: FrameRateRequest, screenMaxHz: Float, actions: RootActions) {
     val night by g.night.collectAsState()
+    // 0.1.34: the map style sheet, opened from its button under Settings
+    var styleSheetOpen by remember { mutableStateOf(false) }
     BeamlineTheme(night) {
         val trip by g.session.state.collectAsState()
         val camera by g.director.state.collectAsState()
@@ -241,6 +244,8 @@ fun AppRoot(g: AppGraph, flows: AppFlows, frameRate: FrameRateRequest, screenMax
                         Column(verticalArrangement = Arrangement.spacedBy(10.dp)) {
                             // States is in Settings only (the owner, 2026-11-21: one button fewer on the map)
                             RoundButton(BeamlineIcons.Settings, "Settings", night, onClick = flows::openSettings)
+                            // 0.1.34 (the owner, 2026-11-25): the map style on the map; not while guiding
+                            if (!driving) RoundButton(MapStyleIcon, "Map style", night) { styleSheetOpen = true }
                         }
                     }
                 }
@@ -336,6 +341,10 @@ fun AppRoot(g: AppGraph, flows: AppFlows, frameRate: FrameRateRequest, screenMax
                 MapPickBar(pick, onEvent = flows::onSavedEvent, modifier = Modifier.fillMaxSize())
             }
             if (mapDataOpen) MapDataDialog(mapDataCredits(set)) { mapDataOpen = false }
+            if (styleSheetOpen && !driving) {
+                val appSettings by g.settings.settings.collectAsStateWithLifecycle()
+                MapStyleSheet(appSettings.mapStyle, onPick = { st -> g.updateSettings { it.copy(mapStyle = st) } }, onClose = { styleSheetOpen = false })
+            }
 
             // ---- screens over the map (hidden while a map pick runs, SP25; none under the driver
             // notice: the States screen would fetch the catalog before it is accepted, item 3)
