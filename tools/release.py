@@ -157,7 +157,15 @@ def main() -> int:
         return 0
     run(["gh", "release", "create", f"v{name}", "--repo", GH_REPO, "--target", head, "--title", f"Beamline {name}",
          "--notes", a.notes, str(out / "update.json"), *(str(p) for p in files.values())])
-    print(f"published https://github.com/{GH_REPO}/releases/tag/v{name}")
+    # GitHub's "latest" address switches to a new release a minute or two later (2026-11-24): report
+    # it published only when the address phones read serves it, so nobody checks too early
+    import time
+    for _ in range(60):
+        if latest_published() == code:
+            print(f"published https://github.com/{GH_REPO}/releases/tag/v{name} (the latest address serves it)")
+            return 0
+        time.sleep(10)
+    print(f"published https://github.com/{GH_REPO}/releases/tag/v{name}, but the latest address did not serve it within 10 minutes")
     return 0
 
 

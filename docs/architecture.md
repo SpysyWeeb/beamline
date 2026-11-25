@@ -3256,7 +3256,9 @@ Every rule id below needs at least one JVM test in `:nav:session` (N's definitio
   rotation-vector sensor's reading straight, at the game rate and only while it turns with the
   compass: no smoothing, no animation, a change of 0.5 degrees or more. A drag ends the following
   and the compass turn (the map stays as it is); a two-finger turn ends only the compass turn.
-  Otherwise a small red mark on the button's rim always points to north (since 0.1.29). The map
+  Otherwise a small red mark on the button's rim always points to north (since 0.1.29). The button's look is
+  option A of the owner's choice (2026-11-24): a bold crosshair, blue with a dot while following, a
+  lighter night panel with a thin outline. The map
   fills the whole screen, behind the status bar and the navigation bar (0.1.29). Browsing's own moves (a picked place) keep the
   bearing browsing has. A new phase group (a route choice, guidance, arrival, back to browsing) starts
   north up with the compass not leading. Without a compass reading the second tap keeps following

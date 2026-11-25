@@ -69,10 +69,11 @@ internal fun RoundButton(
 }
 
 /**
- * K1/K1a (the owner, 2026-11-24): my-location, which also holds the compass. Not following: an
- * outline crosshair; following: a filled one; following turned by the phone's compass ([compass]): a
- * needle pointing to north on the screen, ringed in the route's blue. Otherwise a small red mark on
- * the rim always points to north ([bearing]: the map's, frame by frame; the owner, 2026-11-24).
+ * K1/K1a (the owner, 2026-11-24; option A of the options sheet): my-location, which also holds the
+ * compass. Not following: a bold crosshair; following: the crosshair in the route's blue with a dot;
+ * following turned by the phone's compass ([compass]): a needle pointing to north on the screen in a
+ * blue ring. In the first two a small red mark on the rim always points to north ([bearing]: the
+ * map's, frame by frame). At night a lighter panel with a thin outline, so it stands off the dark map.
  */
 @Composable
 internal fun LocationButton(following: Boolean, compass: Boolean, bearing: kotlinx.coroutines.flow.StateFlow<Float>, night: Boolean, onClick: () -> Unit) {
@@ -84,40 +85,45 @@ internal fun LocationButton(following: Boolean, compass: Boolean, bearing: kotli
     }
     val blue = if (night) Color(0xFF3A80F0) else Color(0xFF4A8CF7)
     val red = Color(0xFFE53935)
+    val ink = if (night) Color(0xFFE4E8EE) else Color(0xFF2E3746)
+    val needleTail = if (night) Color(0xFFAAB4C2) else Color(0xFF7D8796)
+    val fill = if (night) Color(0xFF2B3340) else Color(0xFFFFFFFF)
+    val border = when {
+        compass -> androidx.compose.foundation.BorderStroke(2.2.dp, blue)
+        night -> androidx.compose.foundation.BorderStroke(1.dp, Color(0xFF46505F))
+        else -> null
+    }
     Surface(
         onClick = onClick,
         shape = CircleShape,
-        color = panel(night),
-        contentColor = panelText(night),
+        color = fill,
         shadowElevation = 3.dp,
-        border = if (compass) androidx.compose.foundation.BorderStroke(2.dp, blue) else null,
+        border = border,
         modifier = Modifier.size(56.dp).semantics { contentDescription = label },
     ) {
-        Box(contentAlignment = Alignment.Center) {
+        // drawn on the options sheet's 56-unit grid: one unit is one dp
+        androidx.compose.foundation.Canvas(Modifier.size(56.dp)) {
+            val u = size.width / 56f
+            val c = androidx.compose.ui.geometry.Offset(28f * u, 28f * u)
             if (compass) {
-                androidx.compose.foundation.Canvas(Modifier.size(30.dp)) {
-                    rotate(-deg) {
-                        val cx = size.width / 2
-                        val cy = size.height / 2
-                        val w = size.width * 0.2f
-                        val north = androidx.compose.ui.graphics.Path().apply { moveTo(cx, 0f); lineTo(cx + w, cy); lineTo(cx - w, cy); close() }
-                        val south = androidx.compose.ui.graphics.Path().apply { moveTo(cx, size.height); lineTo(cx + w, cy); lineTo(cx - w, cy); close() }
-                        drawPath(north, red)
-                        drawPath(south, if (night) Color(0xFFAAB4C2) else Color(0xFF7D8796))
-                    }
+                rotate(-deg) {
+                    drawPath(androidx.compose.ui.graphics.Path().apply { moveTo(28f * u, 15f * u); lineTo(31.4f * u, 28f * u); lineTo(24.6f * u, 28f * u); close() }, red)
+                    drawPath(androidx.compose.ui.graphics.Path().apply { moveTo(28f * u, 41f * u); lineTo(31.4f * u, 28f * u); lineTo(24.6f * u, 28f * u); close() }, needleTail)
                 }
             } else {
-                Icon(if (following) BeamlineIcons.MyLocationFollowing else BeamlineIcons.MyLocation, contentDescription = null, modifier = Modifier.size(28.dp))
-                run {
-                    androidx.compose.foundation.Canvas(Modifier.size(56.dp)) {
-                        rotate(-deg) {
-                            val cx = size.width / 2
-                            val tip = 3.dp.toPx()
-                            val base = 10.dp.toPx()
-                            val half = 4.dp.toPx()
-                            drawPath(androidx.compose.ui.graphics.Path().apply { moveTo(cx, tip); lineTo(cx + half, base); lineTo(cx - half, base); close() }, red)
-                        }
-                    }
+                val color = if (following) blue else ink
+                val stroke = androidx.compose.ui.graphics.drawscope.Stroke(width = 2.6f * u, cap = androidx.compose.ui.graphics.StrokeCap.Round)
+                drawCircle(color, radius = 7.5f * u, center = c, style = stroke)
+                val ticks = listOf(
+                    15.5f to 20f, 36f to 40.5f,
+                )
+                for ((a, b) in ticks) {
+                    drawLine(color, androidx.compose.ui.geometry.Offset(28f * u, a * u), androidx.compose.ui.geometry.Offset(28f * u, b * u), 2.6f * u, androidx.compose.ui.graphics.StrokeCap.Round)
+                    drawLine(color, androidx.compose.ui.geometry.Offset(a * u, 28f * u), androidx.compose.ui.geometry.Offset(b * u, 28f * u), 2.6f * u, androidx.compose.ui.graphics.StrokeCap.Round)
+                }
+                if (following) drawCircle(blue, radius = 3.6f * u, center = c)
+                rotate(-deg) {
+                    drawPath(androidx.compose.ui.graphics.Path().apply { moveTo(28f * u, 2.5f * u); lineTo(32.2f * u, 10f * u); lineTo(23.8f * u, 10f * u); close() }, red)
                 }
             }
         }
