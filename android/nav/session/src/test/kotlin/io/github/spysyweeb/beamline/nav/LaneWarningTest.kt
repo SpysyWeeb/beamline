@@ -79,6 +79,36 @@ class LaneWarningTest {
         h.assertAllRecorded()
     }
 
+    /**
+     * A reported drive, 2026-11-25: west on West 26th St (US 20), right at the light onto Peninsula
+     * Dr (PA 832). OpenStreetMap splits the road about 90 m before the light, and the piece before the
+     * split carries the light's arrows ("left;through|through|right", the right lane signed PA 832
+     * North). The app called that split a straight-on spot and said "Right lane turns right: keep
+     * left" just before telling the driver to use that very lane for the turn.
+     */
+    @Test
+    fun `West 26th St to Peninsula Dr - the lane for the turn just ahead is never called a lane to leave`() = sessionTest { h ->
+        val from = Place("West 26th St, Erie", GeoPoint(42.0918, -80.1280), PlaceSource.MAP_PIN)
+        val to = Place("Peninsula Dr, Erie", GeoPoint(42.0895, -80.1388), PlaceSource.MAP_PIN)
+        h.send(NavIntent.PlanTo(to))
+        h.send(NavIntent.SetOrigin(Origin.FromPlace(from, 25.0)))
+        h.advance(1_000)
+        assertEquals(Phase.CHOOSING, h.phase(), "${h.state.problem}")
+        h.send(NavIntent.Start())
+        assertEquals(Phase.GUIDING, h.phase(), "${h.state.problem}")
+        h.assertAllRecorded()
+        val geo = h.guidedGeo()
+        val osrm = RecordedEngine.standard().route(h.engine.routeRequests.last { it["format"]?.jsonPrimitive?.content == "osrm" }.toString())
+        val lw = LaneWarnings.build(geo, osrm, 0, GuidanceRules.bundled(), BannerRules.bundled()) { RecordedEngine.standard().traceAttributes(it) }
+        // the right turn onto Peninsula Dr
+        val k = geo.route.maneuvers.indexOfFirst { it.type == io.github.spysyweeb.beamline.routing.model.ManeuverType.RIGHT && it.streetNames.any { n -> "Peninsula" in n } }
+        assertTrue(k > 0, "the route turns right onto Peninsula Dr: ${geo.route.maneuvers.map { it.type to it.streetNames }}")
+        val turnAlong = geo.maneuverAlong[k]
+        val wrong = lw.spots.filter { it.alongM in (turnAlong - 300.0)..turnAlong && it.text.startsWith("Right lane") }
+        assertTrue(wrong.isEmpty(), "no 'keep left' for the lane of the right turn just ahead: ${wrong.map { (turnAlong - it.alongM).toInt().toString() + " m before: " + it.text }}")
+        h.assertAllRecorded()
+    }
+
     @Test
     fun `an added turn lane alone never warns - Peach St at 26th, one lane on and a left-turn lane added`() = sessionTest { h ->
         // the same drive north on Peach St: past Craig St (the one spot), then at 26th St 1 lane and a

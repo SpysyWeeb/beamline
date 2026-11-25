@@ -78,6 +78,31 @@ class LaneWarnings internal constructor(val spots: List<Spot>) {
         /** A spot this close before the route's next maneuver is that maneuver's lanes, not a lane ending. */
         const val NEAR_TURN_M = 60.0
 
+        /** How close the route's next turn must be for lanes turning its way to count as its own (2026-11-25). */
+        const val SAME_SIDE_TURN_M = 300.0
+
+        private fun sideOf(type: io.github.spysyweeb.beamline.routing.model.ManeuverType?): Int = when (type?.name) {
+            "SLIGHT_RIGHT", "RIGHT", "SHARP_RIGHT", "RAMP_RIGHT", "EXIT_RIGHT", "STAY_RIGHT", "UTURN_RIGHT" -> 1
+            "SLIGHT_LEFT", "LEFT", "SHARP_LEFT", "RAMP_LEFT", "EXIT_LEFT", "STAY_LEFT", "UTURN_LEFT" -> -1
+            else -> 0
+        }
+
+        /**
+         * [lanes] with the lanes on the side the route turns to next ([type]), outside the ones that go
+         * on and every arrow pointing that way, marked as going on: they are the next turn's lanes,
+         * painted (and tagged) before it, not lanes to leave.
+         */
+        fun withNextTurnLanes(lanes: List<Pair<List<String>, Boolean>>, type: io.github.spysyweeb.beamline.routing.model.ManeuverType?): List<Pair<List<String>, Boolean>> {
+            val side = sideOf(type)
+            val first = lanes.indexOfFirst { it.second }
+            val last = lanes.indexOfLast { it.second }
+            if (side == 0 || first < 0) return lanes
+            val word = if (side > 0) "right" else "left"
+            val range = if (side > 0) (last + 1) until lanes.size else 0 until first
+            if (range.isEmpty() || range.any { i -> lanes[i].first.isEmpty() || lanes[i].first.any { word !in it } }) return lanes
+            return lanes.mapIndexed { i, l -> if (i in range) l.first to true else l }
+        }
+
         /** The route goes straight on here: a real intersection (3 or more roads), out within 30 degrees of in, a valid lane marked straight. */
         private fun goesStraight(it: JsonObject, lanes: List<Pair<List<String>, Boolean>>): Boolean {
             val b = (it["bearings"] as? JsonArray)?.map { x -> x.jsonPrimitive.doubleOrNull ?: return false } ?: return false
@@ -144,13 +169,20 @@ class LaneWarnings internal constructor(val spots: List<Spot>) {
                     run = idx to lanes
                 }
                 run?.let { picked += it }
-                for ((idx, lanes) in picked) {
-                    val v = lanes.count { l -> l.second }
-                    if (v == 0 || v == lanes.size || straightAt[idx] != true) continue
+                for ((idx, raw) in picked) {
+                    if (straightAt[idx] != true) continue
                     val along = geo.along[idx]
                     val k = maneuverAt(geo, idx)
                     val nextTurnAlong = if (k + 1 < geo.maneuverCount) geo.maneuverAlong[k + 1] else geo.lengthM
                     if (nextTurnAlong - along < NEAR_TURN_M) continue // the lanes belong to the turn just after
+                    // a reported drive, 2026-11-25 (west on West 26th St, right onto Peninsula Dr): the
+                    // road's pieces 70-90 m before the turn carry the turn's arrows ("left;through|
+                    // through|right", "left|left|through|through|right"), and the right lane, the one for
+                    // the turn, was called a lane to leave. Lanes on the side the route turns to next,
+                    // that close and pointing its way, lead to that turn: they go on with the route.
+                    val lanes = if (nextTurnAlong - along < SAME_SIDE_TURN_M) withNextTurnLanes(raw, geo.route.maneuvers.getOrNull(k + 1)?.type) else raw
+                    val v = lanes.count { l -> l.second }
+                    if (v == 0 || v == lanes.size) continue
                     var from = idx
                     while (from > stepStart && along - geo.along[from - 1] <= lookbackM) from--
                     if (from >= idx) continue
