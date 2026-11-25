@@ -1,5 +1,8 @@
 package io.github.spysyweeb.beamline.ui.theme
 
+import androidx.compose.animation.animateContentSize
+import androidx.compose.animation.core.Spring
+import androidx.compose.animation.core.spring
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.gestures.Orientation
@@ -183,6 +186,9 @@ fun SheetFrame(
     val drag = rememberDraggableState { dy -> state.drag(dy, stepPx) }
     Column(
         modifier
+            // item 47 (the owner, 2026-11-25: "some of the windows will need some kind of transition
+            // from one view to another"): a change of height slides, without a bounce, instead of jumping
+            .animateContentSize(spring(dampingRatio = Spring.DampingRatioNoBouncy, stiffness = Spring.StiffnessMediumLow))
             .nestedScroll(connection)
             .draggable(drag, Orientation.Vertical, onDragStopped = { state.endDrag() }),
     ) {

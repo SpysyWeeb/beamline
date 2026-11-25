@@ -185,7 +185,12 @@ fun AppRoot(g: AppGraph, flows: AppFlows, frameRate: FrameRateRequest, screenMax
                 else -> 0f
             },
             topChrome = if (resultsShown && pillShown) pillHeight.value else 0f)
-        LaunchedEffect(cameraInsets) { flows.cameraInsets = cameraInsets }
+        // item 47: a sheet that slides changes the insets every frame; the camera takes them once they
+        // have settled (INSETS_SETTLE_MS), so the map refits after the slide, not during it
+        LaunchedEffect(cameraInsets) {
+            if (flows.cameraInsets != EdgeInsetsDp()) kotlinx.coroutines.delay(INSETS_SETTLE_MS)
+            flows.cameraInsets = cameraInsets
+        }
 
         // The map's short credit (item 8): shown again when the map appears, when the app comes back
         // and at each change between browsing, a route preview, guiding and ARRIVED.
@@ -645,3 +650,6 @@ internal const val CONTINUING_TRIP = "Continuing the trip..."
 internal const val UNDO = "Undo"
 /** Longer than the session's 15 s wait for a fix before it offers the trip again. */
 internal const val CONTINUING_CAP_MS = 20_000L
+
+/** Item 47: how long the screen's insets must stay the same before the camera refits to them. */
+private const val INSETS_SETTLE_MS = 180L

@@ -873,6 +873,10 @@ not break across two lines in the banner; the results view shows at most the 20 
     bold, body 16, secondary 14 muted, section labels 13 medium in sentence case; primary 52 px filled
     pill, secondary grey-filled with an icon, tertiary text links, no heavy outlined buttons; one blue
     for primary and selection, green only for open, red only for closed and destructive.
+    *Started 2026-11-25 (not released):* every sheet built on `SheetFrame` (results, place,
+    directions) slides between heights instead of jumping (`animateContentSize`, no bounce;
+    ui/theme Sheets.kt, frozen: hash re-recorded), and the camera takes new insets only once they
+    have settled for 180 ms (`AppRoot` INSETS_SETTLE_MS), so the map refits after a slide.
 
 ## Later (not the next round)
 
