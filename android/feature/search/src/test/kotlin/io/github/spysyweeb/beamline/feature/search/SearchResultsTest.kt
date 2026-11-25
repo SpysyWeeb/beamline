@@ -59,6 +59,28 @@ class SearchResultsTest {
             SearchFeatureTest.ZOO.lat + i * 0.01, SearchFeatureTest.ZOO.lon, km, null, null, 10.0 - i, "t", tier),
     )
 
+    /** S11b (a tester, 2026-11-25): pins already shown and still in the window are never dropped by "Search this area". */
+    @Test
+    fun searchThisAreaKeepsThePinsStillInTheWindow() {
+        fake.answers = { (1..25).map { i -> store(i, km = (26 - i).toDouble()) } }
+        f.open(SearchMode.GO_TO, SearchFeatureTest.gps)
+        f.onEvent(SearchEvent.QueryChanged("sheetz"))
+        scope.testScheduler.advanceUntilIdle()
+        f.onEvent(SearchEvent.Submit)
+        scope.testScheduler.advanceUntilIdle()
+        val shown = f.results.value!!.rows.map { it.key }.toSet()
+        assertEquals(20, shown.size)
+        // zoomed out: all 25 in the window, and from the new centre the engine ranks the other end first
+        fake.answers = { (1..25).map { i -> store(i, km = i.toDouble()) } }
+        val zoo = SearchFeatureTest.ZOO
+        val window = Bounds(west = zoo.lon - 0.01, south = zoo.lat, east = zoo.lon + 0.01, north = zoo.lat + 0.26)
+        var found: Int? = -1
+        scope.launch { found = f.searchArea(GeoPoint(zoo.lat + 0.13, zoo.lon), window) }
+        scope.testScheduler.advanceUntilIdle()
+        assertEquals(20, found)
+        assertEquals(shown, f.results.value!!.rows.map { it.key }.toSet(), "every pin still in the window kept")
+    }
+
     /** S1b (the owner, 2026-11-25): a moved map is searched around its centre; the distances stay from the user. */
     @Test
     fun aMovedMapIsSearchedWithDistancesFromTheUser() {
@@ -98,7 +120,8 @@ class SearchResultsTest {
         assertEquals(centre, fake.nears.last(), "asked around the map's centre")
         val after = f.results.value!!
         assertEquals("sheetz", after.query)
-        assertEquals((107 downTo 103).map { "r:us-pa:$it" }, after.rows.map { it.key }, "only the window's, nearest first")
+        assertEquals((103..107).map { "r:us-pa:$it" }.toSet(), after.rows.map { it.key }.toSet(), "only the window's")
+        assertEquals("r:us-pa:105", after.rows.first().key, "nearest the map's centre first")
         assertNull(after.selected, "a new list: nothing selected")
         // a window with none of them: the results stay as they were
         val far = Bounds(west = zoo.lon + 1.0, south = zoo.lat + 1.0, east = zoo.lon + 1.1, north = zoo.lat + 1.1)

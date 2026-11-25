@@ -3483,7 +3483,9 @@ Every rule id below needs at least one JVM test in `:nav:session` (N's definitio
   the user offers "Search this area" first below the search bar once the camera rests. A tap asks
   the results' words again around the map's centre (on_map.candidates rows) and keeps the places in
   the part of the map the user sees (the window less the camera's padding: the search bar, the
-  list; a turned map: the box around it), nearest the centre first, at most on_map.max_results. They
+  list; a turned map: the box around it): the places already shown and still there first (a tester,
+  2026-11-25: pins still in sight were dropped), then the nearest the centre, at most
+  on_map.max_results, listed nearest the centre first. They
   replace the pins and the list (none selected, an open place sheet closes; the rows' distances stay
   from the user); the camera stays where the user put it. None there: "Nothing found in this area"
   and the results stay, until the map moves again. Other results, or none, end the offer

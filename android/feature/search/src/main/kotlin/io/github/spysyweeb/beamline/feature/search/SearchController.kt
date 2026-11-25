@@ -449,8 +449,9 @@ internal class SearchController(
     /**
      * S11b (the owner, 2026-11-24: "when they drag the map to a different area, a button should pop up
      * below the search bar that says "Search this area" that updates the pins and list with searches in
-     * that window"): the results' words again around [center], only the places inside [area], nearest
-     * the center first, at most on_map.max_results. They replace the results (none selected; the rows'
+     * that window"): the results' words again around [center], only the places inside [area]: those
+     * already shown there first, then the nearest the center, at most on_map.max_results, listed
+     * nearest the center first. They replace the results (none selected; the rows'
      * distances stay from the user's position). The number found: 0 leaves the results as they were;
      * null when the results ended or changed meanwhile, or no pack could be read.
      */
@@ -471,8 +472,14 @@ internal class SearchController(
         } ?: return null
         val now = resultsState.value
         if (now == null || now.query != text || now.places != cur.places) return null
-        val rows = (ownRows(text).filter { area.contains(it.second.point) } + rowsOf(r).filter { (_, p) -> !hiddenByOwn(p) })
-            .take(rules.mapMaxResults)
+        val fresh = ownRows(text).filter { area.contains(it.second.point) } + rowsOf(r).filter { (_, p) -> !hiddenByOwn(p) }
+        // a tester, 2026-11-25: zoomed out over four pins, "Search this area" dropped some still in the
+        // window (more than max_results matches there, the ones nearest the centre won). The places
+        // shown and still in the window stay; the rest of max_results are the nearest the centre.
+        val kept = cur.rows.zip(cur.places).filter { (_, p) -> area.contains(p.point) }
+        val seen = HashSet<String>()
+        val rows = (kept + fresh).filter { seen.add(it.first.key) }.take(rules.mapMaxResults)
+            .sortedBy { (_, p) -> Geo.haversineKm(center.lat, center.lon, p.point.lat, p.point.lon) }
         if (rows.isEmpty()) return 0
         resultsState.value = ResultsUi(text, rows.map { it.first }, rows.map { it.second })
         return rows.size
