@@ -837,6 +837,43 @@ not break across two lines in the banner; the results view shows at most the 20 
     tiles (Automatic, Same as phone, Day, Night); a tap writes the setting at once, so the map changes
     behind the sheet; Settings keeps the same section (`app/ui/MapStyleSheet.kt`).
 
+47. **Draggable sheets for every window, and screen transitions** (the owner, 2026-11-25: "Lets make
+    sure all windows have sliders / drag (if they need to be / are capable)"). Concepts on the design
+    canvas ("Sheets", "Sheets, revised"), two rounds of three and two Sonnet critiques. One big release.
+    *Owner's decisions:* full sheets stay usable while moving, no passenger button; the steps preview
+    in the full directions window; Directions shows the drive time (the fastest route's, plain
+    "Directions" when none); a map tap closes the place window; no vibration on snap.
+    *Behaviour:* three heights (peek, half, full) from content (equal heights collapse into one stop);
+    the handle row and header (48 dp or more) drag, a tap on them steps up one height; content drags
+    the sheet only at its scroll top; a fling picks the target; it always settles on a height. Place
+    window: opens at peek; closes by a deliberate pull below peek, a map tap, X or Back. Directions and
+    the stops editor: never close by a drag or a map tap (peek is the floor); X or Back closes them with
+    an Undo message that survives rotation. Back steps down one height. The map refits after the drag
+    settles (eased), never while a finger is down, and keeps the pin or route visible. Start (and
+    every primary action) stays pinned at the sheet's bottom, the same size at every height, above the
+    gesture area; lists scroll above it with a faded edge. TalkBack: the handle announces its height,
+    with Expand and Collapse actions; stops have Move up and Move down; removing a stop shows Undo.
+    Landscape: a side panel about 40 % wide, no heights. The keyboard keeps the sheet above it. Large
+    text: peek grows, never clips, titles never wrap at peek.
+    *Content:* place peek = category icon, name, "Open · closes 5 PM · 1.0 mi" (a darker green, 4.5:1),
+    full-width "Directions · 6 min", Save as an icon at the title's right; half = icon rows (pin,
+    clock, phone, globe; one outline icon set, 24 px, 2 px stroke) and Call / Website with icons; full
+    = the week's hours ("Show all hours"), a quiet footer (Report a problem, Edit on OpenStreetMap).
+    Directions peek = "11:08 PM" large, "Erie Zoo · 8 min · 2.9 mi", a one-line "2 routes" chip;
+    half = route cards with a big time, "Fastest" and "+1 min", the chosen card filled; full =
+    From / To rows with a dot-line-pin connector and swap, "Add a stop" as a row, option chips filled
+    with a check when on, and the steps preview (real maneuver icons, lane icons where they matter,
+    48 dp rows, "Show all N steps"; a tap zooms the map to the step and lowers the sheet to half).
+    Stops editor (the trip bar's list button) and the arrival card (Done primary, Save as a link;
+    drags up to the place's details) follow the same rules; the pickers (time, speed, place type)
+    become small sheets; Search, Settings, States, Saved places, Report / Add / Edit place and About
+    slide in and out; the search bar grows into the search screen and back.
+    *Style:* handle 40 x 4 px, 8 px from the top, mid-grey at 3:1 or more in both themes; 24 px top
+    corners on every sheet; 16 px side padding, 16 px between groups; title 22 semibold, key figure 28
+    bold, body 16, secondary 14 muted, section labels 13 medium in sentence case; primary 52 px filled
+    pill, secondary grey-filled with an icon, tertiary text links, no heavy outlined buttons; one blue
+    for primary and selection, green only for open, red only for closed and destructive.
+
 ## Later (not the next round)
 
 - **Linking Beamline to the real vehicle through the comma 3X** (owner, 2026-11-16). The driving
