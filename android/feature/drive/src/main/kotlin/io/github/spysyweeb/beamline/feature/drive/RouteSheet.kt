@@ -78,10 +78,11 @@ import kotlin.math.roundToInt
 @Composable
 internal fun RouteSheet(sheet: RouteSheetUi, onEvent: (DriveEvent) -> Unit, modifier: Modifier = Modifier) {
     // Rule D10: two heights, kept while the sheet shows and across a turn of the phone; a new trip's
-    // sheet opens at full height. At most 560 dp tall (less on a short screen).
+    // sheet opens at full height (item 47 will give it three heights, opening at half, with its
+    // screen tests). At most 560 dp tall (less on a short screen).
     val height = rememberSheetState(SheetSteps.TWO, SheetHeight.FULL)
     SheetFrame(
-        height, DriveTexts.ROUTE_CHOICE, MaterialTheme.colorScheme.outlineVariant,
+        height, DriveTexts.ROUTE_CHOICE, MaterialTheme.colorScheme.onSurfaceVariant,
         modifier.fillMaxWidth().heightIn(max = 560.dp).testTag(DriveTags.ROUTE_SHEET),
     ) {
         Box(Modifier.fillMaxWidth().height(4.dp)) {

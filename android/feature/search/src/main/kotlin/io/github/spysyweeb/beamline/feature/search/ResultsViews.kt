@@ -122,7 +122,7 @@ internal fun ResultsSheetContent(ui: ResultsUi, onEvent: (ResultsEvent) -> Unit,
         modifier = modifier.fillMaxWidth().testTag(RESULTS_SHEET_TAG),
     ) {
         SheetFrame(
-            sheet, Texts.RESULTS_LIST, p.divider, Modifier.navigationBarsPadding(),
+            sheet, Texts.RESULTS_LIST, p.subtle, Modifier.navigationBarsPadding(),
             header = {
                 Row(verticalAlignment = Alignment.CenterVertically, modifier = Modifier.fillMaxWidth().padding(start = 16.dp)) {
                     Column(Modifier.weight(1f)) {

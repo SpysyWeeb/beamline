@@ -876,7 +876,11 @@ not break across two lines in the banner; the results view shows at most the 20 
     *Started 2026-11-25 (not released):* every sheet built on `SheetFrame` (results, place,
     directions) slides between heights instead of jumping (`animateContentSize`, no bounce;
     ui/theme Sheets.kt, frozen: hash re-recorded), and the camera takes new insets only once they
-    have settled for 180 ms (`AppRoot` INSETS_SETTLE_MS), so the map refits after a slide.
+    have settled for 180 ms (`AppRoot` INSETS_SETTLE_MS), so the map refits after a slide. Then: the handle
+    40 x 4 dp in each sheet's muted text colour; the place window opens at peek with its status line,
+    its main button and Save (SheetHeightsScreensTest updated, not yet run on the emulator). Left:
+    the directions window's three heights opening at half (about ten drive screen tests assume it
+    opens at full: update them with it), and everything else in this item.
 
 ## Later (not the next round)
 

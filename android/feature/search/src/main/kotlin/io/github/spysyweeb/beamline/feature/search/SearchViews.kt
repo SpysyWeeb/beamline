@@ -492,14 +492,16 @@ internal fun PillButton(text: String, night: Boolean, primary: Boolean = false, 
  * title line alone (the map free), the sheet of batch B (status, buttons) and the details height
  * (everything the packs say: the whole week, every number and web address written out, the address,
  * what the place is). A drag or a tap on the handle or the title line moves between them; a tap on
- * the status line raises it to the details height. A new place opens at the middle height. The
+ * the status line raises it to the details height. A new place opens at the lowest height (item 47:
+ * name, distance, whether it is open, the main button and Save). The
  * details height is at most [DETAILS_MAX_SHARE] of the window and scrolls inside.
  */
 @Composable
 internal fun PlaceSheetContent(ui: PlaceSheetUi, onEvent: (PlaceSheetEvent) -> Unit, modifier: Modifier) {
     val night = isNight()
     val p = palette(night)
-    val sheet = rememberSheetState(SheetSteps.THREE, SheetHeight.MIDDLE, ui.place)
+    // item 47 (the owner, 2026-11-25): a place opens at peek (name, status, Directions, Save)
+    val sheet = rememberSheetState(SheetSteps.THREE, SheetHeight.LOW, ui.place)
     val open = sheet.height != SheetHeight.LOW
     val details = sheet.height == SheetHeight.FULL
     val maxHeight = (LocalConfiguration.current.screenHeightDp * DETAILS_MAX_SHARE).dp
@@ -508,7 +510,7 @@ internal fun PlaceSheetContent(ui: PlaceSheetUi, onEvent: (PlaceSheetEvent) -> U
         modifier = modifier.fillMaxWidth().heightIn(max = maxHeight).testTag(PLACE_SHEET_TAG),
     ) {
         SheetFrame(
-            sheet, Texts.PLACE_DETAILS, p.divider, Modifier.navigationBarsPadding(),
+            sheet, Texts.PLACE_DETAILS, p.subtle, Modifier.navigationBarsPadding(),
             header = {
                 Row(verticalAlignment = Alignment.Top, modifier = Modifier.padding(start = 16.dp, end = 16.dp, bottom = if (open) 0.dp else 8.dp)) {
                     SpriteIcon(ui.iconName, night, 28.dp, Modifier.padding(top = 2.dp))
@@ -516,12 +518,12 @@ internal fun PlaceSheetContent(ui: PlaceSheetUi, onEvent: (PlaceSheetEvent) -> U
                     Column(Modifier.weight(1f).semantics(mergeDescendants = true) {}) {
                         Text(ui.title, fontSize = 19.sp, fontWeight = FontWeight.SemiBold, maxLines = if (open) 2 else 1, overflow = TextOverflow.Ellipsis,
                             modifier = Modifier.semantics { heading() })
-                        if (open) {
-                            if (ui.subtitle != null) Text(ui.subtitle, color = p.subtle, fontSize = 14.sp, maxLines = 3)
-                            val line = listOfNotNull(ui.distanceText, ui.savedText).joinToString(" · ")
-                            if (line.isNotEmpty()) Text(line, color = p.subtle, fontSize = 14.sp)
-                            if (ui.note != null) Text(ui.note, color = p.panelText, fontSize = 14.sp, fontWeight = FontWeight.Medium)
-                        }
+                        if (open && ui.subtitle != null) Text(ui.subtitle, color = p.subtle, fontSize = 14.sp, maxLines = 3)
+                        val line = listOfNotNull(ui.distanceText, ui.savedText).joinToString(" · ")
+                        if (line.isNotEmpty()) Text(line, color = p.subtle, fontSize = 14.sp, maxLines = 1, overflow = TextOverflow.Ellipsis)
+                        // item 47: peek says whether it is open now (the full line is under the header from half up)
+                        if (!open && ui.hours != null) HoursLine(ui.hours, night, fontSize = 14)
+                        if (open && ui.note != null) Text(ui.note, color = p.panelText, fontSize = 14.sp, fontWeight = FontWeight.Medium)
                         // Batch O3 (item 26): the values shown are the user's own, until the map update has them
                         if (ui.ownTag != null) Surface(
                             shape = RoundedCornerShape(8.dp), color = p.accent.copy(alpha = 0.14f), contentColor = p.panelText,
@@ -533,6 +535,18 @@ internal fun PlaceSheetContent(ui: PlaceSheetUi, onEvent: (PlaceSheetEvent) -> U
                 }
             },
         ) {
+            // item 47: peek keeps the main button and Save, so a place can be driven to without dragging
+            if (!open) {
+                val main = ui.actions.firstOrNull { it == PlaceAction.DIRECTIONS || it == PlaceAction.ADD_STOP || it == PlaceAction.OPEN_STATES }
+                val keep = ui.actions.firstOrNull { it == PlaceAction.SAVE || it == PlaceAction.EDIT }
+                if (main != null || keep != null) Row(
+                    horizontalArrangement = Arrangement.spacedBy(8.dp),
+                    modifier = Modifier.padding(start = 16.dp, end = 16.dp, bottom = 14.dp).testTag(PLACE_PEEK_ACTIONS_TAG),
+                ) {
+                    if (main != null) PillButton(placeActionLabel(main), night, primary = true) { onEvent(PlaceSheetEvent.Act(main)) }
+                    if (keep != null) PillButton(placeActionLabel(keep), night, primary = false) { onEvent(PlaceSheetEvent.Act(keep)) }
+                }
+            }
             if (open) Column(
                 Modifier.weight(1f, fill = false).verticalScroll(rememberScrollState()).padding(start = 16.dp, end = 16.dp, bottom = 16.dp),
             ) {
@@ -555,18 +569,7 @@ internal fun PlaceSheetContent(ui: PlaceSheetUi, onEvent: (PlaceSheetEvent) -> U
                 Spacer(Modifier.size(12.dp))
                 Row(horizontalArrangement = Arrangement.spacedBy(8.dp), modifier = Modifier.horizontalScroll(rememberScrollState())) {
                     for (a in ui.actions) {
-                        val label = when (a) {
-                            PlaceAction.DIRECTIONS -> Texts.DIRECTIONS
-                            PlaceAction.ADD_STOP -> Texts.ADD_STOP
-                            PlaceAction.OPEN_STATES -> Texts.ADD_STATE_BUTTON
-                            PlaceAction.SAVE -> Texts.SAVE
-                            PlaceAction.EDIT -> Texts.EDIT
-                            PlaceAction.CALL -> Texts.CALL
-                            PlaceAction.WEBSITE -> Texts.WEBSITE
-                            PlaceAction.REPORT -> Texts.REPORT
-                            PlaceAction.EDIT_OSM -> Texts.EDIT_OSM
-                            PlaceAction.ADD_PLACE -> Texts.ADD_PLACE
-                        }
+                        val label = placeActionLabel(a)
                         val primary = a == ui.actions.firstOrNull { it == PlaceAction.DIRECTIONS || it == PlaceAction.ADD_STOP || it == PlaceAction.OPEN_STATES }
                         PillButton(label, night, primary = primary) { onEvent(PlaceSheetEvent.Act(a)) }
                     }
@@ -588,6 +591,23 @@ internal fun PlaceSheetContent(ui: PlaceSheetUi, onEvent: (PlaceSheetEvent) -> U
         }
     }
 }
+
+/** The words of a place sheet button. */
+internal fun placeActionLabel(a: PlaceAction): String = when (a) {
+    PlaceAction.DIRECTIONS -> Texts.DIRECTIONS
+    PlaceAction.ADD_STOP -> Texts.ADD_STOP
+    PlaceAction.OPEN_STATES -> Texts.ADD_STATE_BUTTON
+    PlaceAction.SAVE -> Texts.SAVE
+    PlaceAction.EDIT -> Texts.EDIT
+    PlaceAction.CALL -> Texts.CALL
+    PlaceAction.WEBSITE -> Texts.WEBSITE
+    PlaceAction.REPORT -> Texts.REPORT
+    PlaceAction.EDIT_OSM -> Texts.EDIT_OSM
+    PlaceAction.ADD_PLACE -> Texts.ADD_PLACE
+}
+
+/** Test tag of the buttons a place shows at peek (item 47). */
+internal const val PLACE_PEEK_ACTIONS_TAG = "place-peek-actions"
 
 /** The highest share of the window the place sheet's details height takes (the map keeps the rest; batch G). */
 internal const val DETAILS_MAX_SHARE = 0.7f

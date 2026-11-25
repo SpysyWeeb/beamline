@@ -122,26 +122,26 @@ class SheetHeightsScreensTest {
         assertTrue(events.toString(), events.contains(ResultsEvent.Select(12)))
     }
 
+    /** Item 47 (the owner, 2026-11-25): a new place opens at peek, with its name, Directions and Save. */
     @Test
-    fun placeSheetLowShowsTheTitleOnly() {
+    fun placeSheetOpensAtPeekWithItsButtons() {
         val place = Place("Erie Maritime Museum", GeoPoint(42.13646, -80.08718), PlaceSource.SEARCH, "100 East Front Street, Erie", "museum")
         val ui = PlaceSheetUi(place, "museum", place.name, place.subtitle, "2.3 mi", null, listOf(PlaceAction.DIRECTIONS, PlaceAction.SAVE))
         show { Box(Modifier.size(360.dp, 700.dp)) { PlaceSheetContent(ui, { events.add(it) }, Modifier.align(Alignment.BottomCenter)) } }
-        assertEquals("Half open", state())   // batch G: a new place opens at the middle height
-        compose.onNodeWithText(Texts.DIRECTIONS).assertIsDisplayed()
-        val full = height(PLACE_SHEET_TAG)
-        handle().performTouchInput { swipeDown() }
-        compose.waitForIdle()
         assertEquals("Lowered", state())
-        assertEquals(0, compose.onAllNodes(hasText(Texts.DIRECTIONS)).fetchSemanticsNodes().size)
+        compose.onNodeWithTag(PLACE_PEEK_ACTIONS_TAG).assertIsDisplayed()
+        compose.onNodeWithText(Texts.DIRECTIONS).assertIsDisplayed()
+        compose.onNodeWithText(Texts.SAVE).assertIsDisplayed()
         compose.onNodeWithText("Erie Maritime Museum").assertIsDisplayed()
-        assertTrue(height(PLACE_SHEET_TAG) < full)
+        val low = height(PLACE_SHEET_TAG)
         val desc = handle().fetchSemanticsNode().config[SemanticsProperties.ContentDescription]
         assertTrue(desc.toString(), desc.contains(Texts.PLACE_DETAILS))
-        // a drag up anywhere on it raises it again
+        // a drag up anywhere on it raises it; the peek buttons give way to the full row
         compose.onNodeWithTag(PLACE_SHEET_TAG).performTouchInput { swipeUp(startY = centerY, endY = centerY - 300f) }
         compose.waitForIdle()
-        assertEquals("Full height", state())
+        assertTrue(state() != "Lowered")
+        assertTrue(height(PLACE_SHEET_TAG) > low)
+        assertEquals(0, compose.onAllNodes(hasTestTag(PLACE_PEEK_ACTIONS_TAG)).fetchSemanticsNodes().size)
         compose.onNodeWithText(Texts.DIRECTIONS).performClick()
         assertTrue(events.toString(), events.contains(PlaceSheetEvent.Act(PlaceAction.DIRECTIONS)))
     }
@@ -163,6 +163,8 @@ class SheetHeightsScreensTest {
     @Test
     fun placeSheetDetailsHeight() {
         show { Box(Modifier.size(360.dp, 700.dp)) { PlaceSheetContent(detailsUi(true), { events.add(it) }, Modifier.align(Alignment.BottomCenter)) } }
+        assertEquals("Lowered", state()) // item 47: opens at peek; one raise to the middle height
+        handle().action("Raise the sheet")
         assertEquals("Half open", state())
         assertEquals(0, compose.onAllNodes(hasTestTag(PLACE_DETAILS_TAG)).fetchSemanticsNodes().size)
         val middle = height(PLACE_SHEET_TAG)
@@ -198,6 +200,7 @@ class SheetHeightsScreensTest {
     @Test
     fun placeSheetDetailsWhileGuiding() {
         show { Box(Modifier.size(360.dp, 700.dp)) { PlaceSheetContent(detailsUi(false), { events.add(it) }, Modifier.align(Alignment.BottomCenter)) } }
+        handle().action("Raise the sheet") // item 47: from peek, two raises to the details height
         handle().action("Raise the sheet")
         assertEquals("Full height", state())
         compose.onNodeWithTag("detail-phone-0").performScrollTo()

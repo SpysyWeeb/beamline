@@ -3594,12 +3594,14 @@ Every rule id below needs at least one JVM test in `:nav:session` (N's definitio
   A drag anywhere on a sheet moves it
   one height for every 40 dp (`SHEET_STEP`) it travels in one direction; on the rows of a list a drag
   up raises the sheet before the rows scroll, a drag down scrolls the rows to their top first and
-  then lowers it; the sheet rests at its heights (no height in between, no animation, so the camera
-  gets one change per step). A tap on the handle (or on the header joined to it) raises one height,
+  then lowers it; the sheet rests at its heights (no height in between). Since item 47 (2026-11-25) a
+  change of height slides (`animateContentSize`, no bounce) and the camera takes the new insets once
+  they have settled for 180 ms (`AppRoot` INSETS_SETTLE_MS), so the map refits after the slide. A tap on the handle (or on the header joined to it) raises one height,
   from the highest back to the lowest. A screen reader finds the handle by "Results list", "Route
   choice" or "Place details", with its height ("Lowered", "Half open", "Full height") and the actions
-  "Raise the sheet" and "Lower the sheet". A new results list and a new place open at the middle
-  height, a new trip's sheet at full height; the height is kept across a turn of the phone, and the
+  "Raise the sheet" and "Lower the sheet"; the handle is 40 x 4 dp in the sheet's muted text colour
+  (item 47). A new results list opens at the middle height, a new place at the lowest (item 47: its
+  name, distance, whether it is open, and its main button and Save), a new trip's sheet at full height; the height is kept across a turn of the phone, and the
   results list's while a result's place sheet is open. The camera's insets follow the height the
   sheet rests at (the app measures each sheet, `AppRules.cameraInsets`, `DriveOverlay.onInsets`), so
   the results (K1), the routes (K2) and a picked place (K1) are fitted to the space left, and fitted

@@ -212,7 +212,7 @@ fun SheetFrame(
                 Modifier
                     .align(Alignment.CenterHorizontally)
                     .padding(top = 8.dp, bottom = 6.dp)
-                    .size(width = 36.dp, height = 4.dp)
+                    .size(width = 40.dp, height = 4.dp) // item 47: 40 x 4, in a colour of 3:1 or more (the callers)
                     .background(handleColor, RoundedCornerShape(2.dp)),
             )
             header()
