@@ -3253,8 +3253,14 @@ Every rule id below needs at least one JVM test in `:nav:session` (N's definitio
   following -> following turned by the phone's compass (the button shows a needle pointing to north
   on the screen, ringed in the route's blue); turned by the compass -> following, north up. Since
   0.1.29 (the owner: "The goal is to keep the map up to speed with the user") the map takes the
-  rotation-vector sensor's reading straight, at the game rate and only while it turns with the
-  compass: no smoothing, no animation, a change of 0.5 degrees or more. A drag ends the following
+  rotation-vector sensor's reading without animation, only while it turns with the compass. Since
+  0.1.30 (the owner: "a little bit of snapping when the compass is moving 1 degree at a time ... a
+  super small amount of smoothing without adding any kind of delay") the sensor reads every 8 ms
+  (faster than the screen redraws) and `CompassFilter`, a One Euro filter (minimum cut-off 1 Hz,
+  beta 2, derivative cut-off 3 Hz), calms it in place of 0.1.29's half-degree steps. Simulated:
+  turning at a steady speed the map is under 0.1 degree behind; when a turn starts from still at
+  most about 0.4 degree (2 ms at a quick turn); held still it wobbles about half as much as the
+  sensor. Moves under 0.02 degree are skipped. A drag ends the following
   and the compass turn (the map stays as it is); a two-finger turn ends only the compass turn.
   Otherwise a small red mark on the button's rim always points to north (since 0.1.29). The button's look is
   option A of the owner's choice (2026-11-24): a bold crosshair, blue with a dot while following, a
@@ -3262,7 +3268,7 @@ Every rule id below needs at least one JVM test in `:nav:session` (N's definitio
   fills the whole screen, behind the status bar and the navigation bar (0.1.29). Browsing's own moves (a picked place) keep the
   bearing browsing has. A new phase group (a route choice, guidance, arrival, back to browsing) starts
   north up with the compass not leading. Without a compass reading the second tap keeps following
-  north up. The constant is `Director`'s COMPASS_STEP_DEG.
+  north up. The constants are `Director`'s COMPASS_STEP_DEG and `CompassFilter`'s.
 - **K2** PLANNING/CHOOSING → PREVIEW: top-down, north up, fit all choices' bounds plus the origin and
   stops, padded by `padding_dp` plus the overlay insets.
 - **K3** GUIDING or REROUTING → GUIDE_FOLLOW: pitch `pitch_deg` (60), bearing = vehicle bearing

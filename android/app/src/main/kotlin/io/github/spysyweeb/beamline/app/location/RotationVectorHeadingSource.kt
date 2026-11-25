@@ -25,7 +25,7 @@ import kotlinx.coroutines.flow.callbackFlow
  */
 class RotationVectorHeadingSource(
     private val context: Context,
-    /** SensorManager's delay: SENSOR_DELAY_UI for the puck's cone, SENSOR_DELAY_GAME for the compass-turned map (K1a). */
+    /** SensorManager's delay: SENSOR_DELAY_UI for the puck's cone; for the compass-turned map (K1a) a period in microseconds (8000). */
     private val delay: Int = SensorManager.SENSOR_DELAY_UI,
     private val lastLocation: () -> Location?,
 ) : HeadingSource {

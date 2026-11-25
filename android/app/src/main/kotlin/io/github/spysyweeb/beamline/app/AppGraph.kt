@@ -569,10 +569,11 @@ class AppGraph(context: Context, val dataDir: File, val locationLog: Boolean) {
         // The camera director follows the trip and the puck, and ticks once a second (M's wiring).
         scope.launch { session.state.collect { director.onTrip(it) } }
         scope.launch { puck.puck.collect { director.onPuck(it) } }
-        // K1a: while the map turns with the compass, the sensor at the game rate straight to the camera
+        // K1a: while the map turns with the compass, the sensor at 125 readings a second (every 8 ms,
+        // faster than the screen redraws: 0.1.30) to the camera, which calms it (CompassFilter)
         scope.launch {
             val fast = io.github.spysyweeb.beamline.app.location.RotationVectorHeadingSource(
-                app, android.hardware.SensorManager.SENSOR_DELAY_GAME) { positions.lastLocation }
+                app, COMPASS_SAMPLING_US) { positions.lastLocation }
             director.compassFollow.collectLatest { on -> if (on) fast.headings().collect { director.onHeading(it.degrees) } }
         }
         scope.launch {
@@ -701,5 +702,8 @@ class AppGraph(context: Context, val dataDir: File, val locationLog: Boolean) {
         const val TAG = "Beamline"
         const val PACKS_TAG = "BeamlinePacks"
         const val LOCATION_TAG = "BeamlineLocation"
+
+        /** K1a: the compass-turned map's sensor period, microseconds (125 readings a second; 0.1.30). */
+        const val COMPASS_SAMPLING_US = 8_000
     }
 }

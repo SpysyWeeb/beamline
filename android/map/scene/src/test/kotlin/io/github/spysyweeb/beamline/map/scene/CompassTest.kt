@@ -10,6 +10,7 @@ import org.junit.jupiter.api.Assertions.assertEquals
 import org.junit.jupiter.api.Assertions.assertFalse
 import org.junit.jupiter.api.Assertions.assertTrue
 import org.junit.jupiter.api.Test
+import kotlin.math.abs
 
 /**
  * Rule K1a (the owner, 2026-11-24; one button since 0.1.28): browsing may be turned, and my-location
@@ -32,18 +33,54 @@ class CompassTest {
         val t = cam.target.value!!
         assertEquals(90.0, t.bearingDeg, 0.5, "turned to the phone's direction")
         assertEquals(Fx.ORIGIN.lat, t.center!!.lat, 1e-9, "still centred on the user")
-        // the phone turns: the map keeps up at once (0.1.29: no smoothing, no animation)
+        // the compass's first reading: the map takes it at once, without animation
         cam.onHeading(120f)
         assertEquals(120.0, cam.target.value!!.bearingDeg, 1e-9)
         assertEquals(0, cam.target.value!!.animateMs, "no animation to wait for")
-        cam.onHeading(120.3f)
-        assertEquals(120.0, cam.target.value!!.bearingDeg, 1e-9, "a change under half a degree (sensor noise) does not move the camera")
         cam.onPuck(Fx.puck(Fx.ORIGIN, cone = 200f))
         assertEquals(120.0, cam.target.value!!.bearingDeg, 1e-9, "the puck's smoothed cone does not steer the camera")
         cam.onMyLocation()
         assertFalse(cam.compassFollow.value)
         assertEquals(CameraMode.BROWSE_FOLLOW, mode)
         assertEquals(0.0, cam.target.value!!.bearingDeg, "following, north up again")
+    }
+
+    @Test
+    fun `the compass is calmed when the phone is still and keeps up when it turns (0_1_30)`() {
+        cam.onPuck(Fx.puck(Fx.ORIGIN, cone = 90f))
+        cam.onMyLocation()
+        cam.onMyLocation()
+        cam.onHeading(120f)
+        fun bearing() = cam.target.value!!.bearingDeg
+        // held still, a sensor wobbling 0.3 degree either way (every 8 ms): the map about a third of it
+        for (i in 1..250) {
+            now += 8
+            cam.onHeading(if (i % 2 == 0) 120.3f else 119.7f)
+            assertEquals(120.0, bearing(), 0.15, "still, reading $i")
+        }
+        // a slow turn, 5 degrees a second: small steps with almost every reading (0.1.29: half a degree)
+        var last = bearing()
+        var moves = 0
+        for (i in 1..250) {
+            now += 8
+            cam.onHeading((120 + 5.0 * i * 0.008).toFloat())
+            assertTrue(abs(signedDiff(bearing(), last)) < 0.1, "slow turn, reading $i: a step of ${bearing() - last}")
+            if (bearing() != last) moves++
+            last = bearing()
+        }
+        assertTrue(moves > 200, "the map moved with $moves of 250 readings")
+        assertEquals(130.0, bearing(), 0.1, "a tenth of a degree behind at most")
+        // a quick turn, 180 degrees a second, across north: never half a degree behind
+        var truth = 130.0
+        for (i in 1..187) {
+            now += 8
+            truth = (130 + 180.0 * i * 0.008) % 360
+            cam.onHeading(truth.toFloat())
+            val behind = signedDiff(truth, bearing())
+            assertTrue(behind > -0.05 && behind < 0.5, "quick turn, reading $i: $behind degrees behind")
+        }
+        assertTrue(truth < 90, "the turn went past north")
+        assertEquals(0.0, signedDiff(truth, bearing()), 0.15)
     }
 
     @Test

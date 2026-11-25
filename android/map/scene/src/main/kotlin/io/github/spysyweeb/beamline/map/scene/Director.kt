@@ -35,6 +35,7 @@ import kotlinx.coroutines.flow.asStateFlow
  * thread in the app); the flows may be read from any thread.
  */
 internal class Director(private val rules: CameraRules, private val clock: Clock) {
+    private val compassFilter = CompassFilter()
     private val _target = MutableStateFlow<CameraTarget?>(null)
     val target: StateFlow<CameraTarget?> = _target.asStateFlow()
     private val _state = MutableStateFlow(CameraState())
@@ -208,6 +209,7 @@ internal class Director(private val rules: CameraRules, private val clock: Clock
                 val heading = puck?.coneDeg
                 if (mode == CameraMode.BROWSE_FOLLOW && !_compassFollow.value && heading != null) {
                     browseBearing = heading.toDouble()
+                    compassFilter.reset()
                     _compassFollow.value = true
                 } else {
                     _compassFollow.value = false
@@ -250,13 +252,16 @@ internal class Director(private val rules: CameraRules, private val clock: Clock
     /**
      * K1a: a compass reading straight from the sensor (the app reads it only while [compassFollow]):
      * the map keeps up with the phone (0.1.29, the owner: "so if they want to look in a direction, it's
-     * not making the user dizzy waiting for the screen to keep up"), no smoothing and no animation,
-     * only changes of COMPASS_STEP_DEG or more (the sensor's own noise is smaller).
+     * not making the user dizzy waiting for the screen to keep up"), no animation; since 0.1.30 calmed
+     * by [CompassFilter] (the owner: "a little bit of snapping when the compass is moving 1 degree at a
+     * time"), which replaced 0.1.29's half-degree steps. Moves under COMPASS_STEP_DEG (none can see
+     * them) are skipped.
      */
     fun onHeading(deg: Float) {
         if (!_compassFollow.value || mode != CameraMode.BROWSE_FOLLOW) return
-        if (kotlin.math.abs(signedDiff(deg.toDouble(), browseBearing)) < COMPASS_STEP_DEG) return
-        browseBearing = deg.toDouble()
+        val smoothed = compassFilter.next(deg.toDouble(), clock.elapsedMs())
+        if (kotlin.math.abs(signedDiff(smoothed, browseBearing)) < COMPASS_STEP_DEG) return
+        browseBearing = smoothed
         publish(0)
     }
 
@@ -630,7 +635,7 @@ internal class Director(private val rules: CameraRules, private val clock: Clock
         /** A fit box smaller than this (about 50 m) in both directions is one point. */
         const val POINT_SPAN_DEG = 0.0005
         /** K1a: the map turns with the compass by this much or more at a time (below it the sensor's noise). */
-        const val COMPASS_STEP_DEG = 0.5
+        const val COMPASS_STEP_DEG = 0.02
     }
 }
 
