@@ -3059,7 +3059,11 @@ Every rule id below needs at least one JVM test in `:nav:session` (N's definitio
   step's own maneuver; one trace_attributes call per candidate, at most `max_calls` (40) per route,
   nearest first; a failed call drops only that spot). Of a run of nodes with the same lanes in a
   step only the last counts (a turn-lane tag covers every piece of its way), and none within 60 m
-  before the route's next maneuver (those are that maneuver's lanes, B5). The road's own count is
+  before the route's next maneuver (those are that maneuver's lanes, B5). Within `SAME_SIDE_TURN_M`
+  (300 m) before a next maneuver that turns to one side, the lanes on that side outside the ones
+  that go on, every arrow pointing that way, count as going on: they are that turn's lanes painted
+  and tagged before it (a reported drive, 2026-11-25, where a road's pieces 70-90 m before a light
+  carried the light's arrows and the lane for the turn was called a lane to leave). The road's own count is
   trusted when turn lanes were seen being added (fewer lanes before than at the intersection) or
   when it had as many lanes for `same_count_evidence_m` (300 m); an added turn lane alone never warns
   (the lanes that go on are as many as the road had). Shown (`Guidance.laneWarning`, a
