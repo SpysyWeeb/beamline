@@ -23,6 +23,9 @@
     <uses-permission android:name="android.permission.POST_NOTIFICATIONS" />
     <!-- Item 41 (docs/app-updates-design.md 4): Beamline installs its own updates from its GitHub releases. -->
     <uses-permission android:name="android.permission.REQUEST_INSTALL_PACKAGES" />
+    <!-- item 41 (the owner, 2026-11-26: "Silent updates: Approved"): an update Beamline installs over
+         a version it installed itself goes in without the "Update this app?" question (Android 12+) -->
+    <uses-permission android:name="android.permission.UPDATE_PACKAGES_WITHOUT_USER_ACTION" />
     <!-- The map works without any location hardware, so do not let stores filter on it. -->
     <uses-feature
         android:name="android.hardware.location"

@@ -99,3 +99,7 @@ after every batch the owner approves.
 3. The next approved batch (0.1.27) is the real test: the phone finds it, Android asks once to allow
    "Install unknown apps" for Beamline and to confirm the install; later updates should be silent.
    A test build installed over USB makes the shell the installer again, so the next update asks once more.
+
+**2026-11-26:** the owner approved silent updates; the manifest declares
+`UPDATE_PACKAGES_WITHOUT_USER_ACTION`, so an update installed over a version Beamline installed itself
+no longer asks "Update this app?" (Android 12+; the first self-install still asks once).
