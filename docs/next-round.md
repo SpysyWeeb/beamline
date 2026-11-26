@@ -882,6 +882,28 @@ not break across two lines in the banner; the results view shows at most the 20 
     the directions window's three heights opening at half (about ten drive screen tests assume it
     opens at full: update them with it), and everything else in this item.
 
+48. **Every state's packs, built on GitHub's machines only** (the owner, 2026-11-25/26: "I'm just
+    trying to think of a way we can have github machines handle all the workflow"). Today
+    `weekly.py` builds the states one after another in one job (5 h 45 min cap); 50 states would not
+    fit. *Plan:* one workflow with a matrix, one job per state in parallel (`max-parallel` about 8:
+    20 jobs at once per account, and gentle on Geofabrik), `fail-fast: false`; a state that fails
+    keeps its previous pack; then one publish job that gathers the built packs, checks them and
+    writes `catalog.json` (and `comma.json`) once. `weekly.py` gains a build-one-state mode and a
+    separate publish step. Each job keeps the disk freeing and swap (about 60-70 GB, 16 GB RAM).
+    A state too big for one job splits by part (map, routing, search, addresses, each its own job,
+    files passed through the store), never a self-hosted runner. *First:* a one-off California
+    trial on a GitHub machine measuring time, peak memory, disk and file sizes (estimated 2-3 h,
+    about 10 GB for the search build; Pennsylvania: about 30 min, 3 GB). *Watch:* release files
+    are at most 2 GB each (a big state's routing file may need parts); Geofabrik outages (per-address
+    logging is live, openstreetmap.fr region files as a fallback if they repeat). *Order:*
+    Pennsylvania and Ohio first (both in the config), then New York, New Jersey, Maryland,
+    Delaware, West Virginia, then the rest. Changes the packs repo only (exported from `packs-repo/`).
+    *Also queued:* the next app release carries silent updates (3ef1e0d, the owner's approval
+    2026-11-26); a map-data check on the first start after a self-update; the Parade St lane-tag fix
+    in OpenStreetMap (shown to the owner first); lane strip extras ("+3" trimming, per-lane
+    destinations, swipe to hide); search: plural folding in names, the everyday list from other
+    towns, more than 20 pins or thinning when zoomed out.
+
 ## Later (not the next round)
 
 - **Linking Beamline to the real vehicle through the comma 3X** (owner, 2026-11-16). The driving
