@@ -399,16 +399,12 @@ private fun SpeedChoices(chosen: Int?, perRow: Int = 4, onPick: (Int) -> Unit) {
  */
 @Composable
 fun SpeedPickDialog(onPick: (Int) -> Unit, onDismiss: () -> Unit) {
-    AlertDialog(
-        onDismissRequest = onDismiss,
-        title = { Text(OnlineTexts.SPEED_PICK_TITLE) },
-        text = {
-            Column(Modifier.testTag("speed-pick"), verticalArrangement = Arrangement.spacedBy(10.dp)) {
-                Text(OnlineTexts.SPEED_PICK_TEXT, style = MaterialTheme.typography.bodyMedium)
-                SpeedChoices(null, perRow = 3, onPick = onPick)
-            }
-        },
-        confirmButton = {},
-        dismissButton = { TextButton(onClick = onDismiss, modifier = Modifier.heightIn(min = 48.dp)) { Text(OnlineTexts.SPEED_PICK_CANCEL) } },
-    )
+    // item 47: a small sheet from the bottom, as the other pickers
+    PickerSheet(OnlineTexts.SPEED_PICK_TITLE, onDismiss) {
+        Column(Modifier.testTag("speed-pick"), verticalArrangement = Arrangement.spacedBy(10.dp)) {
+            Text(OnlineTexts.SPEED_PICK_TEXT, style = MaterialTheme.typography.bodyMedium)
+            SpeedChoices(null, perRow = 3, onPick = onPick)
+        }
+        TextButton(onClick = onDismiss, modifier = Modifier.align(Alignment.End).heightIn(min = 48.dp)) { Text(OnlineTexts.SPEED_PICK_CANCEL) }
+    }
 }

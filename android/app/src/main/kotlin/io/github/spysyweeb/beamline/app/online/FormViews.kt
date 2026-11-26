@@ -1,5 +1,8 @@
 package io.github.spysyweeb.beamline.app.online
 
+import androidx.compose.foundation.layout.navigationBarsPadding
+import androidx.compose.material3.rememberModalBottomSheetState
+import androidx.compose.material3.ModalBottomSheet
 import android.text.format.DateFormat
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
@@ -400,22 +403,33 @@ private fun HolidaysLine(d: HoursDraft, h24: Boolean, onChange: (HoursDraft) -> 
 fun TimePickDialog(initial: Int, h24: Boolean, onPick: (Int) -> Unit, onDismiss: () -> Unit) {
     val state = rememberTimePickerState(initialHour = initial / 60, initialMinute = initial % 60, is24Hour = h24)
     var typing by remember { mutableStateOf(false) }
-    AlertDialog(
-        onDismissRequest = onDismiss,
-        title = { Text(OnlineTexts.PICK_TIME) },
-        text = {
-            Column(horizontalAlignment = Alignment.CenterHorizontally, modifier = Modifier.fillMaxWidth().testTag("time-picker")) {
-                if (typing) TimeInput(state) else TimePicker(state)
-            }
-        },
-        confirmButton = { TextButton(onClick = { onPick(state.hour * 60 + state.minute) }, modifier = Modifier.testTag("time-ok")) { Text(OnlineTexts.OK) } },
-        dismissButton = {
-            Row {
-                TextButton(onClick = { typing = !typing }) { Text(if (typing) OnlineTexts.USE_DIAL else OnlineTexts.TYPE_TIME) }
-                TextButton(onClick = onDismiss) { Text(OnlineTexts.CANCEL) }
-            }
-        },
-    )
+    // item 47: a small sheet (its handle drags it away), as the map style sheet
+    PickerSheet(OnlineTexts.PICK_TIME, onDismiss) {
+        Column(horizontalAlignment = Alignment.CenterHorizontally, modifier = Modifier.fillMaxWidth().testTag("time-picker")) {
+            if (typing) TimeInput(state) else TimePicker(state)
+        }
+        Row(Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically) {
+            TextButton(onClick = { typing = !typing }, modifier = Modifier.heightIn(min = 48.dp)) { Text(if (typing) OnlineTexts.USE_DIAL else OnlineTexts.TYPE_TIME) }
+            Spacer(Modifier.weight(1f))
+            TextButton(onClick = onDismiss, modifier = Modifier.heightIn(min = 48.dp)) { Text(OnlineTexts.CANCEL) }
+            TextButton(onClick = { onPick(state.hour * 60 + state.minute) }, modifier = Modifier.heightIn(min = 48.dp).testTag("time-ok")) { Text(OnlineTexts.OK) }
+        }
+    }
+}
+
+/**
+ * Item 47: a picker as a small sheet from the bottom (the map style sheet's kind): its handle, a
+ * title, then [content]; a drag down, a tap beside it or Back dismisses it.
+ */
+@OptIn(ExperimentalMaterial3Api::class)
+@Composable
+internal fun PickerSheet(title: String, onDismiss: () -> Unit, content: @Composable androidx.compose.foundation.layout.ColumnScope.() -> Unit) {
+    ModalBottomSheet(onDismissRequest = onDismiss, sheetState = rememberModalBottomSheetState(skipPartiallyExpanded = true)) {
+        Column(Modifier.fillMaxWidth().padding(start = 16.dp, end = 16.dp, bottom = 16.dp).navigationBarsPadding()) {
+            Text(title, style = MaterialTheme.typography.titleLarge, modifier = Modifier.padding(bottom = 12.dp).semantics { heading() })
+            content()
+        }
+    }
 }
 
 /** "Discard your changes?" on leaving a form with changes (item 24 e). */
@@ -433,18 +447,10 @@ fun DiscardDialog(onDiscard: () -> Unit, onKeep: () -> Unit) {
 /** The type picker: the search's grid of types ([PlaceTypeGrid], one component, two uses) with the addable types. */
 @Composable
 fun TypePickerDialog(selected: String?, onPick: (AddableType) -> Unit, onDismiss: () -> Unit) {
-    androidx.compose.ui.window.Dialog(onDismissRequest = onDismiss, properties = androidx.compose.ui.window.DialogProperties(usePlatformDefaultWidth = false)) {
-        androidx.compose.material3.Surface(Modifier.fillMaxWidth().padding(12.dp), shape = MaterialTheme.shapes.large) {
-            Column(Modifier.padding(top = 12.dp)) {
-                Row(verticalAlignment = Alignment.CenterVertically, modifier = Modifier.padding(horizontal = 16.dp)) {
-                    Text(OnlineTexts.TYPE, style = MaterialTheme.typography.titleLarge, modifier = Modifier.weight(1f).semantics { heading() })
-                    TextButton(onClick = onDismiss, modifier = Modifier.heightIn(min = 48.dp)) { Text(OnlineTexts.CANCEL) }
-                }
-                HorizontalDivider()
-                PlaceTypeGrid(addableGroups(), onPick = { t -> PlaceTypes.byCode(t.code)?.let(onPick) }, selected = selected,
-                    modifier = Modifier.fillMaxWidth().heightIn(max = 560.dp))
-                Spacer(Modifier.size(8.dp))
-            }
-        }
+    // item 47: a small sheet, as the other pickers
+    PickerSheet(OnlineTexts.TYPE, onDismiss) {
+        HorizontalDivider()
+        PlaceTypeGrid(addableGroups(), onPick = { t -> PlaceTypes.byCode(t.code)?.let(onPick) }, selected = selected,
+            modifier = Modifier.fillMaxWidth().heightIn(max = 560.dp))
     }
 }

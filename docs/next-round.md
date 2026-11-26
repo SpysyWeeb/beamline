@@ -897,8 +897,9 @@ not break across two lines in the banner; the results view shows at most the 20 
     "3 stops", Done, Add stop and Best order; no scrim, never closed by a drag or a map tap); the
     arrival card is on the frame with Save as a link under Done (`DriveEvent.SaveDestination`), and
     a drag up opens the destination's own window (`DriveEvent.ShowDestination`); all 20 drive
-    screen tests pass on the emulator. Left: the pickers (time, speed, place type) as small sheets,
-    the style rulebook pass.
+    screen tests pass on the emulator. The pickers (time, speed, place type) are small sheets
+    (`PickerSheet`, the map style sheet's kind; built and unit-tested, not seen on screen: they sit
+    behind an OSM sign-in or driving). Left: the style rulebook pass.
 
 48. **Every state's packs, built on GitHub's machines only** (the owner, 2026-11-25/26: "I'm just
     trying to think of a way we can have github machines handle all the workflow"). Today
