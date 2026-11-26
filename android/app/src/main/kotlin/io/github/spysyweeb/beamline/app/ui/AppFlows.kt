@@ -650,6 +650,7 @@ class AppFlows(private val g: AppGraph) {
             }
             DriveEvent.Recenter -> g.director.onRecenter()
             DriveEvent.ShowOverview -> g.director.onOverview()
+            is DriveEvent.ShowStep -> g.director.onShowPlace(e.point) // item 47: the step on the map
             DriveEvent.OpenStopsEditor -> stopsEditorOpen = true
             DriveEvent.CloseStopsEditor -> stopsEditorOpen = false
             DriveEvent.SearchForStop -> openSearch(SearchMode.ADD_STOP)

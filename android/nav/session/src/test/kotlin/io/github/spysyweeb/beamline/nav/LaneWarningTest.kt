@@ -109,6 +109,20 @@ class LaneWarningTest {
         h.assertAllRecorded()
     }
 
+    /** Item 47: a route's steps, one per maneuver in the banner's words, each where its turn is. */
+    @Test
+    fun `a route's steps for the preview - one per turn, in order, at the turn`() = sessionTest { h ->
+        h.guidePeach()
+        val geo = h.guidedGeo()
+        val route = geo.route
+        val steps = Views.steps(route, BannerRules.bundled(), route.shape.map { GeoPoint(it.lat, it.lon) })
+        assertEquals(route.maneuvers.size, steps.size)
+        assertEquals(route.shape.first().lat, steps.first().point.lat, 1e-9, "the first step is where the route starts")
+        assertTrue(steps.last().afterM < 1.0, "the arrival goes nowhere after it")
+        assertTrue(steps.dropLast(1).all { it.primary.isNotBlank() && it.afterM > 0.0 }, "${steps.map { it.primary to it.afterM }}")
+        h.assertAllRecorded()
+    }
+
     @Test
     fun `an added turn lane alone never warns - Peach St at 26th, one lane on and a left-turn lane added`() = sessionTest { h ->
         // the same drive north on Peach St: past Craig St (the one spot), then at 26th St 1 lane and a

@@ -120,6 +120,10 @@ internal object Presentation {
             warnings = selected?.warnings.orEmpty(),
             canStart = selected != null && trip.phase == Phase.CHOOSING && !trip.replanning && locationAllowed,
             startBlockedText = if (selected != null && !locationAllowed) DriveTexts.START_BLOCKED_NO_PRECISE_LOCATION else null,
+            steps = selected?.steps.orEmpty().map { s ->
+                val roads = roadsText(s.kind, s.roads.map(::keepTogether))
+                StepUi(s.kind, listOfNotNull(keepTogether(s.primary), roads).joinToString(" "), if (s.afterM >= 1.0) units.distance(s.afterM) else "", s.point)
+            },
         )
     }
 

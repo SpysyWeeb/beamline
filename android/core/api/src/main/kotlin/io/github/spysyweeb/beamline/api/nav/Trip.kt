@@ -81,7 +81,12 @@ data class RouteChoice(
     val bounds: Bounds,
     /** Plain-word warnings ("The route reaches stop 2 0.9 mi from the point you chose."). */
     val warnings: List<String>,
+    /** Item 47: the route's turns in order, in the banner's words, for the route sheet's steps preview. */
+    val steps: List<RouteStep> = emptyList(),
 )
+
+/** One turn of a route (item 47): its arrow and words as the banner says them, the roads after it, how far they go, and where it is. */
+data class RouteStep(val kind: ManeuverKind, val primary: String, val roads: List<String>, val afterM: Double, val point: GeoPoint)
 
 /** Where the driven part of the route line ends: after geometry[index], at [point]. */
 data class RouteCursor(val index: Int, val point: GeoPoint)

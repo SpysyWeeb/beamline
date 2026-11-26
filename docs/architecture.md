@@ -643,7 +643,12 @@ data class RouteChoice(
     val bounds: Bounds,
     /** Plain-word warnings ("The route reaches stop 2 0.9 mi from the point you chose."). */
     val warnings: List<String>,
+    /** Item 47: the route's turns in order, in the banner's words, for the route sheet's steps preview. */
+    val steps: List<RouteStep> = emptyList(),
 )
+
+/** One turn of a route (item 47): its arrow and words as the banner says them, the roads after it, how far they go, and where it is. */
+data class RouteStep(val kind: ManeuverKind, val primary: String, val roads: List<String>, val afterM: Double, val point: GeoPoint)
 
 /** Where the driven part of the route line ends: after geometry[index], at [point]. */
 data class RouteCursor(val index: Int, val point: GeoPoint)
@@ -2002,7 +2007,12 @@ data class RouteSheetUi(
     val canStart: Boolean,
     /** Why Start is off although a route is chosen ("Allow precise location to start guidance"); null when it is not off for that. */
     val startBlockedText: String?,
+    /** Item 47: the chosen route's steps, for the full height's preview. */
+    val steps: List<StepUi> = emptyList(),
 )
+
+/** One step of the preview (item 47): the turn's arrow, its words, how far the road goes after it, and where it is. */
+data class StepUi(val kind: ManeuverKind, val text: String, val distanceText: String, val point: io.github.spysyweeb.beamline.api.model.GeoPoint)
 
 data class StopsEditorUi(val rows: List<StopRowUi>, val canOptimize: Boolean, val busy: Boolean)
 
@@ -2112,6 +2122,8 @@ sealed interface DriveEvent {
     data class Nav(val intent: NavIntent) : DriveEvent
     data object Recenter : DriveEvent
     data object ShowOverview : DriveEvent
+    /** Item 47: a step of the preview tapped; the map looks at it. */
+    data class ShowStep(val point: io.github.spysyweeb.beamline.api.model.GeoPoint) : DriveEvent
     data object OpenStopsEditor : DriveEvent
     data object CloseStopsEditor : DriveEvent
     /** Opens search in ADD_STOP mode; the place comes back as NavIntent.AddStop. */
@@ -3605,7 +3617,11 @@ Every rule id below needs at least one JVM test in `:nav:session` (N's definitio
   choice" or "Place details", with its height ("Lowered", "Half open", "Full height") and the actions
   "Raise the sheet" and "Lower the sheet"; the handle is 40 x 4 dp in the sheet's muted text colour
   (item 47). A new results list opens at the middle height, a new place at the lowest (item 47: its
-  name, distance, whether it is open, and its main button and Save), a new trip's sheet at full height; the height is kept across a turn of the phone, and the
+  name, distance, whether it is open, and its main button and Save), a new trip's sheet (three heights
+  since item 47: the arrival time, destination and a "2 routes" chip with Start; the small cards with
+  Start; everything, with the steps preview, `StepsPreview`, five steps then "Show all N steps", a tap
+  on one looks at it on the map, `DriveEvent.ShowStep`, and lowers the sheet to the cards) at the middle
+  height under the map and at full height in the side panel; the height is kept across a turn of the phone, and the
   results list's while a result's place sheet is open. The camera's insets follow the height the
   sheet rests at (the app measures each sheet, `AppRules.cameraInsets`, `DriveOverlay.onInsets`), so
   the results (K1), the routes (K2) and a picked place (K1) are fitted to the space left, and fitted

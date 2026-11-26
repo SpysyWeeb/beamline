@@ -162,6 +162,7 @@ class DriveScreensTest {
         )
         // the overflow menu is a popup window: the whole screen is taken for it
         show(present(two), false)
+        compose.raiseSheetToFull() // item 47: the menu is on the full height's start row
         compose.onNodeWithTag(DriveTags.MORE).performClick()
         compose.waitForIdle()
         saveDeviceScreen("sheet-menu-day")
@@ -170,6 +171,7 @@ class DriveScreensTest {
     @Test
     fun routeSheetEvents() {
         host(present(choosing(choices = listOf(fastestOnly, simpler), selected = 1)))
+        compose.raiseSheetToFull() // item 47: it opens at the middle height
         compose.onNodeWithTag(DriveTags.card(2)).performClick()
         compose.onNodeWithTag(DriveTags.AVOID_HIGHWAYS).performClick()
         compose.onNodeWithTag(DriveTags.AVOID_TOLLS).performClick()
@@ -199,6 +201,7 @@ class DriveScreensTest {
         host(present(choosing(), locationAllowed = false))
         compose.onNodeWithTag(DriveTags.START).assertIsNotEnabled()
         compose.onNodeWithText("Allow precise location to start guidance").assertIsDisplayed()
+        compose.raiseSheetToFull() // item 47: the menu is on the full height's start row
         compose.onNodeWithTag(DriveTags.MORE).performClick()
         compose.onNodeWithTag(DriveTags.SIMULATE).assertIsEnabled().performClick()
         assertEquals(listOf(DriveEvent.Nav(NavIntent.Start(Simulation()))), events)
@@ -397,6 +400,7 @@ class DriveScreensTest {
         compose.onNodeWithTag(DriveTags.THEN_CHIP).assertIsDisplayed()
         compose.assertWhollyShown(DriveTags.END)
         show(present(choosing(choices = listOf(fastestOnly, simpler), selected = 1), locationAllowed = false), false)
+        compose.raiseSheetToFull()
         compose.assertWhollyShown(DriveTags.CANCEL)
         compose.assertWhollyShown(DriveTags.card(1))
         compose.assertWhollyShown(DriveTags.START)
@@ -414,17 +418,18 @@ class DriveScreensTest {
         compose.onNodeWithTag(DriveTags.LANES).assert(
             hasContentDescription("Lanes, left to right: left, left, left or straight, straight, straight, straight, straight or right (allowed), right (best)"),
         )
-        // the sketch's frames keep the sketch's boxes
+        // frame 3 has a lane to choose: since 0.1.30 the lane strip (D9b), boxes 64 dp tall across the banner
         show(frame3Ui, false)
         compose.assertLanesWhole(4)
         val box = compose.onNodeWithTag(DriveTags.LANES, useUnmergedTree = true).fetchSemanticsNode().children.first().size
         val density = InstrumentationRegistry.getInstrumentation().targetContext.resources.displayMetrics.density
-        assertEquals("frame 3 lane box (px)", Math.round(40 * density), box.width)
+        assertEquals("frame 3 lane strip box height (px)", Math.round(64 * density), box.height)
     }
 
     @Test
     fun selectedCardIsMarkedForScreenReaders() {
         host(present(choosing(choices = listOf(fastestOnly, simpler), selected = 1)))
+        compose.raiseSheetToFull() // item 47: the full cards
         compose.onNodeWithTag(DriveTags.card(1)).assert(SemanticsMatcher.expectValue(SemanticsProperties.Selected, true))
         compose.onNodeWithTag(DriveTags.card(2)).assert(SemanticsMatcher.expectValue(SemanticsProperties.Selected, false))
     }
@@ -489,6 +494,7 @@ class DriveScreensTest {
         host(DriveUi())
         for ((name, u, wanted) in cases) {
             show(u, false)
+            if (name == "a11y-sheet") compose.raiseSheetToFull() // item 47: the sheet's every line, at full height
             // The accessibility side follows the screen a moment later (Compose sends its changes at
             // most every 100 ms): read again until every wanted name is there, for at most 5 s.
             val deadline = SystemClock.uptimeMillis() + 5_000

@@ -1,5 +1,6 @@
 package io.github.spysyweeb.beamline.feature.drive
 
+import io.github.spysyweeb.beamline.ui.theme.SheetHeight
 import androidx.compose.animation.core.animateDpAsState
 import androidx.compose.animation.core.tween
 import android.app.Activity
@@ -289,7 +290,8 @@ internal fun DriveOverlayContent(ui: DriveUi, onEvent: (DriveEvent) -> Unit, onI
         ) {
             val sheetInsets = safe.only(WindowInsetsSides.Bottom + horizontal)
             when {
-                ui.planning != null -> BottomSheetSurface(sheetInsets) { RouteSheet(ui.planning, onEvent) }
+                // item 47: the routes and Start under the map, everything in the side panel
+                ui.planning != null -> BottomSheetSurface(sheetInsets) { RouteSheet(ui.planning, onEvent, opensAt = if (side) SheetHeight.FULL else SheetHeight.MIDDLE) }
                 guidance != null && status is GuidanceStatusUi.Arrived -> BottomSheetSurface(sheetInsets) { ArrivedCard(status, onEvent) }
                 guidance != null -> BottomSheetSurface(sheetInsets) { TripBar(guidance.tripBar, onEvent) }
                 ui.resume != null -> BottomSheetSurface(sheetInsets) { ResumeCard(ui.resume, onEvent) }

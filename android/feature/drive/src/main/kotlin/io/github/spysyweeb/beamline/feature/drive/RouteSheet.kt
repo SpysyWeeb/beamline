@@ -76,11 +76,11 @@ import kotlin.math.roundToInt
  * overflow menu, "Simulate drive" (6.29), which stays available whenever a route is chosen.
  */
 @Composable
-internal fun RouteSheet(sheet: RouteSheetUi, onEvent: (DriveEvent) -> Unit, modifier: Modifier = Modifier) {
-    // Rule D10: two heights, kept while the sheet shows and across a turn of the phone; a new trip's
-    // sheet opens at full height (item 47 will give it three heights, opening at half, with its
-    // screen tests). At most 560 dp tall (less on a short screen).
-    val height = rememberSheetState(SheetSteps.TWO, SheetHeight.FULL)
+internal fun RouteSheet(sheet: RouteSheetUi, onEvent: (DriveEvent) -> Unit, modifier: Modifier = Modifier, opensAt: SheetHeight = SheetHeight.MIDDLE) {
+    // Rule D10 (three heights since item 47, 2026-11-26): kept while the sheet shows and across a turn
+    // of the phone; a new trip's sheet opens at [opensAt]: the middle height (the routes and Start)
+    // under the map, full height in the side panel. At most 560 dp tall (less on a short screen).
+    val height = rememberSheetState(SheetSteps.THREE, opensAt)
     SheetFrame(
         height, DriveTexts.ROUTE_CHOICE, MaterialTheme.colorScheme.onSurfaceVariant,
         modifier.fillMaxWidth().heightIn(max = 560.dp).testTag(DriveTags.ROUTE_SHEET),
@@ -88,12 +88,50 @@ internal fun RouteSheet(sheet: RouteSheetUi, onEvent: (DriveEvent) -> Unit, modi
         Box(Modifier.fillMaxWidth().height(4.dp)) {
             if (sheet.busy) LinearProgressIndicator(Modifier.fillMaxWidth().testTag(DriveTags.BUSY))
         }
-        if (height.height == SheetHeight.FULL) FullRouteSheet(sheet, onEvent) else LowRouteSheet(sheet, onEvent)
+        when (height.height) {
+            SheetHeight.FULL -> FullRouteSheet(sheet, onEvent) { step -> onEvent(DriveEvent.ShowStep(step.point)); height.set(SheetHeight.MIDDLE) }
+            SheetHeight.MIDDLE -> LowRouteSheet(sheet, onEvent)
+            SheetHeight.LOW -> PeekRouteSheet(sheet, onEvent) { height.set(SheetHeight.MIDDLE) }
+        }
     }
 }
 
 /**
- * The lowest height (rule D10): one small card per route (its time and types; a tap chooses it, as
+ * The lowest height (item 47, 2026-11-26; the critiques): when the trip arrives, where it goes with its
+ * time and length, a chip with the number of routes (a tap: the middle height, to choose), and Start;
+ * the map above shows the route.
+ */
+@Composable
+private fun PeekRouteSheet(sheet: RouteSheetUi, onEvent: (DriveEvent) -> Unit, onRoutes: () -> Unit) {
+    val chosen = sheet.cards.firstOrNull { it.selected } ?: sheet.cards.firstOrNull()
+    Row(Modifier.fillMaxWidth().padding(start = 16.dp, end = 16.dp, top = 4.dp), verticalAlignment = Alignment.CenterVertically) {
+        Column(Modifier.weight(1f)) {
+            if (chosen != null) {
+                Text(chosen.arriveText, style = MaterialTheme.typography.titleLarge, fontWeight = FontWeight.SemiBold, maxLines = 1, overflow = TextOverflow.Ellipsis)
+                val where = listOfNotNull(sheet.stops.lastOrNull()?.title, chosen.durationText, chosen.distanceText).joinToString(" · ")
+                Text(where, style = MaterialTheme.typography.bodyMedium, color = MaterialTheme.colorScheme.onSurfaceVariant, maxLines = 1, overflow = TextOverflow.Ellipsis)
+            } else {
+                sheet.problem?.let { problem ->
+                    Text(problem, style = MaterialTheme.typography.bodyMedium, maxLines = 2, overflow = TextOverflow.Ellipsis, modifier = Modifier.testTag(DriveTags.PROBLEM))
+                }
+            }
+        }
+        if (sheet.cards.size > 1) {
+            androidx.compose.material3.AssistChip(
+                onClick = onRoutes,
+                label = { Text(DriveTexts.routes(sheet.cards.size)) },
+                modifier = Modifier.heightIn(min = 48.dp).testTag(ROUTES_CHIP_TAG),
+            )
+        }
+    }
+    StartPart(sheet, onEvent)
+}
+
+/** Test tag of the peek's chip with the number of routes (item 47). */
+internal const val ROUTES_CHIP_TAG = "routes-chip"
+
+/**
+ * The middle height (rule D10; the lowest one before item 47): one small card per route (its time and types; a tap chooses it, as
  * the full cards do), the problem when there is no route, and Start with its reason; the map above
  * shows the routes.
  */
@@ -160,7 +198,7 @@ private fun StartPart(sheet: RouteSheetUi, onEvent: (DriveEvent) -> Unit) {
  * on its side.
  */
 @Composable
-private fun ColumnScope.FullRouteSheet(sheet: RouteSheetUi, onEvent: (DriveEvent) -> Unit) {
+private fun ColumnScope.FullRouteSheet(sheet: RouteSheetUi, onEvent: (DriveEvent) -> Unit, onStep: (StepUi) -> Unit = {}) {
     val nav = { i: NavIntent -> onEvent(DriveEvent.Nav(i)) }
     val chosen = sheet.cards.any { it.selected }
     // Start row, overflow menu, cancel.
@@ -283,9 +321,51 @@ private fun ColumnScope.FullRouteSheet(sheet: RouteSheetUi, onEvent: (DriveEvent
                 modifier = Modifier.testTag(DriveTags.AVOID_TOLLS),
             )
         }
+        if (sheet.steps.isNotEmpty()) StepsPreview(sheet.steps, onStep)
     }
     StartPart(sheet, onEvent)
 }
+
+/**
+ * The steps preview (item 47, the owner, 2026-11-25: "The steps preview is good, we'll do that"): the
+ * chosen route's turns in the banner's words, each with how far the road goes after it; the first
+ * [STEPS_SHOWN], then "Show all N steps". A tap on a step looks at it on the map.
+ */
+@Composable
+private fun StepsPreview(steps: List<StepUi>, onStep: (StepUi) -> Unit) {
+    var all by androidx.compose.runtime.saveable.rememberSaveable { androidx.compose.runtime.mutableStateOf(false) }
+    Text(
+        DriveTexts.STEPS, style = MaterialTheme.typography.labelLarge, color = MaterialTheme.colorScheme.onSurfaceVariant,
+        modifier = Modifier.padding(top = 14.dp, bottom = 2.dp),
+    )
+    val shown = if (all) steps else steps.take(STEPS_SHOWN)
+    shown.forEachIndexed { i, step ->
+        Row(
+            Modifier.fillMaxWidth().heightIn(min = 48.dp).clickable { onStep(step) }.testTag(stepTag(i)),
+            verticalAlignment = Alignment.CenterVertically,
+        ) {
+            Icon(DriveIcons.maneuverSmall(step.kind), contentDescription = null, tint = MaterialTheme.colorScheme.onSurface, modifier = Modifier.size(24.dp))
+            Spacer(Modifier.width(12.dp))
+            Text(step.text, style = MaterialTheme.typography.bodyMedium, maxLines = 2, overflow = TextOverflow.Ellipsis, modifier = Modifier.weight(1f))
+            if (step.distanceText.isNotEmpty()) {
+                Spacer(Modifier.width(8.dp))
+                Text(step.distanceText, style = MaterialTheme.typography.bodyMedium, color = MaterialTheme.colorScheme.onSurfaceVariant)
+            }
+        }
+    }
+    if (!all && steps.size > STEPS_SHOWN) {
+        TextButton(onClick = { all = true }, modifier = Modifier.heightIn(min = 48.dp).testTag(SHOW_ALL_STEPS_TAG)) {
+            Text(DriveTexts.showAllSteps(steps.size))
+        }
+    }
+}
+
+/** How many steps the preview shows before "Show all N steps" (item 47). */
+internal const val STEPS_SHOWN = 5
+
+/** Test tags of the steps preview (item 47). */
+internal fun stepTag(i: Int) = "step-$i"
+internal const val SHOW_ALL_STEPS_TAG = "show-all-steps"
 
 /** The option toggles: blue B when on (the theme has no secondary colour of its own). */
 @Composable

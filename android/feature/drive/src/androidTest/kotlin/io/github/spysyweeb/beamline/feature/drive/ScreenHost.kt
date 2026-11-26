@@ -26,8 +26,10 @@ import androidx.compose.ui.layout.positionInWindow
 import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.platform.LocalView
 import androidx.compose.ui.platform.testTag
+import androidx.compose.ui.semantics.getOrNull
 import androidx.compose.ui.test.junit4.ComposeContentTestRule
 import androidx.compose.ui.test.captureToImage
+import androidx.compose.ui.test.performClick
 import androidx.compose.ui.test.onNodeWithTag
 import androidx.compose.ui.unit.Density
 import androidx.compose.ui.unit.dp
@@ -156,7 +158,8 @@ internal fun ComposeContentTestRule.assertNotCutAtTop(tag: String, fontScale: Fl
 internal fun ComposeContentTestRule.assertLanesWhole(count: Int) {
     waitForIdle()
     val row = onNodeWithTag(DriveTags.LANES, useUnmergedTree = true).fetchSemanticsNode()
-    val lanes = row.children
+    // the lanes only: the lane strip (0.1.30) also holds its progress bar under them
+    val lanes = row.children.filter { it.config.getOrNull(androidx.compose.ui.semantics.SemanticsProperties.TestTag)?.startsWith("lane-") == true }
     check(lanes.size == count) { "lanes: ${lanes.size} in the row, $count wanted" }
     val rowBounds = row.boundsInRoot
     val first = lanes.first().boundsInRoot.width
@@ -188,4 +191,14 @@ internal fun saveDeviceScreen(name: String): File {
     val file = File(screensDir(), "$name.png")
     FileOutputStream(file).use { bitmap.compress(Bitmap.CompressFormat.PNG, 100, it) }
     return file
+}
+
+/** Item 47: the route sheet opens at the middle height; raise it (a tap on the handle) until it is full. */
+internal fun ComposeContentTestRule.raiseSheetToFull() {
+    repeat(3) {
+        val node = onNodeWithTag(io.github.spysyweeb.beamline.ui.theme.SHEET_HANDLE_TAG).fetchSemanticsNode()
+        if (node.config.getOrNull(androidx.compose.ui.semantics.SemanticsProperties.StateDescription) == "Full height") return
+        onNodeWithTag(io.github.spysyweeb.beamline.ui.theme.SHEET_HANDLE_TAG).performClick()
+        waitForIdle()
+    }
 }

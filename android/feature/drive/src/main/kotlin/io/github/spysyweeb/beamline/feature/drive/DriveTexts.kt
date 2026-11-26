@@ -175,4 +175,11 @@ object DriveTexts {
 
     /** "Then left, In 0.3 mi". */
     fun thenDescription(then: ThenUi) = "Then ${maneuverName(then.kind)}, ${then.distanceText}"
+
+    /** The peek's chip (item 47): "2 routes". */
+    fun routes(n: Int): String = if (n == 1) "1 route" else "$n routes"
+
+    /** The steps preview (item 47). */
+    const val STEPS = "Steps"
+    fun showAllSteps(n: Int): String = "Show all $n steps"
 }

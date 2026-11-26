@@ -50,7 +50,12 @@ data class RouteSheetUi(
     val canStart: Boolean,
     /** Why Start is off although a route is chosen ("Allow precise location to start guidance"); null when it is not off for that. */
     val startBlockedText: String?,
+    /** Item 47: the chosen route's steps, for the full height's preview. */
+    val steps: List<StepUi> = emptyList(),
 )
+
+/** One step of the preview (item 47): the turn's arrow, its words, how far the road goes after it, and where it is. */
+data class StepUi(val kind: ManeuverKind, val text: String, val distanceText: String, val point: io.github.spysyweeb.beamline.api.model.GeoPoint)
 
 data class StopsEditorUi(val rows: List<StopRowUi>, val canOptimize: Boolean, val busy: Boolean)
 
@@ -160,6 +165,8 @@ sealed interface DriveEvent {
     data class Nav(val intent: NavIntent) : DriveEvent
     data object Recenter : DriveEvent
     data object ShowOverview : DriveEvent
+    /** Item 47: a step of the preview tapped; the map looks at it. */
+    data class ShowStep(val point: io.github.spysyweeb.beamline.api.model.GeoPoint) : DriveEvent
     data object OpenStopsEditor : DriveEvent
     data object CloseStopsEditor : DriveEvent
     /** Opens search in ADD_STOP mode; the place comes back as NavIntent.AddStop. */

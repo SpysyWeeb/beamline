@@ -9,6 +9,7 @@ import io.github.spysyweeb.beamline.api.nav.LaneMark
 import io.github.spysyweeb.beamline.api.nav.LaneView
 import io.github.spysyweeb.beamline.api.nav.ManeuverKind
 import io.github.spysyweeb.beamline.api.nav.RouteChoice
+import io.github.spysyweeb.beamline.api.nav.RouteStep
 import io.github.spysyweeb.beamline.routing.banner.BannerModel
 import io.github.spysyweeb.beamline.routing.banner.BannerRules
 import io.github.spysyweeb.beamline.routing.model.LaneBits
@@ -138,7 +139,24 @@ object Views {
             legEnds = legEnds,
             bounds = Bounds.around(geometry) ?: Bounds(0.0, 0.0, 0.0, 0.0),
             warnings = warnings,
+            steps = steps(route, rules, geometry),
         )
+    }
+
+    /** Item 47: the steps preview's turns, from the banners (one per maneuver, all legs flattened). */
+    fun steps(route: Route, rules: BannerRules, geometry: List<GeoPoint>): List<RouteStep> {
+        if (geometry.isEmpty()) return emptyList()
+        val starts = ArrayList<Int>()
+        var offset = 0
+        for (leg in route.legs) {
+            for (m in leg.maneuvers) starts += offset + m.beginShapeIndex
+            offset += leg.shape.size
+        }
+        val mans = route.maneuvers
+        return banners(route, rules).map { v ->
+            val at = starts.getOrElse(v.maneuverIndex) { 0 }.coerceIn(0, geometry.size - 1)
+            RouteStep(v.kind, v.primary, v.roads, mans[v.maneuverIndex].lengthM, geometry[at])
+        }
     }
 
     /** Names of the two longest stretches (the road a maneuver leads onto, by its length), for "via I 90, US 19". */

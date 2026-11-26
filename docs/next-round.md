@@ -880,7 +880,13 @@ not break across two lines in the banner; the results view shows at most the 20 
     40 x 4 dp in each sheet's muted text colour; the place window opens at peek with its status line,
     its main button and Save (SheetHeightsScreensTest updated, not yet run on the emulator). Left:
     the directions window's three heights opening at half (about ten drive screen tests assume it
-    opens at full: update them with it), and everything else in this item.
+    opens at full: update them with it), and everything else in this item. *2026-11-26:* the
+    directions window has three heights (peek: arrival, destination, "2 routes", Start; middle: the
+    cards and Start, where it opens under the map; full in the side panel), the steps preview
+    (`RouteChoice.steps` from the banners, `RouteSheetUi.steps`, `DriveEvent.ShowStep` looks at the
+    step); all 18 drive screen tests pass on the emulator (the lane counter now counts lanes only,
+    the strip's progress bar is not one). Left: the drive time on Directions, the stops editor,
+    arrival card and pickers on the sheet frame, the screen transitions, the style rulebook pass.
 
 48. **Every state's packs, built on GitHub's machines only** (the owner, 2026-11-25/26: "I'm just
     trying to think of a way we can have github machines handle all the workflow"). Today
