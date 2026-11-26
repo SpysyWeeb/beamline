@@ -1,5 +1,17 @@
 package io.github.spysyweeb.beamline.app.ui
 
+import androidx.compose.ui.unit.IntSize
+import androidx.compose.ui.unit.IntOffset
+import androidx.compose.animation.slideOutHorizontally
+import androidx.compose.animation.slideInHorizontally
+import androidx.compose.animation.shrinkVertically
+import androidx.compose.animation.fadeOut
+import androidx.compose.animation.fadeIn
+import androidx.compose.animation.expandVertically
+import androidx.compose.animation.core.tween
+import androidx.compose.animation.core.FastOutSlowInEasing
+import androidx.compose.animation.ContentTransform
+import androidx.compose.animation.AnimatedContent
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import io.github.spysyweeb.beamline.app.online.EditNoticeDialog
 import io.github.spysyweeb.beamline.api.model.PlaceSource
@@ -361,132 +373,145 @@ fun AppRoot(g: AppGraph, flows: AppFlows, frameRate: FrameRateRequest, screenMax
 
             // ---- screens over the map (hidden while a map pick runs, SP25; none under the driver
             // notice: the States screen would fetch the catalog before it is accepted, item 3)
-            if (pick == null && top != null && !noticeNeeded) {
-                when (top) {
-                    is Layer.Search -> SearchScreen(searchUi, onEvent = flows::onSearchEvent)
-                    Layer.SavedList -> savedUi.list?.let { SavedPlacesScreen(it, onEvent = flows::onSavedEvent) }
-                    Layer.Settings -> SettingsScreen(
-                        store = g.settings,
-                        write = g::updateSettings,
-                        driving = driving,
-                        onSavedPlaces = flows::openSavedPlacesFromSettings,
-                        onStates = flows::openStates,
-                        online = online,
-                        onOnline = { on -> g.updateOnline { if (on) it.allowOnline() else it.offlineOnly() } },
-                        onContributeOsm = { on -> g.updateOnline { it.withContributeOsm(on) } },
-                        onCheckMapUpdates = { on -> g.updateOnline { it.withCheckMapUpdates(on) } },
-                        appUpdates = g.appUpdates.available,
-                        onCheckAppUpdates = { on -> g.updateOnline { it.withCheckAppUpdates(on) } },
-                        appUpdateLine = UpdateTexts.line(appUpdate, appUpdateProblem),
-                        onCheckAppNow = { g.appUpdates.checkNow(g::guiding) },
-                        appUpdateReady = appUpdate is io.github.spysyweeb.beamline.download.AppUpdater.State.Ready,
-                        onInstallApp = { g.appUpdates.install(activity, guiding = driving) },
-                        reportsText = OnlineTexts.reportsCount(outboxItems),
-                        accountName = account?.name,
-                        signingIn = signingIn,
-                        onSignIn = { flows.signIn() },
-                        onSignOut = g::signOut,
-                        onReports = { flows.push(Layer.Reports) },
-                        onAbout = { flows.push(Layer.About) },
-                        onBack = { flows.pop(Layer.Settings) },
-                    )
-                    Layer.About -> AboutScreen(aboutUi(LocalContext.current, g, set), onEvent = { e ->
-                        when (e) {
-                            AboutEvent.Back -> flows.pop(Layer.About)
-                            AboutEvent.OpenLicences -> flows.push(Layer.Licences)
-                            AboutEvent.OpenDriverNotice -> flows.push(Layer.DriverNotice)
-                        }
-                    })
-                    Layer.Licences -> {
-                        val context = LocalContext.current
-                        val notices by produceState<Notices?>(null) {
-                            value = withContext(Dispatchers.IO) {
-                                try {
-                                    loadNotices(context)
-                                } catch (_: Exception) {
-                                    null
+            // item 47: the screens slide in from the side and back out over the map (the one below
+            // moves a little, as Android's own screens do); the search bar grows into the search screen
+            // and back. An outgoing screen keeps drawing its own layer until it has left.
+            val shown = top.takeIf { pick == null && !noticeNeeded }
+            AnimatedContent(
+                targetState = shown?.let { ScreenStep(it, flows.stack.size) },
+                contentKey = { it?.layer },
+                transitionSpec = { screenTransition(initialState, targetState) },
+                modifier = Modifier.fillMaxSize(),
+                label = "screens",
+            ) { step ->
+                val layer = step?.layer
+                if (layer != null) {
+                    when (layer) {
+                        is Layer.Search -> SearchScreen(searchUi, onEvent = flows::onSearchEvent)
+                        Layer.SavedList -> savedUi.list?.let { SavedPlacesScreen(it, onEvent = flows::onSavedEvent) }
+                        Layer.Settings -> SettingsScreen(
+                            store = g.settings,
+                            write = g::updateSettings,
+                            driving = driving,
+                            onSavedPlaces = flows::openSavedPlacesFromSettings,
+                            onStates = flows::openStates,
+                            online = online,
+                            onOnline = { on -> g.updateOnline { if (on) it.allowOnline() else it.offlineOnly() } },
+                            onContributeOsm = { on -> g.updateOnline { it.withContributeOsm(on) } },
+                            onCheckMapUpdates = { on -> g.updateOnline { it.withCheckMapUpdates(on) } },
+                            appUpdates = g.appUpdates.available,
+                            onCheckAppUpdates = { on -> g.updateOnline { it.withCheckAppUpdates(on) } },
+                            appUpdateLine = UpdateTexts.line(appUpdate, appUpdateProblem),
+                            onCheckAppNow = { g.appUpdates.checkNow(g::guiding) },
+                            appUpdateReady = appUpdate is io.github.spysyweeb.beamline.download.AppUpdater.State.Ready,
+                            onInstallApp = { g.appUpdates.install(activity, guiding = driving) },
+                            reportsText = OnlineTexts.reportsCount(outboxItems),
+                            accountName = account?.name,
+                            signingIn = signingIn,
+                            onSignIn = { flows.signIn() },
+                            onSignOut = g::signOut,
+                            onReports = { flows.push(Layer.Reports) },
+                            onAbout = { flows.push(Layer.About) },
+                            onBack = { flows.pop(Layer.Settings) },
+                        )
+                        Layer.About -> AboutScreen(aboutUi(LocalContext.current, g, set), onEvent = { e ->
+                            when (e) {
+                                AboutEvent.Back -> flows.pop(Layer.About)
+                                AboutEvent.OpenLicences -> flows.push(Layer.Licences)
+                                AboutEvent.OpenDriverNotice -> flows.push(Layer.DriverNotice)
+                            }
+                        })
+                        Layer.Licences -> {
+                            val context = LocalContext.current
+                            val notices by produceState<Notices?>(null) {
+                                value = withContext(Dispatchers.IO) {
+                                    try {
+                                        loadNotices(context)
+                                    } catch (_: Exception) {
+                                        null
+                                    }
                                 }
                             }
+                            notices?.let { LicencesScreen(it, onBack = { flows.pop(Layer.Licences) }) }
                         }
-                        notices?.let { LicencesScreen(it, onBack = { flows.pop(Layer.Licences) }) }
-                    }
-                    Layer.DriverNotice -> FirstRunNotice(onAccept = { flows.pop(Layer.DriverNotice) })
-                    Layer.States -> StatesScreen(g.getPacks, StatesMode.MANAGE, onClose = { flows.pop(Layer.States) })
-                    // Batch O1 (docs/online-design.md 4.1, 4.5): the report form and My reports
-                    is Layer.Report -> {
-                        val item = top.itemId?.let { id -> outboxItems.firstOrNull { it.id == id } }
-                        val t = top.target
-                        if (item != null || t != null) ReportScreen(
-                            lat = item?.lat ?: t!!.lat, lon = item?.lon ?: t!!.lon, placeName = item?.placeName ?: t?.placeName, item = item,
-                            signedIn = account != null, startChoice = t?.startChoice, startText = t?.startText,
-                            // item 32: a point on the map (no place) can fix the road's speed limit itself
-                            onSpeedLimit = if (t != null && t.placeName == null && item == null && online.osmAllowed) ({ flows.speedFromReport(t) }) else null,
-                            onSend = { text, withName -> if (t != null) flows.sendNote(t, text, withName) },
-                            onSave = { text ->
-                                if (item != null && outboxSending != item.id) g.outbox.change(item.id, text)
-                                flows.pop(top)
-                                flows.sendOutboxNow()
+                        Layer.DriverNotice -> FirstRunNotice(onAccept = { flows.pop(Layer.DriverNotice) })
+                        Layer.States -> StatesScreen(g.getPacks, StatesMode.MANAGE, onClose = { flows.pop(Layer.States) })
+                        // Batch O1 (docs/online-design.md 4.1, 4.5): the report form and My reports
+                        is Layer.Report -> {
+                            val item = layer.itemId?.let { id -> outboxItems.firstOrNull { it.id == id } }
+                            val t = layer.target
+                            if (item != null || t != null) ReportScreen(
+                                lat = item?.lat ?: t!!.lat, lon = item?.lon ?: t!!.lon, placeName = item?.placeName ?: t?.placeName, item = item,
+                                signedIn = account != null, startChoice = t?.startChoice, startText = t?.startText,
+                                // item 32: a point on the map (no place) can fix the road's speed limit itself
+                                onSpeedLimit = if (t != null && t.placeName == null && item == null && online.osmAllowed) ({ flows.speedFromReport(t) }) else null,
+                                onSend = { text, withName -> if (t != null) flows.sendNote(t, text, withName) },
+                                onSave = { text ->
+                                    if (item != null && outboxSending != item.id) g.outbox.change(item.id, text)
+                                    flows.pop(layer)
+                                    flows.sendOutboxNow()
+                                },
+                                onDelete = {
+                                    if (item != null && outboxSending != item.id) g.outbox.delete(item.id)
+                                    flows.pop(layer)
+                                },
+                                onBack = { flows.pop(layer) },
+                            ) else LaunchedEffect(layer) { if (flows.stack.lastOrNull() == layer) flows.pop(layer) } // the item was sent or deleted meanwhile
+                        }
+                        Layer.Reports -> ReportsScreen(
+                            items = outboxItems, sending = outboxSending, canSend = online.osmAllowed, signedIn = account != null,
+                            onOpen = {
+                                if (it.isSpeed) flows.openSpeedItem(it) else if (it.isAdd) flows.openAddItem(it) else if (it.isEdit) flows.openEditItem(it)
+                                else flows.push(Layer.Report(null, it.id))
                             },
-                            onDelete = {
-                                if (item != null && outboxSending != item.id) g.outbox.delete(item.id)
-                                flows.pop(top)
-                            },
-                            onBack = { flows.pop(top) },
-                        ) else LaunchedEffect(top) { flows.pop(top) } // the item was sent or deleted meanwhile
-                    }
-                    Layer.Reports -> ReportsScreen(
-                        items = outboxItems, sending = outboxSending, canSend = online.osmAllowed, signedIn = account != null,
-                        onOpen = {
-                            if (it.isSpeed) flows.openSpeedItem(it) else if (it.isAdd) flows.openAddItem(it) else if (it.isEdit) flows.openEditItem(it)
-                            else flows.push(Layer.Report(null, it.id))
-                        },
-                        onOpenLink = { link -> flows.host?.openOutside(PlaceAction.WEBSITE, link) },
-                        onRemove = { g.outbox.delete(it.id) },
-                        onSendNow = flows::sendOutboxNow,
-                        onBack = { flows.pop(Layer.Reports) },
-                    )
-                    // Batch O2 (docs/online-design.md 4.2): the edit form, its summary and its upload
-                    Layer.EditPlace -> {
-                        val e = flows.edit
-                        if (e != null) EditPlaceScreen(
-                            e,
-                            onUpload = flows::uploadEdit,
                             onOpenLink = { link -> flows.host?.openOutside(PlaceAction.WEBSITE, link) },
-                            onDelete = {
-                                e.delete()
-                                flows.closeEdit()
-                            },
-                            onClose = flows::closeEdit,
-                        ) else LaunchedEffect(top) { flows.pop(top) }
-                    }
-                    // Item 32 (docs/online-design.md 4.7): the speed limit of a road
-                    Layer.SpeedLimit -> {
-                        val sp = flows.speed
-                        if (sp != null) SpeedLimitScreen(
-                            sp,
-                            onUpload = flows::uploadSpeed,
-                            onOpenLink = { link -> flows.host?.openOutside(PlaceAction.WEBSITE, link) },
-                            onDelete = {
-                                sp.delete()
-                                flows.closeSpeed()
-                            },
-                            onClose = flows::closeSpeed,
-                        ) else LaunchedEffect(top) { flows.pop(top) }
-                    }
-                    // Batch O3 (docs/online-design.md 4.3): add a missing place
-                    Layer.AddPlace -> {
-                        val a = flows.add
-                        if (a != null) AddPlaceScreen(
-                            a,
-                            onUpload = flows::uploadAdd,
-                            onSame = flows::editInstead,
-                            onOpenLink = { link -> flows.host?.openOutside(PlaceAction.WEBSITE, link) },
-                            onDelete = {
-                                a.delete()
-                                flows.closeAdd()
-                            },
-                            onClose = flows::closeAdd,
-                        ) else LaunchedEffect(top) { flows.pop(top) }
+                            onRemove = { g.outbox.delete(it.id) },
+                            onSendNow = flows::sendOutboxNow,
+                            onBack = { flows.pop(Layer.Reports) },
+                        )
+                        // Batch O2 (docs/online-design.md 4.2): the edit form, its summary and its upload
+                        Layer.EditPlace -> {
+                            val e = flows.edit
+                            if (e != null) EditPlaceScreen(
+                                e,
+                                onUpload = flows::uploadEdit,
+                                onOpenLink = { link -> flows.host?.openOutside(PlaceAction.WEBSITE, link) },
+                                onDelete = {
+                                    e.delete()
+                                    flows.closeEdit()
+                                },
+                                onClose = flows::closeEdit,
+                            ) else LaunchedEffect(layer) { if (flows.stack.lastOrNull() == layer) flows.pop(layer) }
+                        }
+                        // Item 32 (docs/online-design.md 4.7): the speed limit of a road
+                        Layer.SpeedLimit -> {
+                            val sp = flows.speed
+                            if (sp != null) SpeedLimitScreen(
+                                sp,
+                                onUpload = flows::uploadSpeed,
+                                onOpenLink = { link -> flows.host?.openOutside(PlaceAction.WEBSITE, link) },
+                                onDelete = {
+                                    sp.delete()
+                                    flows.closeSpeed()
+                                },
+                                onClose = flows::closeSpeed,
+                            ) else LaunchedEffect(layer) { if (flows.stack.lastOrNull() == layer) flows.pop(layer) }
+                        }
+                        // Batch O3 (docs/online-design.md 4.3): add a missing place
+                        Layer.AddPlace -> {
+                            val a = flows.add
+                            if (a != null) AddPlaceScreen(
+                                a,
+                                onUpload = flows::uploadAdd,
+                                onSame = flows::editInstead,
+                                onOpenLink = { link -> flows.host?.openOutside(PlaceAction.WEBSITE, link) },
+                                onDelete = {
+                                    a.delete()
+                                    flows.closeAdd()
+                                },
+                                onClose = flows::closeAdd,
+                            ) else LaunchedEffect(layer) { if (flows.stack.lastOrNull() == layer) flows.pop(layer) }
+                        }
                     }
                 }
             }
@@ -661,3 +686,31 @@ internal const val CONTINUING_CAP_MS = 20_000L
 
 /** Item 47: how long the screen's insets must stay the same before the camera refits to them. */
 private const val INSETS_SETTLE_MS = 180L
+
+/** Item 47: the screen over the map and how deep the stack is (deeper: opened over another; shallower: closed). */
+private data class ScreenStep(val layer: Layer, val depth: Int)
+
+/** Item 47: how long a screen takes to slide in or out. */
+internal const val SCREEN_SLIDE_MS = 280
+
+/**
+ * Item 47: a screen opened slides in from the right and the one under it moves a quarter to the left;
+ * closed, it slides out to the right on top and the one under comes back. Search opened from the map
+ * grows down from the search bar and shrinks back into it.
+ */
+private fun screenTransition(from: ScreenStep?, to: ScreenStep?): ContentTransform {
+    val slide = tween<IntOffset>(SCREEN_SLIDE_MS, easing = FastOutSlowInEasing)
+    val grow = tween<IntSize>(SCREEN_SLIDE_MS, easing = FastOutSlowInEasing)
+    val searchFromMap = from == null && to?.layer is Layer.Search
+    val searchToMap = to == null && from?.layer is Layer.Search
+    return when {
+        searchFromMap -> ContentTransform(fadeIn(tween(SCREEN_SLIDE_MS / 2)) + expandVertically(grow, expandFrom = Alignment.Top), fadeOut(tween(0)),
+            sizeTransform = null)
+        searchToMap -> ContentTransform(fadeIn(tween(0)), fadeOut(tween(SCREEN_SLIDE_MS)) + shrinkVertically(grow, shrinkTowards = Alignment.Top),
+            targetContentZIndex = -1f, sizeTransform = null)
+        to == null || (from != null && to.depth < from.depth) ->
+            // closed: the leaving screen slides out on top
+            ContentTransform(slideInHorizontally(slide) { -it / 4 }, slideOutHorizontally(slide) { it }, targetContentZIndex = -1f, sizeTransform = null)
+        else -> ContentTransform(slideInHorizontally(slide) { it }, slideOutHorizontally(slide) { -it / 4 }, sizeTransform = null)
+    }
+}

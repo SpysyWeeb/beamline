@@ -889,8 +889,12 @@ not break across two lines in the banner; the results view shows at most the 20 
     (IDLE only, from an acceptable fix, the default type with the user's options, not routed again
     for the same place within a minute) answers in `TripState.estimate`; the app sends it when a place
     window opens and shows "Directions · 6 min" (`PlaceSheetUi.driveTimeText`); the sheet screen tests
-    (6) pass on the emulator. Left: the stops editor, arrival card and pickers on the sheet frame, the
-    screen transitions, the style rulebook pass.
+    (6) pass on the emulator. The screens over the map slide (AppRoot `screenTransition`, 280 ms):
+    opened ones in from the right with the one below moving a quarter left, closed ones out to the
+    right on top; Search opened from the map grows down from the search bar and shrinks back; an
+    outgoing screen keeps its own layer while it leaves (checked on the emulator at a tenth of the
+    speed). Left: the stops editor, arrival card and pickers on the sheet frame, the style rulebook
+    pass.
 
 48. **Every state's packs, built on GitHub's machines only** (the owner, 2026-11-25/26: "I'm just
     trying to think of a way we can have github machines handle all the workflow"). Today
