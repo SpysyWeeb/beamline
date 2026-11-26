@@ -937,8 +937,22 @@ not break across two lines in the banner; the results view shows at most the 20 
     logging is live, openstreetmap.fr region files as a fallback if they repeat). *Order:*
     Pennsylvania and Ohio first (both in the config), then New York, New Jersey, Maryland,
     Delaware, West Virginia, then the rest. Changes the packs repo only (exported from `packs-repo/`).
+    *California trial, 2026-11-26 (`weekly.yml` with `states=ca`, `publish=false`):* five runs.
+    1: Geofabrik refused that runner ("Connection refused" on every address; a probe run on another
+    runner reached Geofabrik, openstreetmap.fr, planet.openstreetmap.org, the OSU mirror and BBBike:
+    Geofabrik refuses some GitHub runners, not all). 2-4: California was missing from the builders'
+    state tables (routing, search, map, addresses with its 58 counties and census divisions, pack
+    assembly), then from the addresses extract table, then `check_inputs.py` was Pennsylvania's
+    (now per-state `state_info.<st>.search_points`). **5 passed** (run 45899839156, 69 min): map 19.5
+    min / 6.5 GB peak, routing 12 min / 5.6 GB, search 10 min / 5.5 GB, addresses 10 min / 7.7 GB,
+    comma files 3.3 min / 3.2 GB, every check green; disk 36 of 145 GB. California's pack: map 574
+    MB, routing 1.24 GB (466 MB to download), search 301 MB (134 MB), addresses 475 MB (209 MB):
+    about 1.4 GB to download and 2.6 GB on the phone; every release file well under GitHub's 2 GB.
+    So one state per runner fits with room to spare (6 h and 16 GB per job). Before the matrix:
+    the download job with a second source when Geofabrik refuses a runner; one shared state table
+    instead of five (every builder's list had to learn California by hand).
     *Also queued:* the next app release carries silent updates (3ef1e0d, the owner's approval
-    2026-11-26); a map-data check on the first start after a self-update; the Parade St lane-tag fix
+    2026-11-26; released in 0.1.37); a map-data check on the first start after a self-update; the Parade St lane-tag fix
     in OpenStreetMap (shown to the owner first); lane strip extras ("+3" trimming, per-lane
     destinations, swipe to hide); search: plural folding in names, the everyday list from other
     towns, more than 20 pins or thinning when zoomed out.
