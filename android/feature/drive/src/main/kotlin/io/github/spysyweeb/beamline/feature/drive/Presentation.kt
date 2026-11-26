@@ -88,10 +88,13 @@ internal object Presentation {
 
     fun routeSheet(trip: TripState, units: UnitFormatter, nowEpochMs: Long, zone: ZoneId, locationAllowed: Boolean): RouteSheetUi {
         val labels = trip.offeredTypes.associate { it.id to it.label }
+        // item 47: each slower card says by how much ("+1 min"), from the fastest card shown
+        val fastestS = trip.choices.filter { c -> c.typeIds.any { it in labels } }.minOfOrNull { it.timeS }
         val cards = trip.choices.mapNotNull { choice ->
             // D5: a type the presets do not offer (Eco) is never named; a route only such a type gave is not shown.
             val names = choice.typeIds.mapNotNull { labels[it] }
             if (names.isEmpty()) return@mapNotNull null
+            val slowerS = if (fastestS == null) 0.0 else choice.timeS - fastestS
             RouteCardUi(
                 choiceId = choice.id,
                 labels = names.joinToString(DriveTexts.LABEL_SEPARATOR),
@@ -105,6 +108,7 @@ internal object Presentation {
                     DriveTexts.NOTE_HIGHWAYS.takeIf { choice.hasHighways },
                 ),
                 selected = choice.id == trip.selectedChoiceId,
+                slowerText = if (slowerS >= SLOWER_MIN_S) "+" + units.duration(slowerS) else null,
             )
         }
         val selected = trip.choices.firstOrNull { c -> c.id == trip.selectedChoiceId && cards.any { it.choiceId == c.id } }
@@ -410,3 +414,6 @@ internal object Presentation {
         }
     }
 }
+
+/** Item 47: a card slower than the fastest by less than this says nothing ("+1 min" from a minute on). */
+internal const val SLOWER_MIN_S = 60.0

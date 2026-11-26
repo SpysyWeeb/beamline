@@ -1,5 +1,7 @@
 package io.github.spysyweeb.beamline.feature.drive
 
+import androidx.compose.ui.graphics.compositeOver
+import androidx.compose.material3.CardDefaults
 import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.ScrollState
 import androidx.compose.foundation.background
@@ -155,17 +157,27 @@ private fun LowRouteSheet(sheet: RouteSheetUi, onEvent: (DriveEvent) -> Unit) {
     StartPart(sheet, onEvent)
 }
 
-/** A route at the lowest height: its time over its types, outlined in blue when chosen. */
+/** A route at the middle height: its time over its types (or how much slower than the fastest), outlined in blue and filled when chosen. */
 @Composable
 private fun LowRouteCard(card: RouteCardUi, onClick: () -> Unit) {
     OutlinedCard(
         onClick = onClick,
         border = if (card.selected) BorderStroke(2.dp, MaterialTheme.colorScheme.primary) else BorderStroke(1.dp, MaterialTheme.colorScheme.outlineVariant),
+        // item 47: the chosen card filled (a light tint of the one blue), the others plain
+        colors = CardDefaults.outlinedCardColors(
+            containerColor = if (card.selected) MaterialTheme.colorScheme.primary.copy(alpha = 0.10f).compositeOver(MaterialTheme.colorScheme.surface) else MaterialTheme.colorScheme.surface,
+        ),
         modifier = Modifier.heightIn(min = 48.dp).semantics { selected = card.selected }.testTag(DriveTags.lowCard(card.choiceId)),
     ) {
         Column(Modifier.padding(horizontal = 14.dp, vertical = 6.dp)) {
             Text(card.durationText, style = MaterialTheme.typography.titleLarge, fontWeight = FontWeight.SemiBold, maxLines = 1)
-            Text(card.labels, style = MaterialTheme.typography.labelMedium, color = MaterialTheme.colorScheme.primary, maxLines = 1)
+            // item 47: its types, then how much slower than the fastest ("Simpler · +3 min")
+            Row {
+                Text(card.labels, style = MaterialTheme.typography.labelMedium, color = MaterialTheme.colorScheme.primary, maxLines = 1)
+                card.slowerText?.let {
+                    Text(DriveTexts.LABEL_SEPARATOR + it, style = MaterialTheme.typography.labelMedium, color = MaterialTheme.colorScheme.onSurfaceVariant, maxLines = 1)
+                }
+            }
         }
     }
 }
@@ -271,10 +283,15 @@ private fun ColumnScope.FullRouteSheet(sheet: RouteSheetUi, onEvent: (DriveEvent
                 )
             }
             Row(horizontalArrangement = Arrangement.spacedBy(4.dp)) {
-                TextButton(onClick = { onEvent(DriveEvent.SearchForStop) }, modifier = Modifier.testTag(DriveTags.ADD_STOP)) {
-                    Icon(BeamlineIcons.Add, contentDescription = null, modifier = Modifier.size(18.dp))
-                    Spacer(Modifier.width(6.dp))
-                    Text(DriveTexts.ADD_STOP)
+                // item 47: "Add a stop" as a row of the stops (a plus where a stop's number would be)
+                Row(
+                    Modifier.heightIn(min = 48.dp).clickable(role = Role.Button) { onEvent(DriveEvent.SearchForStop) }
+                        .padding(end = 12.dp).testTag(DriveTags.ADD_STOP),
+                    verticalAlignment = Alignment.CenterVertically,
+                ) {
+                    Icon(BeamlineIcons.Add, contentDescription = null, tint = MaterialTheme.colorScheme.primary, modifier = Modifier.size(20.dp))
+                    Spacer(Modifier.width(10.dp))
+                    Text(DriveTexts.ADD_STOP, style = MaterialTheme.typography.bodyLarge, color = MaterialTheme.colorScheme.primary)
                 }
                 if (sheet.stops.size > 1) {
                     TextButton(onClick = { onEvent(DriveEvent.OpenStopsEditor) }, modifier = Modifier.testTag(DriveTags.OPEN_STOPS)) {
@@ -310,6 +327,7 @@ private fun ColumnScope.FullRouteSheet(sheet: RouteSheetUi, onEvent: (DriveEvent
                 selected = sheet.avoidHighways,
                 onClick = { nav(NavIntent.SetOptions(RouteOptions(avoidHighways = !sheet.avoidHighways, avoidTolls = sheet.avoidTolls))) },
                 label = { Text(DriveTexts.AVOID_HIGHWAYS) },
+                leadingIcon = onCheck(sheet.avoidHighways),
                 colors = toggleColors(),
                 modifier = Modifier.testTag(DriveTags.AVOID_HIGHWAYS),
             )
@@ -317,6 +335,7 @@ private fun ColumnScope.FullRouteSheet(sheet: RouteSheetUi, onEvent: (DriveEvent
                 selected = sheet.avoidTolls,
                 onClick = { nav(NavIntent.SetOptions(RouteOptions(avoidHighways = sheet.avoidHighways, avoidTolls = !sheet.avoidTolls))) },
                 label = { Text(DriveTexts.AVOID_TOLLS) },
+                leadingIcon = onCheck(sheet.avoidTolls),
                 colors = toggleColors(),
                 modifier = Modifier.testTag(DriveTags.AVOID_TOLLS),
             )
@@ -372,7 +391,12 @@ internal const val SHOW_ALL_STEPS_TAG = "show-all-steps"
 private fun toggleColors() = FilterChipDefaults.filterChipColors(
     selectedContainerColor = MaterialTheme.colorScheme.primary,
     selectedLabelColor = MaterialTheme.colorScheme.onPrimary,
+    selectedLeadingIconColor = MaterialTheme.colorScheme.onPrimary,
 )
+
+/** Item 47: an option chip that is on shows a check before its words (not by colour alone). */
+private fun onCheck(on: Boolean): (@Composable () -> Unit)? =
+    if (on) ({ Icon(BeamlineIcons.Check, contentDescription = null, modifier = Modifier.size(18.dp)) }) else null
 
 @Composable
 private fun OverflowMenu(simulateEnabled: Boolean, onSimulate: () -> Unit) {
@@ -466,6 +490,10 @@ private fun RouteCard(card: RouteCardUi, modifier: Modifier, onClick: () -> Unit
     OutlinedCard(
         onClick = onClick,
         border = if (card.selected) BorderStroke(2.dp, MaterialTheme.colorScheme.primary) else BorderStroke(1.dp, MaterialTheme.colorScheme.outlineVariant),
+        // item 47: the chosen card filled (a light tint of the one blue), the others plain
+        colors = CardDefaults.outlinedCardColors(
+            containerColor = if (card.selected) MaterialTheme.colorScheme.primary.copy(alpha = 0.10f).compositeOver(MaterialTheme.colorScheme.surface) else MaterialTheme.colorScheme.surface,
+        ),
         modifier = modifier
             .fillMaxWidth()
             .bringIntoViewRequester(requester)
@@ -489,6 +517,10 @@ private fun RouteCard(card: RouteCardUi, modifier: Modifier, onClick: () -> Unit
             }
             Row(verticalAlignment = Alignment.Bottom) {
                 Text(card.durationText, style = MaterialTheme.typography.headlineSmall, fontWeight = FontWeight.SemiBold)
+                card.slowerText?.let {
+                    Spacer(Modifier.width(8.dp))
+                    Text(it, style = MaterialTheme.typography.titleMedium, color = MaterialTheme.colorScheme.onSurfaceVariant, modifier = Modifier.padding(bottom = 2.dp))
+                }
                 Spacer(Modifier.width(10.dp))
                 Text(card.distanceText, style = MaterialTheme.typography.titleMedium, color = MaterialTheme.colorScheme.onSurfaceVariant, modifier = Modifier.padding(bottom = 2.dp))
                 Spacer(Modifier.weight(1f))

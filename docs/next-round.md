@@ -907,9 +907,13 @@ not break across two lines in the banner; the results view shows at most the 20 
     Then the outline icons (ui/theme `BeamlineIcons` Clock, Phone, Globe, Pin, Star, Flag, Pencil;
     24 grid, 2-unit strokes): the place window's secondary buttons carry them (Save, Edit, Call,
     Website, Report, Add) and its details are icon rows (clock, phone, globe, pin; the icon is the
-    row's heading for screen readers, as the caption was); search 13 screen tests pass. Left of the
-    concept: the directions window's From / To rows with swap,
-    "Add a stop" as a row and option chips with a check, the route cards' big time with "+1 min".
+    row's heading for screen readers, as the caption was); search 13 screen tests pass. Then the
+    directions window: the chosen card filled (a light tint of the one blue) at both heights, a
+    slower card says by how much against the fastest ("Simpler · +4 min"; nothing within a minute,
+    `RouteCardUi.slowerText`), "Add stop" as a row of the stops, the option chips show a check when
+    on (`BeamlineIcons.Check`); drive 21 screen tests pass. Left of the concept: From / To rows with
+    the dot-line-pin connector and a swap (a swap needs the session to plan from the destination to
+    the current position: a question for the owner).
 
 48. **Every state's packs, built on GitHub's machines only** (the owner, 2026-11-25/26: "I'm just
     trying to think of a way we can have github machines handle all the workflow"). Today

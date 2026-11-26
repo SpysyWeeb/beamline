@@ -177,4 +177,11 @@ object BeamlineIcons {
             moveTo(14f, 7f); lineTo(17f, 10f)
         }
     }
+
+    /** A check: an option that is on (item 47). */
+    val Check = icon("check") {
+        stroke {
+            moveTo(5f, 12.5f); lineTo(10f, 17.5f); lineTo(19f, 7f)
+        }
+    }
 }

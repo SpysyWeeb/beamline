@@ -434,6 +434,23 @@ class DriveScreensTest {
         compose.onNodeWithTag(DriveTags.card(2)).assert(SemanticsMatcher.expectValue(SemanticsProperties.Selected, false))
     }
 
+    /** Item 47: a slower card says by how much against the fastest; the fastest says nothing; an option that is on has a check. */
+    @Test
+    fun slowerCardsSayByHowMuch() {
+        // 370 s and 610 s: "+4 min" (the sheet's own simpler is 50 s slower: within a minute, nothing)
+        assertEquals(null, present(choosing(choices = listOf(fastestOnly, simpler), selected = 1)).planning!!.cards.first { it.choiceId == 2L }.slowerText)
+        val ui = present(choosing(choices = listOf(fastestOnly, simpler.copy(timeS = 610.0)), selected = 1))
+        val fast = ui.planning!!.cards.first { it.choiceId == 1L }
+        val slow = ui.planning!!.cards.first { it.choiceId == 2L }
+        assertEquals(null, fast.slowerText)
+        assertTrue(slow.slowerText.toString(), slow.slowerText!!.startsWith("+") && slow.slowerText!!.endsWith("min"))
+        host(ui)
+        compose.onNodeWithTag(DriveTags.lowCard(2)).assertIsDisplayed()
+        compose.onNodeWithText(DriveTexts.LABEL_SEPARATOR + slow.slowerText!!, useUnmergedTree = true).assertIsDisplayed()
+        compose.raiseSheetToFull()
+        compose.onNodeWithText(slow.slowerText!!, useUnmergedTree = true).assertIsDisplayed()
+    }
+
     /**
      * The real status bar over the banner (whole-device screenshots, the overlay edge to edge as in
      * the app): its icons are light while the dark banner or the re-route card is under them, and

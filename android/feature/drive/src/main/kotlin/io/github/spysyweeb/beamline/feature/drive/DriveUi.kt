@@ -34,6 +34,8 @@ data class RouteCardUi(
     /** "Tolls", "Highways" */
     val notes: List<String>,
     val selected: Boolean,
+    /** Item 47: how much longer than the fastest card ("+1 min"); null on the fastest and within a minute of it. */
+    val slowerText: String? = null,
 )
 
 data class RouteSheetUi(
