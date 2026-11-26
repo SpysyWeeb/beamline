@@ -833,6 +833,13 @@ sealed interface NavIntent {
     data class MoveStop(val from: Int, val to: Int) : NavIntent
     /** Reorders the stops not yet reached for the least driving time; the destination stays last. */
     data object OptimizeStopOrder : NavIntent
+    /**
+     * Item 47: the trip the other way round, before guidance (PLANNING, CHOOSING): the destination is
+     * the start, the stops in reverse, and the start the destination. From the current position, the
+     * destination is that position as it is now ("Your position", a point); swapped back, the trip
+     * starts from the current position again. Without a position: NO_POSITION, nothing changes.
+     */
+    data object SwapEnds : NavIntent
     data class SetRouteType(val typeId: String) : NavIntent
     data class SetOptions(val options: RouteOptions) : NavIntent
     /** Selects a route card; the trip's route type follows it (rule C7). */

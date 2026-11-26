@@ -184,4 +184,14 @@ object BeamlineIcons {
             moveTo(5f, 12.5f); lineTo(10f, 17.5f); lineTo(19f, 7f)
         }
     }
+
+    /** Two arrows, up and down: swap the start and the destination (item 47). */
+    val Swap = icon("swap") {
+        stroke {
+            moveTo(8f, 20f); lineTo(8f, 4f)
+            moveTo(4f, 8f); lineTo(8f, 4f); lineTo(12f, 8f)
+            moveTo(16f, 4f); lineTo(16f, 20f)
+            moveTo(12f, 16f); lineTo(16f, 20f); lineTo(20f, 16f)
+        }
+    }
 }

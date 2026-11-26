@@ -225,6 +225,10 @@ private fun ColumnScope.FullRouteSheet(sheet: RouteSheetUi, onEvent: (DriveEvent
             Text(DriveTexts.FROM, style = MaterialTheme.typography.labelMedium, color = MaterialTheme.colorScheme.onSurfaceVariant)
             Text(sheet.fromText, style = MaterialTheme.typography.titleMedium, color = MaterialTheme.colorScheme.primary, maxLines = 1, overflow = TextOverflow.Ellipsis)
         }
+        // item 47: the trip the other way round (which way it goes back, and how long)
+        IconButton(onClick = { nav(NavIntent.SwapEnds) }, enabled = !sheet.busy, modifier = Modifier.testTag(DriveTags.SWAP)) {
+            Icon(BeamlineIcons.Swap, contentDescription = DriveTexts.SWAP)
+        }
         OverflowMenu(simulateEnabled = chosen && !sheet.busy, onSimulate = { nav(NavIntent.Start(Simulation())) })
         IconButton(onClick = { nav(NavIntent.End) }, modifier = Modifier.testTag(DriveTags.CANCEL)) {
             Icon(DriveIcons.close, contentDescription = DriveTexts.CANCEL_ROUTE)

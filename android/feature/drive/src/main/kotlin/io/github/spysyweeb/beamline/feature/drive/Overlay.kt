@@ -83,6 +83,7 @@ object DriveTags {
     const val STOP_CARD = "stop-card"
     const val ARRIVED_CARD = "arrived-card"
     const val SAVE_DESTINATION = "save-destination"
+    const val SWAP = "swap-ends"
     const val DESTINATION_AWAY = "destination-away"
     const val TRIP_BAR = "trip-bar"
     const val SIMULATED = "simulated"

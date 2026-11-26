@@ -1,5 +1,6 @@
 package io.github.spysyweeb.beamline.nav
 
+import io.github.spysyweeb.beamline.api.model.PlaceSource
 import io.github.spysyweeb.beamline.api.data.InstalledSet
 import io.github.spysyweeb.beamline.api.model.GeoPoint
 import io.github.spysyweeb.beamline.api.model.Place
@@ -272,6 +273,8 @@ internal class SessionCore(
     private var lastSaveMs = 0L
     private var problemClearAt: Long? = null
     private var estimateJob: Job? = null
+    /** Item 47: the destination a swap made of the current position (a second swap starts from the position again). */
+    private var swappedPosition: Place? = null
     private var estimateAtMs = 0L
 
     init {
@@ -363,6 +366,7 @@ internal class SessionCore(
                 else stops.toMutableList().apply { add(to, removeAt(from)) }
             }
             NavIntent.OptimizeStopOrder -> optimizeStopOrder()
+            NavIntent.SwapEnds -> swapEnds()
             is NavIntent.SetRouteType -> setRouteType(intent.typeId)
             is NavIntent.SetOptions -> setOptions(intent.options)
             is NavIntent.Choose -> choose(intent.choiceId)
@@ -413,6 +417,38 @@ internal class SessionCore(
                 st = st.copy(estimate = (r as? PlanResult.Ok)?.let { DriveEstimate(at, it.route.timeS, it.route.lengthM) })
             }
         }
+    }
+
+    /**
+     * Item 47: the trip the other way round before guidance ([NavIntent.SwapEnds]). A trip from the
+     * current position ends at that position as it is now ([swappedPosition], so a second swap starts
+     * from the current position again); the stops between are reversed; every type is planned again.
+     */
+    private fun swapEnds() {
+        if (st.phase != Phase.PLANNING && st.phase != Phase.CHOOSING) return
+        if (st.stops.isEmpty() || st.stops.any { it.reached }) return
+        val last = st.stops.last().place
+        val between = st.stops.dropLast(1).reversed()
+        val newOrigin: Origin
+        val newEnd: Place
+        when (val o = st.origin) {
+            Origin.CurrentPosition -> {
+                val fix = acceptableOrigin(positions.latest.value)
+                if (fix == null) {
+                    setProblem(TripProblem(ProblemKind.NO_POSITION, NO_POSITION_TEXT, true), hold = true)
+                    return
+                }
+                newOrigin = Origin.FromPlace(last)
+                newEnd = Place(YOUR_POSITION, GeoPoint(fix.lat, fix.lon), PlaceSource.MAP_PIN)
+            }
+            is Origin.FromPlace -> {
+                newOrigin = if (last == swappedPosition) Origin.CurrentPosition else Origin.FromPlace(last)
+                newEnd = o.place
+            }
+        }
+        swappedPosition = newEnd.takeIf { st.origin == Origin.CurrentPosition }
+        st = st.copy(origin = newOrigin, stops = between + TripStop(newEnd))
+        replanBeforeGuidance()
     }
 
     private fun planTo(intent: NavIntent.PlanTo) {
@@ -1807,6 +1843,8 @@ internal class SessionCore(
         /** Item 47: the same place asked again within this is not routed again. */
         const val ESTIMATE_FRESH_MS = 60_000L
         const val HOLD_REASON = "Not while guiding"
+        /** Item 47: the destination a swap makes of the current position. */
+        const val YOUR_POSITION = "Your position"
         const val NO_POSITION_TEXT = "No GPS position yet. Choose a start point or try again."
         const val PACKS_BUSY_TEXT = "A state is being installed. Start again when it has finished."
         const val OUTSIDE_TEXT = "You are outside the installed maps."

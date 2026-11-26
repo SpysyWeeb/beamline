@@ -1,5 +1,6 @@
 package io.github.spysyweeb.beamline.feature.drive
 
+import androidx.compose.ui.test.onNodeWithContentDescription
 import android.app.Activity
 import android.content.Context
 import android.content.ContextWrapper
@@ -432,6 +433,16 @@ class DriveScreensTest {
         compose.raiseSheetToFull() // item 47: the full cards
         compose.onNodeWithTag(DriveTags.card(1)).assert(SemanticsMatcher.expectValue(SemanticsProperties.Selected, true))
         compose.onNodeWithTag(DriveTags.card(2)).assert(SemanticsMatcher.expectValue(SemanticsProperties.Selected, false))
+    }
+
+    /** Item 47: the From row's swap button asks for the trip the other way round. */
+    @Test
+    fun swapButtonSwapsTheEnds() {
+        host(present(choosing(choices = listOf(fastestOnly, simpler), selected = 1)))
+        compose.raiseSheetToFull()
+        events.clear()
+        compose.onNodeWithContentDescription(DriveTexts.SWAP).assertIsDisplayed().assertIsEnabled().performClick()
+        assertEquals(listOf<DriveEvent>(DriveEvent.Nav(NavIntent.SwapEnds)), events)
     }
 
     /** Item 47: a slower card says by how much against the fastest; the fastest says nothing; an option that is on has a check. */

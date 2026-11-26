@@ -911,9 +911,15 @@ not break across two lines in the banner; the results view shows at most the 20 
     directions window: the chosen card filled (a light tint of the one blue) at both heights, a
     slower card says by how much against the fastest ("Simpler · +4 min"; nothing within a minute,
     `RouteCardUi.slowerText`), "Add stop" as a row of the stops, the option chips show a check when
-    on (`BeamlineIcons.Check`); drive 21 screen tests pass. Left of the concept: From / To rows with
-    the dot-line-pin connector and a swap (a swap needs the session to plan from the destination to
-    the current position: a question for the owner).
+    on (`BeamlineIcons.Check`); drive 21 screen tests pass. The swap (the owner, 2026-11-26: "From /
+    To swapping can be useful for knowing what route would be taken or if there is a time
+    difference, so I'd keep it"): `NavIntent.SwapEnds` before guidance turns the trip round (the
+    destination is the start, the stops reversed; from the current position the destination is that
+    position as it is now, "Your position", and a second swap starts from the position again;
+    without a position NO_POSITION and nothing changes); a swap button on the From row (`BeamlineIcons.
+    Swap`). Session tests with 5 new engine recordings; 943 unit and 22 drive screen tests pass. Not
+    built: the dot-line-pin connector beside From and To (the From row is pinned above the scrolling
+    part, so one line cannot join them without a new layout).
 
 48. **Every state's packs, built on GitHub's machines only** (the owner, 2026-11-25/26: "I'm just
     trying to think of a way we can have github machines handle all the workflow"). Today

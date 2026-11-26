@@ -184,4 +184,6 @@ object DriveTexts {
     /** Item 47: the stops editor lowered, and the arrival card's Save. */
     fun stopsCount(n: Int): String = if (n == 1) "1 stop" else "$n stops"
     const val SAVE_PLACE = "Save this place"
+    /** Item 47: the From row's swap button. */
+    const val SWAP = "Swap start and destination"
 }

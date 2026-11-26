@@ -5,6 +5,7 @@ import io.github.spysyweeb.beamline.api.model.Place
 import io.github.spysyweeb.beamline.api.model.PlaceSource
 import io.github.spysyweeb.beamline.api.nav.GpsState
 import io.github.spysyweeb.beamline.api.nav.NavIntent
+import io.github.spysyweeb.beamline.api.nav.Origin
 import io.github.spysyweeb.beamline.api.nav.Phase
 import io.github.spysyweeb.beamline.api.nav.ProblemKind
 import io.github.spysyweeb.beamline.api.nav.ReplaceReason
@@ -54,6 +55,45 @@ class PlanningAndResumeTest {
         val origin = h.engine.routeRequests.last { "format" !in it }["locations"]!!.jsonArray[0].jsonObject
         assertEquals(57, origin["heading"]!!.jsonPrimitive.int)
         assertEquals(60, origin["radius"]!!.jsonPrimitive.int)
+    }
+
+    /** Item 47: the trip the other way round, and back; the position as it was is the swapped destination. */
+    @Test
+    fun `a swap plans the trip the other way round, and a second swap plans it from the position again`() = sessionTest { h ->
+        h.fixAtOrigin()
+        h.send(NavIntent.PlanTo(Data.DOWNS_DRIVE))
+        h.advance(2_000)
+        assertEquals(Phase.CHOOSING, h.phase(), "${h.state.problem}")
+        h.send(NavIntent.SwapEnds)
+        h.advance(2_000)
+        assertEquals(Phase.CHOOSING, h.phase(), "${h.state.problem}")
+        assertEquals(Origin.FromPlace(Data.DOWNS_DRIVE), h.state.origin)
+        val back = h.state.stops.single().place
+        assertEquals(SessionCore.YOUR_POSITION, back.name)
+        assertEquals(PlaceSource.MAP_PIN, back.source)
+        assertEquals(Data.EXIT24_ORIGIN.point.lat, back.point.lat, 1e-9)
+        assertEquals(Data.EXIT24_ORIGIN.point.lon, back.point.lon, 1e-9)
+        assertTrue(h.state.choices.isNotEmpty(), "routes back")
+        h.fixAtOrigin()
+        h.send(NavIntent.SwapEnds)
+        h.advance(2_000)
+        assertEquals(Origin.CurrentPosition, h.state.origin)
+        assertEquals(Data.DOWNS_DRIVE, h.state.stops.single().place)
+        assertEquals(Phase.CHOOSING, h.phase(), "${h.state.problem}")
+        h.assertAllRecorded()
+    }
+
+    /** Item 47: no position, no swap (a trip from the position has nothing to end at). */
+    @Test
+    fun `a swap without a position says so and changes nothing`() = sessionTest(puck = false) { h ->
+        h.send(NavIntent.PlanTo(Data.DOWNS_DRIVE))
+        h.advance(16_000)
+        assertEquals(ProblemKind.NO_POSITION, h.state.problem?.kind)
+        h.send(NavIntent.SwapEnds)
+        h.advance(500)
+        assertEquals(Origin.CurrentPosition, h.state.origin)
+        assertEquals(Data.DOWNS_DRIVE, h.state.stops.single().place)
+        assertEquals(ProblemKind.NO_POSITION, h.state.problem?.kind)
     }
 
     /** Item 47: the place window's drive time: IDLE only, from a fix, no trip made, not asked twice, dropped with a trip. */
