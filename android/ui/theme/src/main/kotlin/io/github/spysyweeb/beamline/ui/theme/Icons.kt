@@ -101,4 +101,80 @@ object BeamlineIcons {
             moveTo(5f, 12f); lineTo(19f, 12f)
         }
     }
+
+    // ---- item 47: the place window's outline icons (one set: 24 grid, 2-unit strokes)
+
+    /** A clock: the opening hours. */
+    val Clock = icon("clock") {
+        stroke {
+            circle(12f, 12f, 9f)
+            moveTo(12f, 7f); lineTo(12f, 12f); lineTo(15.5f, 14f)
+        }
+    }
+
+    /** A handset: a phone number, Call. */
+    val Phone = icon("phone") {
+        stroke {
+            moveTo(5f, 4f); lineTo(8.5f, 4f); lineTo(10f, 8.5f); lineTo(7.8f, 9.9f)
+            arcTo(11f, 11f, 0f, isMoreThanHalf = false, isPositiveArc = false, x1 = 14.1f, y1 = 16.2f)
+            lineTo(15.5f, 14f); lineTo(20f, 15.5f); lineTo(20f, 19f)
+            arcTo(2f, 2f, 0f, isMoreThanHalf = false, isPositiveArc = true, x1 = 18f, y1 = 21f)
+            arcTo(16f, 16f, 0f, isMoreThanHalf = false, isPositiveArc = true, x1 = 3f, y1 = 6f)
+            arcTo(2f, 2f, 0f, isMoreThanHalf = false, isPositiveArc = true, x1 = 5f, y1 = 4f)
+            close()
+        }
+    }
+
+    /** A globe: a web address, Website. */
+    val Globe = icon("globe") {
+        stroke {
+            circle(12f, 12f, 9f)
+            moveTo(12f, 3f)
+            arcTo(4f, 9f, 0f, isMoreThanHalf = false, isPositiveArc = true, x1 = 12f, y1 = 21f)
+            arcTo(4f, 9f, 0f, isMoreThanHalf = false, isPositiveArc = true, x1 = 12f, y1 = 3f)
+            moveTo(3f, 12f); lineTo(21f, 12f)
+        }
+    }
+
+    /** A map pin: the address. */
+    val Pin = icon("pin") {
+        stroke {
+            moveTo(12f, 21f)
+            curveTo(12f, 21f, 5f, 14.5f, 5f, 9.5f)
+            arcTo(7f, 7f, 0f, isMoreThanHalf = false, isPositiveArc = true, x1 = 19f, y1 = 9.5f)
+            curveTo(19f, 14.5f, 12f, 21f, 12f, 21f)
+            close()
+            circle(12f, 9.5f, 2.5f)
+        }
+    }
+
+    /** A five-pointed star: Save. */
+    val Star = icon("star") {
+        stroke {
+            for (i in 0 until 10) {
+                val r = if (i % 2 == 0) 9.5f else 4f
+                val a = Math.toRadians(-90.0 + i * 36.0)
+                val x = 12f + r * cos(a).toFloat()
+                val y = 12.8f + r * sin(a).toFloat()
+                if (i == 0) moveTo(x, y) else lineTo(x, y)
+            }
+            close()
+        }
+    }
+
+    /** A flag: Report a problem. */
+    val Flag = icon("flag") {
+        stroke {
+            moveTo(5f, 21f); lineTo(5f, 4f)
+            lineTo(17f, 4f); lineTo(14.5f, 8f); lineTo(17f, 12f); lineTo(5f, 12f)
+        }
+    }
+
+    /** A pencil: Edit. */
+    val Pencil = icon("pencil") {
+        stroke {
+            moveTo(4f, 20f); lineTo(5f, 16f); lineTo(16f, 5f); lineTo(19f, 8f); lineTo(8f, 19f); close()
+            moveTo(14f, 7f); lineTo(17f, 10f)
+        }
+    }
 }

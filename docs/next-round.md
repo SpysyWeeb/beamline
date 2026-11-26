@@ -904,8 +904,11 @@ not break across two lines in the banner; the results view shows at most the 20 
     (search pills, the stops editor's, the resume card's Discard: `SecondaryButton`), pills 52 dp
     (`PRIMARY_BUTTON_HEIGHT`); search's accessibility test raises the place window before it looks
     for Directions (it opens at peek since 2026-11-25). Drive 20 and search 13 screen tests pass.
-    Left of the concept: icons on the secondary buttons and the place window's icon rows (the icon
-    set has no phone, globe, clock or star yet), the directions window's From / To rows with swap,
+    Then the outline icons (ui/theme `BeamlineIcons` Clock, Phone, Globe, Pin, Star, Flag, Pencil;
+    24 grid, 2-unit strokes): the place window's secondary buttons carry them (Save, Edit, Call,
+    Website, Report, Add) and its details are icon rows (clock, phone, globe, pin; the icon is the
+    row's heading for screen readers, as the caption was); search 13 screen tests pass. Left of the
+    concept: the directions window's From / To rows with swap,
     "Add a stop" as a row and option chips with a check, the route cards' big time with "+1 min".
 
 48. **Every state's packs, built on GitHub's machines only** (the owner, 2026-11-25/26: "I'm just

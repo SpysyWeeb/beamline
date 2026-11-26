@@ -1,5 +1,9 @@
 package io.github.spysyweeb.beamline.feature.search
 
+import androidx.compose.foundation.layout.width
+import androidx.compose.foundation.layout.ColumnScope
+import androidx.compose.material3.Icon
+import androidx.compose.ui.graphics.vector.ImageVector
 import io.github.spysyweeb.beamline.ui.theme.PRIMARY_BUTTON_HEIGHT
 import io.github.spysyweeb.beamline.ui.theme.SHEET_CORNER
 import android.text.InputType
@@ -463,7 +467,7 @@ private fun RemoveButton(night: Boolean, onClick: () -> Unit) {
 }
 
 @Composable
-internal fun PillButton(text: String, night: Boolean, primary: Boolean = false, enabled: Boolean = true, onClick: () -> Unit) {
+internal fun PillButton(text: String, night: Boolean, primary: Boolean = false, enabled: Boolean = true, icon: ImageVector? = null, onClick: () -> Unit) {
     val p = palette(night)
     Surface(
         onClick = onClick, enabled = enabled, shape = RoundedCornerShape(22.dp),
@@ -480,7 +484,12 @@ internal fun PillButton(text: String, night: Boolean, primary: Boolean = false, 
         },
         modifier = Modifier.heightIn(min = PRIMARY_BUTTON_HEIGHT).semantics { role = Role.Button },
     ) {
-        Box(contentAlignment = Alignment.Center, modifier = Modifier.heightIn(min = PRIMARY_BUTTON_HEIGHT).padding(horizontal = 18.dp)) {
+        Row(verticalAlignment = Alignment.CenterVertically, modifier = Modifier.heightIn(min = PRIMARY_BUTTON_HEIGHT).padding(start = if (icon != null) 14.dp else 18.dp, end = 18.dp)) {
+            // item 47: a secondary button carries its icon (the place window's outline set)
+            if (icon != null) {
+                Icon(icon, contentDescription = null, modifier = Modifier.size(20.dp))
+                Spacer(Modifier.width(8.dp))
+            }
             Text(text, fontSize = 15.sp, fontWeight = FontWeight.Medium, softWrap = false)
         }
     }
@@ -546,7 +555,7 @@ internal fun PlaceSheetContent(ui: PlaceSheetUi, onEvent: (PlaceSheetEvent) -> U
                     modifier = Modifier.padding(start = 16.dp, end = 16.dp, bottom = 14.dp).testTag(PLACE_PEEK_ACTIONS_TAG),
                 ) {
                     if (main != null) PillButton(placeActionLabel(main, ui.driveTimeText), night, primary = true) { onEvent(PlaceSheetEvent.Act(main)) }
-                    if (keep != null) PillButton(placeActionLabel(keep), night, primary = false) { onEvent(PlaceSheetEvent.Act(keep)) }
+                    if (keep != null) PillButton(placeActionLabel(keep), night, primary = false, icon = placeActionIcon(keep)) { onEvent(PlaceSheetEvent.Act(keep)) }
                 }
             }
             if (open) Column(
@@ -573,7 +582,7 @@ internal fun PlaceSheetContent(ui: PlaceSheetUi, onEvent: (PlaceSheetEvent) -> U
                     for (a in ui.actions) {
                         val label = placeActionLabel(a, ui.driveTimeText)
                         val primary = a == ui.actions.firstOrNull { it == PlaceAction.DIRECTIONS || it == PlaceAction.ADD_STOP || it == PlaceAction.OPEN_STATES }
-                        PillButton(label, night, primary = primary) { onEvent(PlaceSheetEvent.Act(a)) }
+                        PillButton(label, night, primary = primary, icon = if (primary) null else placeActionIcon(a)) { onEvent(PlaceSheetEvent.Act(a)) }
                     }
                 }
                 // Batch O1: a long press on the map gives a dropped pin, and with it "Report a problem here";
@@ -585,13 +594,24 @@ internal fun PlaceSheetContent(ui: PlaceSheetUi, onEvent: (PlaceSheetEvent) -> U
                     horizontalArrangement = Arrangement.spacedBy(8.dp),
                     modifier = Modifier.padding(top = 8.dp).horizontalScroll(rememberScrollState()),
                 ) {
-                    if (pinReport) PillButton(Texts.REPORT_HERE, night, primary = false) { onEvent(PlaceSheetEvent.Act(PlaceAction.REPORT)) }
-                    if (pinAdd) PillButton(Texts.ADD_PLACE, night, primary = false) { onEvent(PlaceSheetEvent.Act(PlaceAction.ADD_PLACE)) }
+                    if (pinReport) PillButton(Texts.REPORT_HERE, night, primary = false, icon = BeamlineIcons.Flag) { onEvent(PlaceSheetEvent.Act(PlaceAction.REPORT)) }
+                    if (pinAdd) PillButton(Texts.ADD_PLACE, night, primary = false, icon = BeamlineIcons.Add) { onEvent(PlaceSheetEvent.Act(PlaceAction.ADD_PLACE)) }
                 }
                 if (details) PlaceDetails(ui, night, onEvent)
             }
         }
     }
+}
+
+/** Item 47: the icon of a secondary place sheet button (one outline set), or null. */
+internal fun placeActionIcon(a: PlaceAction): ImageVector? = when (a) {
+    PlaceAction.SAVE -> BeamlineIcons.Star
+    PlaceAction.EDIT -> BeamlineIcons.Pencil
+    PlaceAction.CALL -> BeamlineIcons.Phone
+    PlaceAction.WEBSITE -> BeamlineIcons.Globe
+    PlaceAction.REPORT -> BeamlineIcons.Flag
+    PlaceAction.ADD_STOP, PlaceAction.ADD_PLACE -> BeamlineIcons.Add
+    else -> null
 }
 
 /** The words of a place sheet button; Directions with the drive time when there is one (item 47: "Directions · 6 min"). */
@@ -640,21 +660,22 @@ private fun PlaceDetails(ui: PlaceSheetUi, night: Boolean, onEvent: (PlaceSheetE
     Column(Modifier.fillMaxWidth().padding(top = 16.dp).testTag(PLACE_DETAILS_TAG)) {
         HorizontalDivider(color = p.divider)
         if (ui.category != null) Text(ui.category, color = p.panelText, fontSize = 15.sp, modifier = Modifier.padding(top = 12.dp))
+        // item 47: icon rows (clock, phone, globe, pin), the icon named for screen readers as the caption was
         val hours = ui.hours
-        if (hours != null && hours.week.isNotEmpty()) {
-            Caption(Texts.HOURS, p)
-            HoursWeek(hours, night, Modifier.padding(start = 0.dp, top = 2.dp))
+        if (hours != null && hours.week.isNotEmpty()) DetailRow(BeamlineIcons.Clock, Texts.HOURS, p) {
+            HoursWeek(hours, night, Modifier.padding(start = 0.dp, top = 12.dp))
         }
-        if (ui.phones.isNotEmpty()) Caption(Texts.PHONE, p)
-        ui.phones.forEachIndexed { i, c ->
-            ContactLine(c, "detail-phone-$i", PlaceAction.CALL, Texts.CALL, ui.canOpenOutside, copied, night, onEvent, copy)
+        if (ui.phones.isNotEmpty()) DetailRow(BeamlineIcons.Phone, Texts.PHONE, p) {
+            ui.phones.forEachIndexed { i, c ->
+                ContactLine(c, "detail-phone-$i", PlaceAction.CALL, Texts.CALL, ui.canOpenOutside, copied, night, onEvent, copy)
+            }
         }
-        if (ui.websites.isNotEmpty()) Caption(Texts.WEBSITE_CAPTION, p)
-        ui.websites.forEachIndexed { i, c ->
-            ContactLine(c, "detail-website-$i", PlaceAction.WEBSITE, Texts.OPEN_WEBSITE, ui.canOpenOutside, copied, night, onEvent, copy)
+        if (ui.websites.isNotEmpty()) DetailRow(BeamlineIcons.Globe, Texts.WEBSITE_CAPTION, p) {
+            ui.websites.forEachIndexed { i, c ->
+                ContactLine(c, "detail-website-$i", PlaceAction.WEBSITE, Texts.OPEN_WEBSITE, ui.canOpenOutside, copied, night, onEvent, copy)
+            }
         }
-        if (ui.address != null) {
-            Caption(Texts.ADDRESS, p)
+        if (ui.address != null) DetailRow(BeamlineIcons.Pin, Texts.ADDRESS, p) {
             ContactLine(ContactUi(ui.address, null, ui.address), "detail-address", null, null, ui.canOpenOutside, copied, night, onEvent, copy)
         }
         // Batch O1 (docs/online-design.md 4.1): a public OSM note at the place's point
@@ -681,9 +702,14 @@ private fun PlaceDetails(ui: PlaceSheetUi, night: Boolean, onEvent: (PlaceSheetE
 
 private const val COPIED_NOTE_MS = 2_000L
 
+/** Item 47: one row of the details: its outline icon (named [label], a heading for screen readers), then [content]. */
 @Composable
-private fun Caption(text: String, p: Palette) {
-    Text(text, color = p.subtle, fontSize = 13.sp, fontWeight = FontWeight.Medium, modifier = Modifier.padding(top = 14.dp).semantics { heading() })
+private fun DetailRow(icon: ImageVector, label: String, p: Palette, content: @Composable ColumnScope.() -> Unit) {
+    Row(Modifier.fillMaxWidth().padding(top = 4.dp)) {
+        Icon(icon, contentDescription = label, tint = p.subtle, modifier = Modifier.padding(top = 12.dp).size(24.dp).semantics { heading() })
+        Spacer(Modifier.width(16.dp))
+        Column(Modifier.weight(1f), content = content)
+    }
 }
 
 /** One number, web address or the address: a tap opens it ([action]), a long press copies it; plain text while guiding. */
