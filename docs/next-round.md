@@ -957,6 +957,14 @@ not break across two lines in the banner; the results view shows at most the 20 
     destinations, swipe to hide); search: plural folding in names, the everyday list from other
     towns, more than 20 pins or thinning when zoomed out.
 
+49. **The app audit's findings** (the owner, 2026-11-26: "have some sonnet agent rip apart the app for
+    issues, bugs, odd functions that don't flow well, etc. I'd like to know how we can improve what we
+    have"). 27 Sonnet reviewers, every finding checked by two more against the code: 92 upheld (72 by
+    both), in `docs/audits/2026-11-26-app-audit.md`, grouped A to H. Proposed order (the owner
+    chooses): first the rough edges of what 0.1.37 added and the update safety (group A, F7, F8);
+    then "no silent failures" (group B: every failure says what happened and what to do); then the
+    polish of search, the map, States, online, driving and layout (C to H).
+
 ## Later (not the next round)
 
 - **Linking Beamline to the real vehicle through the comma 3X** (owner, 2026-11-16). The driving
