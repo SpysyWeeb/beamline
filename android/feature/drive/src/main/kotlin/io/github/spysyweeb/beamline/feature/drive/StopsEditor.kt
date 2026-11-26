@@ -22,7 +22,6 @@ import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.LinearProgressIndicator
 import androidx.compose.material3.MaterialTheme
-import androidx.compose.material3.OutlinedButton
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
@@ -80,13 +79,13 @@ internal fun StopsEditor(editor: StopsEditorUi, onEvent: (DriveEvent) -> Unit, m
             Modifier.padding(start = 16.dp, end = 16.dp, top = 8.dp, bottom = 16.dp),
             horizontalArrangement = Arrangement.spacedBy(10.dp),
         ) {
-            OutlinedButton(onClick = { onEvent(DriveEvent.SearchForStop) }, modifier = Modifier.testTag(DriveTags.ADD_STOP)) {
+            SecondaryButton(onClick = { onEvent(DriveEvent.SearchForStop) }, modifier = Modifier.testTag(DriveTags.ADD_STOP)) {
                 Icon(BeamlineIcons.Add, contentDescription = null, modifier = Modifier.size(18.dp))
                 Spacer(Modifier.width(6.dp))
                 Text(DriveTexts.ADD_STOP)
             }
             if (editor.canOptimize) {
-                OutlinedButton(onClick = { nav(NavIntent.OptimizeStopOrder) }, enabled = !editor.busy, modifier = Modifier.testTag(DriveTags.BEST_ORDER)) {
+                SecondaryButton(onClick = { nav(NavIntent.OptimizeStopOrder) }, enabled = !editor.busy, modifier = Modifier.testTag(DriveTags.BEST_ORDER)) {
                     Text(DriveTexts.BEST_ORDER)
                 }
             }

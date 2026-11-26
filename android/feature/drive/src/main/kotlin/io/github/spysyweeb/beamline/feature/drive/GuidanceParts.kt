@@ -26,7 +26,6 @@ import androidx.compose.material3.FilledTonalIconButton
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButtonDefaults
 import androidx.compose.material3.MaterialTheme
-import androidx.compose.material3.OutlinedButton
 import androidx.compose.material3.OutlinedIconButton
 import androidx.compose.material3.SmallFloatingActionButton
 import androidx.compose.material3.Surface
@@ -262,7 +261,7 @@ internal fun ResumeCard(resume: ResumeUi, onEvent: (DriveEvent) -> Unit, modifie
         }
         Spacer(Modifier.size(16.dp))
         Row(horizontalArrangement = Arrangement.spacedBy(12.dp)) {
-            OutlinedButton(onClick = { onEvent(DriveEvent.Nav(NavIntent.DiscardResume)) }, modifier = Modifier.weight(1f).testTag(DriveTags.DISCARD)) {
+            SecondaryButton(onClick = { onEvent(DriveEvent.Nav(NavIntent.DiscardResume)) }, modifier = Modifier.weight(1f).testTag(DriveTags.DISCARD)) {
                 Text(DriveTexts.DISCARD)
             }
             Button(onClick = { onEvent(DriveEvent.Nav(NavIntent.Resume)) }, modifier = Modifier.weight(1f).testTag(DriveTags.CONTINUE)) {
@@ -270,4 +269,16 @@ internal fun ResumeCard(resume: ResumeUi, onEvent: (DriveEvent) -> Unit, modifie
             }
         }
     }
+}
+
+/** Item 47's style rules: a secondary button on a sheet is grey-filled with dark text, never outlined. */
+@Composable
+internal fun SecondaryButton(onClick: () -> Unit, modifier: Modifier = Modifier, enabled: Boolean = true, content: @Composable androidx.compose.foundation.layout.RowScope.() -> Unit) {
+    Button(
+        onClick = onClick, enabled = enabled, modifier = modifier,
+        colors = androidx.compose.material3.ButtonDefaults.buttonColors(
+            containerColor = MaterialTheme.colorScheme.surfaceVariant, contentColor = MaterialTheme.colorScheme.onSurface,
+        ),
+        content = content,
+    )
 }

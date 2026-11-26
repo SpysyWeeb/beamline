@@ -899,7 +899,14 @@ not break across two lines in the banner; the results view shows at most the 20 
     a drag up opens the destination's own window (`DriveEvent.ShowDestination`); all 20 drive
     screen tests pass on the emulator. The pickers (time, speed, place type) are small sheets
     (`PickerSheet`, the map style sheet's kind; built and unit-tested, not seen on screen: they sit
-    behind an OSM sign-in or driving). Left: the style rulebook pass.
+    behind an OSM sign-in or driving). Style rules, first pass: 24 dp top corners on every sheet
+    (`SHEET_CORNER`), the sheets' secondary buttons grey-filled with dark text and never outlined
+    (search pills, the stops editor's, the resume card's Discard: `SecondaryButton`), pills 52 dp
+    (`PRIMARY_BUTTON_HEIGHT`); search's accessibility test raises the place window before it looks
+    for Directions (it opens at peek since 2026-11-25). Drive 20 and search 13 screen tests pass.
+    Left of the concept: icons on the secondary buttons and the place window's icon rows (the icon
+    set has no phone, globe, clock or star yet), the directions window's From / To rows with swap,
+    "Add a stop" as a row and option chips with a check, the route cards' big time with "+1 min".
 
 48. **Every state's packs, built on GitHub's machines only** (the owner, 2026-11-25/26: "I'm just
     trying to think of a way we can have github machines handle all the workflow"). Today

@@ -610,6 +610,12 @@ class SearchScreensTest {
         assertTargets("menu")
         val sheet = sf.placeSheet(s.home()!!.toPlace(), gps, tripActive = true)
         show { OnMap { Box(Modifier.align(Alignment.BottomCenter)) { PlaceSheet(sheet, {}) } } }
+        // item 47: it opens at peek (the main button and Edit); raised, every button
+        val peek = named("sheet-peek", a11yTree("sheet-peek", "Add stop"))
+        assertTrue(peek.toString(), peek.map { it.first }.containsAll(listOf("Close", "Add stop", "Edit")))
+        assertTargets("sheet-peek")
+        compose.onNodeWithTag(io.github.spysyweeb.beamline.ui.theme.SHEET_HANDLE_TAG).performClick()
+        compose.waitForIdle()
         val sh = named("sheet", a11yTree("sheet", "Add stop"))
         assertTrue(sh.toString(), sh.map { it.first }.containsAll(listOf("Close", "Add stop", "Directions", "Edit")))
         assertTargets("sheet")

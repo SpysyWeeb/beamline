@@ -1,5 +1,6 @@
 package io.github.spysyweeb.beamline.feature.drive
 
+import io.github.spysyweeb.beamline.ui.theme.SHEET_CORNER
 import io.github.spysyweeb.beamline.ui.theme.SheetHeight
 import androidx.compose.animation.core.animateDpAsState
 import androidx.compose.animation.core.tween
@@ -332,7 +333,7 @@ internal fun DriveOverlayContent(ui: DriveUi, onEvent: (DriveEvent) -> Unit, onI
 @Composable
 private fun BottomSheetSurface(insets: WindowInsets, content: @Composable ColumnScope.() -> Unit) {
     Surface(
-        shape = RoundedCornerShape(topStart = 20.dp, topEnd = 20.dp),
+        shape = RoundedCornerShape(topStart = SHEET_CORNER, topEnd = SHEET_CORNER), // item 47: 24 dp on every sheet
         color = MaterialTheme.colorScheme.surface,
         contentColor = MaterialTheme.colorScheme.onSurface,
         shadowElevation = 8.dp,

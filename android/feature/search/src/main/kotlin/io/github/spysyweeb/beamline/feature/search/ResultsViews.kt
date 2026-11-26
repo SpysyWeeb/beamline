@@ -1,5 +1,6 @@
 package io.github.spysyweeb.beamline.feature.search
 
+import io.github.spysyweeb.beamline.ui.theme.SHEET_CORNER
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
@@ -118,7 +119,7 @@ internal fun ResultsSheetContent(ui: ResultsUi, onEvent: (ResultsEvent) -> Unit,
     LaunchedEffect(key, sheet.height) { ResultsHeightMemory.remember(key, sheet.height) }
     val screenH = LocalConfiguration.current.screenHeightDp
     Surface(
-        shape = RoundedCornerShape(topStart = 16.dp, topEnd = 16.dp), color = p.panel.copy(alpha = 1f), contentColor = p.panelText, shadowElevation = 6.dp,
+        shape = RoundedCornerShape(topStart = SHEET_CORNER, topEnd = SHEET_CORNER), color = p.panel.copy(alpha = 1f), contentColor = p.panelText, shadowElevation = 6.dp,
         modifier = modifier.fillMaxWidth().testTag(RESULTS_SHEET_TAG),
     ) {
         SheetFrame(

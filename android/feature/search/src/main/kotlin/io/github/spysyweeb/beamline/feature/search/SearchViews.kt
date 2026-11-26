@@ -1,5 +1,7 @@
 package io.github.spysyweeb.beamline.feature.search
 
+import io.github.spysyweeb.beamline.ui.theme.PRIMARY_BUTTON_HEIGHT
+import io.github.spysyweeb.beamline.ui.theme.SHEET_CORNER
 import android.text.InputType
 import android.view.inputmethod.EditorInfo
 import android.view.inputmethod.InputConnection
@@ -465,20 +467,20 @@ internal fun PillButton(text: String, night: Boolean, primary: Boolean = false, 
     val p = palette(night)
     Surface(
         onClick = onClick, enabled = enabled, shape = RoundedCornerShape(22.dp),
+        // item 47's style rules: one blue for the primary; a secondary is grey-filled with dark text (10:1 by
+        // day, 8.6:1 by night), never outlined; both 52 dp tall
         color = when {
-            !primary -> Color.Transparent
-            enabled -> p.accent
+            primary && enabled -> p.accent
             else -> p.off
         },
         contentColor = when {
             !enabled -> p.offText
             primary -> p.onAccent
-            else -> p.accent
+            else -> p.panelText
         },
-        border = if (primary) null else BorderStroke(1.dp, p.divider),
-        modifier = Modifier.heightIn(min = 48.dp).semantics { role = Role.Button },
+        modifier = Modifier.heightIn(min = PRIMARY_BUTTON_HEIGHT).semantics { role = Role.Button },
     ) {
-        Box(contentAlignment = Alignment.Center, modifier = Modifier.heightIn(min = 48.dp).padding(horizontal = 18.dp)) {
+        Box(contentAlignment = Alignment.Center, modifier = Modifier.heightIn(min = PRIMARY_BUTTON_HEIGHT).padding(horizontal = 18.dp)) {
             Text(text, fontSize = 15.sp, fontWeight = FontWeight.Medium, softWrap = false)
         }
     }
@@ -506,7 +508,7 @@ internal fun PlaceSheetContent(ui: PlaceSheetUi, onEvent: (PlaceSheetEvent) -> U
     val details = sheet.height == SheetHeight.FULL
     val maxHeight = (LocalConfiguration.current.screenHeightDp * DETAILS_MAX_SHARE).dp
     Surface(
-        shape = RoundedCornerShape(topStart = 16.dp, topEnd = 16.dp), color = p.panel, contentColor = p.panelText, shadowElevation = 6.dp,
+        shape = RoundedCornerShape(topStart = SHEET_CORNER, topEnd = SHEET_CORNER), color = p.panel, contentColor = p.panelText, shadowElevation = 6.dp,
         modifier = modifier.fillMaxWidth().heightIn(max = maxHeight).testTag(PLACE_SHEET_TAG),
     ) {
         SheetFrame(
@@ -891,7 +893,7 @@ internal fun MapPickContent(ui: MapPickUi, onEvent: (SavedEvent) -> Unit, modifi
             }
         }
         Surface(
-            shape = RoundedCornerShape(topStart = 16.dp, topEnd = 16.dp), color = p.panel, contentColor = p.panelText, shadowElevation = 6.dp,
+            shape = RoundedCornerShape(topStart = SHEET_CORNER, topEnd = SHEET_CORNER), color = p.panel, contentColor = p.panelText, shadowElevation = 6.dp,
             modifier = Modifier.align(Alignment.BottomCenter).fillMaxWidth(),
         ) {
             Column(Modifier.navigationBarsPadding().padding(16.dp)) {
