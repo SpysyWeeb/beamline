@@ -885,8 +885,12 @@ not break across two lines in the banner; the results view shows at most the 20 
     cards and Start, where it opens under the map; full in the side panel), the steps preview
     (`RouteChoice.steps` from the banners, `RouteSheetUi.steps`, `DriveEvent.ShowStep` looks at the
     step); all 18 drive screen tests pass on the emulator (the lane counter now counts lanes only,
-    the strip's progress bar is not one). Left: the drive time on Directions, the stops editor,
-    arrival card and pickers on the sheet frame, the screen transitions, the style rulebook pass.
+    the strip's progress bar is not one). Then the drive time on Directions: `NavIntent.Estimate`
+    (IDLE only, from an acceptable fix, the default type with the user's options, not routed again
+    for the same place within a minute) answers in `TripState.estimate`; the app sends it when a place
+    window opens and shows "Directions · 6 min" (`PlaceSheetUi.driveTimeText`); the sheet screen tests
+    (6) pass on the emulator. Left: the stops editor, arrival card and pickers on the sheet frame, the
+    screen transitions, the style rulebook pass.
 
 48. **Every state's packs, built on GitHub's machines only** (the owner, 2026-11-25/26: "I'm just
     trying to think of a way we can have github machines handle all the workflow"). Today

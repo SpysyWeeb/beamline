@@ -7,6 +7,12 @@ import io.github.spysyweeb.beamline.api.model.Place
 sealed interface NavIntent {
     /** A new trip to one place from the current position (replaces any trip that is not being guided). */
     data class PlanTo(val place: Place) : NavIntent
+    /**
+     * Item 47: how long the drive to [place] would take, for the place window's Directions: IDLE only,
+     * from an acceptable fix, the default route type with the user's options; the answer is
+     * [TripState.estimate]. No trip is made and nothing else changes.
+     */
+    data class Estimate(val place: Place) : NavIntent
     data class SetOrigin(val origin: Origin) : NavIntent
     /** Inserts at [index] of the stops; null = just before the destination (or as the destination when there is none). */
     data class AddStop(val place: Place, val index: Int? = null) : NavIntent

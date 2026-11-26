@@ -5,6 +5,7 @@ import io.github.spysyweeb.beamline.api.model.GeoPoint
 import io.github.spysyweeb.beamline.api.model.Place
 import io.github.spysyweeb.beamline.api.nav.AnnounceStage
 import io.github.spysyweeb.beamline.api.nav.END_UNDO_MS
+import io.github.spysyweeb.beamline.api.nav.DriveEstimate
 import io.github.spysyweeb.beamline.api.nav.BannerView
 import io.github.spysyweeb.beamline.api.nav.LaneWarningView
 import io.github.spysyweeb.beamline.api.nav.GpsState
@@ -270,6 +271,8 @@ internal class SessionCore(
     private var destination: LatLon? = null
     private var lastSaveMs = 0L
     private var problemClearAt: Long? = null
+    private var estimateJob: Job? = null
+    private var estimateAtMs = 0L
 
     init {
         scope.launch {
@@ -343,6 +346,7 @@ internal class SessionCore(
         ended = null
         when (intent) {
             is NavIntent.PlanTo -> planTo(intent)
+            is NavIntent.Estimate -> estimate(intent.place)
             is NavIntent.SetOrigin -> if (st.phase == Phase.PLANNING || st.phase == Phase.CHOOSING) {
                 st = st.copy(origin = intent.origin)
                 replanBeforeGuidance()
@@ -377,6 +381,36 @@ internal class SessionCore(
             NavIntent.DiscardResume -> if (st.phase == Phase.RESUME_OFFERED) {
                 clearTrip()
                 toIdle()
+            }
+        }
+    }
+
+    /**
+     * Item 47: a drive time for the place window's Directions. IDLE only (a trip's own times are on
+     * its cards), from an acceptable fix, inside the installed routing, with the default route type
+     * and the user's options; the same place asked again within [ESTIMATE_FRESH_MS] is not asked
+     * again. Its answer is dropped when a trip has begun meanwhile.
+     */
+    private fun estimate(place: Place) {
+        if (st.phase != Phase.IDLE) return
+        val at = GeoPoint(place.point.lat, place.point.lon)
+        val now = clock.elapsedMs()
+        if (st.estimate?.point == at && now - estimateAtMs < ESTIMATE_FRESH_MS) return
+        val fix = acceptableOrigin(positions.latest.value) ?: return
+        val inst = installed.value
+        val set = inst.routing ?: return
+        if (!set.covers(at) || !set.covers(GeoPoint(fix.lat, fix.lon))) return
+        val s = settings.settings.value
+        val preset = presets.compose(presets.default.routeType, optionIds(RouteOptions(s.avoidHighways, s.avoidTolls)))
+        val stops = listOf(stopFromFix(fix), placeStop(TripStop(place)))
+        val rev = st.revision
+        estimateJob?.cancel()
+        estimateJob = scope.launch {
+            val r = withContext(routingDispatcher) { service.plan(inst.generation, set, stops, preset) }
+            batch {
+                if (rev != st.revision || st.phase != Phase.IDLE) return@batch
+                estimateAtMs = clock.elapsedMs()
+                st = st.copy(estimate = (r as? PlanResult.Ok)?.let { DriveEstimate(at, it.route.timeS, it.route.lengthM) })
             }
         }
     }
@@ -1770,6 +1804,8 @@ internal class SessionCore(
     }
 
     companion object {
+        /** Item 47: the same place asked again within this is not routed again. */
+        const val ESTIMATE_FRESH_MS = 60_000L
         const val HOLD_REASON = "Not while guiding"
         const val NO_POSITION_TEXT = "No GPS position yet. Choose a start point or try again."
         const val PACKS_BUSY_TEXT = "A state is being installed. Start again when it has finished."

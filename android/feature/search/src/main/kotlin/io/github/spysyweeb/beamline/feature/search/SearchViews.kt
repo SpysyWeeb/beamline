@@ -543,7 +543,7 @@ internal fun PlaceSheetContent(ui: PlaceSheetUi, onEvent: (PlaceSheetEvent) -> U
                     horizontalArrangement = Arrangement.spacedBy(8.dp),
                     modifier = Modifier.padding(start = 16.dp, end = 16.dp, bottom = 14.dp).testTag(PLACE_PEEK_ACTIONS_TAG),
                 ) {
-                    if (main != null) PillButton(placeActionLabel(main), night, primary = true) { onEvent(PlaceSheetEvent.Act(main)) }
+                    if (main != null) PillButton(placeActionLabel(main, ui.driveTimeText), night, primary = true) { onEvent(PlaceSheetEvent.Act(main)) }
                     if (keep != null) PillButton(placeActionLabel(keep), night, primary = false) { onEvent(PlaceSheetEvent.Act(keep)) }
                 }
             }
@@ -569,7 +569,7 @@ internal fun PlaceSheetContent(ui: PlaceSheetUi, onEvent: (PlaceSheetEvent) -> U
                 Spacer(Modifier.size(12.dp))
                 Row(horizontalArrangement = Arrangement.spacedBy(8.dp), modifier = Modifier.horizontalScroll(rememberScrollState())) {
                     for (a in ui.actions) {
-                        val label = placeActionLabel(a)
+                        val label = placeActionLabel(a, ui.driveTimeText)
                         val primary = a == ui.actions.firstOrNull { it == PlaceAction.DIRECTIONS || it == PlaceAction.ADD_STOP || it == PlaceAction.OPEN_STATES }
                         PillButton(label, night, primary = primary) { onEvent(PlaceSheetEvent.Act(a)) }
                     }
@@ -592,9 +592,9 @@ internal fun PlaceSheetContent(ui: PlaceSheetUi, onEvent: (PlaceSheetEvent) -> U
     }
 }
 
-/** The words of a place sheet button. */
-internal fun placeActionLabel(a: PlaceAction): String = when (a) {
-    PlaceAction.DIRECTIONS -> Texts.DIRECTIONS
+/** The words of a place sheet button; Directions with the drive time when there is one (item 47: "Directions · 6 min"). */
+internal fun placeActionLabel(a: PlaceAction, driveTime: String? = null): String = when (a) {
+    PlaceAction.DIRECTIONS -> if (driveTime != null) "${Texts.DIRECTIONS} · $driveTime" else Texts.DIRECTIONS
     PlaceAction.ADD_STOP -> Texts.ADD_STOP
     PlaceAction.OPEN_STATES -> Texts.ADD_STATE_BUTTON
     PlaceAction.SAVE -> Texts.SAVE

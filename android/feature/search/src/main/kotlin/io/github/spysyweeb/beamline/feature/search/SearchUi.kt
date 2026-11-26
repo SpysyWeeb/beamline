@@ -288,6 +288,8 @@ data class PlaceSheetUi(
      * dropped pin; the app sets it with [canReport]. It sends Act(ADD_PLACE).
      */
     val canAddPlace: Boolean = false,
+    /** Item 47: the drive time on Directions ("6 min": "Directions · 6 min"); the app sets it from the session's estimate, null shows plain "Directions". */
+    val driveTimeText: String? = null,
 )
 
 /**

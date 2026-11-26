@@ -734,7 +734,12 @@ data class TripState(
      * change during guidance (rules C3, C4), or a re-route. Screens show "busy" from it.
      */
     val replanning: Boolean = false,
+    /** Item 47: the last [NavIntent.Estimate]'s answer (dropped when a trip ends); null before one or when none was found. */
+    val estimate: DriveEstimate? = null,
 )
+
+/** A drive time to [point] from where the phone was (item 47: "Directions · 6 min"). */
+data class DriveEstimate(val point: GeoPoint, val timeS: Double, val lengthM: Double)
 ```
 
 ```kotlin
@@ -814,6 +819,12 @@ import io.github.spysyweeb.beamline.api.model.Place
 sealed interface NavIntent {
     /** A new trip to one place from the current position (replaces any trip that is not being guided). */
     data class PlanTo(val place: Place) : NavIntent
+    /**
+     * Item 47: how long the drive to [place] would take, for the place window's Directions: IDLE only,
+     * from an acceptable fix, the default route type with the user's options; the answer is
+     * [TripState.estimate]. No trip is made and nothing else changes.
+     */
+    data class Estimate(val place: Place) : NavIntent
     data class SetOrigin(val origin: Origin) : NavIntent
     /** Inserts at [index] of the stops; null = just before the destination (or as the destination when there is none). */
     data class AddStop(val place: Place, val index: Int? = null) : NavIntent
@@ -1791,6 +1802,8 @@ data class PlaceSheetUi(
      * dropped pin; the app sets it with [canReport]. It sends Act(ADD_PLACE).
      */
     val canAddPlace: Boolean = false,
+    /** Item 47: the drive time on Directions ("6 min": "Directions · 6 min"); the app sets it from the session's estimate, null shows plain "Directions". */
+    val driveTimeText: String? = null,
 )
 
 /**

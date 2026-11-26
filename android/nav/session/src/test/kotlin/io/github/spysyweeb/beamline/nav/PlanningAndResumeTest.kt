@@ -56,6 +56,44 @@ class PlanningAndResumeTest {
         assertEquals(60, origin["radius"]!!.jsonPrimitive.int)
     }
 
+    /** Item 47: the place window's drive time: IDLE only, from a fix, no trip made, not asked twice, dropped with a trip. */
+    @Test
+    fun `an estimate gives the drive time to a place without making a trip`() = sessionTest { h ->
+        // no fix yet: no answer, no waiting for one
+        h.send(NavIntent.Estimate(Data.DOWNS_DRIVE))
+        h.advance(1_000)
+        assertNull(h.state.estimate)
+        assertEquals(Phase.IDLE, h.phase())
+        assertEquals(GpsState.OFF, h.state.gps)
+        h.fixAtOrigin()
+        h.send(NavIntent.Estimate(Data.DOWNS_DRIVE))
+        h.advance(1_000)
+        val e = h.state.estimate!!
+        assertEquals(Data.DOWNS_DRIVE.point, e.point)
+        assertTrue(e.timeS > 60 && e.lengthM > 500, "$e")
+        assertEquals(Phase.IDLE, h.phase(), "no trip")
+        assertTrue(h.state.stops.isEmpty())
+        // asked again within a minute: not routed again
+        val asked = h.engine.routeRequests.size
+        h.fixAtOrigin()
+        h.send(NavIntent.Estimate(Data.DOWNS_DRIVE))
+        h.advance(1_000)
+        assertEquals(asked, h.engine.routeRequests.size)
+        // a trip: not answered while one exists, and the estimate goes when it ends
+        h.send(NavIntent.PlanTo(Data.DOWNS_DRIVE))
+        h.advance(2_000)
+        assertEquals(Phase.CHOOSING, h.phase(), "${h.state.problem}")
+        val planned = h.engine.routeRequests.size
+        h.send(NavIntent.Estimate(Data.EXIT24_ORIGIN))
+        h.advance(1_000)
+        assertEquals(planned, h.engine.routeRequests.size)
+        h.send(NavIntent.End)
+        h.advance(1_000)
+        assertEquals(Phase.IDLE, h.phase())
+        assertNull(h.state.estimate)
+        h.assertAllRecorded()
+    }
+
     @Test
     fun `P1 a fix older than 30 s or worse than 100 m is not an origin`() = sessionTest { h ->
         h.fixAtOrigin(ageMs = 31_000)

@@ -61,6 +61,7 @@ import io.github.spysyweeb.beamline.api.map.CameraMode
 import io.github.spysyweeb.beamline.api.map.CameraTarget
 import io.github.spysyweeb.beamline.api.map.EdgeInsetsDp
 import io.github.spysyweeb.beamline.api.nav.END_UNDO_MS
+import io.github.spysyweeb.beamline.api.nav.NavIntent
 import io.github.spysyweeb.beamline.api.nav.Phase
 import io.github.spysyweeb.beamline.app.update.UpdateTexts
 import io.github.spysyweeb.beamline.app.AppGraph
@@ -174,6 +175,11 @@ fun AppRoot(g: AppGraph, flows: AppFlows, frameRate: FrameRateRequest, screenMax
         // S10: the statuses follow the clock (each minute)
         val minute = now / 60_000L
         LaunchedEffect(minute) { g.search.refreshHours() }
+        // item 47: the drive time for the place window's Directions (the session answers in IDLE only)
+        LaunchedEffect(sheetPlace, trip.phase == Phase.IDLE) {
+            val p = sheetPlace
+            if (p != null && trip.phase == Phase.IDLE) g.session.send(NavIntent.Estimate(p))
+        }
         var creditRowHeight by remember { mutableStateOf(0.dp) }
         val density = LocalDensity.current
         val statusBarTop = WindowInsets.statusBars.asPaddingValues().calculateTopPadding()
@@ -326,12 +332,14 @@ fun AppRoot(g: AppGraph, flows: AppFlows, frameRate: FrameRateRequest, screenMax
             // while a trip exists offers "Add stop"); measured so the credit stays above it.
             if (sheetShown) {
                 // SP19: rebuilt whenever the saved places change (savedPlaces is read here).
-                val sheet = remember(sheetPlace, savedPlaces, phase, set.generation, detailsLoaded, minute, online, outboxItems, ownChanges) {
+                val sheet = remember(sheetPlace, savedPlaces, phase, set.generation, detailsLoaded, minute, online, outboxItems, ownChanges, trip.estimate, units) {
                     g.search.placeSheet(sheetPlace!!, flows.searchContext(), tripActive, driving, guiding = phase == Phase.GUIDING || phase == Phase.REROUTING)
                         // Batch O1: "Report a problem" while the switch is on and no trip is being driven (section 2)
                         .let { if (online.osmAllowed && !driving) it.copy(canReport = true, canAddPlace = it.place.source == PlaceSource.MAP_PIN) else it }
                         // Batch O2 (4.2, 4.5): "Edit on OpenStreetMap" likewise, and the user's own edit until a pack has it
                         .let { ui -> ui.copy(osm = g.osmFor(ui.osm)).let { if (it.osm != null && online.osmAllowed && !driving) it.copy(canEditOsm = true) else it } }
+                        // item 47: "Directions · 6 min" from the session's estimate for this very place
+                        .let { ui -> trip.estimate?.takeIf { phase == Phase.IDLE && it.point == ui.place.point }?.let { ui.copy(driveTimeText = units.duration(it.timeS)) } ?: ui }
                 }
                 Box(Modifier.align(Alignment.BottomCenter).fillMaxWidth().onSizeChanged { sheetHeight = with(density) { it.height.toDp() } }) {
                     PlaceSheet(sheet, onEvent = { e -> flows.onSheetEvent(e, sheet) })

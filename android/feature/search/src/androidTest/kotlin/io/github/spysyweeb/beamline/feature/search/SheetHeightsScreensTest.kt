@@ -146,6 +146,19 @@ class SheetHeightsScreensTest {
         assertTrue(events.toString(), events.contains(PlaceSheetEvent.Act(PlaceAction.DIRECTIONS)))
     }
 
+    /** Item 47: Directions with the drive time ("Directions · 6 min") at peek and on the full row. */
+    @Test
+    fun placeSheetDirectionsShowsTheDriveTime() {
+        val place = Place("Erie Maritime Museum", GeoPoint(42.13646, -80.08718), PlaceSource.SEARCH, "100 East Front Street, Erie", "museum")
+        val ui = PlaceSheetUi(place, "museum", place.name, place.subtitle, "2.3 mi", null, listOf(PlaceAction.DIRECTIONS, PlaceAction.SAVE), driveTimeText = "6 min")
+        show { Box(Modifier.size(360.dp, 700.dp)) { PlaceSheetContent(ui, { events.add(it) }, Modifier.align(Alignment.BottomCenter)) } }
+        compose.onNodeWithText("${Texts.DIRECTIONS} · 6 min").assertIsDisplayed().performClick()
+        assertTrue(events.toString(), events.contains(PlaceSheetEvent.Act(PlaceAction.DIRECTIONS)))
+        compose.onNodeWithTag(PLACE_SHEET_TAG).performTouchInput { swipeUp(startY = centerY, endY = centerY - 300f) }
+        compose.waitForIdle()
+        compose.onNodeWithText("${Texts.DIRECTIONS} · 6 min").assertIsDisplayed()
+    }
+
     private fun detailsUi(canOpen: Boolean): PlaceSheetUi {
         val place = Place("Sheetz", GeoPoint(42.1, -80.07), PlaceSource.SEARCH, "4662 West Ridge Road, Erie", "convenience", 7L, "us-pa")
         val week = listOf("Mon", "Tue", "Wed", "Thu", "Fri", "Sat", "Sun").map { HoursDayUi(it, "6 AM–10 PM", it == "Wed") }
