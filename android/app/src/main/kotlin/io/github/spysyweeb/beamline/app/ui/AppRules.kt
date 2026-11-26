@@ -91,10 +91,10 @@ object AppRules {
      * planning (up to the 15 s wait for a fix), so the tap is seen to have worked. Neither shows once
      * the phase has left IDLE (guidance again, the resume card, a new trip).
      */
-    fun endBar(tripEnded: Long?, continuing: Boolean, phase: Phase): String? = when {
+    fun endBar(tripEnded: Long?, continuing: Boolean, phase: Phase, endedText: String = TRIP_ENDED): String? = when {
         phase != Phase.IDLE -> null
         continuing -> CONTINUING_TRIP
-        tripEnded != null -> TRIP_ENDED
+        tripEnded != null -> endedText
         else -> null
     }
 }

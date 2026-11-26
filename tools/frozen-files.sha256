@@ -5,7 +5,7 @@ bd26fd046579a92f9a32d06bd488ab1efcba95f6a5fa3af6c0ed525af116d02e  android/core/a
 d2f2eef74f9551fdc6f9aedd6f788d57dd1cabcd8a1f7ef7f93e57e4339393bd  android/core/api/src/main/kotlin/io/github/spysyweeb/beamline/api/model/Model.kt
 69ff29d52955ccabcdd64376b5973192ad7d03ab98c3291c28ce91950e5c6cc1  android/core/api/src/main/kotlin/io/github/spysyweeb/beamline/api/model/Saved.kt
 fa597fef634126e2d8e67c34b903b90fb369df18d9a89f084672ab2c37b60672  android/core/api/src/main/kotlin/io/github/spysyweeb/beamline/api/nav/Banner.kt
-842363ec92fbe0ca8a8a0ee309a2bbfdcca4b3612e17a408334c2c38f3f294a2  android/core/api/src/main/kotlin/io/github/spysyweeb/beamline/api/nav/Intents.kt
+e6d870756a51432b2172ca024e58c6efa5a7db7e9ff0eaa11d3dcb62dea369ba  android/core/api/src/main/kotlin/io/github/spysyweeb/beamline/api/nav/Intents.kt
 4b89f555e883a2d818d216a99d557e2a85ff7e8f032998d983938888b2c5ad2e  android/core/api/src/main/kotlin/io/github/spysyweeb/beamline/api/nav/Trip.kt
 2afb8e71792f3f50a93eeada62382989fa9a72e1a6e30ee2a1733326a294459f  android/core/api/src/test/kotlin/io/github/spysyweeb/beamline/api/ContractClaimsTest.kt
 6b5e3d2eacf6c372c12adb0344992cb849988792742c90ea71768640f22856d7  android/core/api/src/test/kotlin/io/github/spysyweeb/beamline/api/InstallerHandoffTest.kt

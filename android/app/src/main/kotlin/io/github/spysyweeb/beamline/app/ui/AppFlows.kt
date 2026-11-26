@@ -140,6 +140,8 @@ class AppFlows(private val g: AppGraph) {
      * guidance; the value tells one End from the next (each restarts the bar's time). Null: no bar.
      */
     var tripEnded by mutableStateOf<Long?>(null)
+    /** What the End bar says: [TRIP_ENDED] or [DIRECTIONS_CLOSED] (audit F31). */
+    var endedText by mutableStateOf(TRIP_ENDED)
 
     /** R4: Undo was tapped and the session is still IDLE re-planning ("Continuing the trip..."). */
     var continuing by mutableStateOf(false)
@@ -643,10 +645,14 @@ class AppFlows(private val g: AppGraph) {
             is DriveEvent.Nav -> {
                 if (e.intent is NavIntent.Start || e.intent is NavIntent.Resume) host?.requestNotificationsOnce()
                 val endsGuidance = e.intent is NavIntent.End && (phase == Phase.GUIDING || phase == Phase.REROUTING)
+                val closesRoute = e.intent is NavIntent.End && (phase == Phase.PLANNING || phase == Phase.CHOOSING)
                 if (e.intent is NavIntent.End) stopsEditorOpen = false
                 send(e.intent)
-                // R4: one tap ends the trip at once; the bar offers Undo for END_UNDO_MS
-                if (endsGuidance) { tripEnded = (tripEnded ?: 0L) + 1; continuing = false }
+                // audit F29: a route card chosen (again) looks at the whole route, after a step or a pan
+                if (e.intent is NavIntent.Choose && (phase == Phase.PLANNING || phase == Phase.CHOOSING)) g.director.onRecenter()
+                // R4: one tap ends the trip at once; the bar offers Undo for END_UNDO_MS (audit F31: a route
+                // not yet started too, "Directions closed")
+                if (endsGuidance || closesRoute) offerUndo(if (endsGuidance) TRIP_ENDED else DIRECTIONS_CLOSED)
             }
             DriveEvent.Recenter -> g.director.onRecenter()
             DriveEvent.ShowOverview -> g.director.onOverview()
@@ -727,9 +733,17 @@ class AppFlows(private val g: AppGraph) {
 
     /** R4: Undo on the "Trip ended" bar: the same trip again, re-planned from here (the session decides). */
     fun undoEnd() {
+        // "Continuing the trip..." only for a guided trip (a closed route is planned again at once)
+        continuing = endedText == TRIP_ENDED
         tripEnded = null
-        continuing = true
         send(NavIntent.UndoEnd)
+    }
+
+    /** R4 and audit F31: the End bar ("Trip ended" or "Directions closed") with Undo. */
+    private fun offerUndo(text: String) {
+        endedText = text
+        tripEnded = (tripEnded ?: 0L) + 1
+        continuing = false
     }
 
     fun onInsets(insets: EdgeInsetsDp) {
@@ -1012,7 +1026,11 @@ class AppFlows(private val g: AppGraph) {
         }
         if (g.sheetPlace.value != null) return closeSheet()
         if (g.search.results.value != null) return backFromResults()
-        if (phase == Phase.PLANNING || phase == Phase.CHOOSING) send(NavIntent.End)
+        if (phase == Phase.PLANNING || phase == Phase.CHOOSING) {
+            stopsEditorOpen = false
+            send(NavIntent.End)
+            offerUndo(DIRECTIONS_CLOSED) // audit F31: Back at the lowest height closes the route, with Undo
+        }
     }
 
     // ------------------------------------------------------------------ test extras (5.4 item 12)

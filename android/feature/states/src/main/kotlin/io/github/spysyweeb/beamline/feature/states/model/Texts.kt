@@ -244,4 +244,12 @@ object Texts {
     const val OPEN_TO_CONTINUE = "Open Beamline to continue."
     const val NO_SPACE_NOTIFICATION = "Not enough space. Open Beamline to see what's needed."
     const val UNREACHABLE_NOTIFICATION = "Couldn't reach the download server. Open Beamline to continue."
+
+    /** Audit F8: why a download did not start (StartResult.Refused). */
+    fun refused(why: io.github.spysyweeb.beamline.download.StartRefusal): String = when (why) {
+        io.github.spysyweeb.beamline.download.StartRefusal.ANOTHER_JOB -> "Another state is being downloaded or installed. Try again when it has finished."
+        io.github.spysyweeb.beamline.download.StartRefusal.NEEDS_NEWER_APP -> "This state needs a newer version of Beamline. Update the app first."
+        io.github.spysyweeb.beamline.download.StartRefusal.NOT_SUPPORTED -> "This can't be added to the installed version. Update the state first."
+        io.github.spysyweeb.beamline.download.StartRefusal.DOWNLOADS_OFF -> DOWNLOADS_OFF
+    }
 }

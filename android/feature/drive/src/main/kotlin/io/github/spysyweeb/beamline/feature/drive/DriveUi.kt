@@ -54,6 +54,10 @@ data class RouteSheetUi(
     val startBlockedText: String?,
     /** Item 47: the chosen route's steps, for the full height's preview. */
     val steps: List<StepUi> = emptyList(),
+    /** Audit F3: the problem is that there is no position: "Choose start" beside it at every height. */
+    val canChooseStart: Boolean = false,
+    /** Audit F27: a trip from a chosen start (a swap, Change start): "Guidance starts from where you are". */
+    val startNote: String? = null,
 )
 
 /** One step of the preview (item 47): the turn's arrow, its words, how far the road goes after it, and where it is. */

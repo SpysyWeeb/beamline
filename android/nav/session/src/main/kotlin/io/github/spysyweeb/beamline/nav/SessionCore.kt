@@ -213,7 +213,11 @@ internal class SessionCore(
     private var startJob: Job? = null
 
     /** R4: the trip that End took out of guidance, while UndoEnd may still bring it back. */
-    private class EndedTrip(val stops: List<TripStop>, val routeType: String, val options: RouteOptions, val sim: Simulation?, val atMs: Long)
+    private class EndedTrip(
+        val stops: List<TripStop>, val routeType: String, val options: RouteOptions, val sim: Simulation?, val atMs: Long,
+        /** Audit F31: a route closed before guidance (its start kept), planned again by Undo; null: a guided trip. */
+        val origin: Origin? = null,
+    )
     private var ended: EndedTrip? = null
 
     // a change during guidance (C3, C4): what it asked, and the trip as the guided route had it (its undo)
@@ -275,6 +279,8 @@ internal class SessionCore(
     private var estimateJob: Job? = null
     /** Item 47: the destination a swap made of the current position (a second swap starts from the position again). */
     private var swappedPosition: Place? = null
+    /** Audit F31: [swappedPosition] of a route closed by End, for its Undo. */
+    private var closedSwap: Place? = null
     private var estimateAtMs = 0L
 
     init {
@@ -344,12 +350,18 @@ internal class SessionCore(
     // ================================================================================== intents
 
     private fun handle(intent: NavIntent) {
+        // audit F1: the drive-time question changes no trip; it is never "the next intent" of R4
+        // (a place window open at End asks it at once, and the Undo had already gone)
+        if (intent is NavIntent.Estimate) {
+            estimate(intent.place)
+            return
+        }
         // R4: End can be taken back only by the very next intent
         val endedBefore = ended
         ended = null
         when (intent) {
             is NavIntent.PlanTo -> planTo(intent)
-            is NavIntent.Estimate -> estimate(intent.place)
+            is NavIntent.Estimate -> Unit // answered above
             is NavIntent.SetOrigin -> if (st.phase == Phase.PLANNING || st.phase == Phase.CHOOSING) {
                 st = st.copy(origin = intent.origin)
                 replanBeforeGuidance()
@@ -405,7 +417,10 @@ internal class SessionCore(
         val set = inst.routing ?: return
         if (!set.covers(at) || !set.covers(GeoPoint(fix.lat, fix.lon))) return
         val s = settings.settings.value
-        val preset = presets.compose(presets.default.routeType, optionIds(RouteOptions(s.avoidHighways, s.avoidTolls)))
+        // audit F26: the type a trip would plan first (the settings' type when offered), so the time on
+        // Directions is the time on the trip's card
+        val type = s.routeType.takeIf { id -> presets.offered().any { it.id == id } } ?: presets.default.routeType
+        val preset = presets.compose(type, optionIds(RouteOptions(s.avoidHighways, s.avoidTolls)))
         val stops = listOf(stopFromFix(fix), placeStop(TripStop(place)))
         val rev = st.revision
         estimateJob?.cancel()
@@ -467,6 +482,7 @@ internal class SessionCore(
     /** A trip from the current position (P1) with the route type from settings (P4) and the options from settings. */
     private fun newTrip(stops: List<TripStop>) {
         planJob?.cancel()
+        estimateJob?.cancel() // audit F26: a waiting estimate never runs ahead of the trip's own plan
         val s = settings.settings.value
         val type = s.routeType.takeIf { id -> presets.offered().any { it.id == id } } ?: presets.default.routeType
         // a stored type that is not offered (Eco, or Shortest, which left in batch D) is replaced in settings too
@@ -583,8 +599,13 @@ internal class SessionCore(
     private fun end() {
         when (st.phase) {
             Phase.PLANNING, Phase.CHOOSING -> {
+                // audit F31: the X or Back closes the route at once; the very next intent may take it back
+                val closed = EndedTrip(st.stops, st.routeType, st.options, null, clock.elapsedMs(), origin = st.origin)
+                val swapped = swappedPosition
                 planJob?.cancel()
                 toIdle()
+                ended = closed
+                closedSwap = swapped
             }
             Phase.GUIDING, Phase.REROUTING -> {
                 val trip = EndedTrip(st.stops, st.routeType, st.options, simulation, clock.elapsedMs())
@@ -604,6 +625,16 @@ internal class SessionCore(
      */
     private fun undoEnd(e: EndedTrip) {
         if (st.phase != Phase.IDLE || clock.elapsedMs() - e.atMs > END_UNDO_MS) return
+        val origin = e.origin
+        if (origin != null) {
+            // audit F31: a closed route comes back as it was (its start, stops, type and options), planned again
+            estimateJob?.cancel()
+            swappedPosition = closedSwap
+            st = st.copy(phase = Phase.PLANNING, revision = st.revision + 1, origin = origin, stops = e.stops, routeType = e.routeType,
+                options = e.options, choices = emptyList(), selectedChoiceId = null, guidance = null, problem = null, replanning = false)
+            schedulePlan()
+            return
+        }
         st = st.copy(stops = e.stops, routeType = e.routeType, options = e.options)
         resume(Phase.IDLE, e.sim)
     }
@@ -614,6 +645,7 @@ internal class SessionCore(
         orderJob?.cancel()
         startJob?.cancel() // End or DiscardResume while Start or Resume waits: its hold is given back now
         planned = emptyList()
+        swappedPosition = null
         st = TripState(revision = st.revision + 1, offeredTypes = st.offeredTypes, routeType = st.routeType, options = st.options)
     }
 
@@ -857,7 +889,9 @@ internal class SessionCore(
             type = selected.typeIds.first()
             if (type != settings.settings.value.routeType) settings.update { it.copy(routeType = type) }
         }
-        st = st.copy(choices = choices, selectedChoiceId = selected?.id, routeType = type, problem = null)
+        // audit F40: the packs-changed notice stays while planning goes on (until the last answer)
+        val keep = st.problem?.takeIf { !final && it.kind == ProblemKind.PACKS_CHANGED }
+        st = st.copy(choices = choices, selectedChoiceId = selected?.id, routeType = type, problem = keep)
     }
 
     private fun sameRoute(a: Route, b: Route) = abs(a.lengthM - b.lengthM) < 1.0 && abs(a.timeS - b.timeS) < 0.5 && a.shape.size == b.shape.size
@@ -941,7 +975,11 @@ internal class SessionCore(
                 // order[0] is the origin; the others are 1-based indexes into [unreached]
                 val reordered = order.order.drop(1).map { st.stops[unreached[it - 1]] }
                 val next = st.stops.filter { it.reached } + reordered
-                if (next == st.stops) return@launch
+                if (next == st.stops) {
+                    // audit F36: nothing to change; said, not silent
+                    setProblem(TripProblem(ProblemKind.NO_ROUTE, ALREADY_BEST_TEXT, false), hold = true)
+                    return@launch
+                }
                 changeStops { next }
             }
         }
@@ -1844,13 +1882,15 @@ internal class SessionCore(
         const val ESTIMATE_FRESH_MS = 60_000L
         const val HOLD_REASON = "Not while guiding"
         /** Item 47: the destination a swap makes of the current position. */
-        const val YOUR_POSITION = "Your position"
+        const val YOUR_POSITION = "Where you were"
         const val NO_POSITION_TEXT = "No GPS position yet. Choose a start point or try again."
         const val PACKS_BUSY_TEXT = "A state is being installed. Start again when it has finished."
         const val OUTSIDE_TEXT = "You are outside the installed maps."
         const val NO_ROUTING_TEXT = "No state with routes is installed. Add a state."
         const val PACKS_CHANGED_TEXT = "The installed states changed. Planning again."
         const val NO_ORDER_TEXT = "No order of these stops connects them all."
+        /** Audit F36. */
+        const val ALREADY_BEST_TEXT = "These stops are already in the best order."
         const val ENGINE_TEXT = "The route could not be planned."
         const val NO_SCRIPT_TEXT = "There is no simulated drive with that name."
     }

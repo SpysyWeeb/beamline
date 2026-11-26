@@ -125,6 +125,8 @@ data class StatesInput(
     val fileInstallName: String? = null,
     /** A file install the installer refused: the pack's name and the installer's words (Details only). */
     val fileProblem: Pair<String, String>? = null,
+    /** Audit F8: why the open sheet's download did not start. */
+    val startProblem: String? = null,
 )
 
 data class StateRowUi(
@@ -363,7 +365,8 @@ object StatesPresenter {
             needsNewer = needsNewer,
             mapStatus = statuses,
             selected = input.selected,
-            sheet = if (input.sheetOpen && input.selected != null) sheet(input.selected, input, v, statuses.getValue(input.selected)) else null,
+            sheet = if (input.sheetOpen && input.selected != null) sheet(input.selected, input, v, statuses.getValue(input.selected))
+                .let { s -> input.startProblem?.let { s.copy(lines = s.lines + it) } ?: s } else null,
             dialog = dialog(input),
             chooser = input.chooser?.let { c -> ChooserUi(Texts.WHICH_ONE, c.map { it to name(it) }) },
             query = input.query,

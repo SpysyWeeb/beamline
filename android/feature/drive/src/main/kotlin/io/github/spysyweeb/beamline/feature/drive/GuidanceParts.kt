@@ -1,5 +1,7 @@
 package io.github.spysyweeb.beamline.feature.drive
 
+import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.verticalScroll
 import androidx.compose.foundation.layout.heightIn
 import androidx.compose.runtime.LaunchedEffect
 import io.github.spysyweeb.beamline.ui.theme.rememberSheetState
@@ -148,7 +150,8 @@ internal fun ArrivedCard(status: GuidanceStatusUi.Arrived, onEvent: (DriveEvent)
         }
     }
     SheetFrame(height, DriveTexts.ARRIVED, MaterialTheme.colorScheme.onSurfaceVariant, modifier.fillMaxWidth().testTag(DriveTags.ARRIVED_CARD)) {
-        Column(Modifier.fillMaxWidth().padding(start = 20.dp, end = 20.dp, bottom = 12.dp).semantics { liveRegion = LiveRegionMode.Polite }) {
+        // audit F34: a long name, landscape or large text scrolls it, never cutting Done off
+        Column(Modifier.fillMaxWidth().verticalScroll(rememberScrollState()).padding(start = 20.dp, end = 20.dp, bottom = 12.dp).semantics { liveRegion = LiveRegionMode.Polite }) {
             Text(DriveTexts.ARRIVED, style = MaterialTheme.typography.labelLarge, color = MaterialTheme.colorScheme.primary)
             Text(status.name, style = MaterialTheme.typography.headlineSmall, fontWeight = FontWeight.SemiBold, maxLines = 2, overflow = TextOverflow.Ellipsis)
             status.sideText?.let { Text(it, style = MaterialTheme.typography.bodyLarge, color = MaterialTheme.colorScheme.onSurfaceVariant) }

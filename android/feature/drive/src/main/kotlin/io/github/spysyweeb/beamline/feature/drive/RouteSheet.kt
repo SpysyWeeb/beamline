@@ -1,5 +1,8 @@
 package io.github.spysyweeb.beamline.feature.drive
 
+import androidx.compose.ui.semantics.liveRegion
+import androidx.compose.ui.semantics.LiveRegionMode
+import androidx.activity.compose.BackHandler
 import androidx.compose.ui.graphics.compositeOver
 import androidx.compose.material3.CardDefaults
 import androidx.compose.foundation.BorderStroke
@@ -83,6 +86,9 @@ internal fun RouteSheet(sheet: RouteSheetUi, onEvent: (DriveEvent) -> Unit, modi
     // of the phone; a new trip's sheet opens at [opensAt]: the middle height (the routes and Start)
     // under the map, full height in the side panel. At most 560 dp tall (less on a short screen).
     val height = rememberSheetState(SheetSteps.THREE, opensAt)
+    // audit F31: Back at full height steps down to the routes first (under the map); at the lower
+    // heights it closes the route, with Undo (AppFlows.onBack)
+    BackHandler(enabled = height.height == SheetHeight.FULL && opensAt != SheetHeight.FULL) { height.set(SheetHeight.MIDDLE) }
     SheetFrame(
         height, DriveTexts.ROUTE_CHOICE, MaterialTheme.colorScheme.onSurfaceVariant,
         modifier.fillMaxWidth().heightIn(max = 560.dp).testTag(DriveTags.ROUTE_SHEET),
@@ -113,9 +119,7 @@ private fun PeekRouteSheet(sheet: RouteSheetUi, onEvent: (DriveEvent) -> Unit, o
                 val where = listOfNotNull(sheet.stops.lastOrNull()?.title, chosen.durationText, chosen.distanceText).joinToString(" · ")
                 Text(where, style = MaterialTheme.typography.bodyMedium, color = MaterialTheme.colorScheme.onSurfaceVariant, maxLines = 1, overflow = TextOverflow.Ellipsis)
             } else {
-                sheet.problem?.let { problem ->
-                    Text(problem, style = MaterialTheme.typography.bodyMedium, maxLines = 2, overflow = TextOverflow.Ellipsis, modifier = Modifier.testTag(DriveTags.PROBLEM))
-                }
+                sheet.stops.lastOrNull()?.let { Text(it.title, style = MaterialTheme.typography.titleMedium, maxLines = 1, overflow = TextOverflow.Ellipsis) }
             }
         }
         if (sheet.cards.size > 1) {
@@ -126,6 +130,7 @@ private fun PeekRouteSheet(sheet: RouteSheetUi, onEvent: (DriveEvent) -> Unit, o
             )
         }
     }
+    NoticePart(sheet, onEvent)
     StartPart(sheet, onEvent)
 }
 
@@ -139,6 +144,16 @@ internal const val ROUTES_CHIP_TAG = "routes-chip"
  */
 @Composable
 private fun LowRouteSheet(sheet: RouteSheetUi, onEvent: (DriveEvent) -> Unit) {
+    // audit F3: where the route goes and Cancel at this height too (it is where a new trip opens)
+    Row(Modifier.fillMaxWidth().padding(start = 16.dp, end = 4.dp), verticalAlignment = Alignment.CenterVertically) {
+        Text(
+            listOfNotNull(DriveTexts.TO, sheet.stops.lastOrNull()?.title).joinToString(" "), style = MaterialTheme.typography.titleMedium,
+            maxLines = 1, overflow = TextOverflow.Ellipsis, modifier = Modifier.weight(1f),
+        )
+        IconButton(onClick = { onEvent(DriveEvent.Nav(NavIntent.End)) }, modifier = Modifier.testTag(DriveTags.CANCEL)) {
+            Icon(DriveIcons.close, contentDescription = DriveTexts.CANCEL_ROUTE)
+        }
+    }
     if (sheet.cards.isNotEmpty()) {
         Row(
             Modifier.fillMaxWidth().horizontalScroll(rememberScrollState()).padding(start = 16.dp, end = 16.dp, top = 4.dp),
@@ -146,15 +161,45 @@ private fun LowRouteSheet(sheet: RouteSheetUi, onEvent: (DriveEvent) -> Unit) {
         ) {
             for (card in sheet.cards) LowRouteCard(card) { onEvent(DriveEvent.Nav(NavIntent.Choose(card.choiceId))) }
         }
-    } else {
-        sheet.problem?.let { problem ->
-            Text(
-                problem, style = MaterialTheme.typography.bodyMedium, maxLines = 2, overflow = TextOverflow.Ellipsis,
-                modifier = Modifier.padding(start = 16.dp, end = 16.dp, top = 4.dp).testTag(DriveTags.PROBLEM),
-            )
+    }
+    NoticePart(sheet, onEvent)
+    StartPart(sheet, onEvent)
+}
+
+/**
+ * Audit F2, F3: below the full height, what stands in the way and what to do about it, above Start:
+ * the problem with its Retry and "Choose start", else "Finding routes..." while there is no route
+ * yet, else the chosen route's first warning ("No route avoids tolls..."). The full height has its
+ * own rows for all of them.
+ */
+@Composable
+private fun NoticePart(sheet: RouteSheetUi, onEvent: (DriveEvent) -> Unit) {
+    val problem = sheet.problem
+    val pad = Modifier.fillMaxWidth().padding(start = 16.dp, end = 8.dp, top = 6.dp)
+    when {
+        problem != null -> Column(pad.testTag(DriveTags.PROBLEM).semantics { liveRegion = LiveRegionMode.Polite }) {
+            Row(verticalAlignment = Alignment.CenterVertically) {
+                Icon(DriveIcons.warning, contentDescription = null, tint = MaterialTheme.colorScheme.error, modifier = Modifier.size(20.dp))
+                Spacer(Modifier.width(8.dp))
+                Text(problem, style = MaterialTheme.typography.bodyMedium, maxLines = 3, overflow = TextOverflow.Ellipsis, modifier = Modifier.weight(1f))
+            }
+            if (sheet.canRetry || sheet.canChooseStart) Row(Modifier.padding(start = 20.dp)) {
+                if (sheet.canChooseStart) TextButton(onClick = { onEvent(DriveEvent.ChooseStart) }, modifier = Modifier.heightIn(min = 48.dp)) { Text(DriveTexts.CHOOSE_START) }
+                if (sheet.canRetry) TextButton(onClick = { onEvent(DriveEvent.Nav(NavIntent.Retry)) }, modifier = Modifier.heightIn(min = 48.dp)) { Text(DriveTexts.RETRY) }
+            }
+        }
+        sheet.busy && sheet.cards.isEmpty() -> Text(
+            DriveTexts.FINDING_ROUTES, style = MaterialTheme.typography.bodyMedium, color = MaterialTheme.colorScheme.onSurfaceVariant,
+            modifier = pad.semantics { liveRegion = LiveRegionMode.Polite },
+        )
+        else -> sheet.warnings.firstOrNull()?.let { w ->
+            Row(pad, verticalAlignment = Alignment.Top) {
+                Icon(DriveIcons.warning, contentDescription = null, tint = MaterialTheme.colorScheme.onSurfaceVariant, modifier = Modifier.size(18.dp))
+                Spacer(Modifier.width(8.dp))
+                Text(w, style = MaterialTheme.typography.bodyMedium, color = MaterialTheme.colorScheme.onSurfaceVariant, maxLines = 2, overflow = TextOverflow.Ellipsis)
+            }
         }
     }
-    StartPart(sheet, onEvent)
 }
 
 /** A route at the middle height: its time over its types (or how much slower than the fastest), outlined in blue and filled when chosen. */
@@ -177,6 +222,10 @@ private fun LowRouteCard(card: RouteCardUi, onClick: () -> Unit) {
                 card.slowerText?.let {
                     Text(DriveTexts.LABEL_SEPARATOR + it, style = MaterialTheme.typography.labelMedium, color = MaterialTheme.colorScheme.onSurfaceVariant, maxLines = 1)
                 }
+                // audit F2: tolls cost money; said at this height too
+                if (DriveTexts.NOTE_TOLLS in card.notes) {
+                    Text(DriveTexts.LABEL_SEPARATOR + DriveTexts.NOTE_TOLLS, style = MaterialTheme.typography.labelMedium, color = MaterialTheme.colorScheme.onSurfaceVariant, maxLines = 1)
+                }
             }
         }
     }
@@ -191,6 +240,10 @@ private fun StartPart(sheet: RouteSheetUi, onEvent: (DriveEvent) -> Unit) {
             enabled = sheet.canStart,
             modifier = Modifier.fillMaxWidth().padding(top = 8.dp, end = 8.dp).height(52.dp).testTag(DriveTags.START),
         ) { Text(DriveTexts.START, style = MaterialTheme.typography.titleMedium) }
+        sheet.startNote?.let {
+            Text(it, style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant,
+                modifier = Modifier.fillMaxWidth().padding(top = 4.dp, end = 8.dp), textAlign = androidx.compose.ui.text.style.TextAlign.Center)
+        }
         sheet.startBlockedText?.let {
             // Section 4: Start is off "and the app offers to ask for precise location again": the
             // reason is the way to ask (a text button, at least 48 dp tall for the finger).
@@ -356,7 +409,7 @@ private fun ColumnScope.FullRouteSheet(sheet: RouteSheetUi, onEvent: (DriveEvent
  */
 @Composable
 private fun StepsPreview(steps: List<StepUi>, onStep: (StepUi) -> Unit) {
-    var all by androidx.compose.runtime.saveable.rememberSaveable { androidx.compose.runtime.mutableStateOf(false) }
+    var all by androidx.compose.runtime.saveable.rememberSaveable(steps.size, steps.firstOrNull()?.text) { androidx.compose.runtime.mutableStateOf(false) }
     Text(
         DriveTexts.STEPS, style = MaterialTheme.typography.labelLarge, color = MaterialTheme.colorScheme.onSurfaceVariant,
         modifier = Modifier.padding(top = 14.dp, bottom = 2.dp),

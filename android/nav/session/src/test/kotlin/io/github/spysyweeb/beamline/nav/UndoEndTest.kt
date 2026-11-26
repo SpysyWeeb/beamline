@@ -84,4 +84,43 @@ class UndoEndTest {
         assertTrue(h.state.guidance!!.simulated)
         assertTrue(h.events.filterIsInstance<TripEvent.GuidanceStarted>().last().simulated)
     }
+
+    /** Audit F1: a place window open at End asks for its drive time at once; that question is not "the next intent". */
+    @Test
+    fun `an estimate between End and UndoEnd leaves the Undo`() = sessionTest { h ->
+        h.guideExit24()
+        h.fixAtOrigin()
+        h.send(NavIntent.End)
+        h.send(NavIntent.Estimate(Data.DOWNS_DRIVE))
+        h.advance(1_000)
+        h.send(NavIntent.UndoEnd)
+        h.advance(500)
+        assertEquals(Phase.GUIDING, h.phase(), "${h.state.problem}")
+        assertEquals(listOf("Downs Drive"), h.state.stops.map { it.place.name })
+    }
+
+    /** Audit F31: a route closed before it started (X or Back) comes back as it was, planned again. */
+    @Test
+    fun `UndoEnd brings back a closed route, planned again with its type`() = sessionTest { h ->
+        h.planExit24()
+        h.send(NavIntent.SetRouteType("simpler"))
+        assertEquals(Phase.CHOOSING, h.phase())
+        h.send(NavIntent.End)
+        assertEquals(Phase.IDLE, h.phase())
+        h.advance(2_000)
+        h.fixAtOrigin()
+        h.send(NavIntent.UndoEnd)
+        h.advance(2_000)
+        assertEquals(Phase.CHOOSING, h.phase(), "${h.state.problem}")
+        assertEquals(listOf("Downs Drive"), h.state.stops.map { it.place.name })
+        assertEquals("simpler", h.state.routeType)
+        assertTrue(h.state.choices.isNotEmpty())
+        assertEquals(0, h.holds, "planning holds nothing; only guidance does")
+        // and closed again, then anything else first: final
+        h.send(NavIntent.End)
+        h.send(NavIntent.Done)
+        h.send(NavIntent.UndoEnd)
+        h.advance(500)
+        assertEquals(Phase.IDLE, h.phase())
+    }
 }

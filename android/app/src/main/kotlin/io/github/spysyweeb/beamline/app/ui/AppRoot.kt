@@ -1,5 +1,7 @@
 package io.github.spysyweeb.beamline.app.ui
 
+import kotlinx.coroutines.flow.distinctUntilChanged
+import kotlinx.coroutines.flow.map
 import androidx.compose.ui.unit.IntSize
 import androidx.compose.ui.unit.IntOffset
 import androidx.compose.animation.slideOutHorizontally
@@ -129,6 +131,7 @@ fun AppRoot(g: AppGraph, flows: AppFlows, frameRate: FrameRateRequest, screenMax
     val night by g.night.collectAsState()
     // 0.1.34: the map style sheet, opened from its button under Settings
     var styleSheetOpen by remember { mutableStateOf(false) }
+    val driveState = androidx.compose.runtime.saveable.rememberSaveableStateHolder()
     BeamlineTheme(night) {
         val trip by g.session.state.collectAsState()
         val camera by g.director.state.collectAsState()
@@ -188,9 +191,13 @@ fun AppRoot(g: AppGraph, flows: AppFlows, frameRate: FrameRateRequest, screenMax
         val minute = now / 60_000L
         LaunchedEffect(minute) { g.search.refreshHours() }
         // item 47: the drive time for the place window's Directions (the session answers in IDLE only)
-        LaunchedEffect(sheetPlace, trip.phase == Phase.IDLE) {
+        val hasFix by remember { g.sharedPositions.latest.map { it != null }.distinctUntilChanged() }.collectAsState(initial = false)
+        LaunchedEffect(sheetPlace, trip.phase == Phase.IDLE, hasFix) {
             val p = sheetPlace
-            if (p != null && trip.phase == Phase.IDLE) g.session.send(NavIntent.Estimate(p))
+            if (p != null && trip.phase == Phase.IDLE) {
+                delay(ESTIMATE_SETTLE_MS) // audit F26: a run of taps on places asks once, for the last one
+                g.session.send(NavIntent.Estimate(p))
+            }
         }
         var creditRowHeight by remember { mutableStateOf(0.dp) }
         val density = LocalDensity.current
@@ -338,7 +345,11 @@ fun AppRoot(g: AppGraph, flows: AppFlows, frameRate: FrameRateRequest, screenMax
                 // D8: the speed pair stays above the credit's short line while it shows, then slides down.
                 val creditUp = AppRules.creditShown(phase, now, flows.creditUntilMs) &&
                     AppRules.shortCredit((mapStyle as? MapStyleState.Ready)?.map?.creditLine ?: "") != null
-                DriveOverlay(drive, onEvent = flows::onDriveEvent, onInsets = flows::onInsets, modifier = Modifier.fillMaxSize(), creditShown = creditUp)
+                // audit F28: the drive screens keep their heights, scroll and "Show all steps" while a
+                // screen covers them (Add stop, Change start), and find them again after
+                driveState.SaveableStateProvider(DRIVE_STATE_KEY) {
+                    DriveOverlay(drive, onEvent = flows::onDriveEvent, onInsets = flows::onInsets, modifier = Modifier.fillMaxSize(), creditShown = creditUp)
+                }
             }
             // ---- the place sheet, above the route sheet and the trip bar (a marker or POI tapped
             // while a trip exists offers "Add stop"); measured so the credit stays above it.
@@ -356,6 +367,8 @@ fun AppRoot(g: AppGraph, flows: AppFlows, frameRate: FrameRateRequest, screenMax
                 Box(Modifier.align(Alignment.BottomCenter).fillMaxWidth().onSizeChanged { sheetHeight = with(density) { it.height.toDp() } }) {
                     PlaceSheet(sheet, onEvent = { e -> flows.onSheetEvent(e, sheet) })
                 }
+                // the place window above the route sheet: its Back first (the route sheet's own Back comes before the app's)
+                BackHandler { flows.onBack() }
             }
             if (resultsShown) {
                 Box(Modifier.align(Alignment.BottomCenter).fillMaxWidth().onSizeChanged { resultsHeight = with(density) { it.height.toDp() } }) {
@@ -387,8 +400,9 @@ fun AppRoot(g: AppGraph, flows: AppFlows, frameRate: FrameRateRequest, screenMax
                 val layer = step?.layer
                 if (layer != null) {
                     when (layer) {
-                        is Layer.Search -> SearchScreen(searchUi, onEvent = flows::onSearchEvent)
-                        Layer.SavedList -> savedUi.list?.let { SavedPlacesScreen(it, onEvent = flows::onSavedEvent) }
+                        // audit F20: a screen sliding out keeps what it showed (its state is cleared as it goes)
+                        is Layer.Search -> SearchScreen(keptWhileLeaving(searchUi), onEvent = flows::onSearchEvent)
+                        Layer.SavedList -> keptWhileLeaving(savedUi.list)?.let { SavedPlacesScreen(it, onEvent = flows::onSavedEvent) }
                         Layer.Settings -> SettingsScreen(
                             store = g.settings,
                             write = g::updateSettings,
@@ -438,7 +452,7 @@ fun AppRoot(g: AppGraph, flows: AppFlows, frameRate: FrameRateRequest, screenMax
                         Layer.States -> StatesScreen(g.getPacks, StatesMode.MANAGE, onClose = { flows.pop(Layer.States) })
                         // Batch O1 (docs/online-design.md 4.1, 4.5): the report form and My reports
                         is Layer.Report -> {
-                            val item = layer.itemId?.let { id -> outboxItems.firstOrNull { it.id == id } }
+                            val item = keptWhileLeaving(layer.itemId?.let { id -> outboxItems.firstOrNull { it.id == id } })
                             val t = layer.target
                             if (item != null || t != null) ReportScreen(
                                 lat = item?.lat ?: t!!.lat, lon = item?.lon ?: t!!.lon, placeName = item?.placeName ?: t?.placeName, item = item,
@@ -471,7 +485,7 @@ fun AppRoot(g: AppGraph, flows: AppFlows, frameRate: FrameRateRequest, screenMax
                         )
                         // Batch O2 (docs/online-design.md 4.2): the edit form, its summary and its upload
                         Layer.EditPlace -> {
-                            val e = flows.edit
+                            val e = keptWhileLeaving(flows.edit)
                             if (e != null) EditPlaceScreen(
                                 e,
                                 onUpload = flows::uploadEdit,
@@ -485,7 +499,7 @@ fun AppRoot(g: AppGraph, flows: AppFlows, frameRate: FrameRateRequest, screenMax
                         }
                         // Item 32 (docs/online-design.md 4.7): the speed limit of a road
                         Layer.SpeedLimit -> {
-                            val sp = flows.speed
+                            val sp = keptWhileLeaving(flows.speed)
                             if (sp != null) SpeedLimitScreen(
                                 sp,
                                 onUpload = flows::uploadSpeed,
@@ -499,7 +513,7 @@ fun AppRoot(g: AppGraph, flows: AppFlows, frameRate: FrameRateRequest, screenMax
                         }
                         // Batch O3 (docs/online-design.md 4.3): add a missing place
                         Layer.AddPlace -> {
-                            val a = flows.add
+                            val a = keptWhileLeaving(flows.add)
                             if (a != null) AddPlaceScreen(
                                 a,
                                 onUpload = flows::uploadAdd,
@@ -547,10 +561,10 @@ fun AppRoot(g: AppGraph, flows: AppFlows, frameRate: FrameRateRequest, screenMax
             }
 
             // R4: "Trip ended" with Undo, then "Continuing the trip..." (in its place while it shows: one bar at a time)
-            val endBar = AppRules.endBar(flows.tripEnded, flows.continuing, trip.phase)
+            val endBar = AppRules.endBar(flows.tripEnded, flows.continuing, trip.phase, flows.endedText)
             if (endBar != null) {
                 Snackbar(endBar, night, Modifier.align(Alignment.BottomCenter).navigationBarsPadding().padding(bottom = overlayBottom + 88.dp),
-                    action = if (endBar == TRIP_ENDED) UNDO to flows::undoEnd else null)
+                    action = if (endBar != CONTINUING_TRIP) UNDO to flows::undoEnd else null)
             } else {
                 flows.snackbar?.let { s ->
                     Snackbar(s, night, Modifier.align(Alignment.BottomCenter).navigationBarsPadding().padding(bottom = overlayBottom + 88.dp))
@@ -586,7 +600,12 @@ fun AppRoot(g: AppGraph, flows: AppFlows, frameRate: FrameRateRequest, screenMax
         }
         LaunchedEffect(trip.phase) {
             if (trip.phase != Phase.IDLE) { flows.tripEnded = null; flows.continuing = false }
+            // audit F21: the stops editor belongs to a trip being planned or driven; arrival, a resume
+            // offer or the trip's end by any path closes it (else it came back on the next trip)
+            if (trip.phase == Phase.IDLE || trip.phase == Phase.ARRIVED || trip.phase == Phase.RESUME_OFFERED) flows.stopsEditorOpen = false
         }
+        // audit F33: the map style sheet does not wait under a drive to come back after it
+        LaunchedEffect(driving) { if (driving) styleSheetOpen = false }
         // "Continuing the trip..." ends with the phase (above); a cap in case the session never leaves IDLE
         LaunchedEffect(flows.continuing) {
             if (flows.continuing) {
@@ -679,10 +698,16 @@ internal val NO_MAP_HERE = io.github.spysyweeb.beamline.feature.states.MapChip("
 /** From this zoom on the plain overview is all a place outside the installed states shows. */
 internal const val NO_MAP_FROM_ZOOM = 9.0
 internal const val TRIP_ENDED = "Trip ended"
+/** Audit F31: the route closed before it started (X or Back), with Undo. */
+internal const val DIRECTIONS_CLOSED = "Directions closed"
 internal const val CONTINUING_TRIP = "Continuing the trip..."
 internal const val UNDO = "Undo"
 /** Longer than the session's 15 s wait for a fix before it offers the trip again. */
 internal const val CONTINUING_CAP_MS = 20_000L
+/** Audit F28: the drive screens' saved state while a screen covers them. */
+private const val DRIVE_STATE_KEY = "drive"
+/** Audit F26: how long a place window stays before its drive time is asked. */
+internal const val ESTIMATE_SETTLE_MS = 350L
 
 /** Item 47: how long the screen's insets must stay the same before the camera refits to them. */
 private const val INSETS_SETTLE_MS = 180L
@@ -714,3 +739,18 @@ private fun screenTransition(from: ScreenStep?, to: ScreenStep?): ContentTransfo
         else -> ContentTransform(slideInHorizontally(slide) { it }, slideOutHorizontally(slide) { -it / 4 }, sizeTransform = null)
     }
 }
+
+/**
+ * Audit F20: what a screen over the map shows while it slides out. Its state is cleared as it is
+ * closed (the search reset, the editor's session gone), so the leaving screen keeps the last value it
+ * showed while visible instead of drawing an empty page for the slide.
+ */
+@Composable
+private fun <T> androidx.compose.animation.AnimatedVisibilityScope.keptWhileLeaving(value: T): T {
+    val kept = remember { KeptValue(value) }
+    if (transition.targetState != androidx.compose.animation.EnterExitState.PostExit) kept.value = value
+    return kept.value
+}
+
+/** A plain holder (not state: it is read in the same composition that writes it). */
+private class KeptValue<T>(var value: T)

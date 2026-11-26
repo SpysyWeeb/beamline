@@ -238,9 +238,10 @@ class MainActivity : ComponentActivity(), Host {
             }
         }
         graph.puck.stop()
-        // Item 41: leaving the app installs a downloaded update when Android lets it be silent (never while guiding)
+        // Item 41: leaving the app installs a downloaded update when Android lets it be silent; audit F7:
+        // only at a quiet moment (no trip in any phase, no state download or install running)
         graph.appUpdates.foreground = false
-        graph.appUpdates.install(null, graph.guiding())
+        graph.appUpdates.install(null, !graph.quietForUpdate())
         super.onStop()
     }
 

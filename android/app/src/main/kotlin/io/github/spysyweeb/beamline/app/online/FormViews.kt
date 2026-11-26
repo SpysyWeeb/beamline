@@ -1,5 +1,7 @@
 package io.github.spysyweeb.beamline.app.online
 
+import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.verticalScroll
 import androidx.compose.foundation.layout.navigationBarsPadding
 import androidx.compose.material3.rememberModalBottomSheetState
 import androidx.compose.material3.ModalBottomSheet
@@ -425,7 +427,8 @@ fun TimePickDialog(initial: Int, h24: Boolean, onPick: (Int) -> Unit, onDismiss:
 @Composable
 internal fun PickerSheet(title: String, onDismiss: () -> Unit, content: @Composable androidx.compose.foundation.layout.ColumnScope.() -> Unit) {
     ModalBottomSheet(onDismissRequest = onDismiss, sheetState = rememberModalBottomSheetState(skipPartiallyExpanded = true)) {
-        Column(Modifier.fillMaxWidth().padding(start = 16.dp, end = 16.dp, bottom = 16.dp).navigationBarsPadding()) {
+        // audit F11: it scrolls when it is taller than the screen (landscape on a car mount, large text)
+        Column(Modifier.fillMaxWidth().verticalScroll(rememberScrollState()).padding(start = 16.dp, end = 16.dp, bottom = 16.dp).navigationBarsPadding()) {
             Text(title, style = MaterialTheme.typography.titleLarge, modifier = Modifier.padding(bottom = 12.dp).semantics { heading() })
             content()
         }

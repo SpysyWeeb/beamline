@@ -836,7 +836,7 @@ sealed interface NavIntent {
     /**
      * Item 47: the trip the other way round, before guidance (PLANNING, CHOOSING): the destination is
      * the start, the stops in reverse, and the start the destination. From the current position, the
-     * destination is that position as it is now ("Your position", a point); swapped back, the trip
+     * destination is that position as it is now ("Where you were", a point); swapped back, the trip
      * starts from the current position again. Without a position: NO_POSITION, nothing changes.
      */
     data object SwapEnds : NavIntent
@@ -855,8 +855,10 @@ sealed interface NavIntent {
     /**
      * Takes back the End of a guided trip (rule R4): within [END_UNDO_MS] of it, and before any
      * other intent, the stops not reached are re-planned from the current position with the same
-     * route type and options, and guidance goes on (a simulated drive stays simulated). Ignored
-     * otherwise.
+     * route type and options, and guidance goes on (a simulated drive stays simulated). Audit F31:
+     * the End of a route not yet started (PLANNING, CHOOSING) is taken back the same way, the route
+     * planned again as it was (its start, stops, type and options). [Estimate] does not count as
+     * an intent here. Ignored otherwise.
      */
     data object UndoEnd : NavIntent
     /** Leaves ARRIVED. */
@@ -2031,6 +2033,10 @@ data class RouteSheetUi(
     val startBlockedText: String?,
     /** Item 47: the chosen route's steps, for the full height's preview. */
     val steps: List<StepUi> = emptyList(),
+    /** Audit F3: the problem is that there is no position: "Choose start" beside it at every height. */
+    val canChooseStart: Boolean = false,
+    /** Audit F27: a trip from a chosen start (a swap, Change start): "Guidance starts from where you are". */
+    val startNote: String? = null,
 )
 
 /** One step of the preview (item 47): the turn's arrow, its words, how far the road goes after it, and where it is. */

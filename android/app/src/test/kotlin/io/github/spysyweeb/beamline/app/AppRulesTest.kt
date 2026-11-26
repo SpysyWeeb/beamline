@@ -96,6 +96,8 @@ class AppRulesTest {
         assertEquals("Trip ended", AppRules.endBar(tripEnded = 1L, continuing = false, phase = Phase.IDLE))
         assertEquals("Continuing the trip...", AppRules.endBar(tripEnded = null, continuing = true, phase = Phase.IDLE))
         assertNull(AppRules.endBar(tripEnded = null, continuing = true, phase = Phase.GUIDING))
+        // audit F31: a route closed before it started says so, with the same Undo
+        assertEquals("Directions closed", AppRules.endBar(tripEnded = 1L, continuing = false, phase = Phase.IDLE, endedText = io.github.spysyweeb.beamline.app.ui.DIRECTIONS_CLOSED))
         assertNull(AppRules.endBar(tripEnded = null, continuing = true, phase = Phase.RESUME_OFFERED))
         assertNull(AppRules.endBar(tripEnded = 1L, continuing = false, phase = Phase.CHOOSING))
         assertNull(AppRules.endBar(tripEnded = null, continuing = false, phase = Phase.IDLE))

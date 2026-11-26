@@ -509,6 +509,18 @@ class AppGraph(context: Context, val dataDir: File, val locationLog: Boolean) {
     /** True while guiding (an app update never downloads or installs then). */
     fun guiding(): Boolean = session.state.value.phase.let { it == io.github.spysyweeb.beamline.api.nav.Phase.GUIDING || it == io.github.spysyweeb.beamline.api.nav.Phase.REROUTING }
 
+    /**
+     * Audit F7: a silent self-update (it restarts the app) waits for a quiet moment: no trip in any
+     * phase (a route being chosen, a resume offer and the arrival card are lost by a restart too) and
+     * no state download, unpacking or install running (a restart would stop it).
+     */
+    fun quietForUpdate(): Boolean {
+        if (session.state.value.phase != io.github.spysyweeb.beamline.api.nav.Phase.IDLE) return false
+        val j = getPacks.job.value ?: return true
+        return j.phase == io.github.spysyweeb.beamline.download.JobPhase.DONE || j.phase == io.github.spysyweeb.beamline.download.JobPhase.FAILED ||
+            j.phase == io.github.spysyweeb.beamline.download.JobPhase.PAUSED
+    }
+
     init {
         // Item 40: the daily map-update check runs on each start (MainActivity.onStart) and also as soon
         // as the user turns it on; the first value is onStart's to act on.

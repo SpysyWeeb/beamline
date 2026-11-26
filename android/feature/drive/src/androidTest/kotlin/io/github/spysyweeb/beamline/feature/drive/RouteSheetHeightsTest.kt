@@ -196,4 +196,42 @@ class RouteSheetHeightsTest {
         compose.onNodeWithTag(DriveTags.DONE).performClick()
         assertTrue(events.contains(DriveEvent.Nav(NavIntent.Done)))
     }
+
+    /** Audit F2, F3: below full height a problem shows with its buttons, and the middle height has Cancel. */
+    @Test
+    fun problemAndCancelAtTheMiddleHeight() {
+        ui = DriveUi(planning = sheet(1).copy(problem = "No GPS position yet. Choose a start point or try again.", canRetry = true, canChooseStart = true))
+        compose.setContent {
+            BeamlineTheme(night = false) {
+                Box(Modifier.size(411.dp, 891.dp)) { DriveOverlayContent(ui, onEvent = { e -> events.add(e) }, onInsets = { insets = it }) }
+            }
+        }
+        compose.waitForIdle()
+        assertEquals("Half open", state())
+        compose.onNodeWithText("No GPS position yet. Choose a start point or try again.").assertIsDisplayed()
+        compose.onNodeWithText(DriveTexts.CHOOSE_START).performClick()
+        compose.onNodeWithText(DriveTexts.RETRY).performClick()
+        compose.onNodeWithTag(DriveTags.CANCEL).performClick()
+        assertEquals(listOf(DriveEvent.ChooseStart, DriveEvent.Nav(NavIntent.Retry), DriveEvent.Nav(NavIntent.End)), events.toList())
+    }
+
+    /** Audit F31: Back at full height steps down to the routes; it does not close the route there. */
+    @Test
+    fun backAtFullHeightStepsDown() {
+        ui = DriveUi(planning = sheet(1))
+        var back: androidx.activity.OnBackPressedDispatcher? = null
+        compose.setContent {
+            back = androidx.activity.compose.LocalOnBackPressedDispatcherOwner.current?.onBackPressedDispatcher
+            BeamlineTheme(night = false) {
+                Box(Modifier.size(411.dp, 891.dp)) { DriveOverlayContent(ui, onEvent = { e -> events.add(e) }, onInsets = { insets = it }) }
+            }
+        }
+        compose.waitForIdle()
+        compose.raiseSheetToFull()
+        assertEquals("Full height", state())
+        compose.runOnUiThread { back!!.onBackPressed() }
+        compose.waitForIdle()
+        assertEquals("Half open", state())
+        assertTrue(events.toString(), events.none { it == DriveEvent.Nav(NavIntent.End) })
+    }
 }

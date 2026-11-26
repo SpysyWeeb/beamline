@@ -72,6 +72,8 @@ internal data class ScreenState(
     val fileArchive: PackArchive? = null,
     /** A file install the installer refused: the pack's name and the installer's words (Details only). */
     val fileProblem: Pair<String, String>? = null,
+    /** Audit F8: why the open sheet's download did not start ("Another state is downloading..."). */
+    val startProblem: String? = null,
 )
 
 /** A file install started from a screen (not persisted: docs/architecture.md 2.12). */
@@ -329,7 +331,7 @@ internal class GetPacksCore(
             ),
             continuing = f.continuing, switched = f.switched, serviceRefused = f.serviceRefused, readyPackId = if (mode == StatesMode.MANAGE) sc.readyPackId else null,
             removeProblem = sc.removeProblem, changesOptionalParts = installed.changesOptionalParts, debug = debug, file = sc.file,
-            fileInstallName = fi?.name, fileProblem = sc.fileProblem,
+            fileInstallName = fi?.name, fileProblem = sc.fileProblem, startProblem = sc.startProblem,
         )
     }
 
@@ -357,11 +359,11 @@ internal class GetPacksCore(
                 is CatalogState.Loading -> c.cached?.catalog?.packs?.firstOrNull { it.state == code }
                 else -> null
             }
-        screen.update { it.copy(selected = code, sheetOpen = true, sheetPack = entry, sheetKind = kind, chooser = null, mapHint = false) }
+        screen.update { it.copy(selected = code, sheetOpen = true, sheetPack = entry, sheetKind = kind, chooser = null, mapHint = false, startProblem = null) }
     }
 
     fun closeSheet() {
-        screen.update { it.copy(sheetOpen = false, sheetPack = null, sheetKind = SheetKind.STATE, file = null, fileArchive = null) }
+        screen.update { it.copy(sheetOpen = false, sheetPack = null, sheetKind = SheetKind.STATE, file = null, fileArchive = null, startProblem = null) }
     }
 
     fun setIncludeAddresses(on: Boolean) = settings.update { it.copy(includeAddresses = on) }
@@ -374,7 +376,11 @@ internal class GetPacksCore(
     fun download(allowMetered: Boolean, firstRun: Boolean, then: (StartResult?) -> Unit = {}) {
         val e = engine ?: return then(null)
         val sc = screen.value
-        val entry = sc.sheetPack ?: return then(null)
+        // audit F8: a sheet opened while the list was still loading has no entry of its own; the sheet
+        // shows the list's entry once it came (StatesPresenter), and Download uses the same one
+        val entry = sc.sheetPack ?: sc.selected?.let { code ->
+            (catalog.value as? CatalogState.Ready)?.view?.catalog?.packs?.firstOrNull { it.state == code }
+        } ?: return then(null)
         val inst = installed.installed.value.packs.firstOrNull { it.packId == entry.id }
         val kind = when (sc.sheetKind) {
             SheetKind.ADD_HOUSE_NUMBERS -> JobKind.ADD_OPTIONAL
@@ -388,6 +394,9 @@ internal class GetPacksCore(
                 if (firstRun) ui.applyNow { FirstRun.picked(it) }
                 closeSheet()
                 runEngine()
+            } else if (result is StartResult.Refused) {
+                // audit F8: a refused start says why on the sheet, never nothing at all
+                screen.update { it.copy(startProblem = Texts.refused(result.why)) }
             }
             withContext(Dispatchers.Main.immediate) { then(result) }
         }

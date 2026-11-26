@@ -159,12 +159,15 @@ internal fun DriveOverlayContent(ui: DriveUi, onEvent: (DriveEvent) -> Unit, onI
         val density = LocalDensity.current
         var topPx by remember { mutableIntStateOf(0) }
         var bottomPx by remember { mutableIntStateOf(0) }
+        // audit F30: the stops editor covers more of the map than the trip bar; the camera keeps above it
+        var editorPx by remember { mutableIntStateOf(0) }
+        if (ui.stopsEditor == null) editorPx = 0
         // D8 (batch B): the bottom of the chip / stop card column and the speed pair's height, to
         // know whether the pair has room between the top stack and the bottom block
         var chipBottomPx by remember { mutableIntStateOf(0) }
         var clusterPx by remember { mutableIntStateOf(0) }
         val insets = when {
-            !side -> EdgeInsetsDp(top = topPx / density.density, bottom = bottomPx / density.density)
+            !side -> EdgeInsetsDp(top = topPx / density.density, bottom = maxOf(bottomPx, editorPx) / density.density)
             topPx > 0 || bottomPx > 0 -> EdgeInsetsDp(start = panelWidth.value)
             else -> EdgeInsetsDp()
         }
@@ -324,7 +327,9 @@ internal fun DriveOverlayContent(ui: DriveUi, onEvent: (DriveEvent) -> Unit, onI
                     .width(panelWidth)
                     .heightIn(max = (maxHeight - safeTop - 8.dp).coerceAtLeast(0.dp)),
             ) {
-                BottomSheetSurface(safe.only(WindowInsetsSides.Bottom + horizontal)) { StopsEditor(ui.stopsEditor, onEvent) }
+                Box(Modifier.onSizeChanged { editorPx = it.height }) {
+                    BottomSheetSurface(safe.only(WindowInsetsSides.Bottom + horizontal)) { StopsEditor(ui.stopsEditor, onEvent) }
+                }
             }
         }
     }

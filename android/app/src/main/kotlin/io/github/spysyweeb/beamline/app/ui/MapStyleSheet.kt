@@ -1,5 +1,7 @@
 package io.github.spysyweeb.beamline.app.ui
 
+import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.verticalScroll
 import androidx.compose.foundation.Canvas
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
@@ -83,7 +85,7 @@ private fun label(style: MapStyle) = when (style) {
 internal fun MapStyleSheet(current: MapStyle, onPick: (MapStyle) -> Unit, onClose: () -> Unit) {
     ModalBottomSheet(onDismissRequest = onClose, sheetState = rememberModalBottomSheetState(skipPartiallyExpanded = true)) {
         Column(
-            Modifier.fillMaxWidth().padding(start = 16.dp, end = 16.dp, bottom = 16.dp).navigationBarsPadding().testTag("map-style-sheet"),
+            Modifier.fillMaxWidth().verticalScroll(rememberScrollState()).padding(start = 16.dp, end = 16.dp, bottom = 16.dp).navigationBarsPadding().testTag("map-style-sheet"),
             verticalArrangement = Arrangement.spacedBy(14.dp),
         ) {
             Text("Map style", fontSize = 22.sp, fontWeight = FontWeight.Bold, color = MaterialTheme.colorScheme.onSurface)

@@ -186,4 +186,9 @@ object DriveTexts {
     const val SAVE_PLACE = "Save this place"
     /** Item 47: the From row's swap button. */
     const val SWAP = "Swap start and destination"
+
+    /** Audit F2, F3, F27: the directions window at every height. */
+    const val FINDING_ROUTES = "Finding routes..."
+    const val CHOOSE_START = "Choose start"
+    const val STARTS_FROM_HERE = "Guidance starts from where you are."
 }

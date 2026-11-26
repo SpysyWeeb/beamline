@@ -1,5 +1,6 @@
 package io.github.spysyweeb.beamline.feature.drive
 
+import androidx.activity.compose.BackHandler
 import io.github.spysyweeb.beamline.ui.theme.rememberSheetState
 import io.github.spysyweeb.beamline.ui.theme.SheetSteps
 import io.github.spysyweeb.beamline.ui.theme.SheetHeight
@@ -48,6 +49,7 @@ import io.github.spysyweeb.beamline.ui.theme.BeamlineIcons
 internal fun StopsEditor(editor: StopsEditorUi, onEvent: (DriveEvent) -> Unit, modifier: Modifier = Modifier) {
     val nav = { i: NavIntent -> onEvent(DriveEvent.Nav(i)) }
     val height = rememberSheetState(SheetSteps.TWO, SheetHeight.FULL)
+    BackHandler { onEvent(DriveEvent.CloseStopsEditor) } // above the route sheet's own Back (audit F31)
     val full = height.height == SheetHeight.FULL
     SheetFrame(
         height, DriveTexts.STOPS, MaterialTheme.colorScheme.onSurfaceVariant,
@@ -108,13 +110,13 @@ private fun StopEditorRow(row: StopRowUi, nav: (NavIntent) -> Unit) {
         }
         if (!row.reached) {
             IconButton(onClick = { nav(NavIntent.MoveStop(row.index, row.index - 1)) }, enabled = row.canMoveUp) {
-                Icon(DriveIcons.up, contentDescription = DriveTexts.MOVE_UP)
+                Icon(DriveIcons.up, contentDescription = DriveTexts.MOVE_UP + ": " + row.title)
             }
             IconButton(onClick = { nav(NavIntent.MoveStop(row.index, row.index + 1)) }, enabled = row.canMoveDown) {
-                Icon(DriveIcons.down, contentDescription = DriveTexts.MOVE_DOWN)
+                Icon(DriveIcons.down, contentDescription = DriveTexts.MOVE_DOWN + ": " + row.title)
             }
             IconButton(onClick = { nav(NavIntent.RemoveStop(row.index)) }, enabled = row.canRemove) {
-                Icon(DriveIcons.close, contentDescription = DriveTexts.REMOVE)
+                Icon(DriveIcons.close, contentDescription = DriveTexts.REMOVE + ": " + row.title)
             }
         }
     }

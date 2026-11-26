@@ -964,6 +964,26 @@ not break across two lines in the banner; the results view shows at most the 20 
     chooses): first the rough edges of what 0.1.37 added and the update safety (group A, F7, F8);
     then "no silent failures" (group B: every failure says what happened and what to do); then the
     polish of search, the map, States, online, driving and layout (C to H).
+    *0.1.38 (the owner, 2026-11-26: "Start"), built:* F1 (an estimate is not the next intent: Undo
+    after End works with a place window open), F2/F3 (below full height the problem with Retry and
+    "Choose start", "Finding routes...", the first warning and "Tolls" on the small card; the middle
+    height has "To <destination>" and Cancel), F7 (a silent update waits for no trip in any phase and
+    no state download or install: `AppGraph.quietForUpdate`), F8 (Download uses the list's entry when
+    the sheet opened while it loaded; a refused start says why on the sheet), F11/F33/F34 (pickers,
+    the map style sheet and the arrival card scroll; the style sheet closes when a drive starts), F20
+    (a screen sliding out keeps what it showed: `keptWhileLeaving`), F21 (the stops editor closes with
+    the trip by any path), F26 (the estimate plans with the trip's type, waits 350 ms after a tap, is
+    asked again at the first fix, never runs ahead of a trip's plan), F27 (the swapped destination is
+    "Where you were"; Start says "Guidance starts from where you are."), F28 (the drive screens keep
+    their heights and "Show all steps" while a screen covers them: a SaveableStateHolder), F29 (a route
+    card chosen again shows the whole route), F30 (the stops editor counts in the camera's insets;
+    its buttons name their stop), F31 (Back at full height steps down; X or Back at the lower heights
+    closes the route with "Directions closed" and Undo: `UndoEnd` takes back a closed route too), F36
+    ("These stops are already in the best order."), F40 (the packs-changed notice stays until the last
+    answer). Tests: UndoEndTest (estimate between End and Undo; a closed route back), screen tests
+    (problem and Cancel at the middle height; Back steps down), AppRulesTest. 945 unit, 24 drive, 13
+    search and 4 States screen tests pass. Not done in it: Undo for a removed stop (F30), the steps
+    preview's "At the light" wording (F40), the arrival card's own TalkBack words and a saved flag (F34).
 
 ## Later (not the next round)
 
