@@ -234,4 +234,32 @@ class RouteSheetHeightsTest {
         assertEquals("Half open", state())
         assertTrue(events.toString(), events.none { it == DriveEvent.Nav(NavIntent.End) })
     }
+
+    /**
+     * The owner, 2026-11-26: "when dragging the window that shows the faster or simpler route, the map
+     * zoom to match window height is delayed". The camera is given the height the sheet is going to
+     * as the slide starts (LocalSheetLag), not the heights it passes through.
+     */
+    @Test
+    fun theCameraGetsTheHeightTheSheetIsGoingToAtOnce() {
+        ui = DriveUi(planning = sheet(1))
+        compose.setContent {
+            BeamlineTheme(night = false) {
+                Box(Modifier.size(411.dp, 891.dp)) { DriveOverlayContent(ui, onEvent = { e -> events.add(e) }, onInsets = { insets = it }) }
+            }
+        }
+        compose.waitForIdle()
+        assertEquals("Half open", state())
+        val middle = insets.bottom
+        compose.mainClock.autoAdvance = false
+        compose.onNodeWithTag(SHEET_HANDLE_TAG).performClick()
+        repeat(3) { compose.mainClock.advanceTimeByFrame() }
+        val early = insets.bottom
+        compose.mainClock.autoAdvance = true
+        compose.waitForIdle()
+        assertEquals("Full height", state())
+        val full = insets.bottom
+        assertTrue("full $full > middle $middle", full > middle + 50f)
+        assertEquals("three frames into the slide the camera already has the full height", full, early, 1f)
+    }
 }

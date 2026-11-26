@@ -101,7 +101,14 @@ fun StatesMap(
         var centerY by view::centerY
         val scope = rememberCoroutineScope()
         val scale = fit * zoom.value
-        fun toMap(o: Offset) = Offset((o.x - wPx / 2) / scale + centerX, (o.y - hPx / 2) / scale + centerY)
+        // the owner, 2026-11-26: zoomed in, a tap on a state away from the centre sometimes picked
+        // another one. The tap handler below is set up once (its keys are the shapes and the fit), so
+        // it must read the zoom as it is at the tap, never the scale of the composition that set it up.
+        fun scaleNow() = fit * zoom.value
+        fun toMap(o: Offset): Offset {
+            val s = scaleNow()
+            return Offset((o.x - wPx / 2) / s + centerX, (o.y - hPx / 2) / s + centerY)
+        }
         val dpPx = with(density) { 1.dp.toPx() }
 
         // A selection from the list: zoom to the state's box at 60 % of the card.
@@ -134,7 +141,7 @@ fun StatesMap(
                         },
                         onTap = { o ->
                             val m = toMap(o)
-                            onTap(StateHitTest.resolve(shapes, m.x, m.y, 1f / (scale / dpPx)))
+                            onTap(StateHitTest.resolve(shapes, m.x, m.y, dpPx / scaleNow()))
                         },
                     )
                 },

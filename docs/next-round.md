@@ -984,6 +984,14 @@ not break across two lines in the banner; the results view shows at most the 20 
     (problem and Cancel at the middle height; Back steps down), AppRulesTest. 945 unit, 24 drive, 13
     search and 4 States screen tests pass. Not done in it: Undo for a removed stop (F30), the steps
     preview's "At the light" wording (F40), the arrival card's own TalkBack words and a saved flag (F34).
+    *Found by the owner after 0.1.38 (2026-11-26), missed by the code audit:* (1) zoomed in on the
+    States map, a tap on a state away from the centre picked another one: the map's gesture handler
+    starts on the first touch (the pinch) and kept that moment's zoom; it now reads the zoom at each
+    tap (StatesMapTapTest: on the old code a tap on Ohio gave Oklahoma). (2) The map refitted to the
+    directions window only after the slide and a 180 ms settle: every sheet now reports how far it
+    still has to slide (`LocalSheetLag`, ui/theme), so the camera gets the height the sheet is going to
+    as it starts; the settle is 60 ms (RouteSheetHeightsTest: on the old code three frames in the
+    camera had 255 of 575 dp).
 
 ## Later (not the next round)
 

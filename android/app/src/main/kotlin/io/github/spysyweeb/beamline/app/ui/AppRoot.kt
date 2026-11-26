@@ -1,5 +1,8 @@
 package io.github.spysyweeb.beamline.app.ui
 
+import io.github.spysyweeb.beamline.ui.theme.LocalSheetLag
+import androidx.compose.runtime.mutableIntStateOf
+import androidx.compose.runtime.CompositionLocalProvider
 import kotlinx.coroutines.flow.distinctUntilChanged
 import kotlinx.coroutines.flow.map
 import androidx.compose.ui.unit.IntSize
@@ -183,6 +186,9 @@ fun AppRoot(g: AppGraph, flows: AppFlows, frameRate: FrameRateRequest, screenMax
         val pillShown = (phase == Phase.IDLE || phase == Phase.RESUME_OFFERED) && !searchOpen && pick == null
         var sheetHeight by remember { mutableStateOf(0.dp) }
         var resultsHeight by remember { mutableStateOf(0.dp) }
+        // their remaining slides (LocalSheetLag): the camera gets the heights they are going to at once
+        val placeLag = remember { mutableIntStateOf(0) }
+        val resultsLag = remember { mutableIntStateOf(0) }
         var pillHeight by remember { mutableStateOf(0.dp) }
         // S11: the results list at the bottom while browsing, no sheet, screen or pick over it
         val resultsShown = results != null && sheetPlace == null && pick == null && top == null &&
@@ -205,13 +211,14 @@ fun AppRoot(g: AppGraph, flows: AppFlows, frameRate: FrameRateRequest, screenMax
         // What the camera pads by: the overlay, the status bar's band, and the credit row above a sheet (K2).
         val cameraInsets = AppRules.cameraInsets(flows.overlayInsets, statusBarTop.value, creditRowHeight.value + 8f, driving,
             placeSheet = when {
-                sheetPlace != null && pick == null -> sheetHeight.value
-                resultsShown -> resultsHeight.value
+                sheetPlace != null && pick == null -> kotlin.math.round(sheetHeight.value + placeLag.intValue / density.density)
+                resultsShown -> kotlin.math.round(resultsHeight.value + resultsLag.intValue / density.density)
                 else -> 0f
             },
             topChrome = if (resultsShown && pillShown) pillHeight.value else 0f)
-        // item 47: a sheet that slides changes the insets every frame; the camera takes them once they
-        // have settled (INSETS_SETTLE_MS), so the map refits after the slide, not during it
+        // item 47: the insets settle for INSETS_SETTLE_MS before the camera takes them; since 0.1.39 the
+        // sheets report the height they are going to at once (LocalSheetLag), so this only merges the
+        // first frames of a change
         LaunchedEffect(cameraInsets) {
             if (flows.cameraInsets != EdgeInsetsDp()) kotlinx.coroutines.delay(INSETS_SETTLE_MS)
             flows.cameraInsets = cameraInsets
@@ -365,14 +372,14 @@ fun AppRoot(g: AppGraph, flows: AppFlows, frameRate: FrameRateRequest, screenMax
                         .let { ui -> trip.estimate?.takeIf { phase == Phase.IDLE && it.point == ui.place.point }?.let { ui.copy(driveTimeText = units.duration(it.timeS)) } ?: ui }
                 }
                 Box(Modifier.align(Alignment.BottomCenter).fillMaxWidth().onSizeChanged { sheetHeight = with(density) { it.height.toDp() } }) {
-                    PlaceSheet(sheet, onEvent = { e -> flows.onSheetEvent(e, sheet) })
+                    CompositionLocalProvider(LocalSheetLag provides placeLag) { PlaceSheet(sheet, onEvent = { e -> flows.onSheetEvent(e, sheet) }) }
                 }
                 // the place window above the route sheet: its Back first (the route sheet's own Back comes before the app's)
                 BackHandler { flows.onBack() }
             }
             if (resultsShown) {
                 Box(Modifier.align(Alignment.BottomCenter).fillMaxWidth().onSizeChanged { resultsHeight = with(density) { it.height.toDp() } }) {
-                    ResultsSheet(results!!, onEvent = flows::onResultsEvent)
+                    CompositionLocalProvider(LocalSheetLag provides resultsLag) { ResultsSheet(results!!, onEvent = flows::onResultsEvent) }
                 }
             }
             if (pick != null) {
@@ -710,7 +717,7 @@ private const val DRIVE_STATE_KEY = "drive"
 internal const val ESTIMATE_SETTLE_MS = 350L
 
 /** Item 47: how long the screen's insets must stay the same before the camera refits to them. */
-private const val INSETS_SETTLE_MS = 180L
+private const val INSETS_SETTLE_MS = 60L
 
 /** Item 47: the screen over the map and how deep the stack is (deeper: opened over another; shallower: closed). */
 private data class ScreenStep(val layer: Layer, val depth: Int)

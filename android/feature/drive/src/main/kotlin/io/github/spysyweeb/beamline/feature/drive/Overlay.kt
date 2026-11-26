@@ -1,5 +1,7 @@
 package io.github.spysyweeb.beamline.feature.drive
 
+import io.github.spysyweeb.beamline.ui.theme.LocalSheetLag
+import androidx.compose.runtime.CompositionLocalProvider
 import io.github.spysyweeb.beamline.ui.theme.SHEET_CORNER
 import io.github.spysyweeb.beamline.ui.theme.SheetHeight
 import androidx.compose.animation.core.animateDpAsState
@@ -159,6 +161,9 @@ internal fun DriveOverlayContent(ui: DriveUi, onEvent: (DriveEvent) -> Unit, onI
         val density = LocalDensity.current
         var topPx by remember { mutableIntStateOf(0) }
         var bottomPx by remember { mutableIntStateOf(0) }
+        // the sheet's remaining slide (LocalSheetLag): the camera gets the height it is going to at once
+        val sheetLag = remember { mutableIntStateOf(0) }
+        if (ui.planning == null && ui.guidance == null && ui.resume == null) sheetLag.intValue = 0
         // audit F30: the stops editor covers more of the map than the trip bar; the camera keeps above it
         var editorPx by remember { mutableIntStateOf(0) }
         if (ui.stopsEditor == null) editorPx = 0
@@ -167,7 +172,8 @@ internal fun DriveOverlayContent(ui: DriveUi, onEvent: (DriveEvent) -> Unit, onI
         var chipBottomPx by remember { mutableIntStateOf(0) }
         var clusterPx by remember { mutableIntStateOf(0) }
         val insets = when {
-            !side -> EdgeInsetsDp(top = topPx / density.density, bottom = maxOf(bottomPx, editorPx) / density.density)
+            // whole dp: the height now and the remaining slide add up to the same target every frame
+            !side -> EdgeInsetsDp(top = topPx / density.density, bottom = kotlin.math.round(maxOf(bottomPx + sheetLag.intValue, editorPx) / density.density))
             topPx > 0 || bottomPx > 0 -> EdgeInsetsDp(start = panelWidth.value)
             else -> EdgeInsetsDp()
         }
@@ -295,13 +301,13 @@ internal fun DriveOverlayContent(ui: DriveUi, onEvent: (DriveEvent) -> Unit, onI
             horizontalAlignment = panelAlign,
         ) {
             val sheetInsets = safe.only(WindowInsetsSides.Bottom + horizontal)
-            when {
+            CompositionLocalProvider(LocalSheetLag provides sheetLag) { when {
                 // item 47: the routes and Start under the map, everything in the side panel
                 ui.planning != null -> BottomSheetSurface(sheetInsets) { RouteSheet(ui.planning, onEvent, opensAt = if (side) SheetHeight.FULL else SheetHeight.MIDDLE) }
                 guidance != null && status is GuidanceStatusUi.Arrived -> BottomSheetSurface(sheetInsets) { ArrivedCard(status, onEvent) }
                 guidance != null -> BottomSheetSurface(sheetInsets) { TripBar(guidance.tripBar, onEvent) }
                 ui.resume != null -> BottomSheetSurface(sheetInsets) { ResumeCard(ui.resume, onEvent) }
-            }
+            } }
         }
         if (guidance != null && !arrived) {
             MapButtons(

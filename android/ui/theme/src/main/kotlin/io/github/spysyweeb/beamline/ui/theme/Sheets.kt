@@ -1,5 +1,6 @@
 package io.github.spysyweeb.beamline.ui.theme
 
+import androidx.compose.ui.layout.onSizeChanged
 import androidx.compose.animation.animateContentSize
 import androidx.compose.animation.core.Spring
 import androidx.compose.animation.core.spring
@@ -184,11 +185,15 @@ fun SheetFrame(
     val stepPx = with(LocalDensity.current) { SHEET_STEP.toPx() }
     val connection = remember(state, stepPx) { SheetNestedScroll(state, stepPx) }
     val drag = rememberDraggableState { dy -> state.drag(dy, stepPx) }
+    val lag = LocalSheetLag.current
+    val sizes = remember { IntArray(2) } // the height now, the target height
     Column(
         modifier
+            .onSizeChanged { sizes[0] = it.height; lag?.intValue = sizes[1] - sizes[0] }
             // item 47 (the owner, 2026-11-25: "some of the windows will need some kind of transition
             // from one view to another"): a change of height slides, without a bounce, instead of jumping
             .animateContentSize(spring(dampingRatio = Spring.DampingRatioNoBouncy, stiffness = Spring.StiffnessMediumLow))
+            .onSizeChanged { sizes[1] = it.height; lag?.intValue = sizes[1] - sizes[0] }
             .nestedScroll(connection)
             .draggable(drag, Orientation.Vertical, onDragStopped = { state.endDrag() }),
     ) {
