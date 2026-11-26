@@ -1,5 +1,8 @@
 package io.github.spysyweeb.beamline.feature.drive
 
+import androidx.compose.ui.test.swipeUp
+import androidx.compose.ui.Alignment
+import androidx.compose.ui.test.onNodeWithText
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.size
 import androidx.compose.runtime.getValue
@@ -139,5 +142,58 @@ class RouteSheetHeightsTest {
         compose.waitForIdle()
         assertTrue(events.toString(), events.contains(DriveEvent.ShowStep(point)))
         assertEquals("Half open", state())
+    }
+
+    /** Item 47: the stops editor opens full; lowered it keeps its title, the count, Done and Add stop; it never closes by a drag. */
+    @Test
+    fun stopsEditorTwoHeights() {
+        val rows = (0 until 3).map { i -> StopRowUi(i, "Stop $i", "Street $i", reached = false, canMoveUp = i > 0, canMoveDown = i < 2, canRemove = true) }
+        val editor = StopsEditorUi(rows, canOptimize = true, busy = false)
+        compose.setContent {
+            BeamlineTheme(night = false) {
+                Box(Modifier.size(411.dp, 891.dp)) { StopsEditor(editor, onEvent = { e -> events.add(e) }, modifier = Modifier.align(Alignment.BottomCenter)) }
+            }
+        }
+        compose.waitForIdle()
+        assertEquals("Full height", state())
+        compose.onNodeWithTag(DriveTags.stopRow(2)).assertIsDisplayed()
+        compose.onNodeWithTag(DriveTags.STOPS_EDITOR).performTouchInput { swipeDown(startY = top + 10f, endY = top + 400f) }
+        compose.waitForIdle()
+        assertEquals("Lowered", state())
+        assertEquals(0, compose.onAllNodes(hasTestTag(DriveTags.stopRow(0))).fetchSemanticsNodes().size)
+        compose.onNodeWithText("3 stops").assertIsDisplayed()
+        compose.onNodeWithTag(DriveTags.ADD_STOP).assertIsDisplayed()
+        // another drag down: still there (the lowest height is the floor)
+        compose.onNodeWithTag(DriveTags.STOPS_EDITOR).performTouchInput { swipeDown(startY = top + 10f, endY = top + 300f) }
+        compose.waitForIdle()
+        assertEquals("Lowered", state())
+        assertTrue(events.toString(), DriveEvent.CloseStopsEditor !in events)
+        compose.onNodeWithTag(SHEET_HANDLE_TAG).performClick()
+        compose.waitForIdle()
+        assertEquals("Full height", state())
+        compose.onNodeWithTag(DriveTags.CLOSE_STOPS).performClick()
+        assertTrue(events.contains(DriveEvent.CloseStopsEditor))
+    }
+
+    /** Item 47: the arrival card: Done, Save as a link, and a drag up opens the destination's window. */
+    @Test
+    fun arrivalCardSaveAndDetails() {
+        compose.setContent {
+            BeamlineTheme(night = false) {
+                Box(Modifier.size(411.dp, 891.dp)) {
+                    ArrivedCard(GuidanceStatusUi.Arrived("Erie Zoo", "On your right"), onEvent = { e -> events.add(e) }, modifier = Modifier.align(Alignment.BottomCenter))
+                }
+            }
+        }
+        compose.waitForIdle()
+        compose.onNodeWithTag(DriveTags.DONE).assertIsDisplayed()
+        compose.onNodeWithTag(DriveTags.SAVE_DESTINATION).assertIsDisplayed().performClick()
+        assertTrue(events.contains(DriveEvent.SaveDestination))
+        compose.onNodeWithTag(DriveTags.ARRIVED_CARD).performTouchInput { swipeUp(startY = top + 10f, endY = top - 300f) }
+        compose.waitForIdle()
+        assertTrue(events.toString(), events.contains(DriveEvent.ShowDestination))
+        assertEquals("Lowered", state())
+        compose.onNodeWithTag(DriveTags.DONE).performClick()
+        assertTrue(events.contains(DriveEvent.Nav(NavIntent.Done)))
     }
 }

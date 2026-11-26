@@ -653,6 +653,12 @@ class AppFlows(private val g: AppGraph) {
             is DriveEvent.ShowStep -> g.director.onShowPlace(e.point) // item 47: the step on the map
             DriveEvent.OpenStopsEditor -> stopsEditorOpen = true
             DriveEvent.CloseStopsEditor -> stopsEditorOpen = false
+            // item 47: the arrival card raised opens the destination's window; its Save, the save dialog
+            DriveEvent.ShowDestination -> g.session.state.value.stops.lastOrNull()?.place?.let(::showSheet)
+            DriveEvent.SaveDestination -> g.session.state.value.stops.lastOrNull()?.place?.let { place ->
+                saveFrom = place
+                g.savedFeature.openSave(place)
+            }
             DriveEvent.SearchForStop -> openSearch(SearchMode.ADD_STOP)
             DriveEvent.ChooseStart -> openSearch(SearchMode.SET_START)
             DriveEvent.AskPreciseLocation -> host?.requestPreciseLocation()

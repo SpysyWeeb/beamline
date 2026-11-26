@@ -1,5 +1,9 @@
 package io.github.spysyweeb.beamline.feature.drive
 
+import io.github.spysyweeb.beamline.ui.theme.rememberSheetState
+import io.github.spysyweeb.beamline.ui.theme.SheetSteps
+import io.github.spysyweeb.beamline.ui.theme.SheetHeight
+import io.github.spysyweeb.beamline.ui.theme.SheetFrame
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -36,20 +40,37 @@ import io.github.spysyweeb.beamline.ui.theme.BeamlineIcons
  * The stops editor (rules C1, C6): each stop with up, down and remove; reached stops greyed and
  * fixed; "Add stop" opens search (ADD_STOP; while driving without the keyboard, SP4) and "Best order"
  * reorders the stops not reached. Every change goes to the session as it is.
+ *
+ * Item 47: a sheet of two heights on the sheet frame, opened full. Lowered (a drag down, or a tap on
+ * its handle at full height) it keeps its title with the number of stops, Done and its buttons, and
+ * the map shows above it; it never closes by a drag or a tap on the map, only by Done or Back.
  */
 @Composable
 internal fun StopsEditor(editor: StopsEditorUi, onEvent: (DriveEvent) -> Unit, modifier: Modifier = Modifier) {
     val nav = { i: NavIntent -> onEvent(DriveEvent.Nav(i)) }
-    Column(modifier.fillMaxWidth().testTag(DriveTags.STOPS_EDITOR)) {
-        Box(Modifier.fillMaxWidth().height(4.dp)) {
-            if (editor.busy) LinearProgressIndicator(Modifier.fillMaxWidth().testTag(DriveTags.BUSY))
-        }
-        Row(Modifier.padding(start = 20.dp, end = 8.dp, top = 6.dp), verticalAlignment = Alignment.CenterVertically) {
-            Text(DriveTexts.STOPS, style = MaterialTheme.typography.titleLarge, fontWeight = FontWeight.SemiBold, modifier = Modifier.weight(1f))
-            TextButton(onClick = { onEvent(DriveEvent.CloseStopsEditor) }, modifier = Modifier.testTag(DriveTags.CLOSE_STOPS)) { Text(DriveTexts.DONE) }
-        }
+    val height = rememberSheetState(SheetSteps.TWO, SheetHeight.FULL)
+    val full = height.height == SheetHeight.FULL
+    SheetFrame(
+        height, DriveTexts.STOPS, MaterialTheme.colorScheme.onSurfaceVariant,
+        modifier.fillMaxWidth().testTag(DriveTags.STOPS_EDITOR),
+        header = {
+            Box(Modifier.fillMaxWidth().height(4.dp)) {
+                if (editor.busy) LinearProgressIndicator(Modifier.fillMaxWidth().testTag(DriveTags.BUSY))
+            }
+            Row(Modifier.padding(start = 20.dp, end = 8.dp, top = 2.dp), verticalAlignment = Alignment.CenterVertically) {
+                Column(Modifier.weight(1f)) {
+                    Text(DriveTexts.STOPS, style = MaterialTheme.typography.titleLarge, fontWeight = FontWeight.SemiBold)
+                    if (!full) Text(
+                        DriveTexts.stopsCount(editor.rows.count { !it.reached }), style = MaterialTheme.typography.bodyMedium,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant,
+                    )
+                }
+                TextButton(onClick = { onEvent(DriveEvent.CloseStopsEditor) }, modifier = Modifier.testTag(DriveTags.CLOSE_STOPS)) { Text(DriveTexts.DONE) }
+            }
+        },
+    ) {
         // The rows scroll and give up room first, so the header and the buttons stay in view on a short screen.
-        Column(Modifier.weight(1f, fill = false).heightIn(max = 440.dp).verticalScroll(rememberScrollState()).padding(start = 12.dp, end = 4.dp)) {
+        if (full) Column(Modifier.weight(1f, fill = false).heightIn(max = 440.dp).verticalScroll(rememberScrollState()).padding(start = 12.dp, end = 4.dp)) {
             editor.rows.forEachIndexed { i, row ->
                 if (i > 0) HorizontalDivider(Modifier.padding(start = 44.dp), color = MaterialTheme.colorScheme.outlineVariant)
                 StopEditorRow(row, nav)

@@ -81,6 +81,7 @@ object DriveTags {
     const val STATUS_CHIP = "status-chip"
     const val STOP_CARD = "stop-card"
     const val ARRIVED_CARD = "arrived-card"
+    const val SAVE_DESTINATION = "save-destination"
     const val DESTINATION_AWAY = "destination-away"
     const val TRIP_BAR = "trip-bar"
     const val SIMULATED = "simulated"
@@ -313,15 +314,8 @@ internal fun DriveOverlayContent(ui: DriveUi, onEvent: (DriveEvent) -> Unit, onI
                     .padding(bottom = 16.dp, end = 12.dp),
             )
         }
-        // The stops editor over everything; a tap beside it closes it.
+        // The stops editor over everything else; item 47: a sheet, the map stays usable above it (Done or Back closes it).
         if (ui.stopsEditor != null) {
-            Box(
-                Modifier
-                    .fillMaxSize()
-                    .background(Color.Black.copy(alpha = 0.4f))
-                    .clickable(interactionSource = remember { MutableInteractionSource() }, indication = null) { onEvent(DriveEvent.CloseStopsEditor) }
-                    .semantics { contentDescription = DriveTexts.CLOSE_STOPS_EDITOR },
-            )
             Column(
                 Modifier
                     .align(if (side) Alignment.BottomStart else Alignment.BottomCenter)

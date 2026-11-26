@@ -893,8 +893,12 @@ not break across two lines in the banner; the results view shows at most the 20 
     opened ones in from the right with the one below moving a quarter left, closed ones out to the
     right on top; Search opened from the map grows down from the search bar and shrinks back; an
     outgoing screen keeps its own layer while it leaves (checked on the emulator at a tenth of the
-    speed). Left: the stops editor, arrival card and pickers on the sheet frame, the style rulebook
-    pass.
+    speed). The stops editor is a sheet of two heights on the frame (opens full; lowered: title,
+    "3 stops", Done, Add stop and Best order; no scrim, never closed by a drag or a map tap); the
+    arrival card is on the frame with Save as a link under Done (`DriveEvent.SaveDestination`), and
+    a drag up opens the destination's own window (`DriveEvent.ShowDestination`); all 20 drive
+    screen tests pass on the emulator. Left: the pickers (time, speed, place type) as small sheets,
+    the style rulebook pass.
 
 48. **Every state's packs, built on GitHub's machines only** (the owner, 2026-11-25/26: "I'm just
     trying to think of a way we can have github machines handle all the workflow"). Today

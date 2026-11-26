@@ -92,8 +92,6 @@ object DriveTexts {
     const val ADD_STOP = "Add stop"
     const val EDIT_STOPS = "Edit stops"
     const val STOPS = "Stops"
-    /** What a screen reader calls the dimmed map around the stops editor (a tap there closes it). */
-    const val CLOSE_STOPS_EDITOR = "Close stops"
     const val BEST_ORDER = "Best order"
     const val DONE = "Done"
     /** The trip bar's end button (the notification's action says "End trip" too, section 4). */
@@ -182,4 +180,8 @@ object DriveTexts {
     /** The steps preview (item 47). */
     const val STEPS = "Steps"
     fun showAllSteps(n: Int): String = "Show all $n steps"
+
+    /** Item 47: the stops editor lowered, and the arrival card's Save. */
+    fun stopsCount(n: Int): String = if (n == 1) "1 stop" else "$n stops"
+    const val SAVE_PLACE = "Save this place"
 }

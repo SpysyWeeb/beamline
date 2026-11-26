@@ -2139,6 +2139,10 @@ sealed interface DriveEvent {
     data class ShowStep(val point: io.github.spysyweeb.beamline.api.model.GeoPoint) : DriveEvent
     data object OpenStopsEditor : DriveEvent
     data object CloseStopsEditor : DriveEvent
+    /** Item 47: the arrival card raised: the destination's own window (its details). */
+    data object ShowDestination : DriveEvent
+    /** Item 47: the arrival card's Save: the save dialog for the destination. */
+    data object SaveDestination : DriveEvent
     /** Opens search in ADD_STOP mode; the place comes back as NavIntent.AddStop. */
     data object SearchForStop : DriveEvent
     /** Opens search in SET_START mode; the place comes back as NavIntent.SetOrigin. */

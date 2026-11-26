@@ -1,5 +1,11 @@
 package io.github.spysyweeb.beamline.feature.drive
 
+import androidx.compose.foundation.layout.heightIn
+import androidx.compose.runtime.LaunchedEffect
+import io.github.spysyweeb.beamline.ui.theme.rememberSheetState
+import io.github.spysyweeb.beamline.ui.theme.SheetSteps
+import io.github.spysyweeb.beamline.ui.theme.SheetHeight
+import io.github.spysyweeb.beamline.ui.theme.SheetFrame
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.layout.Arrangement
@@ -129,17 +135,32 @@ internal fun StopReachedCard(status: GuidanceStatusUi.StopReached, modifier: Mod
     }
 }
 
-/** At the destination: its name and side, and Done (rule A3). */
+/**
+ * At the destination: its name and side, and Done (rule A3). Item 47: on the sheet frame; Save is a
+ * link under Done; a drag up (or a tap on its handle) opens the place's own window, its details.
+ */
 @Composable
 internal fun ArrivedCard(status: GuidanceStatusUi.Arrived, onEvent: (DriveEvent) -> Unit, modifier: Modifier = Modifier) {
-    Column(modifier.fillMaxWidth().padding(20.dp).semantics { liveRegion = LiveRegionMode.Polite }.testTag(DriveTags.ARRIVED_CARD)) {
-        Text(DriveTexts.ARRIVED, style = MaterialTheme.typography.labelLarge, color = MaterialTheme.colorScheme.primary)
-        Text(status.name, style = MaterialTheme.typography.headlineSmall, fontWeight = FontWeight.SemiBold, maxLines = 2, overflow = TextOverflow.Ellipsis)
-        status.sideText?.let { Text(it, style = MaterialTheme.typography.bodyLarge, color = MaterialTheme.colorScheme.onSurfaceVariant) }
-        status.awayText?.let { Text(it, style = MaterialTheme.typography.bodyLarge, color = MaterialTheme.colorScheme.onSurfaceVariant, modifier = Modifier.testTag(DriveTags.DESTINATION_AWAY)) }
-        Spacer(Modifier.size(16.dp))
-        Button(onClick = { onEvent(DriveEvent.Nav(NavIntent.Done)) }, modifier = Modifier.fillMaxWidth().testTag(DriveTags.DONE)) {
-            Text(DriveTexts.DONE)
+    val height = rememberSheetState(SheetSteps.TWO, SheetHeight.LOW, status.name)
+    LaunchedEffect(height.height) {
+        if (height.height == SheetHeight.FULL) {
+            onEvent(DriveEvent.ShowDestination)
+            height.set(SheetHeight.LOW)
+        }
+    }
+    SheetFrame(height, DriveTexts.ARRIVED, MaterialTheme.colorScheme.onSurfaceVariant, modifier.fillMaxWidth().testTag(DriveTags.ARRIVED_CARD)) {
+        Column(Modifier.fillMaxWidth().padding(start = 20.dp, end = 20.dp, bottom = 12.dp).semantics { liveRegion = LiveRegionMode.Polite }) {
+            Text(DriveTexts.ARRIVED, style = MaterialTheme.typography.labelLarge, color = MaterialTheme.colorScheme.primary)
+            Text(status.name, style = MaterialTheme.typography.headlineSmall, fontWeight = FontWeight.SemiBold, maxLines = 2, overflow = TextOverflow.Ellipsis)
+            status.sideText?.let { Text(it, style = MaterialTheme.typography.bodyLarge, color = MaterialTheme.colorScheme.onSurfaceVariant) }
+            status.awayText?.let { Text(it, style = MaterialTheme.typography.bodyLarge, color = MaterialTheme.colorScheme.onSurfaceVariant, modifier = Modifier.testTag(DriveTags.DESTINATION_AWAY)) }
+            Spacer(Modifier.size(16.dp))
+            Button(onClick = { onEvent(DriveEvent.Nav(NavIntent.Done)) }, modifier = Modifier.fillMaxWidth().heightIn(min = 52.dp).testTag(DriveTags.DONE)) {
+                Text(DriveTexts.DONE)
+            }
+            TextButton(onClick = { onEvent(DriveEvent.SaveDestination) }, modifier = Modifier.align(Alignment.CenterHorizontally).heightIn(min = 48.dp).testTag(DriveTags.SAVE_DESTINATION)) {
+                Text(DriveTexts.SAVE_PLACE)
+            }
         }
     }
 }
