@@ -1121,6 +1121,22 @@ not break across two lines in the banner; the results view shows at most the 20 
     Seen in the replay, not decided: the result pins all look the same and bunch where most places are;
     numbered or labelled pins would be a new design.
 
+55. **A house number on a rural state route shows "Street only"** (the owner, 2026-11-28, on 0.1.41,
+    with a screenshot: "Why is this street only?"; the owner's address stays out of this file). Typed:
+    a house number and the road's name, no town. Found on the PC's copy of the PA pack:
+    a. With no town or ZIP typed, the street results locate a number only from exact address points
+       (`SearchService`: the address lookup with its census ranges runs only with a town or ZIP, so a
+       road of that name elsewhere in the state does not win; without a town, the lookup alone indeed
+       picks the same number near Pittsburgh). This stretch has no address point near that number.
+    b. OSM names the road "William Flinn Highway" (PA 8); the census (TIGER) ranges spell it "William
+       Flynn Hwy", so the street the search shows cannot see them by name.
+    c. The census range that covers the number is filed under a neighbouring town's ZIP, so even the
+       typed town did not match; only that ZIP gave the estimated position.
+    *Proposed fix:* when a house number is typed and a street result has no located house, look the
+    number up along that street by place, not by name: address points and census ranges whose edges lie
+    along the street shown (any spelling, any ZIP), nearest to where the search is ranked; the row then
+    says "Estimated" with the number. No town needed, and the answer stays where the user is looking.
+
 ## Later (not the next round)
 
 - **Linking Beamline to the real vehicle through the comma 3X** (owner, 2026-11-16). The driving
