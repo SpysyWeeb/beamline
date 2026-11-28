@@ -223,6 +223,29 @@ internal class SavedStore(
         }
     }
 
+    /**
+     * P58 (0.1.40): Undo of [delete]: [place] back exactly as it was (id, kind, name, copies). Refused when its
+     * id is in the list again or its HOME/WORK slot was filled (ALREADY_SAVED), or for an OTHER place whose name
+     * was taken (NAME_TAKEN) or at the limit (LIMIT), as SP55/SP56 say.
+     */
+    fun restore(place: SavedPlace): SaveResult {
+        synchronized(lock) {
+            if (readOnly) return SaveResult.Refused(SaveProblem.READ_ONLY)
+            val list = placesFlow.value
+            if (list.any { it.id == place.id }) return SaveResult.Refused(SaveProblem.ALREADY_SAVED)
+            when (place.kind) {
+                SavedKind.HOME, SavedKind.WORK -> if (list.any { it.kind == place.kind }) return SaveResult.Refused(SaveProblem.ALREADY_SAVED)
+                SavedKind.OTHER -> {
+                    val key = nameKeyOf(place.name)
+                    if (list.any { it.kind == SavedKind.OTHER && nameKeyOf(it.name) == key }) return SaveResult.Refused(SaveProblem.NAME_TAKEN)
+                    if (list.count { it.kind == SavedKind.OTHER } >= rules.maxOther) return SaveResult.Refused(SaveProblem.LIMIT)
+                }
+            }
+            commit(list + place)
+            return SaveResult.Done(place)
+        }
+    }
+
     fun setShowOnMap(show: Boolean): SaveResult {
         synchronized(lock) {
             if (readOnly) return SaveResult.Refused(SaveProblem.READ_ONLY)
@@ -253,12 +276,19 @@ internal class SavedStore(
         }
     }
 
-    /** What a saved place keeps of [place] (3.1): the point rounded to 6 decimals; a MAP_PIN place by its coordinates only. */
+    /**
+     * What a saved place keeps of [place] (3.1): the point rounded to 6 decimals; a MAP_PIN place by the line it
+     * carries (P18, 0.1.40: the street the app found, "Near East 5th Street, Erie"), else its coordinates.
+     */
     private data class Copy(val point: GeoPoint, val placeName: String, val subtitle: String?, val categoryId: String?)
 
     private fun copyOf(place: Place): Copy {
         val point = GeoPoint(SavedPlacesFile.round6(place.point.lat), SavedPlacesFile.round6(place.point.lon))
-        if (place.source == PlaceSource.MAP_PIN || place.name.isBlank()) return Copy(point, pointText(place.point), null, null)
+        // P18: a point keeps its line as its place name; no subtitle, no category (3.1)
+        if (place.source == PlaceSource.MAP_PIN) {
+            return Copy(point, place.subtitle?.trim()?.takeIf { it.isNotEmpty() } ?: pointText(place.point), null, null)
+        }
+        if (place.name.isBlank()) return Copy(point, pointText(place.point), null, null)
         return Copy(point, place.name, place.subtitle?.takeIf { it.isNotBlank() }, place.categoryId)
     }
 

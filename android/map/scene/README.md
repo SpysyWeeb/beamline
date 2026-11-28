@@ -8,7 +8,7 @@ puck and the saved places. Contract: `docs/architecture.md` 2.5, 3.6, 3.7 and
 |---|---|
 | `Scene.kt` | The contract file (stubs filled): `MapSceneMapper`, `SavedMarkerRules`, `CameraRules`, `CameraDirector`. Each class's private state is one `private val` after its last function. |
 | `SceneBuilder.kt` | The mapper: route lines, pins, puck or arrow, saved markers. |
-| `Director.kt` | The camera rules K1-K7. |
+| `Director.kt` | The camera rules K1-K8 (K1b, K2a and K8 since 0.1.40); `pinInView` (K1b). |
 | `CameraFile.kt` | Reads `camera.json` (format `beamline-camera/1`); every refusal is a fixed sentence (rule PV2). |
 | `Motion.kt` | The glide (time between the last two vehicle positions), the bearing low-pass on the circle, small geometry. |
 | `ZoomCap.kt` | `CameraTarget.withZoomCap(zoomFor)`: rule K1's z9.99 cap outside the states, applied by the app with `ComposedMap.zoomFor` (the director cannot know the installed maps). |
@@ -18,11 +18,14 @@ puck and the saved places. Contract: `docs/architecture.md` 2.5, 3.6, 3.7 and
 
 One `MapSceneMapper()` and one `CameraDirector(CameraRules.bundled(), clock)` per map surface.
 
-- `mapper.scene(trip, puck, theme, picked, saved)` on every trip, puck, theme, picked-place or saved
-  change; give the result to `MapController.show`.
+- `mapper.scene(trip, puck, theme, picked, saved, results, step)` on every trip, puck, theme,
+  picked-place, saved, results or shown-step change; give the result to `MapController.show`.
 - Feed the director: `onViewport(w, h, insets)` (insets from the drive overlay), `onTrip`, `onPuck`,
   `onGesture` (from `MapController.gestures`), `onMyLocation`, `onRecenter`, `onOverview`, and
-  `tick()` once a second. Apply every non-null `target` with `MapController.moveCamera`; `state`
+  `tick()` once a second. 0.1.40: `onPlaceTapped(point)` for a place tapped on the map whose sheet
+  opened, `onCameraAt(middle, zoom, bearing)` from the map's idle callback and at each tap or long
+  press (K1b); `onShowPlaceAfterRoute(point)` before End when Back from directions reopens a window
+  (K2a); `onStopView(points)` while a stop is being added, empty when that ends (K8). Apply every non-null `target` with `MapController.moveCamera`; `state`
   gives the mode and `showRecenter` for the drive overlay.
 - The director asks `browse.follow_zoom` (16) on my-location; the z9.99 cap outside the installed
   states (K1) is not in the director: its frozen constructor gets no installed maps. The app applies
@@ -43,6 +46,14 @@ One `MapSceneMapper()` and one `CameraDirector(CameraRules.bundled(), clock)` pe
   the PICKED pin (`"picked"`). Saved markers: kinds, `min_zoom` 10/10/12, scale 1.25 from
   `camera.json`; a saved place that is any stop of the trip (by `place.savedId`) is left out;
   `savedBelowRoute` only in GUIDING and REROUTING.
+  0.1.40: a chosen start (`Origin.FromPlace`) is the first pin, START `"start"`, in PLANNING and
+  CHOOSING only (P22; its saved marker is left out then); `step` is `MapScene.step` in PLANNING and
+  CHOOSING only (P21); the alternatives are `AlternativeLine`s with their choice ids (P23: a tap on
+  one chooses it). Item 51: with `TripState.stopPreview.route` (PLANNING to REROUTING) that route is
+  the chosen line and the trip's own route ahead (guided: from the start of the chunk of 64 points the
+  traveled cursor is in, so the line changes only when the car enters the next chunk, not on every fix;
+  before: the selected choice) its one alternative, `tripRoute = true` (grey, never tapped); not on the
+  arrival map.
 - **glideMs.** The time between the last two distinct vehicle positions; the same position seen
   again keeps its glide; the first position after the arrow appeared, and any gap over 3 s
   (`VehicleGlide.MAX_GLIDE_MS`: fixes back after a GPS loss) give 0, a jump. The cap is a code
@@ -70,6 +81,24 @@ One `MapSceneMapper()` and one `CameraDirector(CameraRules.bundled(), clock)` pe
   leaving BROWSE_FOLLOW; in PREVIEW or ARRIVED a look at it; nothing while guiding.
   `onPlaceLeft()` (part 1's review): the picked place's sheet closed or a map tap replaced it; the
   place is no longer a target, so the camera stays where it is when the insets change.
+- **0.1.40 camera.** K1b (P8): a place tapped on the map on a browsing map that is not following
+  stays put while its pin (28 x 38 dp, `PIN_W_DP`/`PIN_H_DP`, 8 dp margin) is in the free area
+  (`pinInView`, Web Mercator from the last `onCameraAt`); once it is not, it is centred there at the
+  map's zoom (top padding + the pin's height) and kept there at every inset until a gesture,
+  my-location, another place, the results or `onPlaceLeft`; no room for the pin: the camera stays.
+  Following or a trip: nothing. K2a (P50): a route closed before it started (PREVIEW to BROWSE) follows
+  the puck (BROWSE_FOLLOW, north up, `follow_zoom`) when there is one; with `onShowPlaceAfterRoute`
+  sent before (P46) it shows that place as a picked one instead, once. K6 (P4): ARRIVED frames the car
+  and the destination together (the overview's padding, room for the arrow at the frame's edge; at most
+  `arrived.zoom`); within about 50 m, no car
+  or no viewport: centred on the destination as before; framed again only when the car, not STOPPED,
+  has moved more than 20 m (`ARRIVED_REFRAME_M`), which also ends a pan. K5 (P32): the overview is
+  padded by `overview.padding_dp` (72, optional in the file; absent = `preview.padding_dp`). K8 (item
+  51): `onStopView(points)` in PREVIEW or a guide mode fits the points top-down, north up (guided:
+  GUIDE_OVERVIEW with the vehicle in the box, re-fitted when the vehicle leaves the middle 80 %, at most
+  every 5 s, `STOP_REFIT_MS`); a gesture leaves the camera until new points, Recenter or
+  `recenter_after_s`; no K4/K5 return meanwhile; empty points: back to K2 or GUIDE_FOLLOW; a change of
+  phase group ends it.
 - **Guide pitch and heading (next run part 1).** `pitch_deg` 60 (was 50: MapLibre applied 50, but
   with its narrow field of view and the banner over the top quarter the view read as nearly
   top-down; docs/architecture.md 3.7 K3). The bearing filter's weight grows with the change, from
@@ -81,8 +110,12 @@ One `MapSceneMapper()` and one `CameraDirector(CameraRules.bundled(), clock)` pe
 
 `sh tools/round/gradle.sh m :map:scene:test` (JUnit 5, virtual clock): `MapSceneMapperTest`
 (choosing, guiding, traveled cursor, lenses, stale, pins, glideMs, saved markers of
-`docs/architecture-saved-places.md` 10.1; 23 tests), `CameraDirectorTest` (K1-K6, and K1's cap with
-`withZoomCap`, the picked place and its sheet closing, the turn and a sharp corner; K7 is the mapper's), `CameraRulesTest` (parse, refusals, bundled values, the
-copy equal to its source; 6 tests).
+`docs/architecture-saved-places.md` 10.1; 0.1.40: the step, the START pin, a stop's preview; 28 tests),
+`CameraDirectorTest` (K1-K6, and K1's cap with
+`withZoomCap`, the picked place and its sheet closing, the turn and a sharp corner; K7 is the mapper's;
+K5's overview padding), `CameraRulesTest` (parse, refusals, bundled values, the
+copy equal to its source; 6 tests), `CameraViewsTest` (0.1.40: K6 arrival frame, K2a after a closed
+route, K1b tapped place, `pinInView`; 9 tests), `StopViewCameraTest` (0.1.40: K8; 4 tests),
+`ResultsCameraTest`, `SheetHeightsCameraTest`, `CompassTest`, `LeanTest`.
 
 No log call and no `$` in a message anywhere in `src/main` (rule PV2 item 2).

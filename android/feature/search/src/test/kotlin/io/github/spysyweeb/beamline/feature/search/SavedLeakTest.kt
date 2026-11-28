@@ -171,6 +171,16 @@ class SavedLeakTest {
             run { sf.open(SearchMode.ADD_STOP, gps); sf.onEvent(SearchEvent.QueryChanged("millcreek")) }
             scope.advanceTimeBy(1_000); scope.runCurrent()
             run { sf.onEvent(SearchEvent.RowTapped(sf.ui.value.results.firstOrNull()?.key ?: "r:x")) }
+            // P58: Remove (its output) and Undo, twice (the second does nothing)
+            run { lf.openEdit(q); lf.onEvent(SavedEvent.MenuChosen(EditAction.DELETE)) }
+            run { lf.onEvent(SavedEvent.DialogConfirm) }
+            run { lf.onEvent(SavedEvent.UndoRemove(q)) }
+            run { lf.onEvent(SavedEvent.UndoRemove(q)) }
+            // P18: a street found for a pick and a save dialog over the canary's point
+            run { lf.startMapPick(SaveTarget.NewPlace); lf.onMapTap(mallPoint, null, 17.0); lf.streetFound(mallPoint, "Near Quokka Street, Millcreek") }
+            run { lf.onEvent(SavedEvent.PickConfirm) }
+            run { lf.onEvent(SavedEvent.NameChanged("")); lf.onEvent(SavedEvent.DialogConfirm) }
+            run { lf.onEvent(SavedEvent.PickCancel) }
             // a failed write
             File(dir, "ok/saved-places.json.tmp").mkdirs()
             File(dir, "ok/saved-places.json.tmp/x").writeText("x")

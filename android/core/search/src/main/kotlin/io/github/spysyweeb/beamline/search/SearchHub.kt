@@ -86,6 +86,7 @@ class SearchHub(
                 else -> cover.all { it == true }
             },
             ms = Py.round((System.nanoTime() - t0) / 1e6, 2),
+            namedPlace = answers.firstNotNullOfOrNull { it.second.namedPlace },
         )
     }
 
@@ -151,6 +152,21 @@ class SearchHub(
         for (p in MultiPackSearch.packsToAsk(usable, point, 0.0).filter { it.bounds.contains(point) }) {
             val s = service(p) ?: continue
             return s.nearStreet(point.lat, point.lon) ?: continue
+        }
+        return null
+    }
+
+    /**
+     * 0.1.40 (play test P6): the town nearest [point] within [withinKm] ([SearchEngine.placeNear]) in an
+     * installed pack that covers the point; null when none is that near or no pack there can be searched.
+     */
+    @Synchronized
+    fun placeNear(set: InstalledSet, point: GeoPoint, withinKm: Double): String? {
+        switchTo(set)
+        val usable = candidates(set).filter { service(it) != null }
+        for (p in MultiPackSearch.packsToAsk(usable, point, 0.0).filter { it.bounds.contains(point) }) {
+            val s = service(p) ?: continue
+            s.placeNear(point.lat, point.lon, withinKm)?.let { return it }
         }
         return null
     }

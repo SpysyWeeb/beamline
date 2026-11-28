@@ -83,6 +83,14 @@ sh tools/round/gradle.sh i test --continue -Pbeamline.routingPacksWork="$(pwd -W
                                                                # search databases the search tests read)
 ```
 
+The app's own screen tests (`app/src/androidTest`: the map chrome on its side, the bars after a
+rotation, the map style sheet's bars, Settings, the hours paste field; 0.1.40) run on the emulator
+with `am instrument`, never `:app:connectedDebugAndroidTest` (it uninstalls the app, its states and
+saved places). Build `:app:assembleDebug :app:assembleDebugAndroidTest`, `adb install -r` both APKs
+(`data/gradle/<key>/build/app/outputs/apk/`), then
+`adb shell "am instrument -w io.github.spysyweeb.beamline.test/androidx.test.runner.AndroidJUnitRunner"`
+(add `-e class <fqcn>` for one class; with `tools/round/adb.sh` pass the shell command as one string).
+
 Build properties (`gradle.properties`, `-P`): `beamline.mapRenderer=opengl` (MapLibre's OpenGL ES
 build, the owner's choice of 2026-11-16; the Vulkan build links glslang, which the licence gate
 refuses, so it is never shipped), `beamline.testExtras`, `beamline.applicationId` (a second install

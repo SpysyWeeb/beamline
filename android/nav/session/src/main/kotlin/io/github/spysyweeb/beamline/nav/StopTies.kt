@@ -5,8 +5,8 @@ import io.github.spysyweeb.beamline.api.model.PlaceSource
 
 /**
  * How a trip's place is tied to the road (docs/architecture.md 2.11 "Every request" 2; the owner's
- * answers after batch C1): a map point (a dropped pin, also once saved or in the recents: its
- * second line is its coordinates) is not tied; a place whose address is known is tied to the street
+ * answers after batch C1): a map point (a dropped pin, also once saved, in the recents or resumed:
+ * its second line is its coordinates, or its street line "Near ...", play test P18) is not tied; a place whose address is known is tied to the street
  * the address names when the planner finds it within reach ([street]); every other place to the
  * nearest street of residential class or above. A point of interest ([isPointOfInterest]; batch E,
  * docs/next-round.md item 18) ends in its own lot when the planner finds one near it. Only the place's
@@ -19,7 +19,25 @@ internal object StopTies {
     /** "155 East 12th Street", "1200-1210 State Street", "12A Main Street": a house number, then a street with a letter in it. */
     private val ADDRESS = Regex("""^\d+[A-Za-z]?(?:-\d+[A-Za-z]?)?\s+(\S.*\p{L}.*)$""")
 
-    fun isMapPoint(p: Place): Boolean = p.source == PlaceSource.MAP_PIN || (p.subtitle?.trim()?.let(COORDINATES::matches) ?: false)
+    /** "Near East 5th Street, Erie": a dropped pin's line once its street is known (AppFlows.nearStreetText), and so a saved pin's (0.1.40, P18). */
+    private val NEAR_LINE = Regex("""^Near \S.*$""")
+
+    /**
+     * A point's own line, never a place's name (play test P34): its coordinates ("42.08418, -80.17321") or its
+     * street line ("Near East 5th Street, Erie"), as a handed-over point without a label (item 52) or a saved point
+     * the driver did not name carries it as its name, also once a recent or resumed.
+     */
+    fun isPointLine(text: String): Boolean {
+        val t = text.trim()
+        return COORDINATES.matches(t) || NEAR_LINE.matches(t)
+    }
+
+    fun isMapPoint(p: Place): Boolean {
+        if (p.source == PlaceSource.MAP_PIN) return true
+        val sub = p.subtitle?.trim() ?: return false
+        // a map point keeps its coordinates, or its street line, as its second line: saved, recent or resumed; never a map label
+        return COORDINATES.matches(sub) || (p.source != PlaceSource.MAP_POI && p.categoryId == null && NEAR_LINE.matches(sub))
+    }
 
     /**
      * The types a search pack gives its streets (road classes) and its places (city, town, ZIP, ...):

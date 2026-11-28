@@ -7,6 +7,33 @@ import io.github.spysyweeb.beamline.api.model.PlaceSource
 import io.github.spysyweeb.beamline.api.model.SavedKind
 import io.github.spysyweeb.beamline.api.model.SavedPlace
 import io.github.spysyweeb.beamline.app.ui.AppRules
+import io.github.spysyweeb.beamline.app.ui.BottomChrome
+import io.github.spysyweeb.beamline.ui.theme.isSideLayout
+import io.github.spysyweeb.beamline.ui.theme.sidePanelWidth
+import androidx.compose.ui.unit.dp
+import io.github.spysyweeb.beamline.feature.drive.BannerUi
+import io.github.spysyweeb.beamline.feature.search.NearSource
+import io.github.spysyweeb.beamline.feature.search.SearchContext
+import io.github.spysyweeb.beamline.feature.search.SearchMode
+import io.github.spysyweeb.beamline.app.ui.ShownStep
+import io.github.spysyweeb.beamline.app.ui.StopEnd
+import io.github.spysyweeb.beamline.api.model.Bounds
+import io.github.spysyweeb.beamline.api.nav.END_UNDO_MS
+import io.github.spysyweeb.beamline.api.nav.ManeuverKind
+import io.github.spysyweeb.beamline.api.nav.NavIntent
+import io.github.spysyweeb.beamline.api.nav.RouteChoice
+import io.github.spysyweeb.beamline.api.nav.RouteStep
+import io.github.spysyweeb.beamline.api.nav.StopPreview
+import io.github.spysyweeb.beamline.api.nav.TripState
+import io.github.spysyweeb.beamline.api.nav.TripStop
+import io.github.spysyweeb.beamline.feature.drive.DriveUi
+import io.github.spysyweeb.beamline.feature.drive.GuidanceStatusUi
+import io.github.spysyweeb.beamline.feature.drive.GuidanceUi
+import io.github.spysyweeb.beamline.feature.drive.StopsEditorUi
+import io.github.spysyweeb.beamline.feature.drive.TripBarUi
+import io.github.spysyweeb.beamline.feature.search.ResultRowUi
+import io.github.spysyweeb.beamline.feature.search.ResultsUi
+import io.github.spysyweeb.beamline.feature.search.StopResultsUi
 import io.github.spysyweeb.beamline.feature.about.FIRST_RUN_NOTICE_VERSION
 import io.github.spysyweeb.beamline.settings.AppState
 import io.github.spysyweeb.beamline.api.nav.Phase
@@ -101,5 +128,314 @@ class AppRulesTest {
         assertNull(AppRules.endBar(tripEnded = null, continuing = true, phase = Phase.RESUME_OFFERED))
         assertNull(AppRules.endBar(tripEnded = 1L, continuing = false, phase = Phase.CHOOSING))
         assertNull(AppRules.endBar(tripEnded = null, continuing = false, phase = Phase.IDLE))
+    }
+
+    // ------------------------------------------------------------------ 0.1.40 (track I part 1)
+
+    /** Made-up places on a line north of Erie (no real addresses). */
+    private val start = GeoPoint(42.10, -80.10)
+    private val mid = GeoPoint(42.15, -80.10)
+    private val end = GeoPoint(42.20, -80.10)
+    private val stopA = Place("Stop A", GeoPoint(42.12, -80.09), PlaceSource.SEARCH)
+    private val stopB = Place("Stop B", GeoPoint(42.16, -80.11), PlaceSource.SEARCH)
+    private val dest = Place("Made-up Park", end, PlaceSource.SEARCH)
+
+    private fun choice(id: Long, geometry: List<GeoPoint>, legEnds: List<Int>, steps: Int = 0) = RouteChoice(
+        id, listOf("fastest"), 10_000.0, 900.0, 3, false, false, emptyList(), geometry, legEnds,
+        Bounds(-80.12, 42.09, -80.08, 42.21), emptyList(),
+        steps = (0 until steps).map { RouteStep(ManeuverKind.LEFT, "Turn left", emptyList(), 100.0, geometry[it % geometry.size]) },
+    )
+
+    @Test
+    fun `item 51 the stop results count in the camera insets while driving`() {
+        // AS test 8: guiding, the window 300 dp high over the map; the banner's 120 stays on top
+        assertEquals(EdgeInsetsDp(top = 120f, bottom = 340f),
+            AppRules.cameraInsets(EdgeInsetsDp(top = 120f, bottom = 80f), 24f, 40f, driving = true, stopSheet = 300f))
+    }
+
+    @Test
+    fun `item 51 the stop results in the side panel keep the start inset, and planning has no stale route sheet height`() {
+        // AS test 9b: on its side the window is in the panel (stopSheet 0): the start inset holds it
+        val side = AppRules.cameraInsets(EdgeInsetsDp(start = 400f), 24f, 40f, driving = true, stopSheet = 0f)
+        assertEquals(400f, side.start)
+        assertEquals(0f, side.bottom)
+        // planning: the stop overlay reports top-only insets (no route sheet), the window counts
+        val planning = AppRules.cameraInsets(EdgeInsetsDp(top = 0f), 24f, 40f, driving = false, stopSheet = 300f)
+        assertEquals(24f, planning.top)
+        assertEquals(340f, planning.bottom)
+    }
+
+    @Test
+    fun `item 51 the stop view - the list with where it joins, the card's way to the stop`() {
+        // AS test 9: CHOOSING one leg start -> end; J is the route's first point (StopLeg.lineAhead)
+        val route = choice(1, listOf(start, mid, end), legEnds = listOf(2))
+        val trip = TripState(phase = Phase.CHOOSING, stops = listOf(TripStop(dest)), choices = listOf(route), selectedChoiceId = 1)
+        val rows = listOf(ResultRowUi("r0", "fuel", "Stop A", null, null, null), ResultRowUi("r1", "fuel", "Stop B", null, null, null))
+        val list = ResultsUi("gas", rows, listOf(stopA, stopB), stop = StopResultsUi(7, working = false))
+        assertEquals(listOf(stopA.point, stopB.point, start), AppRules.stopViewPoints(list, null, trip))
+        // a row selected, its route not there yet: J and the place
+        val card = list.copy(selected = 1)
+        assertEquals(listOf(start, stopB.point), AppRules.stopViewPoints(card, null, trip))
+        assertEquals(listOf(start, stopB.point), AppRules.stopViewPoints(card, StopPreview(stopB, null, null, busy = true), trip))
+        // its route there: the leg into the stop (StopLeg.lineToStop) and the place
+        val withStop = choice(9, listOf(start, GeoPoint(42.13, -80.11), stopB.point, end), legEnds = listOf(2, 3))
+        assertEquals(listOf(start, GeoPoint(42.13, -80.11), stopB.point, stopB.point),
+            AppRules.stopViewPoints(card, StopPreview(stopB, withStop, 120.0, busy = false), trip))
+        // a preview of another place (an older one) is not this card's
+        assertEquals(listOf(start, stopB.point), AppRules.stopViewPoints(card, StopPreview(stopA, withStop, 120.0, busy = false), trip))
+        // no stop results: none (the teardown ends the view), plain results neither
+        assertNull(AppRules.stopViewPoints(null, null, trip))
+        assertNull(AppRules.stopViewPoints(list.copy(stop = null), null, trip))
+    }
+
+    @Test
+    fun `item 51 the stop results end - the old request is dropped, the view and preview only when none took over`() {
+        // AS test 9c
+        assertEquals(StopEnd(1, all = true), AppRules.stopResultsEnded(1, null))
+        assertEquals(StopEnd(1, all = false), AppRules.stopResultsEnded(1, 2))
+        assertNull(AppRules.stopResultsEnded(null, 1))
+        assertNull(AppRules.stopResultsEnded(1, 1))
+        assertNull(AppRules.stopResultsEnded(null, null))
+    }
+
+    @Test
+    fun `the search bar is in the camera's top insets while a place sheet is open (P8)`() {
+        // a place sheet over the map: the bar's bottom (status bar 24 + 8 + bar 48), not the buttons beside it
+        assertEquals(80f, AppRules.cameraTopChrome(pillShown = true, resultsShown = false, sheetShown = true, pillBlock = 146f, barBottom = 80f))
+        // the results on the map: the pill's whole block, as before (S11)
+        assertEquals(146f, AppRules.cameraTopChrome(pillShown = true, resultsShown = true, sheetShown = false, pillBlock = 146f, barBottom = 80f))
+        // the plain map, or a trip (no pill): nothing
+        assertEquals(0f, AppRules.cameraTopChrome(pillShown = true, resultsShown = false, sheetShown = false, pillBlock = 146f, barBottom = 80f))
+        assertEquals(0f, AppRules.cameraTopChrome(pillShown = false, resultsShown = false, sheetShown = true, pillBlock = 146f, barBottom = 80f))
+    }
+
+    @Test
+    fun `the arrival view counts the destination's window in the camera's insets, the guide camera does not (P4)`() {
+        assertTrue(AppRules.guideCamera(Phase.GUIDING))
+        assertTrue(AppRules.guideCamera(Phase.REROUTING))
+        assertFalse(AppRules.guideCamera(Phase.ARRIVED))
+        assertFalse(AppRules.guideCamera(Phase.IDLE))
+        // ARRIVED: the arrival card's block (200) under the destination's window raised to 500, the credit row 40 + 8
+        assertEquals(EdgeInsetsDp(top = 24f, bottom = 548f),
+            AppRules.cameraInsets(EdgeInsetsDp(bottom = 200f), 24f, 48f, AppRules.guideCamera(Phase.ARRIVED), placeSheet = 500f))
+    }
+
+    @Test
+    fun stepShownStaysWithItsRoute() {
+        // RS T21d
+        val p = GeoPoint(42.15, -80.10)
+        val t = TripState(phase = Phase.CHOOSING, stops = listOf(TripStop(dest)),
+            choices = listOf(choice(1, listOf(start, mid, end), listOf(2), steps = 3), choice(2, listOf(start, end), listOf(1), steps = 1)), selectedChoiceId = 1)
+        assertEquals(2, AppRules.shownStep(ShownStep(1, 2, p), t))
+        assertNull(AppRules.shownStep(ShownStep(1, 3, p), t))
+        assertNull(AppRules.shownStep(ShownStep(1, 2, p), t.copy(selectedChoiceId = 2)))
+        assertNull(AppRules.shownStep(ShownStep(1, 2, p), t.copy(phase = Phase.GUIDING)))
+        assertNull(AppRules.shownStep(null, t))
+    }
+
+    @Test
+    fun `P10 Undo of a removed stop puts it back where it was, only while the trip can change`() {
+        // stops [A, C] after B (index 1) was removed
+        val c = Place("Stop C", GeoPoint(42.18, -80.10), PlaceSource.SEARCH)
+        val trip = TripState(phase = Phase.CHOOSING, stops = listOf(TripStop(stopA), TripStop(c)))
+        assertEquals(NavIntent.AddStop(stopB, 1), AppRules.undoRemovedStop(stopB, 1, trip))
+        for (ph in listOf(Phase.IDLE, Phase.ARRIVED, Phase.RESUME_OFFERED)) assertNull(AppRules.undoRemovedStop(stopB, 1, trip.copy(phase = ph)), "$ph")
+        assertEquals(NavIntent.AddStop(stopB, 1), AppRules.undoRemovedStop(stopB, 1, trip.copy(phase = Phase.GUIDING)))
+        // B is back already (a failed change during guidance was put back by the session)
+        assertNull(AppRules.undoRemovedStop(stopB, 1, trip.copy(stops = listOf(TripStop(stopA), TripStop(stopB), TripStop(c)))))
+        // an index past the end is clamped; one inside the reached stops goes to the first unreached place
+        assertEquals(NavIntent.AddStop(stopB, 2), AppRules.undoRemovedStop(stopB, 5, trip))
+        val reached = trip.copy(phase = Phase.GUIDING, stops = listOf(TripStop(stopA, reached = true), TripStop(c)))
+        assertEquals(NavIntent.AddStop(stopB, 1), AppRules.undoRemovedStop(stopB, 0, reached))
+        // the stops editor's note line carries the offer with its Undo
+        val editor = StopsEditorUi(emptyList(), canOptimize = false, busy = false, note = "Stops reordered.")
+        val drive = DriveUi(stopsEditor = editor)
+        assertEquals(editor.copy(note = "Stop removed", canUndo = true), AppRules.withStopUndo(drive, AppRules.STOP_REMOVED).stopsEditor)
+        assertEquals(drive, AppRules.withStopUndo(drive, null))
+        assertEquals(DriveUi(), AppRules.withStopUndo(DriveUi(), AppRules.STOP_REMOVED))
+        assertEquals(END_UNDO_MS, AppRules.UNDO_BAR_MS)
+    }
+
+    @Test
+    fun `P31 the arrival card says Saved once the destination is saved, and only then`() {
+        val zoo = Place("Made-up Zoo", GeoPoint(42.15, -80.08), PlaceSource.SEARCH)
+        val sp = SavedPlace("s00000000000000aa", SavedKind.OTHER, "Zoo", zoo.point, "Made-up Zoo")
+        assertFalse(AppRules.destinationSaved(zoo, emptyList(), null, null))
+        assertTrue(AppRules.destinationSaved(zoo, listOf(sp), null, sp))
+        // a dropped pin is never found by name: saved at arrival, while that saved place is still there
+        val pin = Place("Dropped pin", GeoPoint(42.16, -80.07), PlaceSource.MAP_PIN)
+        val pinSaved = sp.copy(id = "s00000000000000bb", point = pin.point)
+        assertTrue(AppRules.destinationSaved(pin, listOf(pinSaved), pinSaved.id, null))
+        assertFalse(AppRules.destinationSaved(pin, emptyList(), pinSaved.id, null))
+        assertFalse(AppRules.destinationSaved(null, listOf(sp), sp.id, sp))
+        // the card's link or the place's own window: a save at the destination's point while ARRIVED
+        assertTrue(AppRules.savedAtArrival(Phase.ARRIVED, pin, pinSaved))
+        assertFalse(AppRules.savedAtArrival(Phase.ARRIVED, pin, pinSaved.copy(point = GeoPoint(42.169, -80.07))))   // 1 km away
+        assertFalse(AppRules.savedAtArrival(Phase.GUIDING, pin, pinSaved))
+        assertFalse(AppRules.savedAtArrival(Phase.ARRIVED, null, pinSaved))
+        // the card gets the flag; a guiding DriveUi is left as it is
+        val bar = TripBarUi("Arrived", "", "", null, simulated = false)
+        val arrived = DriveUi(guidance = GuidanceUi(null, GuidanceStatusUi.Arrived("Made-up Zoo", "On the right"), bar, showRecenter = false))
+        assertEquals(GuidanceStatusUi.Arrived("Made-up Zoo", "On the right", saved = true), AppRules.withDestinationSaved(arrived, true).guidance!!.status)
+        assertEquals(arrived, AppRules.withDestinationSaved(arrived, false))
+        val guiding = DriveUi(guidance = GuidanceUi(null, GuidanceStatusUi.OnRoute, bar, showRecenter = false))
+        assertEquals(guiding, AppRules.withDestinationSaved(guiding, true))
+        assertEquals(DriveUi(), AppRules.withDestinationSaved(DriveUi(), true))
+    }
+
+    @Test
+    fun `P28 Back while a trip is driven or offered asks for a second press within 2 s`() {
+        assertEquals("Press Back again to leave Beamline. Guidance keeps running.", AppRules.backHint(Phase.GUIDING))
+        assertEquals(AppRules.backHint(Phase.GUIDING), AppRules.backHint(Phase.REROUTING))
+        assertEquals("Press Back again to leave Beamline.", AppRules.backHint(Phase.ARRIVED))
+        assertEquals(AppRules.backHint(Phase.ARRIVED), AppRules.backHint(Phase.RESUME_OFFERED))
+        for (ph in listOf(Phase.IDLE, Phase.PLANNING, Phase.CHOOSING)) assertNull(AppRules.backHint(ph), "$ph")
+        assertFalse(AppRules.secondBack(null, 5_000))
+        assertTrue(AppRules.secondBack(5_000, 6_900))
+        assertFalse(AppRules.secondBack(5_000, 7_100))
+        assertFalse(AppRules.secondBack(5_000, 4_000))   // a clock that went back does not count
+    }
+
+    @Test
+    fun `P28 a reroute between the two presses keeps the first Back armed`() {
+        // both phases say the same hint: the second press within 2 s still leaves
+        assertTrue(AppRules.backArmKept(Phase.GUIDING, Phase.REROUTING))
+        assertTrue(AppRules.backArmKept(Phase.REROUTING, Phase.GUIDING))
+        assertTrue(AppRules.backArmKept(Phase.GUIDING, Phase.GUIDING))   // the screen built again (a rotation)
+        assertTrue(AppRules.backArmKept(Phase.ARRIVED, Phase.RESUME_OFFERED))
+        // a change of hint, or a phase that does not hold Back, disarms it
+        assertFalse(AppRules.backArmKept(Phase.GUIDING, Phase.ARRIVED))
+        assertFalse(AppRules.backArmKept(Phase.RESUME_OFFERED, Phase.GUIDING))
+        for (ph in listOf(Phase.IDLE, Phase.PLANNING, Phase.CHOOSING)) assertFalse(AppRules.backArmKept(Phase.GUIDING, ph), "$ph")
+        assertFalse(AppRules.backArmKept(null, Phase.GUIDING))
+    }
+
+    // ------------------------------------------------------------------ 0.1.40 (track I part 2)
+
+    @Test
+    fun `P7 on its side the place window goes into the start panel and my-location stays at the bottom`() {
+        // LS T1
+        assertTrue(isSideLayout(891.dp, 411.dp)); assertFalse(isSideLayout(500.dp, 360.dp)); assertFalse(isSideLayout(411.dp, 891.dp))
+        assertEquals(400.dp, sidePanelWidth(891.dp)); assertEquals(320.dp, sidePanelWidth(600.dp))
+        assertEquals(BottomChrome(startDp = 400f, bottomDp = 0f), AppRules.bottomChrome(sheetDp = 286f, panelDp = 400f, overlay = EdgeInsetsDp(), pickDp = null))
+        // upright: K1 as today
+        assertEquals(BottomChrome(0f, 286f, onSheet = true), AppRules.bottomChrome(286f, null, EdgeInsetsDp(), null))
+        // a route preview on its side with a place window over it
+        assertEquals(BottomChrome(400f, 0f), AppRules.bottomChrome(286f, 400f, EdgeInsetsDp(start = 400f), null))
+        // a pick
+        assertEquals(BottomChrome(0f, 180f), AppRules.bottomChrome(null, 400f, EdgeInsetsDp(), 180f))
+        // camera: the window in the panel keeps the credit row's room at the bottom
+        assertEquals(EdgeInsetsDp(top = 24f, bottom = 72f, start = 400f, end = 48f),
+            AppRules.cameraInsets(EdgeInsetsDp(), statusBarTop = 24f, chromeBottom = 72f, driving = false, placeSheet = 286f, sheetPanel = 400f, safeRight = 48f))
+    }
+
+    @Test
+    fun `P1 fitted things keep clear of a navigation bar or a cutout at the sides`() {
+        // LS T2
+        assertEquals(EdgeInsetsDp(top = 24f, bottom = 72f, start = 32f, end = 48f), AppRules.cameraInsets(EdgeInsetsDp(), 24f, 72f, false, safeLeft = 32f, safeRight = 48f))
+        // the overlay's panel already holds the start
+        assertEquals(EdgeInsetsDp(top = 24f, start = 400f, end = 48f), AppRules.cameraInsets(EdgeInsetsDp(start = 400f), 24f, 72f, false, safeLeft = 32f, safeRight = 48f))
+        // upright guiding unchanged
+        assertEquals(EdgeInsetsDp(top = 160f, bottom = 96f), AppRules.cameraInsets(EdgeInsetsDp(top = 160f, bottom = 96f), 24f, 72f, true))
+        // item 51 on its side: the stop window is in the panel (stopSheet 0), the side's inset still counts
+        assertEquals(EdgeInsetsDp(top = 120f, start = 400f, end = 48f), AppRules.cameraInsets(EdgeInsetsDp(top = 120f, start = 400f), 24f, 40f, true, safeRight = 48f))
+    }
+
+    @Test
+    fun `P7 my-location is left out while a raised window would bring it to Map style`() {
+        // LS T3 (the end column ends at 134 dp: 24 + 8 + 46 + 10 + 46)
+        assertTrue(AppRules.locationFits(BottomChrome(0f, 286f, onSheet = true), windowDp = 891f, topChromeDp = 134f))
+        assertFalse(AppRules.locationFits(BottomChrome(0f, 280f, onSheet = true), 400f, 134f))     // split screen
+        assertFalse(AppRules.locationFits(BottomChrome(0f, 448f, onSheet = true), 640f, 134f))     // a 360 x 640 dp phone, the window at its cap
+        assertTrue(AppRules.locationFits(BottomChrome(0f, 560f), 640f, 24f))                       // the route preview at full height: as today
+        assertTrue(AppRules.locationFits(BottomChrome(400f, 0f), 411f, 134f))                      // on its side, beside the panel
+        assertTrue(AppRules.locationFits(BottomChrome(0f, 286f, onSheet = true), 0f, 0f))          // not measured yet
+    }
+
+    @Test
+    fun `P7 a window keeps under the pill's column and the banner`() {
+        assertNull(AppRules.sheetRoomDp(0f, 96f, 0f, 184f))                                       // not measured
+        assertEquals(307f, AppRules.sheetRoomDp(411f, 96f, 0f, 184f)!!)                           // on its side, the pill without chips
+        assertEquals(184f, AppRules.sheetRoomDp(360f, 188f, 0f, 184f)!!)                          // two chips in a 360 dp tall window: the lowest height wins
+        assertEquals(239.2f, AppRules.sheetRoomDp(360f, 188f, 0f, 184f * 1.3f)!!, 0.01f)          // font 1.3
+        assertEquals(173f, AppRules.sheetRoomDp(411f, 24f, 230f, 184f)!!)                         // guiding on its side: the banner wins
+        assertEquals(709f, AppRules.sheetRoomDp(891f, 24f, 174f, 184f)!!)                         // upright guiding: far above every cap
+    }
+
+    @Test
+    fun `P17 a point's window keeps its save across its street line (F42)`() {
+        val pt = GeoPoint(42.12919, -80.08506)   // downtown Erie, a made-up saved spot
+        val pin = Place("Dropped pin", pt, PlaceSource.MAP_PIN, subtitle = "42.12919, -80.08506")
+        val sp = SavedPlace("s0123456789abcdef", SavedKind.OTHER, "Lunch spot", pt, "42.12919, -80.08506")
+        val withStreet = pin.copy(subtitle = "Near East 5th Street, Erie")
+        assertEquals(withStreet.copy(savedId = sp.id), AppRules.sheetAfterSave(withStreet, pin, sp))
+        assertTrue(AppRules.sameSheetPlace(pin, withStreet.copy(savedId = sp.id)))
+        assertFalse(AppRules.sameSheetPlace(pin, pin.copy(name = "Point on the map")))
+        assertFalse(AppRules.sameSheetPlace(pin, pin.copy(point = GeoPoint(42.13, -80.085))))
+    }
+
+    @Test
+    fun `a point without its street is looked up`() {
+        val p = GeoPoint(42.13646, -80.08718)
+        assertTrue(AppRules.lacksStreet(Place("Dropped pin", p, PlaceSource.MAP_PIN, subtitle = "42.13646, -80.08718")))
+        assertTrue(AppRules.lacksStreet(Place("Dropped pin", p, PlaceSource.MAP_PIN)))
+        assertFalse(AppRules.lacksStreet(Place("Dropped pin", p, PlaceSource.MAP_PIN, subtitle = "Near East 5th Street, Erie")))
+        assertFalse(AppRules.lacksStreet(Place("Made-up Cafe", p, PlaceSource.MAP_POI)))
+        assertFalse(AppRules.lacksStreet(Place("Dropped pin", p, PlaceSource.RESUMED, subtitle = "42.13646, -80.08718")))
+    }
+
+    @Test
+    fun `P58 the window after Undo of a removal`() {
+        val home = SavedPlace("s00000000000000h1", SavedKind.HOME, "Home", GeoPoint(42.11, -80.09), "Made-up Street, Erie")
+        val pt = GeoPoint(42.14, -80.07)
+        val pinSaved = SavedPlace("s00000000000000p1", SavedKind.OTHER, "Gate", pt, "Near East 5th Street, Erie")
+        assertEquals(home.toPlace(), AppRules.windowAfterUndo(home.toPlace(), null, true, home))
+        assertNull(AppRules.windowAfterUndo(home.toPlace(), Place("Other", pt, PlaceSource.SEARCH), true, home))   // another window opened
+        assertNull(AppRules.windowAfterUndo(home.toPlace(), null, false, home))                                    // another screen opened
+        val w = Place("Dropped pin", pt, PlaceSource.MAP_PIN, "Near East 5th Street, Erie", savedId = pinSaved.id)
+        assertEquals(w.copy(savedId = pinSaved.id), AppRules.windowAfterUndo(w, w.copy(savedId = null), true, pinSaved))
+        assertNull(AppRules.windowAfterUndo(w, Place("Other", GeoPoint(42.2, -80.2), PlaceSource.MAP_PIN), true, pinSaved))
+        assertNull(AppRules.windowAfterUndo(null, null, true, pinSaved))
+        assertEquals("Home could not be put back.", AppRules.notRestoredText("Home"))
+        assertEquals("Home removed", AppRules.removedText("Home"))
+    }
+
+    @Test
+    fun s1bOnlyAfterTheUsersOwnMove() {
+        // SE T17 (P6 d)
+        val me = GeoPoint(42.0971, -80.07578)
+        val gpsCtx = SearchContext(me, NearSource.GPS, 10.0)
+        val corryBox = Bounds(-79.70, 41.88, -79.58, 41.96)
+        val corry = GeoPoint(41.92, -79.64)
+        assertEquals(gpsCtx, AppRules.searchContextFor(SearchMode.GO_TO, gpsCtx, corryBox, corry, movedByUser = false))   // the app moved the camera
+        assertEquals(SearchContext(corry, NearSource.MAP_CENTER, distanceFrom = me), AppRules.searchContextFor(SearchMode.GO_TO, gpsCtx, corryBox, corry, movedByUser = true))
+        assertEquals(gpsCtx, AppRules.searchContextFor(SearchMode.GO_TO, gpsCtx, Bounds(-80.2, 42.0, -80.0, 42.2), corry, movedByUser = true))   // a window holding me
+        assertEquals(gpsCtx, AppRules.searchContextFor(SearchMode.ADD_STOP, gpsCtx, corryBox, corry, movedByUser = true))
+        assertEquals(gpsCtx, AppRules.searchContextFor(SearchMode.GO_TO, gpsCtx, null, corry, movedByUser = true))
+        val mapCtx = SearchContext(corry, NearSource.MAP_CENTER)
+        assertEquals(mapCtx, AppRules.searchContextFor(SearchMode.GO_TO, mapCtx, corryBox, corry, movedByUser = true))
+    }
+
+    @Test
+    fun `after a rotation both bars follow the map, the status bar left to the drive overlay while it holds it (P39)`() {
+        assertEquals(AppRules.BarIcons(navForLightBackground = true, statusForLightBackground = true), AppRules.barIconsAfterRotation(night = false, revealDone = true, driveHoldsStatusBar = false))
+        assertEquals(AppRules.BarIcons(false, false), AppRules.barIconsAfterRotation(night = true, revealDone = true, driveHoldsStatusBar = false))
+        assertEquals(AppRules.BarIcons(false, false), AppRules.barIconsAfterRotation(night = false, revealDone = false, driveHoldsStatusBar = false))
+        assertEquals(AppRules.BarIcons(true, null), AppRules.barIconsAfterRotation(night = false, revealDone = true, driveHoldsStatusBar = true))
+        assertEquals(AppRules.BarIcons(false, null), AppRules.barIconsAfterRotation(night = true, revealDone = true, driveHoldsStatusBar = true))
+    }
+
+    @Test
+    fun `the drive overlay holds the status bar only with its banner or re-route card at the top (P39)`() {
+        val bar = TripBarUi("Arrive 3:42 PM", "12 min", "4.1 mi", null, simulated = false)
+        val banner = BannerUi(ManeuverKind.LEFT, null, "0.3 mi", "Turn left", null, null, null, null)
+        fun g(banner: BannerUi?, status: GuidanceStatusUi) = GuidanceUi(banner, status, bar, showRecenter = false)
+        assertFalse(AppRules.driveDarkTop(null))                                         // browsing, planning
+        assertTrue(AppRules.driveDarkTop(g(banner, GuidanceStatusUi.OnRoute)))
+        assertFalse(AppRules.driveDarkTop(g(null, GuidanceStatusUi.WaitingForGps)))      // no banner before the first fix
+        assertFalse(AppRules.driveDarkTop(g(null, GuidanceStatusUi.GpsLost)))
+        assertTrue(AppRules.driveDarkTop(g(null, GuidanceStatusUi.Rerouting)))
+        assertTrue(AppRules.driveDarkTop(g(null, GuidanceStatusUi.RerouteFailed("No route found", canRetry = true))))
+        assertFalse(AppRules.driveDarkTop(g(banner, GuidanceStatusUi.Arrived("Test Diner", null))))
     }
 }

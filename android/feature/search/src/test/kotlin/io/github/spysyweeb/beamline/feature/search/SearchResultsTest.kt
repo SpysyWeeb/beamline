@@ -153,14 +153,15 @@ class SearchResultsTest {
         scope.testScheduler.advanceUntilIdle()
         assertEquals(asked, fake.limits.size, "Enter shows the list's own rows")
         assertEquals(listed, f.results.value!!.rows.map { it.key })
-        // a name (not a category or a brand): the engine's best ten in its order, far ones too, in the list and on the map
+        // a name (not a category or a brand): the engine's best ten, far ones too, its best first and the others
+        // nearest first (P6, 0.1.40), in the list and on the map
         f.onResultsEvent(ResultsEvent.Close)
         fake.answers = { (1..25).map { i -> store(i, km = (26 - i).toDouble(), tier = "exact") } }
         f.open(SearchMode.GO_TO, SearchFeatureTest.gps)
         f.onEvent(SearchEvent.QueryChanged("sheetz on peach"))
         scope.testScheduler.advanceUntilIdle()
         val named = f.ui.value.results.map { it.key }
-        assertEquals((1..10).map { "r:us-pa:${100 + it}" }, named)
+        assertEquals(listOf("r:us-pa:101") + (110 downTo 102).map { "r:us-pa:$it" }, named)
         f.onEvent(SearchEvent.Submit)
         scope.testScheduler.advanceUntilIdle()
         assertEquals(named, f.results.value!!.rows.map { it.key })
@@ -234,13 +235,209 @@ class SearchResultsTest {
 
     @Test
     fun notOfferedOutsideGoToOrWhileDriving() {
+        // GO_TO while driving: Enter shows nothing on the map (ADD_STOP has its own stop results since item 51)
         fake.answers = { (1..5).map { store(it, it.toDouble()) } }
-        enter("sheetz", mode = SearchMode.ADD_STOP, driving = true)
-        enter("sheetz", mode = SearchMode.ADD_STOP)
         enter("sheetz", mode = SearchMode.GO_TO, driving = true)
         assertNull(f.results.value)
         assertTrue(outputs.isEmpty())
-        assertEquals(3, fake.limits.size)                         // only the typing searches ran: Enter asked nothing and showed nothing
+        assertEquals(1, fake.limits.size)                         // only the typing search ran: Enter asked nothing and showed nothing
+        enter("sheetz", mode = SearchMode.SET_START)
+        assertNull(f.results.value)
+        assertTrue(outputs.isEmpty())
+    }
+
+    /** A made-up or public place found for a query: [tier] says how it matched, [km] its distance from the ranking position. */
+    private fun hit(id: Long, title: String, km: Double, tier: String, cat: String? = null,
+                    at: GeoPoint = GeoPoint(SearchFeatureTest.ZOO.lat + km / 111.0, SearchFeatureTest.ZOO.lon)) =
+        PackResult("us-pa", SearchResult(id, SearchResult.Kind.POI, title, "Erie", cat, null, at.lat, at.lon, km, null, null, 1.0, "t", tier))
+
+    /** P6 (a): a name, a street or an address: the engine's best match first, then the others nearest first. */
+    @Test
+    fun theBestMatchThenTheNearest() {
+        fake.answers = {
+            listOf(hit(1, "100 State Street", 0.6, "exact"), hit(2, "100 East State Street", 35.0, "exact_alt"), hit(3, "State Street", 4.1, "exact"),
+                hit(4, "State Street Market", 0.5, "prefix"), hit(5, "9th & State Beer Store", 0.3, "word_prefix"))
+        }
+        f.open(SearchMode.GO_TO, SearchFeatureTest.gps)
+        f.onEvent(SearchEvent.QueryChanged("100 state street"))
+        settle()
+        val listed = f.ui.value.results.map { it.key }
+        assertEquals(listOf(1, 5, 4, 3, 2).map { "r:us-pa:$it" }, listed)
+        f.onEvent(SearchEvent.Submit)
+        settle()
+        assertEquals(listed, f.results.value!!.rows.map { it.key })
+    }
+
+    /** P6 (b): words that name a place ("coffee in corry") are ranked, cut and named from that place; distances stay from the user. */
+    @Test
+    fun wordsThatNameAPlaceAreRankedFromIt() {
+        fake.namedPlace = io.github.spysyweeb.beamline.search.NamedPlace("Corry", 41.9203, -79.6403)
+        fake.answers = {
+            listOf(hit(1, "Corner Cafe", 43.4, "category", at = GeoPoint(41.9210, -79.6400)), hit(2, "Main Street Coffee", 42.5, "category", at = GeoPoint(41.9230, -79.6250)),
+                hit(3, "Bayfront Coffee", 0.1, "category", at = GeoPoint(42.1290, -80.0850)), hit(4, "Perry Square Coffee", 0.2, "category", at = GeoPoint(42.1250, -80.0870)))
+        }
+        f.open(SearchMode.GO_TO, SearchFeatureTest.gps)
+        f.onEvent(SearchEvent.QueryChanged("coffee in corry"))
+        settle()
+        assertEquals(listOf("r:us-pa:1", "r:us-pa:2"), f.ui.value.results.map { it.key })   // Erie's are 43 km from Corry
+        assertTrue(f.ui.value.results.all { it.distanceText != null && it.distanceText!!.endsWith("mi") })
+        assertEquals("Near Corry", f.ui.value.nearText)
+        f.onEvent(SearchEvent.Submit)
+        settle()
+        assertEquals("Near Corry", f.results.value!!.nearText)
+        f.open(SearchMode.GO_TO, SearchFeatureTest.gps)
+        assertEquals("Near your position", f.ui.value.nearText)
+    }
+
+    /** P6 (a) and P2: the order helpers. */
+    @Test
+    fun orderHelpers() {
+        val rules = io.github.spysyweeb.beamline.search.SearchAppRules.bundled()
+        assertEquals(listOf(5.0, 1.0, 3.0, 9.0, null), bestThenNearest(listOf(5.0, 9.0, 1.0, null, 3.0)) { it })
+        assertEquals(listOf<Double?>(null, null, null), bestThenNearest(listOf<Double?>(null, null, null)) { it })
+        assertEquals(listOf(9.0, 1.0), bestThenNearest(listOf(9.0, 1.0)) { it })
+        assertEquals(listOf(1.0, 2.0), withinNearest(listOf(50.0, 2.0, null, 1.0), { it }, rules))
+        assertEquals(listOf<Double?>(null, null), withinNearest(listOf<Double?>(null, null), { it }, rules))
+    }
+
+    /** P6 (e): the results window says where its list is ranked from when that is not the user's position. */
+    @Test
+    fun theResultsWindowSaysWhereItIsRanked() {
+        val zoo = SearchFeatureTest.ZOO
+        val corry = SearchContext(GeoPoint(41.9203, -79.6403), NearSource.MAP_CENTER, distanceFrom = zoo)
+        fake.answers = { (1..3).map { store(it, km = it.toDouble()) } }
+        fake.area = "Corry"
+        f.open(SearchMode.GO_TO, corry)
+        settle()
+        f.onEvent(SearchEvent.ShortcutTapped("gas"))
+        settle()
+        assertEquals("Near Corry", f.results.value!!.nearText)
+        // a typed list's row (P44), the same place
+        f.onResultsEvent(ResultsEvent.Close)
+        fake.answers = { (1..3).map { store(it, km = it.toDouble(), tier = "exact") } }
+        f.open(SearchMode.GO_TO, corry)
+        f.onEvent(SearchEvent.QueryChanged("sheetz on peach"))
+        settle()
+        f.onEvent(SearchEvent.RowTapped(f.ui.value.results[1].key))
+        assertEquals("Near Corry", f.results.value!!.nearText)
+        // from the user's position: no line
+        f.onResultsEvent(ResultsEvent.Close)
+        fake.answers = { (1..3).map { store(it, km = it.toDouble()) } }
+        enter("sheetz")
+        assertNull(f.results.value!!.nearText)
+        // "Search this area": the town at the centre, else "Near the map center"
+        var found: Int? = -1
+        val window = Bounds(west = zoo.lon - 0.01, south = zoo.lat, east = zoo.lon + 0.01, north = zoo.lat + 0.1)
+        scope.launch { found = f.searchArea(GeoPoint(zoo.lat + 0.05, zoo.lon), window) }
+        scope.testScheduler.advanceUntilIdle()
+        assertEquals(3, found)
+        assertEquals("Near Corry", f.results.value!!.nearText)
+        fake.area = null
+        scope.launch { found = f.searchArea(GeoPoint(zoo.lat + 0.05, zoo.lon), window) }
+        scope.testScheduler.advanceUntilIdle()
+        assertEquals("Near the map center", f.results.value!!.nearText)
+    }
+
+    /** P44 (decisions.md): a row of a typed list in GO_TO keeps the list on the map with that row's sheet open, like a chip's. */
+    @Test
+    fun aTypedRowKeepsItsListOnTheMap() {
+        fake.answers = { (1..5).map { store(it, km = it.toDouble(), tier = "exact") } }
+        f.open(SearchMode.GO_TO, SearchFeatureTest.gps)
+        f.onEvent(SearchEvent.QueryChanged("sheetz on peach"))
+        settle()
+        val listed = f.ui.value.results.map { it.key }
+        assertEquals((101..105).map { "r:us-pa:$it" }, listed)
+        val out = f.onEvent(SearchEvent.RowTapped(listed[2])) as SearchOutput.ShowPlace
+        assertEquals(103L, out.place.searchId)
+        val r = f.results.value!!
+        assertEquals("sheetz on peach", r.query)
+        assertEquals(listed, r.rows.map { it.key })
+        assertEquals(2, r.selected)
+        assertEquals(SearchUi(), f.ui.value)
+        assertEquals(103L, recents.places.value.first().searchId)
+        assertNull(f.onResultsEvent(ResultsEvent.Deselect))       // the sheet closed: back to the list
+        assertNull(f.results.value!!.selected)
+        assertEquals(listed, f.results.value!!.rows.map { it.key })
+        // one row: the pick as before
+        f.onResultsEvent(ResultsEvent.Close)
+        fake.answers = { listOf(store(1, 1.0, "exact")) }
+        f.open(SearchMode.GO_TO, SearchFeatureTest.gps)
+        f.onEvent(SearchEvent.QueryChanged("sheetz on peach"))
+        settle()
+        assertTrue(f.onEvent(SearchEvent.RowTapped(f.ui.value.results[0].key)) is SearchOutput.Picked)
+        assertNull(f.results.value)
+        // ADD_STOP: the stop results with that row's card (item 51)
+        fake.answers = { (1..5).map { store(it, km = it.toDouble(), tier = "exact") } }
+        f.open(SearchMode.ADD_STOP, SearchFeatureTest.gps)
+        f.onEvent(SearchEvent.QueryChanged("sheetz on peach"))
+        settle()
+        val stop = f.onEvent(SearchEvent.RowTapped(f.ui.value.results[2].key)) as SearchOutput.ShowStopResults
+        assertEquals(0, stop.selected)
+        f.onResultsEvent(ResultsEvent.Close)
+        // GO_TO while driving: the pick
+        f.open(SearchMode.GO_TO, SearchFeatureTest.gps, driving = true)
+        f.onEvent(SearchEvent.QueryChanged("sheetz on peach"))
+        settle()
+        assertTrue(f.onEvent(SearchEvent.RowTapped(f.ui.value.results[2].key)) is SearchOutput.Picked)
+        assertNull(f.results.value)
+    }
+
+    /** P2: a category's own places first (nearest within 25 miles), then the rows that only matched by name, under "Other matches". */
+    @Test
+    fun aCategorysOwnPlacesComeBeforeNameMatches() {
+        val hospitals = listOf(
+            hit(1, "UPMC Hamot", 0.5, "category", "hospital"), hit(2, "Saint Vincent Hospital", 2.0, "category", "hospital"),
+            hit(3, "LECOM Medical Center", 6.2, "category", "hospital"), hit(4, "Corry Memorial Hospital", 44.5, "category", "hospital"),
+            hit(5, "Hospitality Place", 8.9, "prefix"), hit(6, "Animal Kingdom Pet Hospital", 5.5, "word_prefix", "veterinary"),
+            hit(7, "Hospital Drive", 82.1, "prefix"),
+        )
+        fake.answers = { hospitals }
+        f.open(SearchMode.GO_TO, SearchFeatureTest.gps)
+        f.onEvent(SearchEvent.QueryChanged("hospital"))
+        settle()
+        val keys = listOf(1, 2, 3, 6, 5).map { "r:us-pa:$it" }
+        val flags = listOf(false, false, false, true, true)
+        assertEquals(keys, f.ui.value.results.map { it.key })
+        assertEquals(flags, f.ui.value.results.map { it.otherMatch })
+        f.onEvent(SearchEvent.Submit)
+        settle()
+        assertEquals(keys, f.results.value!!.rows.map { it.key })
+        assertEquals(flags, f.results.value!!.rows.map { it.otherMatch })
+        // a search in SAVE mode over the results does not change their flags (the code review's path)
+        f.openToSave(SaveTarget.NewPlace, SearchFeatureTest.gps)
+        fake.answers = { t -> if (t == "hospital") hospitals else listOf(hit(9, "Hospital Road", 1.0, "prefix")) }
+        f.onEvent(SearchEvent.QueryChanged("hos"))
+        settle()
+        f.close()
+        // "Search this area": the hospitals nearest the centre first, then the name matches
+        val zoo = SearchFeatureTest.ZOO
+        var found: Int? = -1
+        scope.launch { found = f.searchArea(GeoPoint(zoo.lat + 0.05, zoo.lon), Bounds(west = zoo.lon - 0.01, south = zoo.lat, east = zoo.lon + 0.01, north = zoo.lat + 0.1)) }
+        scope.testScheduler.advanceUntilIdle()
+        assertEquals(5, found)
+        assertEquals(listOf(3, 2, 1, 6, 5).map { "r:us-pa:$it" }, f.results.value!!.rows.map { it.key })
+        assertEquals(flags, f.results.value!!.rows.map { it.otherMatch })
+    }
+
+    /** P46 (Back from directions): the results kept while a route preview ran come back; never over others, never from a removed state. */
+    @Test
+    fun resultsKeptForAPreviewComeBack() {
+        fake.answers = { (1..5).map { store(it, it.toDouble()) } }
+        enter("sheetz")
+        f.onResultsEvent(ResultsEvent.Select(1))
+        val kept = f.results.value!!
+        f.open(SearchMode.SET_START, SearchFeatureTest.gps)        // Change start during the preview
+        assertNull(f.results.value)
+        f.close()
+        assertTrue(f.restoreResults(kept))
+        assertEquals(kept, f.results.value)
+        assertEquals(1, f.results.value!!.selected)
+        assertTrue(!f.restoreResults(kept.copy(query = "x")))     // other results show: nothing changes
+        assertEquals(kept, f.results.value)
+        f.onResultsEvent(ResultsEvent.Close)
+        installed.value = installed.value.copy(generation = installed.value.generation + 1, packs = emptyList())
+        assertTrue(!f.restoreResults(kept))                       // its state was removed meanwhile
+        assertNull(f.results.value)
     }
 
     @Test

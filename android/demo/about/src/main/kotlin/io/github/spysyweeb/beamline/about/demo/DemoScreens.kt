@@ -97,7 +97,14 @@ internal fun Home(onOpen: (String) -> Unit) {
                 style = MaterialTheme.typography.bodyMedium,
                 color = MaterialTheme.colorScheme.onSurfaceVariant,
             )
-            for ((label, screen) in listOf("About" to "about", "Licenses" to "licences", "Driver notice" to "notice", "Icon shapes" to "icons")) {
+            val menu = listOf(
+                "About" to "about",
+                "Licenses" to "licences",
+                "Driver notice" to "notice",
+                "First-run notice" to "first-run",
+                "Icon shapes" to "icons",
+            )
+            for ((label, screen) in menu) {
                 Button(onClick = { onOpen(screen) }, modifier = Modifier.fillMaxWidth()) { Text(label) }
             }
         }

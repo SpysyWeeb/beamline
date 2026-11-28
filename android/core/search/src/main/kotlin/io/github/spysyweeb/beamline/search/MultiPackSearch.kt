@@ -20,6 +20,8 @@ data class MultiSearchResponse(
     /** True when every asked pack said the position is outside it; null without a position or a pack. */
     val outOfCoverage: Boolean?,
     val ms: Double,
+    /** 0.1.40 (P6): the place the words name, from the first asked pack whose answer names one ("coffee in corry"); null otherwise. */
+    val namedPlace: NamedPlace? = null,
 )
 
 /**

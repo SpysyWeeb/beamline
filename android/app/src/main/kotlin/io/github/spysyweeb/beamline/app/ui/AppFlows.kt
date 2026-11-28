@@ -29,6 +29,8 @@ import io.github.spysyweeb.beamline.api.nav.NavIntent
 import io.github.spysyweeb.beamline.api.nav.Origin
 import io.github.spysyweeb.beamline.api.nav.Phase
 import io.github.spysyweeb.beamline.api.nav.Simulation
+import io.github.spysyweeb.beamline.api.nav.TripState
+import io.github.spysyweeb.beamline.nav.StopLeg
 import io.github.spysyweeb.beamline.app.AppGraph
 import io.github.spysyweeb.beamline.feature.drive.DriveEvent
 import io.github.spysyweeb.beamline.feature.search.NearSource
@@ -43,10 +45,24 @@ import io.github.spysyweeb.beamline.feature.search.SearchEvent
 import io.github.spysyweeb.beamline.feature.search.SearchMode
 import io.github.spysyweeb.beamline.feature.search.SearchOutput
 import io.github.spysyweeb.beamline.search.SearchAppRules
+import io.github.spysyweeb.beamline.app.handover.Handover
+import io.github.spysyweeb.beamline.app.handover.HandoverLink
+import io.github.spysyweeb.beamline.app.handover.HandoverNote
+import io.github.spysyweeb.beamline.app.handover.HandoverRules
+import io.github.spysyweeb.beamline.app.handover.HandoverTexts
+import io.github.spysyweeb.beamline.app.handover.LinkTickets
+import io.github.spysyweeb.beamline.search.Geo
+import io.github.spysyweeb.beamline.search.MultiSearchResponse
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.withContext
 import kotlinx.coroutines.Job
+import kotlinx.coroutines.flow.combine
+import kotlinx.coroutines.flow.distinctUntilChanged
 import kotlinx.coroutines.flow.first
+import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withTimeoutOrNull
+import java.time.ZoneId
 import java.util.Locale
 
 /** A screen over the map. The search screen remembers the mode it was opened in (5.5: back to it). */
@@ -97,7 +113,26 @@ interface Host {
      * permission) or its browser with the address; the app itself makes no request (N1).
      */
     fun openOutside(action: PlaceAction, value: String)
+
+    /** Play test P28: leaves the app as the system's Back does (the task to the back; guidance and the trip go on). */
+    fun leaveApp()
 }
+
+/**
+ * One offer to take something back (0.1.40, one mechanism for the app: a removed stop, play test P10 and
+ * audit F30; a removed saved place, P58): its words, its number ([seq]: each offer restarts the bar's
+ * time), whether it shows in the stops editor's note line while the editor is open ([inStopsEditor]),
+ * whether it goes when the trip leaves IDLE ([idleOnly]: an offer about browsing), whether Undo can still
+ * do something for the trip as it is now ([stillUseful]), and what Undo does.
+ */
+class UndoOffer(
+    val text: String,
+    val seq: Long,
+    val inStopsEditor: Boolean,
+    val idleOnly: Boolean,
+    val stillUseful: (TripState) -> Boolean,
+    val undo: () -> Unit,
+)
 
 /**
  * The screens over the map and the flows between them (docs/architecture.md 5.4 items 5 and 6,
@@ -109,6 +144,27 @@ class AppFlows(private val g: AppGraph) {
     /** Screens over the map, the top one last. */
     val stack = mutableStateListOf<Layer>()
     var stopsEditorOpen by mutableStateOf(false)
+
+    /** P21: the route step the map marks and the route sheet shows (AppRules.shownStep); null: none. */
+    var shownStep by mutableStateOf<ShownStep?>(null)
+        private set
+
+    /** The Undo offer standing (W3: the app's one Undo); null: none. Each offer replaces the one before and restarts its time (AppRules.UNDO_BAR_MS). */
+    var undoOffer by mutableStateOf<UndoOffer?>(null)
+    private var undoSeq = 0L
+
+    /** Play test P31, audit F34: the saved place made at arrival for the trip's destination (its id), until the trip leaves ARRIVED. */
+    var arrivalSavedId by mutableStateOf<String?>(null)
+
+    /** P28: when the first Back of a pair was pressed (monotonic ms); null: none pending. */
+    var backArmedAtMs by mutableStateOf<Long?>(null)
+
+    /** P28: the trip's phase when that first Back was pressed (AppRules.backArmKept). */
+    var backArmedIn: Phase? = null
+        private set
+
+    /** P46: the way back from a route preview to the place window whose Directions planned it. */
+    private val preview = PreviewBack()
     var confirm by mutableStateOf<ConfirmUi?>(null)
     var snackbar by mutableStateOf<String?>(null)
 
@@ -148,6 +204,13 @@ class AppFlows(private val g: AppGraph) {
 
     /** The splash reveal plays once per process (A's README). */
     var revealDone by mutableStateOf(false)
+
+    /**
+     * P39: the drive overlay is on screen with its dark banner or re-route card at the top
+     * (AppRules.driveDarkTop). Written by AppRoot after each composition; read by MainActivity after a
+     * rotation. Plain: nothing recomposes on it.
+     */
+    var driveDarkTop = false
 
     /** The first-run picker was closed in this process ("Not now", "Look at the map while you wait"). */
     var firstRunClosed by mutableStateOf(false)
@@ -207,14 +270,21 @@ class AppFlows(private val g: AppGraph) {
     /** S11b: the user moved the map since these results showed. */
     private var movedOverResults = false
 
+    /** S1b (0.1.40, P6): the user moved the map by hand since its window last held their position (K1 and S11 moves are the app's). */
+    private var mapMovedByUser = false
+
     /** Where the camera came to rest (the map's idle callback, once the camera was placed); [bounds]: the part the user sees. */
     fun onCameraRest(center: GeoPoint, zoom: Double, bounds: Bounds? = null) {
         cameraCenter = center
         cameraZoom = zoom
         cameraBounds = bounds
+        // P6: the user in sight again (a drag back, or my-location's follow): a later app move away is not theirs
+        // (near is another module's property: no smart cast)
+        if (bounds != null && searchContext().takeIf { it.source == NearSource.GPS }?.near?.let { bounds.contains(it) } == true) mapMovedByUser = false
         refreshNoMapHere()
         // S11b: the user dragged or zoomed the map over results: offer them again in this window
-        if (movedOverResults && bounds != null && g.search.results.value != null && areaSearch != AreaSearch.SEARCHING) {
+        if (movedOverResults && bounds != null && g.search.results.value != null && g.search.results.value?.stop == null &&
+            areaSearch != AreaSearch.SEARCHING) {
             areaSearch = AreaSearch.OFFERED
         }
     }
@@ -257,11 +327,63 @@ class AppFlows(private val g: AppGraph) {
     init {
         // S11: the answers that come after Enter (the results, or the one match picked)
         g.scope.launch { g.search.later.collect { onSearchOutput(it) } }
-        // S11: the results are a browsing view: a trip planned or guided ends them
+        // S11: the results are a browsing view: a trip planned or guided ends them (item 51: not the stop
+        // results, which belong to the trip). P46: Back from directions puts back the results that were
+        // behind the window once the route has ended. P21: the step shown belongs to the preview's route.
         g.scope.launch {
+            var prev = g.session.state.value.phase
             g.session.state.collect { s ->
-                if (s.phase != Phase.IDLE && s.phase != Phase.RESUME_OFFERED && g.search.results.value != null) closeResults()
+                val r = g.search.results.value
+                if (s.phase != Phase.IDLE && s.phase != Phase.RESUME_OFFERED && r != null && r.stop == null) closeResults()
+                preview.onPhase(prev, s.phase)?.let(::restoreAfterBack)
+                val previewing = s.phase == Phase.PLANNING || s.phase == Phase.CHOOSING
+                shownStep?.let { st -> if (!previewing || s.selectedChoiceId != st.choiceId) clearStep(recenter = false) }
+                // item 51: adding a stop belongs to a trip being planned or driven (an arrival or the end ends it)
+                if (r?.stop != null && s.phase !in STOP_PHASES) endStopFlow()
+                // item 52 (K16): a place handed over by another app is a recent once the user drives to it
+                if (s.phase == Phase.GUIDING) linkRecent?.let { lr ->
+                    linkRecent = null
+                    if (HandoverRules.guidedTo(lr, s.phase, s.stops.lastOrNull()?.place?.point)) g.recents.add(lr)
+                }
+                prev = s.phase
             }
+        }
+        // item 51 (rule S12): the session's detours and the looked-at stop's route, for the stop results
+        g.scope.launch { g.session.state.map { it.detours }.distinctUntilChanged().collect { g.search.onDetours(it) } }
+        g.scope.launch {
+            g.session.state.map { it.stopPreview }.distinctUntilChanged().collect { g.search.onStopPreview(it, System.currentTimeMillis(), ZoneId.systemDefault()) }
+        }
+        // item 51: the one teardown. Every way the stop results end (X, Back, Add stop, a new search, a state
+        // removed, the phase guard above) shows here as their request id going away: that request is dropped;
+        // the preview and the camera's stop view end unless newer stop results took over (they sent their own).
+        g.scope.launch {
+            var shownId: Long? = null
+            g.search.results.map { it?.stop?.requestId }.distinctUntilChanged().collect { id ->
+                val end = AppRules.stopResultsEnded(shownId, id)
+                shownId = id
+                if (end != null) {
+                    send(NavIntent.Detours(end.requestId, emptyList()))   // drops only that request (C8): never a newer one
+                    if (end.all) {
+                        send(NavIntent.PreviewStop(null))
+                        g.director.onStopView(emptyList())
+                    }
+                }
+            }
+        }
+        // item 51: the list shows (sorted, or nearest first after the wait): what is still being worked out is dropped
+        g.scope.launch {
+            var working: Long? = null
+            g.search.results.map { r -> r?.stop?.takeIf { it.working }?.requestId }.distinctUntilChanged().collect { id ->
+                val was = working
+                working = id
+                if (was != null && id == null && g.search.results.value?.stop?.requestId == was) send(NavIntent.Detours(was, emptyList()))
+            }
+        }
+        // item 51 (rule K8): the camera looks at the stop results, or at the way to the one looked at
+        g.scope.launch {
+            combine(g.search.results, g.session.state.map { it.stopPreview }.distinctUntilChanged()) { r, p -> AppRules.stopViewPoints(r, p, g.session.state.value) }
+                .distinctUntilChanged { a, b -> a?.toSet() == b?.toSet() }
+                .collect { pts -> if (pts != null) g.director.onStopView(pts) }
         }
         // S11b: other results, or none, start without "Search this area" (a selection keeps it)
         g.scope.launch {
@@ -277,7 +399,8 @@ class AppFlows(private val g: AppGraph) {
         // S11: a state removed while its results show ends them (the camera stays)
         g.scope.launch {
             g.installed.installed.collect { set ->
-                if (g.search.closeResultsGoneFrom(set)) g.director.onPlaceLeft()
+                // P8: a window open over them keeps its camera (the close stays first, it has the side effect)
+                if (g.search.closeResultsGoneFrom(set) && g.sheetPlace.value == null) g.director.onPlaceLeft()
                 // a state added or removed under a resting camera: the "No map for this area" chip follows
                 refreshNoMapHere()
             }
@@ -305,24 +428,23 @@ class AppFlows(private val g: AppGraph) {
      * where it is and search that area?"): a search for a place (GO_TO) on a map moved so that the
      * user's position is out of sight searches the map instead: near its centre ("Near the map
      * center"), distances still from the user. The position in sight, the camera not yet at rest, or
-     * another kind of search (a start, a stop, a save): [searchContext] as before.
+     * another kind of search (a start, a stop, a save): [searchContext] as before. Since 0.1.40 (P6) only
+     * after the user's own move ([mapMovedByUser]), see AppRules.searchContextFor.
      */
-    private fun searchContextFor(mode: SearchMode): SearchContext {
-        val ctx = searchContext()
-        if (mode != SearchMode.GO_TO || ctx.source != NearSource.GPS) return ctx
-        val me = ctx.near ?: return ctx
-        val seen = cameraBounds ?: return ctx
-        val center = cameraCenter ?: return ctx
-        return if (seen.contains(me)) ctx else SearchContext(center, NearSource.MAP_CENTER, distanceFrom = me)
-    }
+    private fun searchContextFor(mode: SearchMode): SearchContext =
+        AppRules.searchContextFor(mode, searchContext(), cameraBounds, cameraCenter, mapMovedByUser)
 
     private fun destinationFor(mode: SearchMode): Place? =
         if (mode == SearchMode.SET_START) g.session.state.value.stops.lastOrNull()?.place else null
 
-    /** Search in GO_TO (the pill), ADD_STOP (DriveEvent.SearchForStop) or SET_START (DriveEvent.ChooseStart). */
-    fun openSearch(mode: SearchMode, typed: String? = null) {
+    /**
+     * Search in GO_TO (the pill), ADD_STOP (DriveEvent.SearchForStop) or SET_START (DriveEvent.ChooseStart). Item 52: [near],
+     * the point a handed-over link gave (the rows are ranked there); [onePick]: the search a link's words opened during a
+     * trip, where a row is one place for the stop card (no results on the map, as while driving).
+     */
+    fun openSearch(mode: SearchMode, typed: String? = null, near: GeoPoint? = null, onePick: Boolean = false) {
         val layer = Layer.Search(nextSearchId++, mode, forSave = false)
-        g.search.open(mode, searchContextFor(mode), driving = g.driving(), destination = destinationFor(mode))
+        openSession(mode, near, onePick)
         searchOwner = layer.id
         stack.add(layer)
         // from the bar that holds the words of the results on the map: the search opens with them typed
@@ -333,7 +455,8 @@ class AppFlows(private val g: AppGraph) {
         // the results that come next are a type's of the "View all" grid, or not: Back from them returns there
         when (e) {
             is SearchEvent.TypeTapped -> resultsFromGrid = stack.lastOrNull().let { it is Layer.Search && it.mode == SearchMode.GO_TO }
-            is SearchEvent.ShortcutTapped, is SearchEvent.QueryChanged, SearchEvent.Submit -> resultsFromGrid = false
+            // P44: a typed list's row now puts that list on the map: Back from it must not reopen an older grid
+            is SearchEvent.ShortcutTapped, is SearchEvent.QueryChanged, SearchEvent.Submit, is SearchEvent.RowTapped -> resultsFromGrid = false
             else -> Unit
         }
         g.search.onEvent(e)?.let(::onSearchOutput)
@@ -343,11 +466,14 @@ class AppFlows(private val g: AppGraph) {
     private var resultsFromGrid = false
 
     private fun onSearchOutput(o: SearchOutput) {
+        // item 52 (H7, K10): a place picked in the search a link's words opened, during a trip, opens the stop card
+        val fromLink = linkSearchId != null && (stack.lastOrNull() as? Layer.Search)?.let { it.id == linkSearchId && it.mode == SearchMode.GO_TO } == true &&
+            HandoverRules.pickToCard(phase)
         when (o) {
             is SearchOutput.Picked -> {
                 closeSearchAndList()
                 when (o.mode) {
-                    SearchMode.GO_TO -> showPicked(o.place)
+                    SearchMode.GO_TO -> if (fromLink) openLinkPlace(o.place) else showPicked(o.place)
                     SearchMode.ADD_STOP -> send(NavIntent.AddStop(o.place))
                     SearchMode.SET_START -> send(NavIntent.SetOrigin(Origin.FromPlace(o.place)))
                     SearchMode.SAVE -> Unit
@@ -360,12 +486,12 @@ class AppFlows(private val g: AppGraph) {
             SearchOutput.Closed -> popSearch()
             is SearchOutput.PlanTrip -> {
                 closeSearchAndList()
-                planTrip(o.place)
+                if (fromLink) openLinkPlace(o.place) else planTrip(o.place)
             }
             is SearchOutput.ShowPlace -> {
                 closeSearchAndList()
                 stack.remove(Layer.Settings)
-                showPicked(o.place)
+                if (fromLink) openLinkPlace(o.place) else showPicked(o.place)
             }
             is SearchOutput.OpenSavedPlaces -> {
                 g.savedFeature.openList(o.mode, searchContext(), destinationFor(o.mode))
@@ -374,6 +500,9 @@ class AppFlows(private val g: AppGraph) {
             is SearchOutput.SaveNew -> {
                 popSearch()
                 g.savedFeature.openSave(o.place)
+                // P18: "Use my position" (a point): the dialog shows and saves the street it is near
+                val p = o.place
+                if (AppRules.lacksStreet(p)) lookUpStreet(p.point) { g.savedFeature.streetFound(p.point, it) }
             }
             is SearchOutput.ShowResults -> {
                 // S11: the search screen is done; the pins and the list show, the camera fits them
@@ -391,6 +520,25 @@ class AppFlows(private val g: AppGraph) {
                 if (top is Layer.Search && top.forSave) stack.removeAt(stack.lastIndex)
                 g.savedFeature.startMapPick(o.target)
             }
+            is SearchOutput.ShowStopResults -> {
+                // item 51 (rule S12): the places for a new stop on the map, over the trip; the session works out
+                // what each adds, and the route with the one picked (null ends an older list's look)
+                closeSearchAndList()
+                g.sheetPlace.value = null
+                send(NavIntent.Detours(o.requestId, o.places))
+                send(NavIntent.PreviewStop(o.selected?.let { o.places.getOrNull(it) }))
+            }
+            // item 51: a stop result looked at (its card), or its card closed (null)
+            is SearchOutput.PreviewStop -> send(NavIntent.PreviewStop(o.place))
+            // item 51: "Add stop" on the card; the stop results have ended (the teardown collector does the rest)
+            is SearchOutput.AddStop -> send(NavIntent.AddStop(o.place))
+            // item 52 (H7): "Go here instead" on a handed-over place's card: Directions' own rule (S7: while guiding, "End this trip ...?")
+            is SearchOutput.GoInstead -> planTrip(o.place)
+            SearchOutput.StartFromYourPosition -> {
+                // P22: Choose start's "Your position": the trip starts from the current position again
+                closeSearchAndList()
+                if (g.session.state.value.origin != Origin.CurrentPosition) send(NavIntent.SetOrigin(Origin.CurrentPosition))
+            }
         }
     }
 
@@ -404,9 +552,24 @@ class AppFlows(private val g: AppGraph) {
     private fun reopenTopSearch() {
         val top = stack.lastOrNull()
         if (top is Layer.Search && top.id != searchOwner && !top.forSave) {
-            g.search.open(top.mode, searchContextFor(top.mode), driving = g.driving(), destination = destinationFor(top.mode))
+            openSession(top.mode)
             searchOwner = top.id
         }
+    }
+
+    /**
+     * The search session for [mode]; ADD_STOP looks along the trip's route ahead from where a new stop joins it (item 51,
+     * rule S12). Item 52: with [near], ranked around that point (distances still from a fresh fix); [onePick] as openSearch.
+     */
+    private fun openSession(mode: SearchMode, near: GeoPoint? = null, onePick: Boolean = false) {
+        val trip = g.session.state.value
+        val stop = mode == SearchMode.ADD_STOP
+        val context = if (near != null) {
+            val searchable = g.installed.installed.value.packs.filter { it.searchFile != null }.map { it.bounds }
+            HandoverRules.linkContext(near, searchable, from = searchContext().takeIf { it.source == NearSource.GPS }?.near)
+        } else searchContextFor(mode)
+        g.search.open(mode, context, driving = g.driving() || onePick, destination = destinationFor(mode),
+            along = if (stop) StopLeg.lineAhead(trip) else emptyList(), alongAfter = if (stop) StopLeg.joinsAfter(trip)?.name else null)
     }
 
     private fun closeSearchAndList() {
@@ -418,8 +581,35 @@ class AppFlows(private val g: AppGraph) {
     // ------------------------------------------------------------------ the results on the map (S11)
 
     fun onResultsEvent(e: ResultsEvent) {
+        if (g.search.results.value?.stop != null) {
+            // item 51: the stop results' X ends adding a stop (the teardown collector tells the session and the camera)
+            if (e == ResultsEvent.Close) return endStopFlow()
+            g.search.onResultsEvent(e)?.let(::onSearchOutput)
+            return
+        }
         if (e == ResultsEvent.Close) return backFromResults()
         g.search.onResultsEvent(e)?.let(::onSearchOutput)
+    }
+
+    /** Item 51: the stop results end (the trip as before); the init's teardown collector does the rest. */
+    private fun endStopFlow() {
+        g.search.onResultsEvent(ResultsEvent.Close)
+    }
+
+    /**
+     * Item 51, Back on the stop results: from a card, the list (a list of one place has nothing to choose:
+     * as from the list); from the list, the Add stop search again with its words typed ("" after a
+     * shortcut, a type or a single place).
+     */
+    private fun backFromStop() {
+        val r = g.search.results.value ?: return
+        val stop = r.stop ?: return
+        // item 52: a place handed over by another app has no list or search behind it: Back ends it
+        if (stop.instead) return endStopFlow()
+        if (r.selected != null && r.places.size > 1) return onResultsEvent(ResultsEvent.Deselect)
+        val typed = stop.typed
+        endStopFlow()
+        openSearch(SearchMode.ADD_STOP, typed = typed)
     }
 
     /**
@@ -437,11 +627,23 @@ class AppFlows(private val g: AppGraph) {
         }
     }
 
-    /** The results' pins and list gone; the camera stays where it is. */
+    /** The results' pins and list gone; the camera stays where it is (a place window open over them keeps its camera, K1, K1b). */
     fun closeResults() {
         resultsFromGrid = false
         g.search.onResultsEvent(ResultsEvent.Close)
-        g.director.onPlaceLeft()
+        // P8: the director's results ended when a window opened over them: then nothing to end here
+        if (g.sheetPlace.value == null) g.director.onPlaceLeft()
+    }
+
+    /**
+     * P46: the results that were behind the reopened window, back under it (hidden while it shows, AppRoot's
+     * resultsShown; closing it deselects and fits them, closeSheet). Only while that window still shows: one
+     * closed or replaced meanwhile leaves them gone. No fit now: the camera stays on the place (K2a).
+     */
+    private fun restoreAfterBack(way: PreviewBack.Way) {
+        val r = way.results ?: return
+        if (g.sheetPlace.value != way.place) return
+        if (g.search.restoreResults(r)) resultsFromGrid = way.fromGrid
     }
 
     private fun fitResults() {
@@ -469,7 +671,8 @@ class AppFlows(private val g: AppGraph) {
             is SavedOutput.Picked -> {
                 closeSearchAndList()
                 when (o.mode) {
-                    SearchMode.ADD_STOP -> send(NavIntent.AddStop(o.place))
+                    // item 51: a saved place for a stop opens its card on the map like any row (nothing changes until "Add stop")
+                    SearchMode.ADD_STOP -> onSearchOutput(g.search.showStopPlace(o.place, searchContext()))
                     SearchMode.SET_START -> send(NavIntent.SetOrigin(Origin.FromPlace(o.place)))
                     SearchMode.GO_TO -> showPicked(o.place)
                     SearchMode.SAVE -> Unit
@@ -486,8 +689,26 @@ class AppFlows(private val g: AppGraph) {
                 // was keeps the saved id, so a saved dropped pin says "Saved as ..." with Edit
                 AppRules.sheetAfterSave(g.sheetPlace.value, saveFrom, o.place)?.let { g.sheetPlace.value = it }
                 saveFrom = null
+                // play test P31: a save of the destination while arrived (the card's link or the place's own window)
+                val trip = g.session.state.value
+                if (AppRules.savedAtArrival(trip.phase, trip.stops.lastOrNull()?.place, o.place)) arrivalSavedId = o.place.id
             }
             is SavedOutput.PickEnded -> Unit   // what the pick hid shows again by itself (SP25)
+            is SavedOutput.Removed -> {
+                // P58: a saved place removed: the shared Undo bar ("Home removed"), only while no trip runs (SP4)
+                val id = o.place.id
+                val name = o.place.name
+                // the window of that saved place: its own window closes; a saved dropped pin's says "Save" again
+                val window = g.sheetPlace.value?.takeIf { it.savedId == id }
+                window?.let { if (it.source == PlaceSource.SAVED) closeSheet() else g.sheetPlace.value = it.copy(savedId = null) }
+                val screens = stack.toList()
+                offerUndo(AppRules.removedText(name), idleOnly = true) {
+                    onSavedEvent(SavedEvent.UndoRemove(id))
+                    val back = g.saved.byId(id)
+                    if (back == null) snackbar = AppRules.notRestoredText(name)   // its Home slot or name was taken meanwhile
+                    else AppRules.windowAfterUndo(window, g.sheetPlace.value, stack.toList() == screens, back)?.let { g.sheetPlace.value = it }
+                }
+            }
             SavedOutput.Closed -> {
                 val i = stack.lastIndexOf(Layer.SavedList)
                 if (i >= 0) stack.removeAt(i)
@@ -512,16 +733,44 @@ class AppFlows(private val g: AppGraph) {
         // K1: a place tapped on the map replaces a picked one; the camera no longer returns to that
         if (g.sheetPlace.value != place) g.director.onPlaceLeft()
         g.sheetPlace.value = place
+        // P17/P18: a point still showing its coordinates: its street from the packs
+        if (AppRules.lacksStreet(place)) lookUpStreet(place.point) { line ->
+            // still this point's window (saved meanwhile too): its line; its height stays (F42, placeSheetKey)
+            g.sheetPlace.value?.takeIf { AppRules.sameSheetPlace(it, place) }?.let { g.sheetPlace.value = it.copy(subtitle = line) }
+            // a save dialog opened from it shows and saves the street too
+            g.savedFeature.streetFound(place.point, line)
+        }
+    }
+
+    /**
+     * P17/P18: the street at [point] from the installed packs, read off the main thread (as the dropped pin did);
+     * [then] gets its line ("Near East 5th Street, Erie") on the main thread, and never runs when no street is
+     * near. Nothing is logged (PV2).
+     */
+    private fun lookUpStreet(point: GeoPoint, then: (String) -> Unit) {
+        g.scope.launch {
+            val s = runCatching { kotlinx.coroutines.withContext(kotlinx.coroutines.Dispatchers.Default) { g.streetAt(point) } }.getOrNull() ?: return@launch
+            then(nearStreetText(s.name, s.subtitle, s.house))
+        }
     }
 
     /**
      * A place picked from a search, the saved places, the recents or a sheet: its sheet, and the
      * camera goes to it (K1, docs/next-round.md item 2). A place tapped on the map is on screen
-     * already: [showSheet] alone.
+     * already: [showTapped].
      */
     fun showPicked(place: Place) {
         showSheet(place)
         g.director.onShowPlace(place.point)
+    }
+
+    /**
+     * K1b (P8): a place tapped on the map (a POI label, a saved place's marker, a dropped pin): its
+     * sheet; the camera stays unless the sheet or the search bar would cover it (CameraDirector.onPlaceTapped).
+     */
+    private fun showTapped(place: Place) {
+        showSheet(place)
+        g.director.onPlaceTapped(place.point)
     }
 
     fun closeSheet() {
@@ -544,9 +793,12 @@ class AppFlows(private val g: AppGraph) {
             }
             is PlaceSheetEvent.Act -> when (e.action) {
                 PlaceAction.DIRECTIONS -> {
+                    // P46: Back from this preview comes back to this window and to the results behind it:
+                    // a copy is kept (PreviewBack); the live ones close as before, so nothing hidden lingers
+                    val way = PreviewBack.Way(ui.place, g.search.results.value, resultsFromGrid)
                     closeResults()
                     closeSheet()
-                    planTrip(ui.place)
+                    planTrip(ui.place, way)
                 }
                 PlaceAction.ADD_STOP -> {
                     closeResults()
@@ -572,15 +824,21 @@ class AppFlows(private val g: AppGraph) {
     }
 
     /** "Directions" and a one-tap PlanTrip, by phase (rule S7, SP18), location asked first. */
-    fun planTrip(place: Place) {
+    fun planTrip(place: Place) = planTrip(place, null)
+
+    /** [way] (P46): Back from the preview returns to the window whose Directions this was; null: planned another way. */
+    private fun planTrip(place: Place, way: PreviewBack.Way?) {
         val h = host
-        if (h == null) planByPhase(place) else h.requestLocation { planByPhase(place) }
+        if (h == null) planByPhase(place, way) else h.requestLocation { planByPhase(place, way) }
     }
 
-    private fun planByPhase(place: Place) {
+    private fun planByPhase(place: Place, way: PreviewBack.Way?) {
         val trip = g.session.state.value
         when (trip.phase) {
-            Phase.IDLE, Phase.PLANNING, Phase.CHOOSING -> send(NavIntent.PlanTo(place))
+            Phase.IDLE, Phase.PLANNING, Phase.CHOOSING -> {
+                preview.planned(way)   // P46: null for a trip planned another way: Back closes it with Undo
+                send(NavIntent.PlanTo(place))
+            }
             Phase.RESUME_OFFERED -> {
                 val destination = trip.stops.lastOrNull()?.place?.name ?: ""
                 confirm = ConfirmUi("Drop your trip to $destination and go to ${place.name}?") {
@@ -604,35 +862,48 @@ class AppFlows(private val g: AppGraph) {
     fun onGesture(gesture: MapGesture) {
         g.director.onGesture(gesture)
         if (gesture == MapGesture.CameraMovedByUser && g.search.results.value != null) movedOverResults = true
+        if (gesture == MapGesture.CameraMovedByUser) mapMovedByUser = true   // P6: S1b follows the user's own moves only
         creditUntilMs = 0L // the first touch of the map fades the credit (item 8)
         val picking = g.savedFeature.ui.value.mapPick != null
+        // item 51: while the stop results show only their pins act: no window, no dropped pin over the stop window
+        val stopResults = g.search.results.value?.stop != null
         when (gesture) {
             is MapGesture.Tap -> when {
-                // SP16, SP24: during a map pick every tap is the pick; no sheet, no dropped pin.
-                picking -> g.savedFeature.onMapTap(gesture.point, gesture.poi, cameraZoom)
-                gesture.pinId?.startsWith(SAVED_PIN) == true ->
-                    g.saved.byId(gesture.pinId!!.removePrefix(SAVED_PIN))?.let { showSheet(it.toPlace()) }
+                // SP16, SP24: during a map pick every tap is the pick; no sheet, no dropped pin. P18: a point's bar
+                // shows the street it is near once the packs answer (a later tap's pick drops an older answer)
+                picking -> {
+                    g.savedFeature.onMapTap(gesture.point, gesture.poi, cameraZoom)
+                    if (gesture.poi == null) lookUpStreet(gesture.point) { g.savedFeature.streetFound(gesture.point, it) }
+                }
                 gesture.pinId?.startsWith(RESULT_PIN) == true ->
                     gesture.pinId!!.removePrefix(RESULT_PIN).toIntOrNull()?.let { onResultsEvent(ResultsEvent.Select(it)) }
-                gesture.pinId != null -> Unit   // a stop, the destination or the picked pin: nothing
+                stopResults -> Unit
+                gesture.pinId?.startsWith(SAVED_PIN) == true ->
+                    g.saved.byId(gesture.pinId!!.removePrefix(SAVED_PIN))?.let { showTapped(it.toPlace()) }
+                // P23: another route tapped on the map is chosen, as its card is; the camera stays where the user looks.
+                // Never during item 51's stop preview (its line under the new route is the trip's own, AlternativeLine.tripRoute)
+                gesture.pinId?.startsWith(ROUTE_PIN) == true -> gesture.pinId!!.removePrefix(ROUTE_PIN).toLongOrNull()?.let { id ->
+                    val trip = g.session.state.value
+                    if ((trip.phase == Phase.PLANNING || trip.phase == Phase.CHOOSING) && trip.stopPreview == null && trip.selectedChoiceId != id) {
+                        clearStep(recenter = false)
+                        send(NavIntent.Choose(id))
+                    }
+                }
+                gesture.pinId != null -> Unit   // a stop, the destination, the start or the picked pin: nothing
                 gesture.poi != null -> {
                     // batch O3: the label's own icon, for the own-changes layer if the user edits it
                     tappedIcon = gesture.poi!!.kind.takeIf { it.isNotEmpty() }?.let { k -> MAP_KIND_ICONS[k] ?: k }
-                    showSheet(Place(gesture.poi!!.name, gesture.poi!!.point, PlaceSource.MAP_POI))
+                    showTapped(Place(gesture.poi!!.name, gesture.poi!!.point, PlaceSource.MAP_POI))
                 }
                 else -> closeSheet()
             }
             is MapGesture.LongPress ->
                 if (picking) {
                     g.savedFeature.onMapTap(gesture.point, null, cameraZoom)
-                } else {
-                    val pin = Place(DROPPED_PIN, gesture.point, PlaceSource.MAP_PIN, subtitle = coordinates(gesture.point))
-                    showSheet(pin)
-                    // which street it is on, once the pack has been asked; while this pin's sheet still shows
-                    g.scope.launch {
-                        val street = runCatching { kotlinx.coroutines.withContext(kotlinx.coroutines.Dispatchers.Default) { g.streetAt(pin.point) } }.getOrNull()
-                        if (street != null && g.sheetPlace.value == pin) g.sheetPlace.value = pin.copy(subtitle = nearStreetText(street.name, street.subtitle, street.house))
-                    }
+                    lookUpStreet(gesture.point) { g.savedFeature.streetFound(gesture.point, it) }   // P18
+                } else if (!stopResults) {
+                    // the coordinates first; showSheet asks for the street it is on (P17: kept across a quick Save)
+                    showTapped(Place(DROPPED_PIN, gesture.point, PlaceSource.MAP_PIN, subtitle = coordinates(gesture.point)))
                 }
             MapGesture.CameraMovedByUser -> Unit
         }
@@ -643,27 +914,57 @@ class AppFlows(private val g: AppGraph) {
     fun onDriveEvent(e: DriveEvent) {
         when (e) {
             is DriveEvent.Nav -> {
+                // P21: a route chosen or closed lets the step shown go (a Choose recenters below anyway)
+                if (e.intent is NavIntent.Choose || e.intent is NavIntent.End) clearStep(recenter = false)
                 if (e.intent is NavIntent.Start || e.intent is NavIntent.Resume) host?.requestNotificationsOnce()
                 val endsGuidance = e.intent is NavIntent.End && (phase == Phase.GUIDING || phase == Phase.REROUTING)
                 val closesRoute = e.intent is NavIntent.End && (phase == Phase.PLANNING || phase == Phase.CHOOSING)
                 if (e.intent is NavIntent.End) stopsEditorOpen = false
+                // P46: X closes the route with Undo as before (Undo plans it again with no way back to a window)
+                if (closesRoute) preview.forget()
+                // play test P10, audit F30: a removed stop can be taken back for a few seconds
+                val removed = (e.intent as? NavIntent.RemoveStop)?.let { r ->
+                    g.session.state.value.stops.getOrNull(r.index)?.takeIf { !it.reached }?.let { it.place to r.index }
+                }
                 send(e.intent)
                 // audit F29: a route card chosen (again) looks at the whole route, after a step or a pan
                 if (e.intent is NavIntent.Choose && (phase == Phase.PLANNING || phase == Phase.CHOOSING)) g.director.onRecenter()
                 // R4: one tap ends the trip at once; the bar offers Undo for END_UNDO_MS (audit F31: a route
                 // not yet started too, "Directions closed")
-                if (endsGuidance || closesRoute) offerUndo(if (endsGuidance) TRIP_ENDED else DIRECTIONS_CLOSED)
+                if (endsGuidance || closesRoute) offerEndUndo(if (endsGuidance) TRIP_ENDED else DIRECTIONS_CLOSED)
+                removed?.let { (place, index) ->
+                    offerUndo(AppRules.STOP_REMOVED, inStopsEditor = true, stillUseful = { t -> AppRules.undoRemovedStop(place, index, t) != null }) {
+                        AppRules.undoRemovedStop(place, index, g.session.state.value)?.let(::send)
+                    }
+                }
             }
             DriveEvent.Recenter -> g.director.onRecenter()
             DriveEvent.ShowOverview -> g.director.onOverview()
-            is DriveEvent.ShowStep -> g.director.onShowPlace(e.point) // item 47: the step on the map
+            is DriveEvent.ShowStep -> {
+                // item 47, P21: the step on the map, marked, and the sheet says which one it is
+                // (locals: ShowStep.index and TripState.selectedChoiceId are other modules' properties, no smart cast)
+                val idx = e.index
+                val id = g.session.state.value.selectedChoiceId
+                if (idx != null && id != null) {
+                    shownStep = ShownStep(id, idx, e.point)
+                    g.stepMark.value = e.point
+                }
+                g.director.onShowPlace(e.point)
+            }
+            // P21: the step let go (Back at full height, the peek's chip): the whole route again
+            DriveEvent.CloseStep -> clearStep(recenter = true)
+            // P10, F30: the Undo in the stops editor's note line
+            DriveEvent.UndoStopRemoval -> takeUndo()
             DriveEvent.OpenStopsEditor -> stopsEditorOpen = true
             DriveEvent.CloseStopsEditor -> stopsEditorOpen = false
             // item 47: the arrival card raised opens the destination's window; its Save, the save dialog
             DriveEvent.ShowDestination -> g.session.state.value.stops.lastOrNull()?.place?.let(::showSheet)
-            DriveEvent.SaveDestination -> g.session.state.value.stops.lastOrNull()?.place?.let { place ->
+            DriveEvent.SaveDestination -> if (!destinationSaved()) g.session.state.value.stops.lastOrNull()?.place?.let { place ->
+                // P31: once saved the card says "Saved" and cannot save again
                 saveFrom = place
                 g.savedFeature.openSave(place)
+                // P18: a pin destination still on its coordinates: the dialog shows and saves its street
+                if (AppRules.lacksStreet(place)) lookUpStreet(place.point) { g.savedFeature.streetFound(place.point, it) }
             }
             DriveEvent.SearchForStop -> openSearch(SearchMode.ADD_STOP)
             DriveEvent.ChooseStart -> openSearch(SearchMode.SET_START)
@@ -739,11 +1040,43 @@ class AppFlows(private val g: AppGraph) {
         send(NavIntent.UndoEnd)
     }
 
-    /** R4 and audit F31: the End bar ("Trip ended" or "Directions closed") with Undo. */
-    private fun offerUndo(text: String) {
+    /** R4 and audit F31: the End bar ("Trip ended" or "Directions closed") with Undo; the newest bar wins (W4). */
+    private fun offerEndUndo(text: String) {
         endedText = text
         tripEnded = (tripEnded ?: 0L) + 1
         continuing = false
+        undoOffer = null
+    }
+
+    /**
+     * W3: a new Undo offer (a removed stop, P10; a removed saved place, P58), shown for AppRules.UNDO_BAR_MS
+     * (longer when the phone's accessibility settings ask for it); it replaces the one before, and an End
+     * bar still showing goes (the newest bar wins).
+     */
+    fun offerUndo(text: String, inStopsEditor: Boolean = false, idleOnly: Boolean = false, stillUseful: (TripState) -> Boolean = { true }, undo: () -> Unit) {
+        undoOffer = UndoOffer(text, ++undoSeq, inStopsEditor, idleOnly, stillUseful, undo)
+        tripEnded = null
+    }
+
+    /** Undo on the offer's bar or in the stops editor's note line: done once, and only while it can still do something. */
+    fun takeUndo() {
+        val o = undoOffer ?: return
+        undoOffer = null
+        if (o.stillUseful(g.session.state.value)) o.undo()
+    }
+
+    /** P31, F34: whether the trip's destination is one of the saved places (the arrival card's "Saved"). */
+    fun destinationSaved(): Boolean {
+        val dest = g.session.state.value.stops.lastOrNull()?.place ?: return false
+        return AppRules.destinationSaved(dest, g.saved.places.value, arrivalSavedId, g.saved.find(dest))
+    }
+
+    /** P21: no step marked any more; [recenter]: the camera shows the whole route again (audit F29). */
+    private fun clearStep(recenter: Boolean) {
+        if (shownStep == null && g.stepMark.value == null) return
+        shownStep = null
+        g.stepMark.value = null
+        if (recenter) g.director.onRecenter()
     }
 
     fun onInsets(insets: EdgeInsetsDp) {
@@ -1002,10 +1335,15 @@ class AppFlows(private val g: AppGraph) {
     fun canGoBack(): Boolean {
         val su = g.savedFeature.ui.value
         return confirm != null || su.dialog != null || su.mapPick != null || stack.isNotEmpty() || stopsEditorOpen ||
-            g.sheetPlace.value != null || g.search.results.value != null || phase == Phase.PLANNING || phase == Phase.CHOOSING
+            g.sheetPlace.value != null || g.search.results.value != null || phase == Phase.PLANNING || phase == Phase.CHOOSING ||
+            AppRules.backHint(phase) != null
     }
 
-    /** Back: dialog, pick, the top screen, the stops editor, the sheet, then the route sheet (5.5's Back row). */
+    /**
+     * Back: dialog, pick, the top screen, the stop results (item 51), the stops editor, the sheet, the
+     * results, then the route sheet (5.5's Back row; P46: back to the window its Directions came from);
+     * while a trip is driven or offered, a pair of presses leaves the app (P28).
+     */
     fun onBack() {
         if (confirm != null) {
             confirm = null
@@ -1020,6 +1358,8 @@ class AppFlows(private val g: AppGraph) {
             null -> Unit
             else -> return pop(top)
         }
+        // item 51: the stop results (the stops editor is hidden under them)
+        if (g.search.results.value?.stop != null) return backFromStop()
         if (stopsEditorOpen) {
             stopsEditorOpen = false
             return
@@ -1028,8 +1368,246 @@ class AppFlows(private val g: AppGraph) {
         if (g.search.results.value != null) return backFromResults()
         if (phase == Phase.PLANNING || phase == Phase.CHOOSING) {
             stopsEditorOpen = false
-            send(NavIntent.End)
-            offerUndo(DIRECTIONS_CLOSED) // audit F31: Back at the lowest height closes the route, with Undo
+            clearStep(recenter = false)
+            val back = preview.back()
+            if (back != null) {
+                // P46 (decisions 0.1.40): Back from directions opens the destination's window again; its
+                // results come back under it once the route has ended (restoreAfterBack); the camera shows
+                // the place as a picked one (K2a)
+                g.director.onShowPlaceAfterRoute(back.point)
+                send(NavIntent.End)
+                showSheet(back)
+            } else {
+                send(NavIntent.End)
+                offerEndUndo(DIRECTIONS_CLOSED) // audit F31: a route planned another way: closed, with Undo
+            }
+            return
+        }
+        // play test P28: while a trip is driven (or offered) a single Back never hides it by accident
+        if (AppRules.backHint(phase) == null) return
+        val now = g.clock.elapsedMs()
+        if (AppRules.secondBack(backArmedAtMs, now)) {
+            backArmedAtMs = null
+            host?.leaveApp()
+        } else {
+            backArmedAtMs = now
+            backArmedIn = phase
+        }
+    }
+
+    // ------------------------------------------------------------------ item 52: directions handed over by another app
+
+    /**
+     * H3: the link waiting until the map can take it (H4); [seq] tells one from the next, [receivedMs] (monotonic) and
+     * [firstRun] (it came during the first-run steps) how long it may wait (K5). Never saved, never logged.
+     */
+    class PendingLink(val seq: Long, val link: Handover, val receivedMs: Long, val firstRun: Boolean) {
+        override fun toString(): String = "PendingLink"
+    }
+
+    var pendingLink by mutableStateOf<PendingLink?>(null)
+        private set
+    /** H3, K15: each link's number; a lookup opens what it found only while its link's is live. */
+    private val linkTickets = LinkTickets()
+
+    /** H4-H7: the line about a link that cannot open, with "Add a state" (the map's message slot); notes without it are the plain bar (K3). */
+    var handoverNote by mutableStateOf<HandoverNote?>(null)
+
+    /** K8: counts each time a link opens something; AppRoot closes its own map style sheet and map data dialog then. */
+    var linkClears by mutableStateOf(0)
+        private set
+
+    /** H6/H7: the search a link's words opened (its Layer.Search id): during a trip its pick opens the stop card (K10). */
+    private var linkSearchId: Int? = null
+
+    /** K16: the place a link's route preview went to: a recent once the user drives to it. */
+    private var linkRecent: Place? = null
+
+    /** H6: the address parser's state spellings (us_street_norm.json), read once off the main thread. */
+    private val streetTables by lazy { io.github.spysyweeb.beamline.search.address.StreetTables.load() }
+
+    /** H6 (a): street names compared as the address parser reads them ("W 38th St" is "West 38th Street"); made off the main thread. */
+    private val streetKeys by lazy { io.github.spysyweeb.beamline.search.address.AddressNormalizer(streetTables) }
+
+    /** MainActivity: a VIEW link arrived (H3); a newer one replaces one not yet opened. K5: behind the user's own work it says so. */
+    fun receiveLink(uri: String) {
+        val set = g.installed.installed.value
+        val firstRun = !AppRules.noticeAccepted(g.appState.state.value) || !g.online.state.value.choiceMade || !set.scanned || set.packs.isEmpty() ||
+            (g.getPacks.showFirstRunPicker.value && !firstRunClosed)
+        pendingLink = PendingLink(linkTickets.next(), HandoverLink.parse(uri), g.clock.elapsedMs(), firstRun)
+        handoverNote = null
+        linkRecent = null
+        if (!firstRun && linkBusy()) snackbar = HandoverTexts.WAITING
+    }
+
+    /**
+     * K15: the activity finished: a link still waiting is not opened by a later launch, and one whose lookup is still
+     * running ("Finding the place...") opens nothing when it ends.
+     */
+    fun dropPendingLink() {
+        pendingLink = null
+        linkTickets.voidAll()
+        if (snackbar == HandoverTexts.FINDING) snackbar = null
+    }
+
+    /** H4: something of the user's is open (a form, the save dialog, a map pick, a public notice, a search to save). */
+    private fun linkBusy(): Boolean {
+        val su = g.savedFeature.ui.value
+        return HandoverRules.busy(stack.toList(), saveDialog = su.dialog != null, mapPick = su.mapPick != null,
+            publicNotice = notePending != null || editNoticeShown, saveSearch = g.search.ui.value.mode == SearchMode.SAVE)
+    }
+
+    /** H4: the pending link opens now (AppRoot calls it when HandoverRules.ready); one that waited too long goes (K5). */
+    fun runPendingLink() {
+        val p = pendingLink ?: return
+        pendingLink = null
+        if (HandoverRules.expired(p.receivedMs, g.clock.elapsedMs(), p.firstRun)) {
+            Log.i(TAG, "handover: dropped, it waited too long") // plain literal
+            return
+        }
+        Log.i(TAG, "handover: ${HandoverRules.kindName(p.link)}") // log-ok: a fixed word for the link's form
+        when (val l = p.link) {
+            Handover.Unreadable -> showLinkNote(HandoverTexts.UNREADABLE, states = false)
+            is Handover.Point -> openLinkPoint(p, l)
+            is Handover.Text -> openLinkText(p, l)
+        }
+    }
+
+    /** H4: a lookup ended while the user opened something of their own: the link waits for it again (K5's bar). */
+    private fun requeue(p: PendingLink) {
+        if (pendingLink != null) return
+        pendingLink = p
+        snackbar = HandoverTexts.WAITING
+    }
+
+    /**
+     * H4 (K3): the map in front for a link that opens something: what is open over it goes (never something of the
+     * user's: H4 waits for that), the map style sheet and the map data dialog too (AppRoot, [linkClears]).
+     */
+    private fun clearForLink() {
+        linkClears++
+        confirm = null
+        signInFor = null
+        signInToAdd = null
+        speedPicking = false
+        handoverNote = null
+        closeSearchAndList()
+        stack.removeAll { it == Layer.Settings || it == Layer.About || it == Layer.Licences || it == Layer.DriverNotice || it == Layer.States || it == Layer.Reports }
+        stopsEditorOpen = false
+        clearStep(recenter = false)
+        if (g.sheetPlace.value != null) {
+            g.director.onPlaceLeft()
+            g.sheetPlace.value = null
+        }
+        if (g.search.results.value != null) closeResults()   // S11 results, or item 51's stop results (its teardown runs)
+        linkSearchId = null
+    }
+
+    /** K3: a note with "Add a state" closes what is open and shows on the map; any other is the plain bar over the screen as it is. */
+    private fun showLinkNote(text: String, states: Boolean) {
+        Log.i(TAG, "handover opened: note") // plain literal
+        if (states) {
+            clearForLink()
+            snackbar = null
+            handoverNote = HandoverNote(text, states = true)
+        } else {
+            handoverNote = null
+            snackbar = text
+        }
+    }
+
+    /** H5: a point, named from the packs inside the installed maps (off the main thread), then opened by phase. */
+    private fun openLinkPoint(p: PendingLink, l: Handover.Point) {
+        val set = g.installed.installed.value
+        if (set.packs.isEmpty()) return showLinkNote(HandoverTexts.NEED_STATE, HandoverRules.statesOffered(phase))
+        if (set.routing?.covers(l.point) != true) return openLinkPlace(HandoverRules.pointPlace(l.point, l.label, emptyList(), null))
+        g.scope.launch {
+            val pois = runCatching { g.search.poisNear(l.point, HandoverRules.LABEL_POI_M) }.getOrDefault(emptyList())
+            val street = runCatching { withContext(Dispatchers.Default) { g.streetAt(l.point) } }.getOrNull()
+            if (!linkTickets.live(p.seq)) return@launch   // a newer link came meanwhile
+            if (linkBusy()) return@launch requeue(p)
+            val line = street?.let { nearStreetText(it.name, it.subtitle, it.house) }
+            openLinkPlace(HandoverRules.pointPlace(l.point, l.label, pois, line))
+        }
+    }
+
+    /**
+     * H6 in K1's order: a state named that is not installed is said at once; else the words are looked up on the search
+     * thread ("Finding the place..."): one clear match opens as the same place picked in search, "Name, 12 Some Street,
+     * ..." is tried as the address, anything else opens the search with the words typed.
+     */
+    private fun openLinkText(p: PendingLink, l: Handover.Text) {
+        val set = g.installed.installed.value
+        if (set.packs.isEmpty()) return showLinkNote(HandoverTexts.NEED_STATE, HandoverRules.statesOffered(phase))
+        val near = l.near ?: searchContext().near
+        val installedStates = set.packs.map { it.state.lowercase(Locale.US) }.toSet()
+        val packStates = set.packs.associate { it.packId to it.state.lowercase(Locale.US) }
+        g.scope.launch {
+            val (tables, keys) = withContext(Dispatchers.Default) { streetTables to streetKeys }
+            if (!linkTickets.live(p.seq)) return@launch
+            val streetKey: (String) -> String = keys::streetKey
+            fun decide(r: MultiSearchResponse?) = HandoverRules.decideText(l.text, r, tables.states, tables.ambiguousStates, installedStates, packStates, streetKey)
+            fun outside(code: String) {
+                val canAdd = HandoverRules.statesOffered(phase)
+                showLinkNote(HandoverTexts.outsideState(HandoverRules.stateName(code, tables.states), canAdd), canAdd)
+            }
+            (decide(null) as? HandoverRules.TextAct.OutsideState)?.let { return@launch outside(it.code) }
+            snackbar = HandoverTexts.FINDING
+            val r = g.search.lookUp(l.text, near)
+            if (!linkTickets.live(p.seq)) return@launch
+            if (linkBusy()) return@launch requeue(p)
+            when (val d = decide(r)) {
+                is HandoverRules.TextAct.OutsideState -> outside(d.code)
+                is HandoverRules.TextAct.Clear -> openLinkPlace(HandoverRules.placeOf(d.row))
+                is HandoverRules.TextAct.TryAddress -> {
+                    val state = HandoverRules.namedState(l.text, tables.states, tables.ambiguousStates)
+                    val a = HandoverRules.clearAddress(d.address, g.search.lookUp(d.address, near), state, packStates, streetKey)
+                    if (!linkTickets.live(p.seq)) return@launch
+                    if (linkBusy()) return@launch requeue(p)
+                    if (a == null) return@launch openLinkSearch(l.text, l.near)
+                    val at = GeoPoint(a.result.lat, a.result.lon)
+                    val pois = runCatching { g.search.poisNear(at, HandoverRules.LABEL_POI_M) }.getOrDefault(emptyList())
+                    if (!linkTickets.live(p.seq)) return@launch
+                    openLinkPlace(HandoverRules.pointPlace(at, d.name, pois, HandoverRules.addressLine(a)))
+                }
+                HandoverRules.TextAct.Search -> openLinkSearch(l.text, l.near)
+            }
+        }
+    }
+
+    /** H6: the search (GO_TO) with the words typed, ranked near the link's point when it gave one; its rows work as a typed search's. */
+    private fun openLinkSearch(text: String, near: GeoPoint?) {
+        Log.i(TAG, "handover opened: search") // plain literal
+        clearForLink()
+        snackbar = null
+        openSearch(SearchMode.GO_TO, typed = text, near = near, onePick = HandoverRules.pickToCard(phase))
+        linkSearchId = (stack.lastOrNull() as? Layer.Search)?.id
+    }
+
+    /** H7 (K2, K3, K16): a handed-over place opens by phase (HandoverRules.act). */
+    private fun openLinkPlace(place: Place) {
+        snackbar = null
+        val trip = g.session.state.value
+        val inside = g.installed.installed.value.routing?.covers(place.point) == true
+        val dest = trip.stops.lastOrNull()?.place?.point
+        val atDestination = dest != null && Geo.haversineKm(dest.lat, dest.lon, place.point.lat, place.point.lon) * 1000.0 <= HandoverRules.SAME_PLACE_M
+        when (val act = HandoverRules.act(trip.phase, inside, atDestination)) {
+            HandoverRules.Act.NOTE -> showLinkNote(HandoverTexts.OUTSIDE_MAPS, states = false)
+            HandoverRules.Act.ALREADY -> showLinkNote(HandoverRules.alreadyText(trip.phase), states = false)
+            else -> {
+                Log.i(TAG, "handover opened: ${act.name}") // log-ok: an enum name
+                clearForLink()
+                when (act) {
+                    HandoverRules.Act.PREVIEW -> {
+                        linkRecent = place   // K16: a recent once the trip to it is guided, not now
+                        planTrip(place)
+                    }
+                    HandoverRules.Act.STOP_CARD -> onSearchOutput(
+                        g.search.showStopPlace(place, searchContext(), instead = true, after = StopLeg.joinsAfter(trip)?.name),
+                    )
+                    else -> showPicked(place)   // WINDOW: "Outside the installed maps" with Add a state
+                }
+            }
         }
     }
 
@@ -1076,6 +1654,10 @@ class AppFlows(private val g: AppGraph) {
         const val SAVED_PIN = "saved:"
         /** MapSceneMapper's RESULT pins: "result:<index into SearchFeature.results>" (S11). */
         const val RESULT_PIN = "result:"
+        /** P23: MapSceneMapper's alternatives as the map reports a tap on one: "route:<choice id>". */
+        const val ROUTE_PIN = "route:"
+        /** Item 51: the phases a stop can be added in (rule C8); the stop results end in any other. */
+        private val STOP_PHASES = setOf(Phase.PLANNING, Phase.CHOOSING, Phase.GUIDING, Phase.REROUTING)
 
         const val DROPPED_PIN = "Dropped pin"
 

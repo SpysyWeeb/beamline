@@ -56,6 +56,13 @@ object Texts {
     const val MAP_DESCRIPTION_NO_LIST = "Map of the United States."
     const val WHOLE_COUNTRY = "Whole country"
     const val SEARCH = "Search states"
+    /** P12: under the search field when nothing matches; one fixed text, so a screen reader says it once. */
+    const val NO_MATCH = "No state matches your search."
+    /**
+     * P12: the search field's X, which empties the field: the same name as the place search field's X
+     * (P44). Not "Clear search": that is the map pill's X, which ends the results.
+     */
+    const val CLEAR_TEXT = "Clear text"
     const val AVAILABLE = "Available"
     const val NOT_AVAILABLE = "Not available yet"
     const val NEEDS_NEWER_SECTION = "Needs a newer Beamline"
@@ -92,6 +99,8 @@ object Texts {
     fun noDownload(name: String) = "There's no download for $name yet."
     fun nearby(names: List<String>) = "Nearby states you can download: ${names.joinToString(", ")}."
     const val NEEDS_NEWER_SHEET = "This download needs a newer version of Beamline."
+    /** P25: what "Use a file instead" means, on the sheet of a state without a download. */
+    const val FILE_HINT = "You can also install a state file (.tar) copied to this phone."
 
     // --- progress view (1.1 step 5)
     fun downloading(name: String) = "Downloading $name"
@@ -168,9 +177,15 @@ object Texts {
 
     // --- 1.2 the States screen
     const val STATES_TITLE = "States"
+    /** P13: the top bar's Back arrow. */
+    const val BACK = "Back"
     const val ON_THIS_PHONE = "On this phone"
     const val ADD_A_STATE = "Add a state"
     fun installedLine(snapshot: String, bytes: Long) = "On this phone · data from ${date(snapshot)} · ${size(bytes)}"
+    /** P63: the row's line under the heading "On this phone", which it does not repeat ([installedLine] is the sheet's). */
+    fun installedRowLine(snapshot: String, bytes: Long) = "Data from ${date(snapshot)} · ${size(bytes)}"
+    /** P14: the window of a state on this phone when the fetched list has nothing newer. */
+    fun upToDate(date: String) = "Up to date. " + listChecked(date)
     /**
      * "Built Nov 21, 2026" from a pack_version (the build time as YYYYMMDDhhmm, UTC; its date as written,
      * which is the date in the pack's release name); null for a number that is not such a time. Two
@@ -193,6 +208,9 @@ object Texts {
     const val KEEP = "Keep"
     fun removeTitle(name: String) = "Remove $name?"
     const val REMOVE_TEXT = "Its maps, directions and search are deleted from this phone. You can download it again."
+    /** P62: the Remove dialog says what it frees, as "Remove house numbers" does; [REMOVE_TEXT] without a size. */
+    fun removeText(frees: Long?) = if (frees == null || frees <= 0) REMOVE_TEXT
+        else "Its maps, directions and search are deleted from this phone. This frees ${size(frees)}. You can download it again."
     const val NO_REMOVE_DURING_TRIP = "You can't remove a state during a trip."
     fun beingUpdated(name: String) = "$name is being updated. Cancel the update to remove it."
     fun couldNotRemove(name: String) = "Couldn't remove $name. Nothing was changed."

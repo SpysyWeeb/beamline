@@ -196,7 +196,9 @@ class OffRouteTest {
         h.leaveI90()
         assertEquals(Phase.REROUTING, h.phase())
         assertEquals(ProblemKind.OUTSIDE_INSTALLED_MAPS, h.state.problem!!.kind)
-        assertEquals("You are outside the installed maps.", h.state.problem!!.text)
+        // play test P5: no Retry (it cannot help: the session asks again on a covered fix), and the text says so
+        assertEquals("You are outside the installed maps. Guidance goes on when you are back on them.", h.state.problem!!.text)
+        assertFalse(h.state.problem!!.canRetry, "Retry cannot help: asked again on a covered fix")
         assertEquals(asked, h.engine.routeRequests.size, "no engine call")
         assertEquals(0, h.state.guidance!!.rerouteAttempts)
         h.installed.value = InstalledSet(generation = 1, scanned = true, routing = all)
@@ -211,6 +213,7 @@ class OffRouteTest {
         h.engine.failWhen = { req -> if ("format" !in req) EngineException(171, "No suitable edges near location") else null }
         h.leaveI90()
         assertEquals(ProblemKind.OUTSIDE_INSTALLED_MAPS, h.state.problem!!.kind)
+        assertFalse(h.state.problem!!.canRetry, "play test P5: Retry cannot help: asked again on a covered fix")
         assertEquals(0, h.state.guidance!!.rerouteAttempts)
         assertTrue(h.eventsOf(TripEvent.RerouteFailed::class.java).isEmpty())
     }

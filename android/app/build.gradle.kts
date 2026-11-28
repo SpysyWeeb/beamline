@@ -230,4 +230,12 @@ dependencies {
     testImplementation(libs.junit.jupiter)
     testImplementation(libs.kotlinx.coroutines.test)
     testRuntimeOnly(libs.junit.platform.launcher)
+    // 0.1.40 (P1, P7, P39, P41, P55, P64): the app's own screen tests (the map chrome, Settings, the bars and the
+    // sheets live in :app; no other module may hold them). Run with am instrument, never :app:connectedDebugAndroidTest
+    // (it uninstalls the app and its packs, docs/architecture.md 5.3).
+    androidTestImplementation(platform(libs.androidx.compose.bom))
+    androidTestImplementation(libs.androidx.compose.ui.test.junit4)
+    debugImplementation(libs.androidx.compose.ui.test.manifest)
+    androidTestImplementation(libs.androidx.test.runner)
+    androidTestImplementation(libs.androidx.test.ext.junit)
 }

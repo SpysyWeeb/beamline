@@ -76,29 +76,36 @@ internal object SceneParts {
         PinKind.PICKED -> Ids.PIN_PICKED
         PinKind.RESULT -> Ids.PIN_RESULT
         PinKind.STOP -> Ids.pinStop(pin.number?.coerceIn(1, Ids.MAX_PIN_NUMBER), pin.reached)
+        PinKind.START -> Ids.PIN_START   // play test P22: the chosen start
     }
 
-    /** Pins drawn later are on top: the picked place over the stops, the destination over the other stops. */
+    /** Pins drawn later are on top: the picked place over the stops, the destination over the other stops (and the start, P22). */
     fun pinSortKey(pin: MapPin): Int = when (pin.kind) {
         PinKind.RESULT -> -1   // search results (S11) under every other pin
-        PinKind.STOP -> 0
+        PinKind.STOP, PinKind.START -> 0
         PinKind.DESTINATION -> 1
         PinKind.PICKED -> 2
     }
 
     /**
-     * The tap rule (SP44): a pin wins (the one drawn on top: the highest [pinSortKey], so the
+     * The tap rule (SP44; P23): a pin wins (the one drawn on top: the highest [pinSortKey], so the
      * picked place over the destination over the stops), then a saved marker (the one on top: Home
-     * over Work over the others), then a POI label. [pins] (id and sort key) and [saved] are what
-     * lies under the finger; a pin or a saved marker reports no POI.
+     * over Work over the others), then a POI label, then a route choice ([routes]: the alternatives
+     * under the finger where the chosen line is not, the lowest id; the labels are drawn above the
+     * lines). [pins] (id and sort key) and [saved] are what lies under the finger; a pin, a saved
+     * marker or a route reports no POI.
      */
-    fun tap(pins: List<Pair<String, Int>>, saved: List<Pair<String, SavedKind>>, poi: MapPoi?): Pair<String?, MapPoi?> {
+    fun tap(pins: List<Pair<String, Int>>, saved: List<Pair<String, SavedKind>>, poi: MapPoi?, routes: List<Long> = emptyList()): Pair<String?, MapPoi?> {
         pins.maxByOrNull { it.second }?.let { return it.first to null }
         saved.maxByOrNull { savedSortKey(it.second) }?.let { return SAVED_PREFIX + it.first to null }
-        return null to poi
+        if (poi != null) return null to poi
+        routes.minOrNull()?.let { return ROUTE_PREFIX + it to null }
+        return null to null
     }
 
     const val SAVED_PREFIX = "saved:"
+    /** P23: a route choice tapped on the map: "route:" + AlternativeLine.id (MapGesture.Tap.pinId). */
+    const val ROUTE_PREFIX = "route:"
 
     /**
      * Of the POI labels under the finger, each with its distance from the finger on the screen
@@ -258,11 +265,14 @@ internal object RouteCut {
  * near pieces when the cursor moves, the alternatives when they change).
  */
 internal class RouteSources(private val chunk: Int = RouteCut.CHUNK) {
-    /** What to send; null = the source keeps what it holds. Pairs are (driven, ahead). */
+    /**
+     * What to send; null = the source keeps what it holds. Pairs are (driven, ahead). [alternatives]
+     * keep their ids (P23: a tap on one) and [AlternativeLine.tripRoute] (item 51: grey, never tapped).
+     */
     data class Update(
         val far: Pair<List<GeoPoint>, List<GeoPoint>>?,
         val near: Pair<List<GeoPoint>, List<GeoPoint>>?,
-        val alternatives: List<List<GeoPoint>>?,
+        val alternatives: List<AlternativeLine>?,
     )
 
     private var sent = false
@@ -290,7 +300,7 @@ internal class RouteSources(private val chunk: Int = RouteCut.CHUNK) {
         return Update(
             far = pieces?.takeIf { farChanged }?.let { it.drivenFar to it.aheadFar },
             near = pieces?.let { it.drivenNear to it.aheadNear },
-            alternatives = if (alternativesChanged) newAlternatives.map { it.points } else null,
+            alternatives = if (alternativesChanged) newAlternatives else null,
         )
     }
 
@@ -400,7 +410,10 @@ internal object Ids {
     /** The traffic lights on the guided route ahead (MapScene.lights; docs/next-round.md item 22): points. */
     const val SRC_LIGHTS = "beamline-route-lights"
 
-    val SOURCES = listOf(SRC_ROUTE, SRC_TRAVELED, SRC_ROUTE_NEAR, SRC_ALTERNATIVES, SRC_PINS, SRC_SAVED, SRC_VEHICLE, SRC_BUBBLE, SRC_LIGHTS)
+    /** The route step the route sheet shows (MapScene.step, play test P21): one point, or nothing. */
+    const val SRC_STEP = "beamline-route-step"
+
+    val SOURCES = listOf(SRC_ROUTE, SRC_TRAVELED, SRC_ROUTE_NEAR, SRC_ALTERNATIVES, SRC_PINS, SRC_SAVED, SRC_VEHICLE, SRC_BUBBLE, SRC_LIGHTS, SRC_STEP)
 
     // Below the style's "roads_oneway", bottom to top. A far and a near layer of one kind touch
     // where their pieces meet; every casing of a kind is below every fill of it, so the joint is
@@ -437,6 +450,12 @@ internal object Ids {
     const val L_SAVED_OVER = "beamline-saved-over"
     /** The traffic lights of the route ahead (item 22): above the lines and the saved markers, below the pins and the vehicle. */
     const val L_LIGHTS = "beamline-route-lights"
+    /**
+     * P21: the route step the route sheet shows, a white disc ringed in the route's casing, flat on the map:
+     * above the lines, the lights and the saved markers, below the pins and the vehicle (the lights show only
+     * while guided, the step only while choosing).
+     */
+    const val L_STEP = "beamline-route-step"
     const val L_PINS = "beamline-pins"
     const val L_PUCK_CONE = "beamline-puck-cone"
     const val L_PUCK = "beamline-puck"
@@ -476,7 +495,7 @@ internal object Ids {
     val ROUTE_AHEAD = listOf(L_ROUTE_CASING, L_ROUTE_NEAR_CASING, L_ROUTE, L_ROUTE_NEAR)
 
     /** The marker layers, bottom to top, on top of everything. */
-    val ON_TOP = listOf(L_BUBBLE, L_BUBBLE_EDGE, L_SAVED_OVER, L_LIGHTS, L_PINS, L_PUCK_CONE, L_PUCK, L_BEAM, L_GLOW, L_ARROW, L_LIT)
+    val ON_TOP = listOf(L_BUBBLE, L_BUBBLE_EDGE, L_SAVED_OVER, L_LIGHTS, L_STEP, L_PINS, L_PUCK_CONE, L_PUCK, L_BEAM, L_GLOW, L_ARROW, L_LIT)
 
     /** The lights are drawn from this zoom on (not on the whole-route overview, where they would be a row of dots). */
     const val LIGHTS_MIN_ZOOM = 13.5f
@@ -514,6 +533,8 @@ internal object Ids {
     const val PIN_PICKED = "beamline-pin-picked"
     /** S11: a search result on the map, the destination pin's art at 80 % (the selected result is the picked pin). */
     const val PIN_RESULT = "beamline-pin-result"
+    /** P22: the chosen start: the stop pin's blue with a white ring (the destination has a white dot). */
+    const val PIN_START = "beamline-pin-start"
 
     /** At most 9 stops (guidance.json planning.max_stops), so stop numbers 1-8; 9 is room to spare. */
     const val MAX_PIN_NUMBER = 9

@@ -171,7 +171,9 @@ const val SHEET_HANDLE_TAG = "sheet-handle"
  * under it, then the [content]. The whole frame drags (a list inside it through [SheetNestedScroll]);
  * a tap on the handle or the header raises one height (from the highest, back to the lowest), and a
  * screen reader finds the handle by [label] with its height and the actions "Raise the sheet" and
- * "Lower the sheet". The caller draws the surface around it and shows, for each height, its part.
+ * "Lower the sheet". [raiseLabel] names the raise of a sheet whose raise does something else (audit
+ * F34: the arrival card's opens the place's details, "Show place details"). The caller draws the
+ * surface around it and shows, for each height, its part.
  */
 @Composable
 fun SheetFrame(
@@ -180,6 +182,7 @@ fun SheetFrame(
     handleColor: Color,
     modifier: Modifier = Modifier,
     header: @Composable ColumnScope.() -> Unit = {},
+    raiseLabel: String = SheetTexts.RAISE,
     content: @Composable ColumnScope.() -> Unit,
 ) {
     val stepPx = with(LocalDensity.current) { SHEET_STEP.toPx() }
@@ -199,13 +202,13 @@ fun SheetFrame(
     ) {
         val h = state.height
         val actions = buildList {
-            if (state.canRaise) add(CustomAccessibilityAction(SheetTexts.RAISE) { state.raise() })
+            if (state.canRaise) add(CustomAccessibilityAction(raiseLabel) { state.raise() })
             if (state.canLower) add(CustomAccessibilityAction(SheetTexts.LOWER) { state.lower() })
         }
         Column(
             Modifier
                 .fillMaxWidth()
-                .clickable(role = Role.Button, onClickLabel = if (state.canRaise) SheetTexts.RAISE else SheetTexts.LOWEST) { state.tap() }
+                .clickable(role = Role.Button, onClickLabel = if (state.canRaise) raiseLabel else SheetTexts.LOWEST) { state.tap() }
                 .semantics {
                     contentDescription = label
                     stateDescription = SheetTexts.state(h)

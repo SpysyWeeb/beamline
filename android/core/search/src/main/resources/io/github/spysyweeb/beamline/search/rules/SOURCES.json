@@ -23,7 +23,7 @@
     },
     "search_app.json": {
       "source": "packbuilder/search/search_app.json",
-      "sha256_lf": "cea386acce2eaf36608b456e3afc033bbf3e76729137eb9349528fd77119d46f",
+      "sha256_lf": "59304458cb1139300f0424d27468a16abab620ce71855e4fea5a83f0e088e7fd",
       "used_by": "search screen and saved places: near, typing, merge, recents, saved, shortcuts"
     },
     "fingerprint_spellings.json": {

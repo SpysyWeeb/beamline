@@ -24,6 +24,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
 import io.github.spysyweeb.beamline.feature.about.AboutEvent
 import io.github.spysyweeb.beamline.feature.about.AboutScreen
+import io.github.spysyweeb.beamline.feature.about.DriverNoticeScreen
 import io.github.spysyweeb.beamline.feature.about.FIRST_RUN_NOTICE_VERSION
 import io.github.spysyweeb.beamline.feature.about.FirstRunNotice
 import io.github.spysyweeb.beamline.feature.about.LicencesScreen
@@ -45,7 +46,8 @@ import kotlinx.coroutines.withContext
  *   hold_ms       keep the system splash this long (default 0)
  *   map_ready_ms  when the stand-in map says it is ready (default 900)
  *   reset_notice  true: forget the accepted notice first
- *   screen        home | about | licences | notice | icons: open that screen (no reveal)
+ *   screen        home | about | licences | notice | first-run | icons: open that screen (no reveal);
+ *                 notice is the page About opens (Back, nothing to accept), first-run the first-run page
  *   night         true | false: dark or light screens (default: the system's setting)
  */
 class DemoActivity : ComponentActivity() {
@@ -98,6 +100,8 @@ private fun DemoApp(prefs: SharedPreferences, mapReadyMs: Long, startScreen: Str
         }
         var accepted by remember { mutableIntStateOf(prefs.getInt(DemoActivity.KEY_ACCEPTED, 0)) }
         var screen by rememberSaveable { mutableStateOf(startScreen ?: "home") }
+        // Where Back on the driver notice goes: About when About opened it, else the menu.
+        var noticeBack by rememberSaveable { mutableStateOf("home") }
         SideEffect { darkBars(night || !revealDone) }
         val context = LocalContext.current
         val notices by produceState<Notices?>(null) {
@@ -125,13 +129,14 @@ private fun DemoApp(prefs: SharedPreferences, mapReadyMs: Long, startScreen: Str
                         screen = when (e) {
                             AboutEvent.Back -> "home"
                             AboutEvent.OpenLicences -> "licences"
-                            AboutEvent.OpenDriverNotice -> "notice"
+                            AboutEvent.OpenDriverNotice -> "notice".also { noticeBack = "about" }
                         }
                     })
                     "licences" -> notices?.let { LicencesScreen(it, onBack = { screen = "about" }) }
-                    "notice" -> FirstRunNotice(onAccept = { screen = "about" })
+                    "notice" -> DriverNoticeScreen(onBack = { screen = noticeBack })
+                    "first-run" -> FirstRunNotice(onAccept = { screen = "home" })
                     "icons" -> IconShapes(onBack = { screen = "home" })
-                    else -> Home(onOpen = { screen = it })
+                    else -> Home(onOpen = { noticeBack = "home"; screen = it })
                 }
             }
             if (!revealDone) SplashReveal(mapReady, onFinished = { revealDone = true }, Modifier.fillMaxSize())

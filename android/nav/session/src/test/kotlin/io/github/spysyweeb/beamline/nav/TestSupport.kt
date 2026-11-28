@@ -81,11 +81,14 @@ class RecordedEngine(recordings: List<JsonObject>) : RoutingEngine, AutoCloseabl
     var closed = 0
     /** Fails a request on purpose (O7, C3 failures): return the exception to throw. */
     var failWhen: ((JsonObject) -> EngineException?)? = null
+    /** Item 51: answers a matrix request itself ([fakeMatrix]) before the recordings are asked; null: not answered here. */
+    var matrixAnswer: ((JsonObject) -> String?)? = null
 
     private fun answer(kind: String, requestJson: String): String {
         val req = Json.parseToJsonElement(requestJson).jsonObject
         asked += req
         failWhen?.invoke(req)?.let { throw it }
+        if (kind == "matrix") matrixAnswer?.invoke(req)?.let { return it }
         val r = answers[canonicalJson(req)] ?: run {
             MissingRequests.add(kind, requestJson)
             throw EngineException(null, "request not recorded")
@@ -138,6 +141,31 @@ object MissingRequests {
 
     @Synchronized
     fun count() = seen.size
+}
+
+/** Item 51: a made-up drive time from [a] to [b]: the crow-flies distance x 1.3 at [speedMps] (the tests' matrix, [fakeMatrix]). */
+fun fakeTimeS(a: LatLon, b: LatLon, speedMps: Double = 20.0): Double =
+    io.github.spysyweeb.beamline.routing.model.Geo.distanceM(a, b) * 1.3 / speedMps
+
+/** The point of a matrix location ({"lat":..,"lon":..}). */
+fun JsonObject.latLon(): LatLon = LatLon(this["lat"]!!.jsonPrimitive.content.toDouble(), this["lon"]!!.jsonPrimitive.content.toDouble())
+
+/**
+ * Item 51: a sources_to_targets answer made up from the request's own points ([fakeTimeS]; the shape
+ * ValhallaResponses.parseMatrix reads), no connection (null) to or from a point of [unreachable] (within 1 m).
+ */
+fun fakeMatrix(speedMps: Double = 20.0, unreachable: Set<LatLon> = emptySet()): (JsonObject) -> String? = { req ->
+    fun cut(p: LatLon) = unreachable.any { io.github.spysyweeb.beamline.routing.model.Geo.distanceM(it, p) < 1.0 }
+    val sources = req["sources"]!!.jsonArray.map { it.jsonObject.latLon() }
+    val targets = req["targets"]!!.jsonArray.map { it.jsonObject.latLon() }
+    val rows = JsonArray(sources.map { s ->
+        JsonArray(targets.map { t ->
+            if (cut(s) || cut(t)) JsonObject(mapOf("time" to kotlinx.serialization.json.JsonNull, "distance" to kotlinx.serialization.json.JsonNull))
+            else JsonObject(mapOf("time" to JsonPrimitive(fakeTimeS(s, t, speedMps)),
+                "distance" to JsonPrimitive(io.github.spysyweeb.beamline.routing.model.Geo.distanceM(s, t) * 1.3 / 1000.0)))
+        })
+    })
+    JsonObject(mapOf("sources_to_targets" to rows, "units" to JsonPrimitive("kilometers"))).toString()
 }
 
 /** A dispatcher that holds its work while [gated], to make an engine answer arrive later (O5, C2). */

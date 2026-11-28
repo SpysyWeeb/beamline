@@ -40,7 +40,8 @@ class RouteSheetPresentTest {
         assertEquals(
             listOf(
                 RouteCardUi(1, "Fastest", "6 min", "3.3 mi", "Arrive 3:36 PM", "via I 90, US 19", listOf("Highways"), selected = true),
-                RouteCardUi(2, "Simpler", "7 min", "3.2 mi", "Arrive 3:37 PM", "via US 20", listOf("Tolls"), selected = false),
+                // P23: the cards read "6 min" and "7 min", so the slower one says "+1 min"
+                RouteCardUi(2, "Simpler", "7 min", "3.2 mi", "Arrive 3:37 PM", "via US 20", listOf("Tolls"), selected = false, slowerText = "+1 min"),
             ),
             s.cards,
         )
@@ -49,6 +50,40 @@ class RouteSheetPresentTest {
         assertNull(both.cards.single().viaText)
         val none = sheet(choosing(choices = listOf(choice(4, listOf("fastest"), hasHighways = false))))
         assertEquals(emptyList<String>(), none.cards.single().notes)
+    }
+
+    /** Play test P23: "+N min" counts the minutes the cards show (rounded to the nearest minute), not raw seconds. */
+    @Test
+    fun `a card a minute slower by the times shown says +1 min`() {
+        fun slower(fastS: Double, slowS: Double): Pair<String?, String?> {
+            val s = sheet(choosing(choices = listOf(fastestOnly.copy(timeS = fastS), simpler.copy(timeS = slowS)), selected = 1))
+            return s.cards.first { it.choiceId == 1L }.slowerText to s.cards.first { it.choiceId == 2L }.slowerText
+        }
+        // "6 min" and "7 min" (50 s apart)
+        assertEquals(null to "+1 min", slower(370.0, 420.0))
+        // "1 h 58 min" and "1 h 59 min" (32 s apart)
+        assertEquals(null to "+1 min", slower(7079.0, 7111.0))
+        // "1 h 58 min" and "2 h" (89 s apart): two minutes as read, not one
+        assertEquals(null to "+2 min", slower(7100.0, 7189.0))
+        // both "6 min": nothing
+        assertEquals(null to null, slower(370.0, 380.0))
+    }
+
+    /** Play tests P19, P20: below full height the sheet says where the preview starts and how many stops come before the destination. */
+    @Test
+    fun `a trip from a chosen start says so below full height`() {
+        val swapped = Place("Your starting point", GeoPoint(42.0402, -80.0951), PlaceSource.MAP_PIN, subtitle = "Where you were when you swapped")
+        val fromDowns = sheet(choosing(origin = Origin.FromPlace(downsDrive), stops = listOf(TripStop(sheetz), TripStop(swapped))))
+        assertEquals("From Downs Drive · 1 stop", fromDowns.contextLine)
+        // the note above Start stays as it was
+        assertEquals("Guidance starts from where you are.", fromDowns.startNote)
+        val plain = sheet(choosing())
+        assertNull(plain.contextLine)
+        assertNull(plain.startNote)
+        val zoo = TripStop(Place("Erie Zoo", GeoPoint(42.1489, -80.0869), PlaceSource.SEARCH))
+        assertEquals("2 stops", sheet(choosing(stops = listOf(TripStop(sheetz), zoo, TripStop(downsDrive)))).contextLine)
+        // a reached stop is not counted; a chosen start alone says only where it is
+        assertEquals("From Downs Drive", sheet(choosing(origin = Origin.FromPlace(downsDrive), stops = listOf(TripStop(sheetz, reached = true), TripStop(downsDrive)))).contextLine)
     }
 
     @Test
@@ -161,6 +196,34 @@ class RouteSheetPresentTest {
         assertTrue(present(guided, stopsEditorOpen = true).stopsEditor!!.canOptimize)
         val guidedTwoLeft = Exit24.guiding(stops = listOf(TripStop(sheetz, reached = true), zoo, TripStop(downsDrive)))
         assertFalse(present(guidedTwoLeft, stopsEditorOpen = true).stopsEditor!!.canOptimize)
+    }
+
+    /**
+     * Play test P49: the stops editor takes the route sheet's (or the trip bar's) place, so its own note line says what
+     * Best order did, or the trip's problem; while guided it shows the trip bar's arrival and remaining time (P5: "No route
+     * from here" outside the installed maps). The Undo offer is the app's (canUndo stays false here).
+     */
+    @Test
+    fun `P49 the stops editor says what Best order did, and while guided the arrival`() {
+        val three = listOf(TripStop(sheetz), TripStop(Place("Erie Zoo", GeoPoint(42.1489, -80.0869), PlaceSource.SEARCH)), TripStop(downsDrive))
+        fun editor(t: TripState, shown: io.github.spysyweeb.beamline.api.nav.TripEvent? = null) = present(t, stopsEditorOpen = true, shownEvent = shown).stopsEditor!!
+        val reordered = io.github.spysyweeb.beamline.api.nav.TripEvent.StopsReordered
+        assertEquals("Stops reordered.", editor(choosing(stops = three), reordered).note)
+        val best = TripProblem(ProblemKind.NO_ROUTE, "These stops are already in the best order.", false)
+        assertEquals("These stops are already in the best order.", editor(choosing(stops = three, problem = best)).note)
+        assertEquals(best.text, editor(choosing(stops = three, problem = best), reordered).note, "the problem is read first")
+        val plain = editor(choosing(stops = three))
+        assertNull(plain.note)
+        assertFalse(plain.canUndo)
+        assertNull(plain.arriveText, "no arrival before guidance (the route sheet's cards have it)")
+        // while guided
+        val guided = present(Exit24.guiding(stops = three), stopsEditorOpen = true)
+        val bar = guided.guidance!!.tripBar
+        assertEquals(bar.arriveText + " · " + bar.remainingTimeText, guided.stopsEditor!!.arriveText)
+        assertEquals("Arrive 3:33 PM · 3 min", guided.stopsEditor!!.arriveText)
+        assertEquals("Stops reordered.", editor(Exit24.guiding(stops = three), reordered).note)
+        val outside = TripProblem(ProblemKind.OUTSIDE_INSTALLED_MAPS, "You are outside the installed maps. Guidance goes on when you are back on them.", false)
+        assertEquals("No route from here", editor(Exit24.guiding(stops = three, phase = Phase.REROUTING, problem = outside)).arriveText)
     }
 
     @Test

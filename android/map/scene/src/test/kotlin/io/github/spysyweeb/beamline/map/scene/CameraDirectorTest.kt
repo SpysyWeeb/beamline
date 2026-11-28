@@ -480,7 +480,8 @@ class CameraDirectorTest {
         assertEquals(Bounds.around(listOf(GeoPoint(42.0420, -80.0960)) + Fx.ROUTE.drop(3)), t.fit)
         assertEquals(0.0, t.pitchDeg)
         assertEquals(0.0, t.bearingDeg)
-        assertEquals(EdgeInsetsDp(top = 168f, bottom = 248f, start = 48f, end = 48f), t.padding)
+        // P32 (0.1.40): padded by overview.padding_dp (72), room for the driving arrow's 136 dp picture
+        assertEquals(EdgeInsetsDp(top = 192f, bottom = 272f, start = 72f, end = 72f), t.padding)
         // positions keep coming: the overview stays put
         drive(3, 11_000)
         assertTrue(t === target)
@@ -490,6 +491,15 @@ class CameraDirectorTest {
         assertEquals(CameraMode.GUIDE_FOLLOW, mode)
         assertEquals(Fx.ROUTE[3], target!!.center)
         assertEquals(60.0, target!!.pitchDeg)
+    }
+
+    @Test
+    fun `K5 a camera file without the overview's padding pads as the preview`() {
+        val d = CameraDirector(rules.copy(overviewPaddingDp = null), clock)
+        d.onViewport(411f, 891f, insets)
+        d.onTrip(Fx.guiding(Fx.vehicle(GeoPoint(42.0420, -80.0960), 10_000), traveled = RouteCursor(2, GeoPoint(42.0420, -80.0960))))
+        d.onOverview()
+        assertEquals(EdgeInsetsDp(top = 168f, bottom = 248f, start = 48f, end = 48f), d.target.value!!.padding)
     }
 
     @Test

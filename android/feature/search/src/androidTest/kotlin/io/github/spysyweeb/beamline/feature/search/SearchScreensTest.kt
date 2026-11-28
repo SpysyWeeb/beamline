@@ -9,11 +9,13 @@ import androidx.compose.foundation.layout.WindowInsets
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.requiredSize
 import androidx.compose.foundation.layout.safeDrawing
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.windowInsetsPadding
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.CompositionLocalProvider
+import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.setValue
@@ -23,11 +25,22 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.asAndroidBitmap
 import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.platform.testTag
+import androidx.compose.ui.semantics.SemanticsActions
 import androidx.compose.ui.semantics.SemanticsProperties
 import androidx.compose.ui.semantics.getOrNull
+import androidx.compose.ui.test.assertCountEquals
+import androidx.compose.ui.test.assertIsDisplayed
+import androidx.compose.ui.test.assertIsFocused
 import androidx.compose.ui.test.captureToImage
+import androidx.compose.ui.test.getUnclippedBoundsInRoot
 import androidx.compose.ui.test.hasClickAction
 import androidx.compose.ui.test.hasSetTextAction
+import androidx.compose.ui.test.onAllNodesWithContentDescription
+import androidx.compose.ui.test.onNodeWithContentDescription
+import androidx.compose.ui.test.onNodeWithText
+import androidx.compose.ui.test.performScrollTo
+import androidx.compose.ui.test.performSemanticsAction
+import androidx.compose.ui.test.performTextInput
 import androidx.compose.ui.test.junit4.ComposeContentTestRule
 import androidx.compose.ui.test.junit4.v2.createComposeRule
 import androidx.compose.ui.test.onFirst
@@ -70,6 +83,8 @@ import kotlinx.coroutines.cancel
 import kotlinx.coroutines.flow.MutableStateFlow
 import org.junit.After
 import org.junit.Assert.assertEquals
+import org.junit.Assert.assertNotNull
+import org.junit.Assert.assertNull
 import org.junit.Assert.assertTrue
 import org.junit.Assume.assumeTrue
 import org.junit.Before
@@ -221,7 +236,7 @@ class SearchScreensTest {
         f2.openToSave(SaveTarget.Work, gps)
         assertTrue(f2.ui.value.useMyPosition)
         bothThemes("search-save-start") { SearchScreen(f2.ui.value, {}) }
-        // ADD_STOP while driving: rows at the top, no keyboard (SP4)
+        // ADD_STOP while driving: the field focused (P26, 0.1.40)
         f2.open(SearchMode.ADD_STOP, gps, driving = true)
         bothThemes("search-addstop-driving") { SearchScreen(f2.ui.value, {}) }
         // a refused pick in SAVE mode says why: "Change location" of an other place onto the mall, saved as "Quokka Shop"
@@ -320,7 +335,8 @@ class SearchScreensTest {
             f.open(SearchMode.GO_TO, gps)
             f.onEvent(SearchEvent.QueryChanged("sheetz"))
             waitFor(f) { it.phase == SearchPhase.RESULTS }
-            val picked = f.onEvent(SearchEvent.RowTapped(f.ui.value.results[0].key)) as SearchOutput.Picked
+            // P44 (0.1.40): a row of the typed list keeps its list on the map and opens that place's sheet
+            val picked = f.onEvent(SearchEvent.RowTapped(f.ui.value.results[0].key)) as SearchOutput.ShowPlace
             val sheet = f.placeSheet(picked.place, gps, tripActive = false)
             bothThemes("sheet-routable") { OnMap { Box(Modifier.align(Alignment.BottomCenter)) { PlaceSheet(sheet, {}) } } }
             val outside = f.placeSheet(Place("Point State Park", GeoPoint(40.4416, -80.0128), PlaceSource.SEARCH, "Pittsburgh", "park"), gps, tripActive = false)
@@ -567,7 +583,9 @@ class SearchScreensTest {
         val start = named("search-start", a11yTree("search-start", "Saved places, 2 places"))
         val said = start.map { it.first }
         assertTrue(said.toString(), said.any { Regex("""Home, Erie Maritime Museum, 100 East Front Street, Erie, [0-9.]+ mi""").matches(it) })
-        assertTrue(said.toString(), "Set work" in said && "Saved places, 2 places" in said && "Gas" in said && "Remove from recents" in said)
+        assertTrue(said.toString(), "Set work" in said && "Saved places, 2 places" in said && "Gas" in said)
+        // P45 (audit F49): the buttons say what they act on
+        assertTrue(said.toString(), "Remove Erie Art Museum from recent places" in said && "Clear recent places" in said)
         assertTrue(said.toString(), "Search places or addresses" in said)   // the field: its label once, the hint not again
         assertTargets("search-start")
         // (2) the saved places screen: "Edit {name}" stops; (3) the switch with its state
@@ -619,6 +637,131 @@ class SearchScreensTest {
         val sh = named("sheet", a11yTree("sheet", "Add stop"))
         assertTrue(sh.toString(), sh.map { it.first }.containsAll(listOf("Close", "Add stop", "Directions", "Edit")))
         assertTargets("sheet")
+    }
+
+    // ---------------------------------------------------------------- 0.1.40: P26, P45, P47, P44's clear button
+
+    /** P26: the Add stop search field is focused while driving (decisions.md); typing lands in it. */
+    @Test
+    fun addStopFieldIsFocusedWhileDriving() {
+        val f = SearchFeature(installed(), RecentPlaces(File(work, "recents6.json")), store("focus"), units, scope, Dispatchers.Unconfined, Quiet)
+        f.open(SearchMode.ADD_STOP, gps, driving = true)
+        show { SearchScreen(f.ui.collectAsState().value, { f.onEvent(it) }) }
+        compose.onNode(hasSetTextAction()).assertIsFocused()
+        compose.onNode(hasSetTextAction()).performTextInput("Wegmans")
+        compose.waitForIdle()
+        assertEquals("Wegmans", f.ui.value.query)
+    }
+
+    /** P45: the Undo bar after "Clear": Undo sends its event, the time runs out after 10 s; the buttons are named. */
+    @Test
+    fun recentsUndoBarAndLabels() {
+        val events = ArrayList<SearchEvent>()
+        compose.mainClock.autoAdvance = false
+        try {
+            // the clock is ours: a few frames compose the bar and start its timer
+            compose.runOnUiThread { content = { SearchScreen(SearchUi(undoText = "Recent places cleared"), { events.add(it) }) }; night = false; fontScale = null }
+            compose.mainClock.advanceTimeBy(100)
+            compose.waitForIdle()
+            compose.onNodeWithTag(UNDO_BAR_TAG).assertIsDisplayed()
+            compose.onNodeWithText("Recent places cleared").assertIsDisplayed()
+            compose.onNodeWithText("Undo").performClick()
+            assertEquals(listOf<SearchEvent>(SearchEvent.UndoClearRecents), events)
+            compose.mainClock.advanceTimeBy(9_000)
+            compose.waitForIdle()
+            assertEquals(SearchEvent.UndoClearRecents, events.last())       // not yet
+            compose.mainClock.advanceTimeBy(1_100)
+            compose.waitForIdle()
+            assertEquals(SearchEvent.UndoExpired, events.last())
+        } finally {
+            compose.mainClock.autoAdvance = true
+        }
+        assertTargets("undo-bar")
+        bothThemes("search-recents-undo") { SearchScreen(SearchUi(undoText = "Recent places cleared"), {}) }
+        val recents = RecentPlaces(File(work, "recents8.json"))
+        recents.add(art.copy(searchId = 3, packId = "us-pa"))
+        awaitStoreWrites()
+        val f = SearchFeature(installed(), recents, store("undo"), units, scope, Dispatchers.Unconfined, Quiet)
+        f.open(SearchMode.GO_TO, gps)
+        show { SearchScreen(f.ui.value, {}) }
+        compose.onNodeWithContentDescription("Clear recent places").assertExists()
+        compose.onNodeWithContentDescription("Remove Erie Art Museum from recent places").assertExists()
+        assertTargets("recents-labels")
+    }
+
+    /** P47: "No places found" after typed words has a hint and, in GO_TO, "Add a state"; only the first line is a live region. */
+    @Test
+    fun noResultsHasAHintAndANextStep() {
+        val events = ArrayList<SearchEvent>()
+        val none = SearchUi(mode = SearchMode.GO_TO, query = "xqzvv", phase = SearchPhase.NO_RESULTS, message = "No places found", noResultsHint = Texts.NO_RESULTS_HINT)
+        show { SearchScreen(none, { events.add(it) }) }
+        compose.onNodeWithText(Texts.NO_RESULTS_HINT).assertIsDisplayed()
+        assertNull(compose.onNodeWithText(Texts.NO_RESULTS_HINT).fetchSemanticsNode().config.getOrNull(SemanticsProperties.LiveRegion))
+        assertNotNull(compose.onNodeWithText("No places found").fetchSemanticsNode().config.getOrNull(SemanticsProperties.LiveRegion))
+        compose.onNodeWithText("Add a state").performClick()
+        assertEquals(listOf<SearchEvent>(SearchEvent.OpenStates), events)
+        assertTargets("no-results")
+        bothThemes("search-no-results-hint") { SearchScreen(none, {}) }
+        show { SearchScreen(none.copy(mode = SearchMode.ADD_STOP), {}) }
+        compose.onNodeWithText("Add a state").assertDoesNotExist()
+        show { SearchScreen(none.copy(noResultsHint = null), {}) }
+        compose.onNodeWithText("No places found").assertIsDisplayed()
+        compose.onNodeWithText(Texts.NO_RESULTS_HINT).assertDoesNotExist()
+    }
+
+    /** P47: at font 1.3 the chip row runs off the screen: a fade says it scrolls; at its real end the fade goes. */
+    @Test
+    fun shortcutRowShowsThatItScrolls() {
+        val f1 = SearchFeature(installed(), RecentPlaces(File(work, "recents7.json")), store("chips"), units, scope, Dispatchers.Unconfined, Quiet)
+        f1.open(SearchMode.GO_TO, gps)
+        compose.runOnUiThread { content = { SearchScreen(f1.ui.value, {}) }; night = false; fontScale = 1.3f }
+        compose.waitForIdle()
+        compose.onNodeWithTag(SHORTCUTS_FADE_TAG).assertExists()
+        compose.onNodeWithTag(VIEW_ALL_TAG).performScrollTo().assertIsDisplayed()
+        // performScrollTo stops when View all shows, 12 dp short of the row's end: scroll to the real end
+        compose.onNodeWithTag(SHORTCUTS_ROW_TAG).performSemanticsAction(SemanticsActions.ScrollBy) { it(100_000f, 0f) }
+        compose.waitForIdle()
+        compose.onNodeWithTag(VIEW_ALL_TAG).assertIsDisplayed()
+        compose.onNodeWithTag(SHORTCUTS_FADE_TAG).assertDoesNotExist()
+        assertTargets("chips-1.3")
+        bothThemes("search-start-empty-1.3", 1.3f) { SearchScreen(f1.ui.value, {}) }
+    }
+
+    /** P44 (audit F50): the field's own clear button, named once; the pill keeps its "Clear search"; clear of a side bar in landscape. */
+    @Test
+    fun theFieldHasAClearButton() {
+        val events = ArrayList<SearchEvent>()
+        val typed = SearchUi(query = "coffee", phase = SearchPhase.RESULTS)
+        show { SearchScreen(typed, { events.add(it) }) }
+        compose.onNodeWithContentDescription("Clear text").performClick()
+        assertEquals(listOf<SearchEvent>(SearchEvent.QueryChanged("")), events)
+        assertTargets("field-clear")
+        show { SearchScreen(SearchUi(), {}) }
+        compose.onNodeWithContentDescription("Clear text").assertDoesNotExist()
+        show { OnMap { Box(Modifier.padding(8.dp).fillMaxWidth()) { SearchBar(onClick = {}, modifier = Modifier.fillMaxWidth(), query = "coffee") } } }
+        compose.onAllNodesWithContentDescription("Clear search").assertCountEquals(1)
+        compose.onAllNodesWithContentDescription("Clear text").assertCountEquals(0)
+        // landscape with 3-button navigation on the right: the X stays clear of the bar
+        val land = "landscape"
+        val bar = WindowInsets(right = 48.dp)
+        compose.runOnUiThread {
+            content = { Box(Modifier.requiredSize(640.dp, 360.dp).testTag(land)) { SearchScreenContent(typed, {}, Modifier, sideInsets = bar) } }
+            night = false; fontScale = null
+        }
+        compose.waitForIdle()
+        val box = compose.onNodeWithTag(land).getUnclippedBoundsInRoot()
+        val x = compose.onNodeWithContentDescription("Clear text").getUnclippedBoundsInRoot()
+        assertTrue("X right ${x.right} vs box ${box.left}..${box.right}", x.right <= box.left + 592.dp)
+        compose.runOnUiThread {
+            content = { Box(Modifier.requiredSize(640.dp, 360.dp).testTag(land)) { SearchScreenContent(SearchUi(shortcuts = listOf(
+                ShortcutUi("gas", "Gas", "fuel"), ShortcutUi("rest_stops", "Rest stops", "rest_area"), ShortcutUi("food", "Food", "restaurant"),
+                ShortcutUi("coffee", "Coffee", "cafe"), ShortcutUi("parking", "Parking", "parking"), ShortcutUi("ev_charging", "EV charging", "charging_station"),
+                ShortcutUi("hotels", "Hotels", "hotel"))), {}, Modifier, sideInsets = bar) } }
+            fontScale = 1.3f
+        }
+        compose.waitForIdle()
+        val fade = compose.onNodeWithTag(SHORTCUTS_FADE_TAG).getUnclippedBoundsInRoot()
+        assertTrue("fade right ${fade.right}", fade.right <= box.left + 592.dp)
     }
 
     // ---------------------------------------------------------------- PV8: the keyboard does not learn

@@ -49,6 +49,14 @@ data class AddressInfo(
 data class ParseLabel(val text: String, val role: String, val match: String? = null,
                       val matches: List<String>? = null, val fuzzy: Boolean? = null)
 
+/**
+ * 0.1.40 (play test P6): the place a query's words name ("coffee in corry": Corry), which the engine
+ * ranked around (its anchor). [toString] prints none of it (PV2).
+ */
+data class NamedPlace(val name: String, val lat: Double, val lon: Double) {
+    override fun toString(): String = "NamedPlace"
+}
+
 data class SearchResponse(
     val query: String,
     val parse: List<ParseLabel>,
@@ -60,6 +68,8 @@ data class SearchResponse(
     val positionIgnored: Boolean,
     /** The house number the engine read at the start of the query ("4319 peach st"), if any. */
     val houseNumber: String? = null,
+    /** 0.1.40 (P6): the place the words name, when they name one ("coffee in corry"); null otherwise. */
+    val namedPlace: NamedPlace? = null,
 )
 
 /**

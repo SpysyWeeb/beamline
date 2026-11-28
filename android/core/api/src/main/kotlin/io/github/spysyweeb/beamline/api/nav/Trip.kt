@@ -174,7 +174,34 @@ data class TripState(
     val replanning: Boolean = false,
     /** Item 47: the last [NavIntent.Estimate]'s answer (dropped when a trip ends); null before one or when none was found. */
     val estimate: DriveEstimate? = null,
+    /** Item 51: the answer to the last [NavIntent.Detours]; null before one, after an empty one for it, when the stops, the start, the route type or options or the chosen route changed, at arrival, or when the trip ended. */
+    val detours: StopDetours? = null,
+    /** Item 51: the route with the place of the last [NavIntent.PreviewStop] added; null when none is looked at. The trip itself does not change for it. */
+    val stopPreview: StopPreview? = null,
+    /**
+     * Play test P27: the trip offered in RESUME_OFFERED (or being resumed, R3/R4) is a simulated drive;
+     * Resume drives it simulated again (from the new route's start, as R4 does). Read in RESUME_OFFERED;
+     * false once guidance starts and in a new trip.
+     */
+    val resumeSimulated: Boolean = false,
 )
 
 /** A drive time to [point] from where the phone was (item 47: "Directions · 6 min"). */
 data class DriveEstimate(val point: GeoPoint, val timeS: Double, val lengthM: Double)
+
+/**
+ * Item 51 (rule C8): what each place of [NavIntent.Detours] [requestId] adds to the trip as a stop, in the
+ * request's order: [addedS] = the time from where the stop joins the trip to the place, plus from the place back
+ * to the trip (a point of its route 10 km past the farthest place, or the destination when that is nearer), less
+ * [legS] (that part of the leg's time now), never below 0; null where no connection was found or it was not
+ * worked out yet. [done]: every place has been worked out (until then the answer grows a few places at a time).
+ */
+data class StopDetours(val requestId: Long, val addedS: List<Double?>, val legS: Double?, val done: Boolean)
+
+/**
+ * Item 51 (rule C8): the route the trip would have with [place] added as [NavIntent.AddStop] without an index
+ * adds it, from the car while guiding, from the trip's start before. [route] (line, legs, time and length as a
+ * route card has them) and [addedS] (its time less the trip's remaining time now, never below 0) are null while
+ * [busy], and when [problem] says why there is none (only TOO_MANY_STOPS means AddStop would be refused).
+ */
+data class StopPreview(val place: Place, val route: RouteChoice?, val addedS: Double?, val busy: Boolean, val problem: TripProblem? = null)

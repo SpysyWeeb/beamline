@@ -8,7 +8,17 @@ import androidx.compose.material3.CardDefaults
 import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.ScrollState
 import androidx.compose.foundation.background
+import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
+import androidx.compose.material3.OutlinedButton
+import androidx.compose.runtime.saveable.rememberSaveable
+import androidx.compose.runtime.withFrameNanos
+import androidx.compose.ui.geometry.Rect
+import androidx.compose.ui.graphics.Brush
+import androidx.compose.ui.unit.IntSize
+import androidx.compose.ui.semantics.contentDescription
+import androidx.compose.ui.semantics.heading
+import androidx.compose.ui.semantics.stateDescription
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.horizontalScroll
 import androidx.compose.foundation.layout.Box
@@ -82,13 +92,37 @@ import kotlin.math.roundToInt
  */
 @Composable
 internal fun RouteSheet(sheet: RouteSheetUi, onEvent: (DriveEvent) -> Unit, modifier: Modifier = Modifier, opensAt: SheetHeight = SheetHeight.MIDDLE) {
-    // Rule D10 (three heights since item 47, 2026-11-26): kept while the sheet shows and across a turn
-    // of the phone; a new trip's sheet opens at [opensAt]: the middle height (the routes and Start)
-    // under the map, full height in the side panel. At most 560 dp tall (less on a short screen).
+    // Rule D10 (three heights since item 47, 2026-11-26): kept while the sheet shows; a new trip's sheet opens at
+    // [opensAt]: the middle height (the routes and Start) under the map, full height in the side panel. At most
+    // 560 dp tall (less on a short screen).
     val height = rememberSheetState(SheetSteps.THREE, opensAt)
-    // audit F31: Back at full height steps down to the routes first (under the map); at the lower
-    // heights it closes the route, with Undo (AppFlows.onBack)
-    BackHandler(enabled = height.height == SheetHeight.FULL && opensAt != SheetHeight.FULL) { height.set(SheetHeight.MIDDLE) }
+    // P52 (0.1.40): a turn of the phone between the two layouts moves the sheet to the new layout's opening height
+    // (turned on its side at the middle height, the panel showed only the small cards and Start). On purpose this
+    // overrides P21's step view: turned on its side with a step shown, the panel opens the list with the step marked.
+    var laidOutFor by rememberSaveable { mutableStateOf(opensAt) }
+    LaunchedEffect(opensAt) {
+        if (laidOutFor != opensAt) {
+            laidOutFor = opensAt
+            height.set(opensAt)
+        }
+    }
+    // P21: the step the map shows (AppFlows keeps it); an index outside the steps is none
+    val shown = sheet.shownStep?.takeIf { it in sheet.steps.indices }
+    val full = height.height == SheetHeight.FULL
+    // audit F31: Back at full height steps down to the routes first (under the map); at the lower heights
+    // AppFlows.onBack closes the route (P46: back to the destination's window, else with Undo). P21: with a
+    // step shown, Back at the middle height goes back up to the steps (the step stays marked); at full
+    // height it lets the step go (the whole route again) and steps down; at the lowest it lets it go.
+    BackHandler(enabled = shown != null || (full && opensAt != SheetHeight.FULL)) {
+        when {
+            shown != null && height.height == SheetHeight.MIDDLE -> height.set(SheetHeight.FULL)
+            shown != null -> {
+                onEvent(DriveEvent.CloseStep)
+                if (full && opensAt != SheetHeight.FULL) height.set(SheetHeight.MIDDLE)
+            }
+            else -> height.set(SheetHeight.MIDDLE)
+        }
+    }
     SheetFrame(
         height, DriveTexts.ROUTE_CHOICE, MaterialTheme.colorScheme.onSurfaceVariant,
         modifier.fillMaxWidth().heightIn(max = 560.dp).testTag(DriveTags.ROUTE_SHEET),
@@ -97,9 +131,17 @@ internal fun RouteSheet(sheet: RouteSheetUi, onEvent: (DriveEvent) -> Unit, modi
             if (sheet.busy) LinearProgressIndicator(Modifier.fillMaxWidth().testTag(DriveTags.BUSY))
         }
         when (height.height) {
-            SheetHeight.FULL -> FullRouteSheet(sheet, onEvent) { step -> onEvent(DriveEvent.ShowStep(step.point)); height.set(SheetHeight.MIDDLE) }
-            SheetHeight.MIDDLE -> LowRouteSheet(sheet, onEvent)
-            SheetHeight.LOW -> PeekRouteSheet(sheet, onEvent) { height.set(SheetHeight.MIDDLE) }
+            SheetHeight.FULL -> FullRouteSheet(sheet, onEvent, shown) { i ->
+                onEvent(DriveEvent.ShowStep(sheet.steps[i].point, i))
+                // P21: under the map the step shows at the middle height (the map above it); the side panel keeps its list
+                if (opensAt != SheetHeight.FULL) height.set(SheetHeight.MIDDLE)
+            }
+            SheetHeight.MIDDLE -> if (shown != null) StepView(sheet, shown, onEvent) { height.set(SheetHeight.FULL) } else LowRouteSheet(sheet, onEvent)
+            SheetHeight.LOW -> PeekRouteSheet(sheet, onEvent) {
+                // the "2 routes" chip goes to the routes, not to the step
+                if (shown != null) onEvent(DriveEvent.CloseStep)
+                height.set(SheetHeight.MIDDLE)
+            }
         }
     }
 }
@@ -112,7 +154,7 @@ internal fun RouteSheet(sheet: RouteSheetUi, onEvent: (DriveEvent) -> Unit, modi
 @Composable
 private fun PeekRouteSheet(sheet: RouteSheetUi, onEvent: (DriveEvent) -> Unit, onRoutes: () -> Unit) {
     val chosen = sheet.cards.firstOrNull { it.selected } ?: sheet.cards.firstOrNull()
-    Row(Modifier.fillMaxWidth().padding(start = 16.dp, end = 16.dp, top = 4.dp), verticalAlignment = Alignment.CenterVertically) {
+    Row(Modifier.fillMaxWidth().padding(start = 16.dp, end = 4.dp, top = 4.dp), verticalAlignment = Alignment.CenterVertically) {
         Column(Modifier.weight(1f)) {
             if (chosen != null) {
                 Text(chosen.arriveText, style = MaterialTheme.typography.titleLarge, fontWeight = FontWeight.SemiBold, maxLines = 1, overflow = TextOverflow.Ellipsis)
@@ -128,6 +170,10 @@ private fun PeekRouteSheet(sheet: RouteSheetUi, onEvent: (DriveEvent) -> Unit, o
                 label = { Text(DriveTexts.routes(sheet.cards.size)) },
                 modifier = Modifier.heightIn(min = 48.dp).testTag(ROUTES_CHIP_TAG),
             )
+        }
+        // play test P20 (decisions: "Peek gets an X too"): Cancel at every height
+        IconButton(onClick = { onEvent(DriveEvent.Nav(NavIntent.End)) }, modifier = Modifier.testTag(DriveTags.CANCEL)) {
+            Icon(DriveIcons.close, contentDescription = DriveTexts.CANCEL_ROUTE)
         }
     }
     NoticePart(sheet, onEvent)
@@ -146,10 +192,19 @@ internal const val ROUTES_CHIP_TAG = "routes-chip"
 private fun LowRouteSheet(sheet: RouteSheetUi, onEvent: (DriveEvent) -> Unit) {
     // audit F3: where the route goes and Cancel at this height too (it is where a new trip opens)
     Row(Modifier.fillMaxWidth().padding(start = 16.dp, end = 4.dp), verticalAlignment = Alignment.CenterVertically) {
-        Text(
-            listOfNotNull(DriveTexts.TO, sheet.stops.lastOrNull()?.title).joinToString(" "), style = MaterialTheme.typography.titleMedium,
-            maxLines = 1, overflow = TextOverflow.Ellipsis, modifier = Modifier.weight(1f),
-        )
+        Column(Modifier.weight(1f)) {
+            Text(
+                listOfNotNull(DriveTexts.TO, sheet.stops.lastOrNull()?.title).joinToString(" "), style = MaterialTheme.typography.titleMedium,
+                maxLines = 1, overflow = TextOverflow.Ellipsis,
+            )
+            // P19, P20: where the preview starts and the stops on the way, below full height
+            sheet.contextLine?.let {
+                Text(
+                    it, style = MaterialTheme.typography.bodyMedium, color = MaterialTheme.colorScheme.onSurfaceVariant,
+                    maxLines = 1, overflow = TextOverflow.Ellipsis, modifier = Modifier.testTag(DriveTags.CONTEXT_LINE),
+                )
+            }
+        }
         IconButton(onClick = { onEvent(DriveEvent.Nav(NavIntent.End)) }, modifier = Modifier.testTag(DriveTags.CANCEL)) {
             Icon(DriveIcons.close, contentDescription = DriveTexts.CANCEL_ROUTE)
         }
@@ -160,6 +215,68 @@ private fun LowRouteSheet(sheet: RouteSheetUi, onEvent: (DriveEvent) -> Unit) {
             horizontalArrangement = Arrangement.spacedBy(8.dp),
         ) {
             for (card in sheet.cards) LowRouteCard(card) { onEvent(DriveEvent.Nav(NavIntent.Choose(card.choiceId))) }
+        }
+    }
+    NoticePart(sheet, onEvent)
+    StartPart(sheet, onEvent)
+}
+
+/**
+ * P21: the step the map shows, at the middle height: which one it is ("Step 3 of 12"), its arrow, words
+ * and distance, Previous and Next (each looks at that step), Cancel (as at every height, P20) and Start.
+ * The back arrow goes up to the full list, the step still marked there.
+ */
+@Composable
+private fun StepView(sheet: RouteSheetUi, index: Int, onEvent: (DriveEvent) -> Unit, onBackToSteps: () -> Unit) {
+    val step = sheet.steps[index]
+    val position = DriveTexts.stepOf(index, sheet.steps.size)
+    Row(Modifier.fillMaxWidth().padding(start = 4.dp, end = 4.dp).testTag(DriveTags.STEP_VIEW), verticalAlignment = Alignment.CenterVertically) {
+        IconButton(onClick = onBackToSteps, modifier = Modifier.testTag(DriveTags.STEP_BACK)) {
+            Icon(BeamlineIcons.Back, contentDescription = DriveTexts.BACK_TO_STEPS)
+        }
+        Text(
+            position, style = MaterialTheme.typography.titleMedium, maxLines = 1,
+            modifier = Modifier.weight(1f).semantics { heading() }.testTag(DriveTags.STEP_TITLE),
+        )
+        // P20 (decisions: Cancel at every height): the middle height's X stays while a step is shown
+        IconButton(onClick = { onEvent(DriveEvent.Nav(NavIntent.End)) }, modifier = Modifier.testTag(DriveTags.CANCEL)) {
+            Icon(DriveIcons.close, contentDescription = DriveTexts.CANCEL_ROUTE)
+        }
+    }
+    // a short window at a large font (the side panel on its side, font 1.3): two lines, so Start stays in view
+    val lines = if (LocalDensity.current.fontScale > 1.2f) 2 else 3
+    Row(
+        Modifier.fillMaxWidth().heightIn(min = 56.dp).padding(horizontal = 16.dp)
+            // TalkBack: one announcement on Previous / Next, the words with which step it is
+            .semantics(mergeDescendants = true) { liveRegion = LiveRegionMode.Polite; stateDescription = position },
+        verticalAlignment = Alignment.CenterVertically,
+    ) {
+        Icon(DriveIcons.maneuverSmall(step.kind), contentDescription = null, tint = MaterialTheme.colorScheme.onSurface, modifier = Modifier.size(32.dp))
+        Spacer(Modifier.width(12.dp))
+        Text(step.text, style = MaterialTheme.typography.bodyLarge, maxLines = lines, overflow = TextOverflow.Ellipsis, modifier = Modifier.weight(1f))
+        if (step.distanceText.isNotEmpty()) {
+            Spacer(Modifier.width(8.dp))
+            Text(step.distanceText, style = MaterialTheme.typography.bodyMedium, color = MaterialTheme.colorScheme.onSurfaceVariant)
+        }
+    }
+    Row(Modifier.fillMaxWidth().padding(start = 16.dp, end = 16.dp, top = 4.dp), horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+        OutlinedButton(
+            onClick = { onEvent(DriveEvent.ShowStep(sheet.steps[index - 1].point, index - 1)) },
+            enabled = index > 0,
+            modifier = Modifier.weight(1f).heightIn(min = 48.dp).semantics { contentDescription = DriveTexts.PREVIOUS_STEP }.testTag(DriveTags.STEP_PREVIOUS),
+        ) {
+            Icon(DriveIcons.previous, contentDescription = null, modifier = Modifier.size(18.dp))
+            Spacer(Modifier.width(6.dp))
+            Text(DriveTexts.PREVIOUS)
+        }
+        OutlinedButton(
+            onClick = { onEvent(DriveEvent.ShowStep(sheet.steps[index + 1].point, index + 1)) },
+            enabled = index < sheet.steps.lastIndex,
+            modifier = Modifier.weight(1f).heightIn(min = 48.dp).semantics { contentDescription = DriveTexts.NEXT_STEP }.testTag(DriveTags.STEP_NEXT),
+        ) {
+            Text(DriveTexts.NEXT)
+            Spacer(Modifier.width(6.dp))
+            Icon(DriveIcons.next, contentDescription = null, modifier = Modifier.size(18.dp))
         }
     }
     NoticePart(sheet, onEvent)
@@ -231,19 +348,27 @@ private fun LowRouteCard(card: RouteCardUi, onClick: () -> Unit) {
     }
 }
 
-/** Start with its reason, at the bottom of the sheet at every height. */
+/** Start with its reason, at the bottom of the sheet at every height; what Start does from a chosen start above it. */
 @Composable
 private fun StartPart(sheet: RouteSheetUi, onEvent: (DriveEvent) -> Unit) {
     Column(Modifier.padding(start = 16.dp, end = 8.dp, bottom = 16.dp)) {
+        // audit F27, P19: what Start does when the preview starts elsewhere, above the button, as a line one reads
+        // (body size, the position icon: it is about where you are); it was small and grey under Start
+        sheet.startNote?.let {
+            Row(
+                Modifier.fillMaxWidth().padding(top = 8.dp, end = 8.dp).semantics(mergeDescendants = true) {}.testTag(DriveTags.START_NOTE),
+                verticalAlignment = Alignment.CenterVertically,
+            ) {
+                Icon(BeamlineIcons.MyLocation, contentDescription = null, tint = MaterialTheme.colorScheme.primary, modifier = Modifier.size(18.dp))
+                Spacer(Modifier.width(8.dp))
+                Text(it, style = MaterialTheme.typography.bodyMedium, color = MaterialTheme.colorScheme.onSurface)
+            }
+        }
         Button(
             onClick = { onEvent(DriveEvent.Nav(NavIntent.Start())) },
             enabled = sheet.canStart,
             modifier = Modifier.fillMaxWidth().padding(top = 8.dp, end = 8.dp).height(52.dp).testTag(DriveTags.START),
         ) { Text(DriveTexts.START, style = MaterialTheme.typography.titleMedium) }
-        sheet.startNote?.let {
-            Text(it, style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant,
-                modifier = Modifier.fillMaxWidth().padding(top = 4.dp, end = 8.dp), textAlign = androidx.compose.ui.text.style.TextAlign.Center)
-        }
         sheet.startBlockedText?.let {
             // Section 4: Start is off "and the app offers to ask for precise location again": the
             // reason is the way to ask (a text button, at least 48 dp tall for the finger).
@@ -263,7 +388,7 @@ private fun StartPart(sheet: RouteSheetUi, onEvent: (DriveEvent) -> Unit) {
  * on its side.
  */
 @Composable
-private fun ColumnScope.FullRouteSheet(sheet: RouteSheetUi, onEvent: (DriveEvent) -> Unit, onStep: (StepUi) -> Unit = {}) {
+private fun ColumnScope.FullRouteSheet(sheet: RouteSheetUi, onEvent: (DriveEvent) -> Unit, shown: Int?, onStep: (Int) -> Unit) {
     val nav = { i: NavIntent -> onEvent(DriveEvent.Nav(i)) }
     val chosen = sheet.cards.any { it.selected }
     // Start row, overflow menu, cancel.
@@ -290,6 +415,27 @@ private fun ColumnScope.FullRouteSheet(sheet: RouteSheetUi, onEvent: (DriveEvent
     // A line under the start row while the part below is scrolled.
     val scroll = rememberScrollState()
     HorizontalDivider(color = if (scroll.value > 0) MaterialTheme.colorScheme.outlineVariant else Color.Transparent)
+    // play test P48: a change of the stops (one added, removed or moved, a swap) shows them from the top: the
+    // kept offset (audit F28) hid the new first stop. Saveable, so a change made while a screen covered the
+    // sheet (Add stop) is seen when it comes back; the same stops keep the offset (Change start, F28).
+    // (A hash, not the names, goes into the saved state.)
+    val stopsKey = sheet.stops.map { it.title to it.subtitle }.hashCode()
+    var seenStops by rememberSaveable { mutableIntStateOf(stopsKey) }
+    // ...and the replan's new cards must not scroll them away again: the selected card brings itself into
+    // view for each new choice id (RouteCard), which in a short window (the side panel on its side, font 1.3)
+    // pushes stop 1 out. While the routes for the changed stops are coming, and in the composition that sees
+    // the change (read here, so the cards' effects launched with it see it), the cards hold still.
+    var topHeld by rememberSaveable { mutableStateOf(false) }
+    val holdTop = topHeld || stopsKey != seenStops
+    LaunchedEffect(stopsKey) {
+        if (stopsKey != seenStops) {
+            seenStops = stopsKey
+            // a change of the stops replans in the same session batch: busy until the new cards
+            topHeld = sheet.busy
+            scroll.animateScrollTo(0)
+        }
+    }
+    LaunchedEffect(sheet.busy) { if (!sheet.busy) topHeld = false }
     // Whenever the part comes to rest (after a drag or fling, after the selected card brought itself
     // into view, after its content changed), no stop line stays cut under the start row: with its
     // name scrolled away, a destination's second line ("Erie, Pennsylvania") read as the start's.
@@ -306,6 +452,7 @@ private fun ColumnScope.FullRouteSheet(sheet: RouteSheetUi, onEvent: (DriveEvent
         }
         positions.lineTopFreePx = STOP_LINE_PAD.roundToPx() + leading
         positions.lineBottomFreePx = STOP_LINE_PAD.roundToPx()
+        positions.fadePx = MORE_BELOW_FADE.roundToPx()
     }
     var layoutVersion by remember { mutableIntStateOf(0) }
     LaunchedEffect(scroll) {
@@ -315,121 +462,167 @@ private fun ColumnScope.FullRouteSheet(sheet: RouteSheetUi, onEvent: (DriveEvent
             if (!moving && !scroll.isScrollInProgress) positions.restingScroll(scroll)?.let { scroll.animateScrollTo(it) }
         }
     }
-    Column(
-        Modifier
-            .weight(1f, fill = false)
-            .onSizeChanged { positions.viewportPx = it.height; layoutVersion++ }
-            .verticalScroll(scroll)
-            .onPlaced { positions.content = it }
-            .onSizeChanged { layoutVersion++ }
-            .padding(start = 16.dp, end = 8.dp),
-    ) {
-        // Stops: "To" and the destination, or the numbered stops.
-        Column(Modifier.padding(end = 8.dp)) {
-            Text(
-                DriveTexts.TO,
-                style = MaterialTheme.typography.labelMedium,
-                color = MaterialTheme.colorScheme.onSurfaceVariant,
-                modifier = Modifier.onPlaced { positions.toLabel = it },
-            )
-            for (row in sheet.stops) {
-                StopLine(
-                    row,
-                    numbered = sheet.stops.size > 1,
-                    modifier = Modifier.onPlaced { positions.lines[row.index] = it }.testTag(DriveTags.stopLine(row.index)),
+    Box(Modifier.weight(1f, fill = false)) {
+        Column(
+            Modifier
+                .onSizeChanged { positions.viewportPx = it.height; layoutVersion++ }
+                .verticalScroll(scroll)
+                .onPlaced { positions.content = it }
+                .onSizeChanged { layoutVersion++ }
+                .padding(start = 16.dp, end = 8.dp),
+        ) {
+            // Stops: "To" and the destination, or the numbered stops.
+            Column(Modifier.padding(end = 8.dp)) {
+                Text(
+                    DriveTexts.TO,
+                    style = MaterialTheme.typography.labelMedium,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                    modifier = Modifier.onPlaced { positions.toLabel = it },
                 )
-            }
-            Row(horizontalArrangement = Arrangement.spacedBy(4.dp)) {
-                // item 47: "Add a stop" as a row of the stops (a plus where a stop's number would be)
-                Row(
-                    Modifier.heightIn(min = 48.dp).clickable(role = Role.Button) { onEvent(DriveEvent.SearchForStop) }
-                        .padding(end = 12.dp).testTag(DriveTags.ADD_STOP),
-                    verticalAlignment = Alignment.CenterVertically,
-                ) {
-                    Icon(BeamlineIcons.Add, contentDescription = null, tint = MaterialTheme.colorScheme.primary, modifier = Modifier.size(20.dp))
-                    Spacer(Modifier.width(10.dp))
-                    Text(DriveTexts.ADD_STOP, style = MaterialTheme.typography.bodyLarge, color = MaterialTheme.colorScheme.primary)
+                for (row in sheet.stops) {
+                    StopLine(
+                        row,
+                        numbered = sheet.stops.size > 1,
+                        modifier = Modifier.onPlaced { positions.lines[row.index] = it }.testTag(DriveTags.stopLine(row.index)),
+                    )
                 }
-                if (sheet.stops.size > 1) {
-                    TextButton(onClick = { onEvent(DriveEvent.OpenStopsEditor) }, modifier = Modifier.testTag(DriveTags.OPEN_STOPS)) {
-                        Text(DriveTexts.EDIT_STOPS)
+                Row(horizontalArrangement = Arrangement.spacedBy(4.dp)) {
+                    // item 47: "Add a stop" as a row of the stops (a plus where a stop's number would be)
+                    Row(
+                        Modifier.heightIn(min = 48.dp).clickable(role = Role.Button) { onEvent(DriveEvent.SearchForStop) }
+                            .padding(end = 12.dp).testTag(DriveTags.ADD_STOP),
+                        verticalAlignment = Alignment.CenterVertically,
+                    ) {
+                        Icon(BeamlineIcons.Add, contentDescription = null, tint = MaterialTheme.colorScheme.primary, modifier = Modifier.size(20.dp))
+                        Spacer(Modifier.width(10.dp))
+                        Text(DriveTexts.ADD_STOP, style = MaterialTheme.typography.bodyLarge, color = MaterialTheme.colorScheme.primary)
+                    }
+                    if (sheet.stops.size > 1) {
+                        TextButton(onClick = { onEvent(DriveEvent.OpenStopsEditor) }, modifier = Modifier.testTag(DriveTags.OPEN_STOPS)) {
+                            Text(DriveTexts.EDIT_STOPS)
+                        }
                     }
                 }
             }
-        }
-        // Cards.
-        Column(Modifier.padding(end = 8.dp), verticalArrangement = Arrangement.spacedBy(8.dp)) {
-            for (card in sheet.cards) {
-                RouteCard(card, Modifier.onPlaced { positions.cards[card.choiceId] = it }) { nav(NavIntent.Choose(card.choiceId)) }
+            // Cards.
+            Column(Modifier.padding(end = 8.dp), verticalArrangement = Arrangement.spacedBy(8.dp)) {
+                for (card in sheet.cards) {
+                    RouteCard(card, follow = !holdTop, Modifier.onPlaced { positions.cards[card.choiceId] = it }) { nav(NavIntent.Choose(card.choiceId)) }
+                }
             }
-        }
-        sheet.problem?.let { problem ->
-            Row(Modifier.padding(top = 10.dp, end = 8.dp).testTag(DriveTags.PROBLEM), verticalAlignment = Alignment.CenterVertically) {
-                Icon(DriveIcons.warning, contentDescription = null, tint = MaterialTheme.colorScheme.error, modifier = Modifier.size(20.dp))
-                Spacer(Modifier.width(8.dp))
-                Text(problem, style = MaterialTheme.typography.bodyMedium, modifier = Modifier.weight(1f))
-                if (sheet.canRetry) TextButton(onClick = { nav(NavIntent.Retry) }) { Text(DriveTexts.RETRY) }
+            sheet.problem?.let { problem ->
+                Row(Modifier.padding(top = 10.dp, end = 8.dp).testTag(DriveTags.PROBLEM), verticalAlignment = Alignment.CenterVertically) {
+                    Icon(DriveIcons.warning, contentDescription = null, tint = MaterialTheme.colorScheme.error, modifier = Modifier.size(20.dp))
+                    Spacer(Modifier.width(8.dp))
+                    Text(problem, style = MaterialTheme.typography.bodyMedium, modifier = Modifier.weight(1f))
+                    if (sheet.canRetry) TextButton(onClick = { nav(NavIntent.Retry) }) { Text(DriveTexts.RETRY) }
+                }
             }
-        }
-        for (w in sheet.warnings) {
-            Row(Modifier.padding(top = 8.dp, end = 8.dp), verticalAlignment = Alignment.Top) {
-                Icon(DriveIcons.warning, contentDescription = null, tint = MaterialTheme.colorScheme.onSurfaceVariant, modifier = Modifier.size(18.dp))
-                Spacer(Modifier.width(8.dp))
-                Text(w, style = MaterialTheme.typography.bodyMedium, color = MaterialTheme.colorScheme.onSurfaceVariant)
+            for (w in sheet.warnings) {
+                Row(Modifier.padding(top = 8.dp, end = 8.dp), verticalAlignment = Alignment.Top) {
+                    Icon(DriveIcons.warning, contentDescription = null, tint = MaterialTheme.colorScheme.onSurfaceVariant, modifier = Modifier.size(18.dp))
+                    Spacer(Modifier.width(8.dp))
+                    Text(w, style = MaterialTheme.typography.bodyMedium, color = MaterialTheme.colorScheme.onSurfaceVariant)
+                }
             }
+            // The two option toggles.
+            Row(Modifier.padding(top = 10.dp), horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                FilterChip(
+                    selected = sheet.avoidHighways,
+                    onClick = { nav(NavIntent.SetOptions(RouteOptions(avoidHighways = !sheet.avoidHighways, avoidTolls = sheet.avoidTolls))) },
+                    label = { Text(DriveTexts.AVOID_HIGHWAYS) },
+                    leadingIcon = onCheck(sheet.avoidHighways),
+                    colors = toggleColors(),
+                    modifier = Modifier.testTag(DriveTags.AVOID_HIGHWAYS),
+                )
+                FilterChip(
+                    selected = sheet.avoidTolls,
+                    onClick = { nav(NavIntent.SetOptions(RouteOptions(avoidHighways = sheet.avoidHighways, avoidTolls = !sheet.avoidTolls))) },
+                    label = { Text(DriveTexts.AVOID_TOLLS) },
+                    leadingIcon = onCheck(sheet.avoidTolls),
+                    colors = toggleColors(),
+                    modifier = Modifier.testTag(DriveTags.AVOID_TOLLS),
+                )
+            }
+            if (sheet.steps.isNotEmpty()) StepsPreview(sheet.steps, shown, onStep)
         }
-        // The two option toggles.
-        Row(Modifier.padding(top = 10.dp), horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-            FilterChip(
-                selected = sheet.avoidHighways,
-                onClick = { nav(NavIntent.SetOptions(RouteOptions(avoidHighways = !sheet.avoidHighways, avoidTolls = sheet.avoidTolls))) },
-                label = { Text(DriveTexts.AVOID_HIGHWAYS) },
-                leadingIcon = onCheck(sheet.avoidHighways),
-                colors = toggleColors(),
-                modifier = Modifier.testTag(DriveTags.AVOID_HIGHWAYS),
+        // P52 (0.1.40): more below (the options, the steps): a fade over the part's last lines while it scrolls
+        // further; no pointer input and no label (drags and taps reach the lines under it, a screen reader skips it)
+        if (scroll.canScrollForward) {
+            Box(
+                Modifier
+                    .align(Alignment.BottomCenter)
+                    .fillMaxWidth()
+                    .height(MORE_BELOW_FADE)
+                    .background(Brush.verticalGradient(listOf(Color.Transparent, MaterialTheme.colorScheme.surface)))
+                    .testTag(DriveTags.MORE_BELOW),
             )
-            FilterChip(
-                selected = sheet.avoidTolls,
-                onClick = { nav(NavIntent.SetOptions(RouteOptions(avoidHighways = sheet.avoidHighways, avoidTolls = !sheet.avoidTolls))) },
-                label = { Text(DriveTexts.AVOID_TOLLS) },
-                leadingIcon = onCheck(sheet.avoidTolls),
-                colors = toggleColors(),
-                modifier = Modifier.testTag(DriveTags.AVOID_TOLLS),
-            )
         }
-        if (sheet.steps.isNotEmpty()) StepsPreview(sheet.steps, onStep)
     }
+    // ... and a line above Start, as the one under the start row while the part is scrolled
+    HorizontalDivider(color = if (scroll.canScrollForward) MaterialTheme.colorScheme.outlineVariant else Color.Transparent)
     StartPart(sheet, onEvent)
 }
 
 /**
  * The steps preview (item 47, the owner, 2026-11-25: "The steps preview is good, we'll do that"): the
  * chosen route's turns in the banner's words, each with how far the road goes after it; the first
- * [STEPS_SHOWN], then "Show all N steps". A tap on a step looks at it on the map.
+ * [STEPS_SHOWN], then "Show all N steps". A tap on a step looks at it on the map (its index goes to [onStep]);
+ * P21: the step the map shows ([shown]) is always in the list, outlined as the selected card is, and in view.
  */
 @Composable
-private fun StepsPreview(steps: List<StepUi>, onStep: (StepUi) -> Unit) {
-    var all by androidx.compose.runtime.saveable.rememberSaveable(steps.size, steps.firstOrNull()?.text) { androidx.compose.runtime.mutableStateOf(false) }
+private fun StepsPreview(steps: List<StepUi>, shown: Int?, onStep: (Int) -> Unit) {
+    var all by rememberSaveable(steps.size, steps.firstOrNull()?.text) { mutableStateOf(false) }
     Text(
         DriveTexts.STEPS, style = MaterialTheme.typography.labelLarge, color = MaterialTheme.colorScheme.onSurfaceVariant,
         modifier = Modifier.padding(top = 14.dp, bottom = 2.dp),
     )
-    val shown = if (all) steps else steps.take(STEPS_SHOWN)
-    shown.forEachIndexed { i, step ->
+    val expanded = all || (shown != null && shown >= STEPS_SHOWN)
+    val list = if (expanded) steps else steps.take(STEPS_SHOWN)
+    val fadePx = with(LocalDensity.current) { MORE_BELOW_FADE.toPx() }
+    list.forEachIndexed { i, step ->
+        val marked = i == shown
+        val requester = remember { BringIntoViewRequester() }
+        var rowSize by remember { mutableStateOf(IntSize.Zero) }
+        LaunchedEffect(marked) {
+            if (marked) {
+                withFrameNanos { }   // laid out: its size is known
+                // with the fade's height of room under it (P52), so the marked step is not under the fade
+                requester.bringIntoView(Rect(0f, 0f, rowSize.width.toFloat(), rowSize.height + fadePx))
+            }
+        }
         Row(
-            Modifier.fillMaxWidth().heightIn(min = 48.dp).clickable { onStep(step) }.testTag(stepTag(i)),
+            Modifier
+                .fillMaxWidth()
+                .heightIn(min = 48.dp)
+                .onSizeChanged { rowSize = it }
+                .bringIntoViewRequester(requester)
+                // the selected card's look: a 2 dp blue outline over the light tint, readable in sunlight
+                .then(if (marked) Modifier.border(2.dp, MaterialTheme.colorScheme.primary, RoundedCornerShape(8.dp)) else Modifier)
+                .background(
+                    if (marked) MaterialTheme.colorScheme.primary.copy(alpha = 0.10f).compositeOver(MaterialTheme.colorScheme.surface) else Color.Transparent,
+                    RoundedCornerShape(8.dp),
+                )
+                .semantics { selected = marked }
+                .clickable { onStep(i) }
+                .testTag(stepTag(i))
+                // room inside the outline (every row, so nothing moves when one is marked)
+                .padding(horizontal = 8.dp),
             verticalAlignment = Alignment.CenterVertically,
         ) {
             Icon(DriveIcons.maneuverSmall(step.kind), contentDescription = null, tint = MaterialTheme.colorScheme.onSurface, modifier = Modifier.size(24.dp))
             Spacer(Modifier.width(12.dp))
-            Text(step.text, style = MaterialTheme.typography.bodyMedium, maxLines = 2, overflow = TextOverflow.Ellipsis, modifier = Modifier.weight(1f))
+            Text(
+                step.text, style = MaterialTheme.typography.bodyMedium, fontWeight = if (marked) FontWeight.SemiBold else null,
+                maxLines = 2, overflow = TextOverflow.Ellipsis, modifier = Modifier.weight(1f),
+            )
             if (step.distanceText.isNotEmpty()) {
                 Spacer(Modifier.width(8.dp))
                 Text(step.distanceText, style = MaterialTheme.typography.bodyMedium, color = MaterialTheme.colorScheme.onSurfaceVariant)
             }
         }
     }
-    if (!all && steps.size > STEPS_SHOWN) {
+    if (!expanded && steps.size > STEPS_SHOWN) {
         TextButton(onClick = { all = true }, modifier = Modifier.heightIn(min = 48.dp).testTag(SHOW_ALL_STEPS_TAG)) {
             Text(DriveTexts.showAllSteps(steps.size))
         }
@@ -438,6 +631,9 @@ private fun StepsPreview(steps: List<StepUi>, onStep: (StepUi) -> Unit) {
 
 /** How many steps the preview shows before "Show all N steps" (item 47). */
 internal const val STEPS_SHOWN = 5
+
+/** P52: the height of the fade over the route sheet's scrolling part while more is below. */
+internal val MORE_BELOW_FADE = 32.dp
 
 /** Test tags of the steps preview (item 47). */
 internal fun stepTag(i: Int) = "step-$i"
@@ -487,6 +683,8 @@ private class SheetPositions {
     /** Empty px above a stop line's letters (its padding and the name's top leading) and below its text (padding). */
     var lineTopFreePx = 0
     var lineBottomFreePx = 0
+    /** The fade's height over the part's last lines (P52), kept under the selected card ([cardWithRoom]). */
+    var fadePx = 0
 
     private fun span(c: LayoutCoordinates?, padTop: Int = 0, padBottom: Int = 0): Span? {
         val root = content ?: return null
@@ -500,7 +698,8 @@ private class SheetPositions {
         val label = span(toLabel)
         // the "To" label belongs to the first line; it has no padding of its own
         if (spans.isNotEmpty() && label != null && label.top < spans[0].top) spans[0] = spans[0].copy(top = label.top, padTop = 0)
-        return sheetRestingScroll(scroll.value, viewportPx, scroll.maxValue, spans, span(selectedId?.let { cards[it] }))
+        val card = cardWithRoom(span(selectedId?.let { cards[it] }), fadePx, scroll.value, viewportPx)
+        return sheetRestingScroll(scroll.value, viewportPx, scroll.maxValue, spans, card)
     }
 }
 
@@ -538,12 +737,21 @@ internal fun StopNumber(number: Int, reached: Boolean) {
 /**
  * One route: its types ("Fastest · Simpler"), time, distance, arrival, roads and notes; selected =
  * outlined in blue. The selected card scrolls itself into view (on a short screen the stops above
- * it would otherwise push it out of sight behind Start).
+ * it would otherwise push it out of sight behind Start), while [follow] (P48: not the cards that come
+ * with a change of the stops, so the stops stay in view), with the fade's height of room under it (P52).
  */
 @Composable
-private fun RouteCard(card: RouteCardUi, modifier: Modifier, onClick: () -> Unit) {
+private fun RouteCard(card: RouteCardUi, follow: Boolean, modifier: Modifier, onClick: () -> Unit) {
     val requester = remember { BringIntoViewRequester() }
-    LaunchedEffect(card.choiceId, card.selected) { if (card.selected) requester.bringIntoView() }
+    var cardSize by remember { mutableStateOf(IntSize.Zero) }
+    val fadePx = with(LocalDensity.current) { MORE_BELOW_FADE.toPx() }
+    LaunchedEffect(card.choiceId, card.selected) {
+        if (card.selected && follow) {
+            withFrameNanos { }   // laid out: its size is known
+            // review (0.1.40): brought just into view, its last line and border sat under the fade ("cut off above Start")
+            requester.bringIntoView(Rect(0f, 0f, cardSize.width.toFloat(), cardSize.height + fadePx))
+        }
+    }
     OutlinedCard(
         onClick = onClick,
         border = if (card.selected) BorderStroke(2.dp, MaterialTheme.colorScheme.primary) else BorderStroke(1.dp, MaterialTheme.colorScheme.outlineVariant),
@@ -553,6 +761,7 @@ private fun RouteCard(card: RouteCardUi, modifier: Modifier, onClick: () -> Unit
         ),
         modifier = modifier
             .fillMaxWidth()
+            .onSizeChanged { cardSize = it }
             .bringIntoViewRequester(requester)
             .semantics { selected = card.selected }
             .testTag(DriveTags.card(card.choiceId)),

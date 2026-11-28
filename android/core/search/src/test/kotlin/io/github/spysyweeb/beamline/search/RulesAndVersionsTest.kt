@@ -42,6 +42,26 @@ class RulesAndVersionsTest {
         }
     }
 
+    /** 0.1.40: P6's near.area_name_within_km and item 51's along_route (rule S12), read from the bundled copy; defaults when missing. */
+    @Test
+    fun theSearchScreensNewRulesAreRead() {
+        val r = SearchAppRules.bundled()
+        assertEquals(25.0, r.areaNameWithinKm)
+        assertEquals(60.0, r.alongAheadKm)
+        assertEquals(10.0, r.alongSampleKm)
+        assertEquals(3.0, r.alongCorridorKm)
+        assertEquals(20, r.alongMaxResults)
+        assertEquals(5, r.alongNearestWhenNone)
+        assertEquals(4000L, r.detoursWaitMs)
+        val old = SearchAppRules.parse(
+            """{"format":"beamline-search-app/1","near":{"fix_max_age_s":60},"typing":{"debounce_ms":120},""" +
+                """"merge":{"pack_margin_km":50,"dedupe_m":100,"limit":10},"recents":{"max":30,"same_place_m":50},"shortcuts":[]}""",
+        )
+        assertEquals(25.0, old.areaNameWithinKm)
+        assertEquals(4000L, old.detoursWaitMs)
+        assertEquals(20, old.alongMaxResults)
+    }
+
     @Test
     fun jsonKeyOrderIsKept() {
         // the port relies on file order (connectors, first spelling wins in the street tables)

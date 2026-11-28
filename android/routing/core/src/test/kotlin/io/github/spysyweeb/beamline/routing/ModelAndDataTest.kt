@@ -7,6 +7,7 @@ import io.github.spysyweeb.beamline.routing.model.LaneState
 import io.github.spysyweeb.beamline.routing.model.LatLon
 import io.github.spysyweeb.beamline.routing.model.ManeuverType
 import io.github.spysyweeb.beamline.routing.model.RoadFlag
+import io.github.spysyweeb.beamline.routing.model.Stop
 import io.github.spysyweeb.beamline.routing.planner.StopOrder
 import io.github.spysyweeb.beamline.routing.planner.StopOrderer
 import io.github.spysyweeb.beamline.routing.preset.PresetDefault
@@ -139,6 +140,23 @@ class ModelAndDataTest {
         // a missing connection is never used
         val t = listOf(listOf(0.0, 1.0, 5.0), listOf(1.0, 0.0, null), listOf(5.0, 1.0, 0.0))
         assertEquals(listOf(0, 2, 1), StopOrderer.bestOrder(t, keepLast = false)!!.order)
+    }
+
+    /** Item 51 (rule C8): the detour matrices send whole stops, so the car's heading and radius pick its carriageway. */
+    @Test
+    fun `a matrix of whole stops - plain points as matrix, the car with its heading and radius, the costing options`() {
+        val a = LatLon(42.028694, -80.128884)
+        val b = LatLon(42.053308, -80.079579)
+        val opts = kotlinx.serialization.json.buildJsonObject { put("use_highways", JsonPrimitive(0.5)) }
+        assertEquals(ValhallaRequests.matrix(listOf(a), listOf(a, b), opts), ValhallaRequests.matrixOf(listOf(Stop(a)), listOf(Stop(a), Stop(b)), opts),
+            "plain points: the same request as matrix")
+        val req = ValhallaRequests.matrixOf(listOf(Stop(a, headingDeg = 57, radiusM = 60)), listOf(Stop(b)))
+        val car = req["sources"]!!.jsonArray.single().jsonObject
+        assertEquals(57, car["heading"]!!.jsonPrimitive.int)
+        assertEquals(60, car["radius"]!!.jsonPrimitive.int)
+        assertEquals(1, req["targets"]!!.jsonArray.size)
+        assertEquals("auto", req["costing"]!!.jsonPrimitive.content)
+        assertEquals("kilometers", req["units"]!!.jsonPrimitive.content)
     }
 
     @Test

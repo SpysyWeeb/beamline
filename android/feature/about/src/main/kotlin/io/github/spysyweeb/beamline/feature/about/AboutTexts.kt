@@ -29,4 +29,7 @@ internal object AboutTexts {
     const val LICENCE_PREFIX = "License: "
     const val TEXT_MISSING = "This text is missing from the app."
     const val LOADING = "Loading…"
+
+    /** What a screen reader says for the reveal while it covers the window (play test P29). */
+    const val STARTING = "Beamline is starting"
 }

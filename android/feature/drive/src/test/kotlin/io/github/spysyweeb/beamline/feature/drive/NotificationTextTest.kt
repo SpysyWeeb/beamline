@@ -36,8 +36,32 @@ class NotificationTextTest {
         // no roads: the sign's towards; neither: empty
         val signOnly = frame1.copy(view = Exit24.exitView.copy(roads = emptyList()))
         assertEquals("toward Waterford", n(guiding(banner = signOnly))!!.text)
-        assertEquals("", n(guiding(banner = LiveBanner(Exit24.arriveView, 100.0, false)))!!.text)
-        assertEquals("Arrive, on the right · 350 ft", n(guiding(banner = LiveBanner(Exit24.arriveView, 100.0, false)))!!.title)
+        assertEquals("", n(guiding(banner = frame1.copy(view = Exit24.exitView.copy(roads = emptyList(), towards = emptyList()))))!!.text)
+        // P34: the arrival keeps its words and the distance in the title; the stop's name (a SEARCH place) is the text
+        assertEquals(GuidanceNotificationText("Arrive, on the right · 350 ft", "Downs Drive"), n(guiding(banner = LiveBanner(Exit24.arriveView, 100.0, false))))
+    }
+
+    /**
+     * Play test P34 (review): the banner now names the stop ("Arrive on the right at Presque Isle State Park"), which
+     * on one line would push the distance off: the title keeps the plain side words and the distance, the text the name.
+     */
+    @Test
+    fun `P34 an arrival keeps its side and distance in the title, the stop's name in the text`() {
+        val park = io.github.spysyweeb.beamline.api.model.Place("Presque Isle State Park", GeoPoint(42.1580, -80.1150), io.github.spysyweeb.beamline.api.model.PlaceSource.SEARCH)
+        val named = LiveBanner(Exit24.arriveView.copy(primary = "Arrive on the right at Presque Isle State Park"), 100.0, false)
+        assertEquals(GuidanceNotificationText("Arrive, on the right · 350 ft", "Presque Isle State Park"), n(guiding(banner = named, stops = listOf(TripStop(park)))))
+        val left = LiveBanner(Exit24.arriveView.copy(kind = io.github.spysyweeb.beamline.api.nav.ManeuverKind.ARRIVE_LEFT, primary = "Arrive on the left at Presque Isle State Park"), 100.0, false)
+        assertEquals("Arrive, on the left · 350 ft", n(guiding(banner = left, stops = listOf(TripStop(park))))!!.title)
+        val plain = LiveBanner(Exit24.arriveView.copy(kind = io.github.spysyweeb.beamline.api.nav.ManeuverKind.ARRIVE, primary = "Arrive at Presque Isle State Park"), 100.0, false)
+        assertEquals("Arrive · 350 ft", n(guiding(banner = plain, stops = listOf(TripStop(park))))!!.title)
+        // the next stop's name while a stop comes first
+        val zoo = io.github.spysyweeb.beamline.api.model.Place("Erie Zoo", GeoPoint(42.1489, -80.0869), io.github.spysyweeb.beamline.api.model.PlaceSource.SEARCH)
+        assertEquals("Erie Zoo", n(guiding(banner = named, stops = listOf(TripStop(zoo), TripStop(park)), nextStopIndex = 0))!!.text)
+        // a dropped pin has no name of its own: no text (the banner keeps "Arrive, on the right")
+        val pin = io.github.spysyweeb.beamline.api.model.Place("Dropped pin", GeoPoint(42.1580, -80.1150), io.github.spysyweeb.beamline.api.model.PlaceSource.MAP_PIN)
+        assertEquals(GuidanceNotificationText("Arrive, on the right · 350 ft", ""), n(guiding(banner = LiveBanner(Exit24.arriveView, 100.0, false), stops = listOf(TripStop(pin)))))
+        // a status still wins over the name
+        assertEquals("Weak GPS signal", n(guiding(banner = named, gps = GpsState.WEAK, stops = listOf(TripStop(park))))!!.text)
     }
 
     @Test
@@ -52,11 +76,18 @@ class NotificationTextTest {
     @Test
     fun `re-routing - no maneuver in the title (D7), the failure or the destination as text`() {
         assertEquals(GuidanceNotificationText("Finding a new route...", "To Downs Drive"), n(guiding(banner = frame2, phase = Phase.REROUTING)))
+        // P5: outside the installed maps (O8, no Retry) nothing is being searched: the title says what the trip bar says
         val outside = TripProblem(ProblemKind.OUTSIDE_INSTALLED_MAPS, "You are outside the installed maps.", false)
         assertEquals(
-            GuidanceNotificationText("Finding a new route...", "You are outside the installed maps."),
+            GuidanceNotificationText("No route from here", "You are outside the installed maps."),
             n(guiding(banner = frame2, phase = Phase.REROUTING, problem = outside)),
         )
+        // a failed stop change outside the maps (Retry kept, C3) and an ordinary failed re-route keep the title
+        assertEquals(
+            GuidanceNotificationText("Finding a new route...", "You are outside the installed maps."),
+            n(guiding(banner = frame2, phase = Phase.REROUTING, problem = outside.copy(canRetry = true))),
+        )
+        assertEquals("Finding a new route...", n(guiding(banner = frame2, phase = Phase.REROUTING, problem = TripProblem(ProblemKind.NO_ROUTE, "No route found from here.", true)))!!.title)
     }
 
     @Test

@@ -56,6 +56,7 @@ import io.github.spysyweeb.beamline.feature.search.PlaceTypeGrid
 import io.github.spysyweeb.beamline.feature.search.PlaceTypeGroupUi
 import io.github.spysyweeb.beamline.feature.search.PlaceTypeUi
 import io.github.spysyweeb.beamline.feature.search.placeTypeIcon
+import io.github.spysyweeb.beamline.app.ui.SheetWindowBars
 import java.util.Locale
 
 private val DAY_SHORT = listOf("Mon", "Tue", "Wed", "Thu", "Fri", "Sat", "Sun")
@@ -261,7 +262,7 @@ private fun HoursBlock(title: String, d: HoursDraft, onChange: (HoursDraft) -> U
  * the tap of "Paste from clipboard".
  */
 @Composable
-private fun PasteHoursDialog(onUse: (HoursText.Read) -> Unit, onDismiss: () -> Unit) {
+internal fun PasteHoursDialog(onUse: (HoursText.Read) -> Unit, onDismiss: () -> Unit) {
     var text by remember { mutableStateOf("") }
     var failed by remember { mutableStateOf(false) }
     val clipboard = androidx.compose.ui.platform.LocalClipboardManager.current
@@ -271,7 +272,9 @@ private fun PasteHoursDialog(onUse: (HoursText.Read) -> Unit, onDismiss: () -> U
         text = {
             Column {
                 Text(OnlineTexts.PASTE_HINT, style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
+                // P64: the field's name for a screen reader (it had none)
                 OutlinedTextField(text, { text = it; failed = false }, minLines = 3, maxLines = 8, isError = failed,
+                    label = { Text(OnlineTexts.HOURS) },
                     modifier = Modifier.fillMaxWidth().padding(top = 8.dp).testTag("hours-paste-text"))
                 if (failed) Text(OnlineTexts.PASTE_NOT_READ, color = MaterialTheme.colorScheme.error, style = MaterialTheme.typography.bodySmall,
                     modifier = Modifier.testTag("hours-paste-failed"))
@@ -426,7 +429,14 @@ fun TimePickDialog(initial: Int, h24: Boolean, onPick: (Int) -> Unit, onDismiss:
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 internal fun PickerSheet(title: String, onDismiss: () -> Unit, content: @Composable androidx.compose.foundation.layout.ColumnScope.() -> Unit) {
-    ModalBottomSheet(onDismissRequest = onDismiss, sheetState = rememberModalBottomSheetState(skipPartiallyExpanded = true)) {
+    ModalBottomSheet(
+        onDismissRequest = onDismiss,
+        sheetState = rememberModalBottomSheetState(skipPartiallyExpanded = true),
+        // P41: the app's sheet colour, and no contrast band behind the navigation bar (SheetWindowBars)
+        containerColor = MaterialTheme.colorScheme.surface,
+        tonalElevation = 0.dp,
+    ) {
+        SheetWindowBars()
         // audit F11: it scrolls when it is taller than the screen (landscape on a car mount, large text)
         Column(Modifier.fillMaxWidth().verticalScroll(rememberScrollState()).padding(start = 16.dp, end = 16.dp, bottom = 16.dp).navigationBarsPadding()) {
             Text(title, style = MaterialTheme.typography.titleLarge, modifier = Modifier.padding(bottom = 12.dp).semantics { heading() })

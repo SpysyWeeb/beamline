@@ -83,6 +83,8 @@ internal object Texts {
     const val CANCEL = "Cancel"
     const val OK = "OK"
     const val NAME = "Name"
+    /** P57 (0.1.40): the Name field's drawn hint in the Save and Rename dialogs (its label stays NAME). */
+    const val NAME_HINT = "Name this place"
     const val BACK = "Back"
     const val DIRECTIONS = "Directions"
     /** Rule S10 (batch B): the place sheet's buttons; the dialer and the browser open only on a tap. */
@@ -136,6 +138,49 @@ internal object Texts {
     const val RECENT = "Recent"
     const val CLEAR = "Clear"
 
+    // 0.1.40, play test P45: clearing the recents can be undone; the buttons name what they act on (audit F49)
+    const val RECENTS_CLEARED = "Recent places cleared"
+    const val UNDO = "Undo"
+    const val CLEAR_RECENTS = "Clear recent places"
+    fun removeRecent(name: String) = "Remove $name from recent places"
+
+    // 0.1.40, play test P47 and P44 (audit F50): a next step after no results; the field's own clear button
+    const val NO_RESULTS_HINT = "Check the spelling, or try fewer words."
+    const val CLEAR_TEXT = "Clear text"
+
+    /** 0.1.40, play test P2: the heading over the rows that only matched by name ("Erie Animal Hospital" for "hospital"). */
+    const val OTHER_MATCHES = "Other matches"
+
+    // 0.1.40, play test P22: SET_START is a titled picker with "Your position" (YOUR_POSITION) and "Choose on the map"
+    const val CHOOSE_START = "Choose start"
+    const val START_PROMPT = "Tap the map where the trip starts"
+    const val START_HERE = "Use as start"
+
+    // Item 51 (rule S12): a new stop along the trip's route, the time it adds, its card
+    const val ALONG_ROUTE = "Along your route"
+    fun alongAfter(stop: String) = "Along your route after $stop"
+    const val ALONG_NONE_CLOSE = "None close to your route. Nearest shown."
+    const val WORKING_DETOURS = "Working out detours..."
+    const val DETOURS_SLOW = "Detours took too long. Nearest first."
+    const val DETOURS_NONE = "Detours could not be worked out. Nearest first."
+    const val ON_THE_WAY = "On the way"
+    const val WORKING_ROUTE = "Working out the route..."
+    const val PREVIEW_FAILED = "Could not work out the route with this stop."
+    const val ARRIVE = "Arrive "
+    fun goesAfter(stop: String) = "Goes after $stop"
+    /** The card's button as a screen reader says it. */
+    fun addStopLabel(title: String) = "Add $title as a stop"
+    /** Item 52 (rule H7): the second button of a handed-over place's stop card. */
+    const val GO_INSTEAD = "Go here instead"
+    /** Item 52: what a screen reader says for it. */
+    fun goInsteadLabel(title: String) = "Go to $title instead of your destination"
+    /** The card's time line as a screen reader says it (the dot is not read): "Adds 4 min, arrive 4:33 PM"; "On the way, arrive 4:33 PM". */
+    fun addedWords(added: String?, arrive: String?): String = listOfNotNull(
+        added?.let { if (it.startsWith("+")) "Adds " + it.drop(1) else it },
+        arrive?.let { if (added != null) it.replaceFirstChar(Char::lowercaseChar) else it },
+    ).joinToString(", ")
+    const val BACK_TO_LIST = "Back to the list"
+
     fun listLimit(max: Int) = "You can save $max places besides Home and Work. Remove one to add another."
     fun editLabel(name: String) = "Edit $name"
     fun kindLabel(k: SavedKind) = when (k) {
@@ -162,9 +207,19 @@ internal object Texts {
         null -> null
     }
 
-    fun nearText(c: SearchContext): String? = when (c.source) {
+    /** P6 (0.1.40): "Near Corry". */
+    fun near(name: String) = "Near $name"
+    /** P6 (0.1.40): after the map centre's line when there is no fresh fix (S1's fallback): why the search is not around the user. */
+    const val NO_POSITION = "no position yet"
+
+    /**
+     * S1, P6: GPS "Near your position"; the map's centre "Near <town>" when [area] is known, else "Near the
+     * map center"; without the user's position ([SearchContext.distanceFrom] null: no fresh fix, not S1b)
+     * followed by " · no position yet".
+     */
+    fun nearText(c: SearchContext, area: String? = null): String? = when (c.source) {
         NearSource.GPS -> NEAR_GPS
-        NearSource.MAP_CENTER -> NEAR_MAP
+        NearSource.MAP_CENTER -> (area?.let(::near) ?: NEAR_MAP).let { if (c.distanceFrom == null) "$it · $NO_POSITION" else it }
         NearSource.NONE -> null
     }
 

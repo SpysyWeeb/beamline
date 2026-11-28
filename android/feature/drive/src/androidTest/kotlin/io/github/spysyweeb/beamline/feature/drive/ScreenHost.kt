@@ -63,6 +63,7 @@ internal fun PhoneScreen(
     fontScale: Float? = null,
     fullWindow: Boolean = false,
     onView: (View) -> Unit = {},
+    stopWindowDp: Float? = null,
 ) {
     val density = LocalDensity.current
     val view = LocalView.current
@@ -72,13 +73,13 @@ internal fun PhoneScreen(
             if (fullWindow) {
                 Box(Modifier.fillMaxSize().clipToBounds().testTag(SHOT_TAG)) {
                     StandInMap(night)
-                    DriveOverlay(ui, onEvent, onInsets)
+                    DriveOverlay(ui, onEvent, onInsets, stopWindowDp = stopWindowDp)
                 }
             } else {
                 Box(Modifier.fillMaxSize().windowInsetsPadding(WindowInsets.safeDrawing)) {
                     Box(Modifier.size(widthDp.dp, heightDp.dp).clipToBounds().testTag(SHOT_TAG)) {
                         StandInMap(night)
-                        DriveOverlay(ui, onEvent, onInsets)
+                        DriveOverlay(ui, onEvent, onInsets, stopWindowDp = stopWindowDp)
                     }
                 }
             }
@@ -111,6 +112,15 @@ private fun StandInMap(night: Boolean) {
 internal fun ComposeContentTestRule.saveShot(name: String): File {
     waitForIdle()
     val bitmap = onNodeWithTag(SHOT_TAG).captureToImage().asAndroidBitmap()
+    val file = File(screensDir(), "$name.png")
+    FileOutputStream(file).use { bitmap.compress(Bitmap.CompressFormat.PNG, 100, it) }
+    return file
+}
+
+/** Captures the node tagged [tag] (a sheet, or the overlay without the stand-in map) and writes it as a PNG; returns the file. */
+internal fun ComposeContentTestRule.saveShotOf(tag: String, name: String): File {
+    waitForIdle()
+    val bitmap = onNodeWithTag(tag).captureToImage().asAndroidBitmap()
     val file = File(screensDir(), "$name.png")
     FileOutputStream(file).use { bitmap.compress(Bitmap.CompressFormat.PNG, 100, it) }
     return file

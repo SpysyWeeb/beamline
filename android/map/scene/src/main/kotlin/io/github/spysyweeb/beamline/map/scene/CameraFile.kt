@@ -84,6 +84,9 @@ internal object CameraFile {
         require(recenter > 0.0) { "camera.json: guide.recenter_after_s must be above 0" }
         val overviewReturn = num(overview, "return_after_s", "camera.json: overview.return_after_s missing")
         require(overviewReturn > 0.0) { "camera.json: overview.return_after_s must be above 0" }
+        // Optional (P32, 0.1.40): the overview's own padding, room for the driving arrow's 136 dp picture; absent = preview.padding_dp
+        val overviewPadding = overview["padding_dp"]?.let { num(overview, "padding_dp", "camera.json: overview.padding_dp must be a number") }
+        require(overviewPadding == null || overviewPadding >= 0.0) { "camera.json: overview.padding_dp must not be negative" }
         val followZoom = zoom(browse, "follow_zoom", "camera.json: browse.follow_zoom missing or out of range")
         val padding = num(preview, "padding_dp", "camera.json: preview.padding_dp missing")
         require(padding >= 0.0) { "camera.json: preview.padding_dp must not be negative" }
@@ -107,6 +110,7 @@ internal object CameraFile {
             transitionMs = transition.toInt(),
             bearingTurnDeg = turnDeg,
             lean = lean,
+            overviewPaddingDp = overviewPadding?.toFloat(),
         )
     }
 

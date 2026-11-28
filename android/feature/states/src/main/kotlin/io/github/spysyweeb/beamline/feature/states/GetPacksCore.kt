@@ -74,6 +74,8 @@ internal data class ScreenState(
     val fileProblem: Pair<String, String>? = null,
     /** Audit F8: why the open sheet's download did not start ("Another state is downloading..."). */
     val startProblem: String? = null,
+    /** P25: [selected] was picked on the map (a tap or the chooser): outlined, not zoomed. A row's selection clears it. */
+    val selectedOnMap: Boolean = false,
 )
 
 /** A file install started from a screen (not persisted: docs/architecture.md 2.12). */
@@ -331,7 +333,7 @@ internal class GetPacksCore(
             ),
             continuing = f.continuing, switched = f.switched, serviceRefused = f.serviceRefused, readyPackId = if (mode == StatesMode.MANAGE) sc.readyPackId else null,
             removeProblem = sc.removeProblem, changesOptionalParts = installed.changesOptionalParts, debug = debug, file = sc.file,
-            fileInstallName = fi?.name, fileProblem = sc.fileProblem, startProblem = sc.startProblem,
+            fileInstallName = fi?.name, fileProblem = sc.fileProblem, startProblem = sc.startProblem, selectedOnMap = sc.selectedOnMap,
         )
     }
 
@@ -352,18 +354,35 @@ internal class GetPacksCore(
 
     // --------------------------------------------------------------- actions of the screens
 
-    fun select(code: String, kind: SheetKind = SheetKind.STATE) {
+    /** Opens [code]'s sheet; [onMap]: picked on the map (P25: outlined, not zoomed). */
+    fun select(code: String, kind: SheetKind = SheetKind.STATE, onMap: Boolean = false) {
         val entry = (catalog.value as? CatalogState.Ready)?.view?.catalog?.packs?.firstOrNull { it.state == code }
             ?: when (val c = catalog.value) {
                 is CatalogState.Failed -> c.cached?.catalog?.packs?.firstOrNull { it.state == code }
                 is CatalogState.Loading -> c.cached?.catalog?.packs?.firstOrNull { it.state == code }
                 else -> null
             }
-        screen.update { it.copy(selected = code, sheetOpen = true, sheetPack = entry, sheetKind = kind, chooser = null, mapHint = false, startProblem = null) }
+        screen.update { it.copy(selected = code, selectedOnMap = onMap, sheetOpen = true, sheetPack = entry, sheetKind = kind, chooser = null, mapHint = false, startProblem = null) }
     }
 
     fun closeSheet() {
         screen.update { it.copy(sheetOpen = false, sheetPack = null, sheetKind = SheetKind.STATE, file = null, fileArchive = null, startProblem = null) }
+    }
+
+    /** P12: typing in the search; a selected state the search no longer lists is no longer selected (its outline and zoom go). */
+    fun typed(text: String) {
+        screen.update { s -> s.typed(text) { shapes.byCode(it)?.name } }
+    }
+
+    /**
+     * P61 (audit F69): a new visit of a States screen starts fresh: no search text, selection, sheet,
+     * chooser, dialog, hint or old banner ("is ready", a refused removal, a refused file install). A refused
+     * file install's banner goes the way its OK takes (fileProblemDismissed: the installer's result is
+     * dismissed too, and on the first run the picker's choice is reset as after that OK).
+     */
+    fun freshScreen() {
+        if (screen.value.fileProblem != null) fileProblemDismissed()
+        screen.value = ScreenState()
     }
 
     fun setIncludeAddresses(on: Boolean) = settings.update { it.copy(includeAddresses = on) }
@@ -459,7 +478,8 @@ internal class GetPacksCore(
     fun showOnMapDone() = ui.update { it.copy(showOnMap = null) }
 
     fun remove(packId: String) {
-        screen.update { it.copy(dialog = null) }
+        // P14: Remove can be confirmed from the state's window too; the window closes with the dialog
+        screen.update { it.copy(dialog = null, sheetOpen = false, sheetPack = null, sheetKind = SheetKind.STATE) }
         scope.launch {
             val problem = installed.remove(packId)
             screen.update { it.copy(removeProblem = problem?.let { packId to it }) }
@@ -544,6 +564,12 @@ internal class GetPacksCore(
         /** The States screen fetches the list again on opening unless it is younger than this (0.1.32). */
         const val SCREEN_FRESH_MS = 60L * 1000
     }
+}
+
+/** P12: typing [text] in the search; a selected state the search no longer lists is no longer selected (its outline and zoom go). */
+internal fun ScreenState.typed(text: String, name: (String) -> String?): ScreenState {
+    val kept = selected?.takeIf { StatesPresenter.matches(it, name(it) ?: it, text) }
+    return copy(query = text, selected = kept, selectedOnMap = selectedOnMap && kept != null)
 }
 
 /** A list of states last fetched at [checkedAtMs] is to be fetched again: none yet, [maxAgeMs] old or more, or from the future (a clock moved back). */

@@ -12,12 +12,13 @@ the same way. Report: `docs/experiments/13-navigation-session.md`.
 | `Ports.kt`, `GuidanceRules.kt` | Contract (2.4): the follower port and the rules type; `GuidanceRules.parse` / `bundled` filled |
 | `GuidanceRulesFile.kt` | Strict reader of `guidance.json` (every key, no unknown key, values that fit together) |
 | `SessionCore.kt` | The state machine: intents, planning (P), fixes (G, M), banner (B), off route and re-route (O), arrival and stops (A, C), resume (R) |
-| `EngineRouteService.kt` | Planning, the OSRM request and the stop-order matrix on `beamline-routing`; one engine per installed generation (2.2 rule 3) |
+| `EngineRouteService.kt` | Planning, the OSRM request, the traffic lights, the stop-order matrix and the detour matrices (`times`, C8) on `beamline-routing`; one engine per installed generation (2.2 rule 3) |
+| `StopLeg.kt` | Item 51 (C1, C8), pure, also used by `:app`: where `AddStop` without an index puts a stop, the line of the leg it joins (`lineAhead`), the leg into a previewed stop, the stop it goes after, the detour's rejoin point |
 | `RouteGeometry.kt` | A route's line as distances: projection, maneuver positions, point and bearing at a distance, time left |
 | `GeometricFollower.kt` | The app's route follower (the only one since Ferrostar was dropped on 2026-11-17), also of the tests and the golden trace: `RouteFollower` with the 2.4 contract (entry within `entry_m`, then `exit_m` past, on plain geometry) |
 | `RouteSimulator.kt`, `SimScripts.kt` | The built-in drive (`Simulation`, provider `simulated`) and its named scripts `default`, `wrongturn`, `gaps`, `jitter`, `drift`, `tunnel` |
-| `TripFile.kt` | `trip.json`, format `beamline-trip/1` (stops with `PlaceSource` and `savedId`, reached flags, type, options, time) |
-| `Views.kt` | `:routing:banner` banners as `BannerView`s (B1, B7), routes as `RouteChoice`s |
+| `TripFile.kt` | `trip.json`, format `beamline-trip/1` (stops with `PlaceSource` and `savedId`, reached flags, type, options, time; `"simulated": true` only for a simulated drive, P27) |
+| `Views.kt` | `:routing:banner` banners as `BannerView`s (B1, B7), the lot turn, "At the light" and the stop's name on an arrival (`decorate`), routes as `RouteChoice`s with their steps in the same words |
 
 `src/main/resources/io/github/spysyweeb/beamline/nav/guidance.json` is a copy of
 `packbuilder/routing/guidance.json` (`python android/routing/scripts/sync_data.py --only guidance.json`;
@@ -76,6 +77,22 @@ a test fails when it differs).
   (item 36) the installed packs' lights within 20 m of a junction of the route or 3 m of its line, on plain road,
   where the engine has none within 30 m. `signals` is the session's `signalsIn` (`SearchHub.signalsIn` in the app;
   null in the tests of the rules before, which then ask the engine for the lights alone).
+- The steps preview in the banner's words (audit F40, play test P34, 0.1.40): every card names each arrival's
+  stop ("Arrive on the left at Erie Zoo"; a dropped pin, and a point named by its coordinates or its street line
+  also as a recent, keeps "Arrive") and the turn into a lot at once; the
+  selected card's traffic lights are asked once the plan is final (CHOOSING) or a card is chosen (`askLights`,
+  one engine walk per plan, never setting `replanning`), and Start reuses them (`forGuidance(known)`), waiting for
+  a walk still on the routing thread rather than walking the route again. The guided
+  banners say the same (`Views.decorate` in `prepare`).
+- Adding a stop on the map (item 51, rule C8): `Detours(id, places)` answers `TripState.detours` (two matrices per
+  10 places from J, where the stop joins, to the places and to R, the route's point 10 km past the farthest place
+  or the destination; each call its own job on the routing thread); `PreviewStop(place)` answers
+  `TripState.stopPreview` (one plan of the trip's type with the place inserted as C1). Neither changes the trip,
+  counts as R4's next intent or sets `replanning`; a change of the stops, start, type, options or chosen route
+  (also a change while guiding that fails and goes back, C3), arrival and the trip's end drop both (`dropStopWork`).
+- Outside the installed maps while guided (O8, play test P5): the problem has no Retry (the session asks again
+  on the first covered fix) and says so. A simulated drive is saved as one and offered again as one (P27,
+  `TripState.resumeSimulated`); Resume simulates it again.
 
 Wiring (I, `docs/architecture.md` 5.4): `BeamlineNavigationSession(positions, clock, System::currentTimeMillis,
 installed.installed, installed::holdChanges, EngineOpener { ValhallaEngine.open(it) }, GeometricFollowerFactory(),
@@ -85,7 +102,7 @@ BannerRules.bundled(), navDispatcher, routingDispatcher, doorOf, signalsIn)`.
 ## Tests
 
 ```
-sh tools/round/gradle.sh n :nav:session:test                                   # 88 JVM tests, about 15 s
+sh tools/round/gradle.sh n :nav:session:test                                   # 159 JVM tests, about 20 s
 sh tools/round/gradle.sh n :nav:session:test --rerun                           # when Gradle says the tests are up to date
 sh tools/round/gradle.sh n :nav:session:test -Pbeamline.writeGolden=true       # rewrites the golden trace
 ```
@@ -108,10 +125,13 @@ test and is listed in `data/gradle/<key>/build/nav/session/missing-requests.json
 | `FixesAndMotionTest` | G1-G6, M1-M3 |
 | `BannerRulesSessionTest` | B1-B8 |
 | `OffRouteTest` | O1-O9 (O4 also for a slow car: radius without heading, and a Reroute before the first fix; O8 also counts the engine calls of a car standing where no road is found) |
-| `ArrivalAndStopsTest` | A1-A3, C1-C7 (with a stop reached while a change waits, a failed second change, process death and Resume keeping Shortest) |
-| `PlanningAndResumeTest` | P1-P5, R1-R3 (R2 also with a wall clock that stepped back), `trip.json` with saved places |
+| `ArrivalAndStopsTest` | A1-A3, C1-C7 (with a stop reached while a change waits, a failed second change, process death and Resume keeping Shortest; C6 tells a changed order) |
+| `StopDetoursTest`, `StopLegTest` | C8 (item 51): the detour matrices' points, formula, chunks, a newer or empty request, what drops them, R4, the previews before and while guiding; `StopLeg` |
+| `PlanningAndResumeTest` | P1-P5, R1-R3 (R2 also with a wall clock that stepped back; a simulated drive offered and resumed as one, P27), `trip.json` with saved places |
 | `SimulationScriptsTest` | the named scripts (`wrongturn`, `gaps`, `tunnel`, `jitter`, `drift`) and the OSRM step check (2 and 3 legs: one step per maneuver, same kind, length and place) |
 | `RobustnessTest` | a follower that fails on one fix, a follower that cannot be made, an unknown simulation script, an unwritable `trip.json`, `close()` (also while Start or Resume waits for the engine: the hold is given back) |
+| `RouteLightsTest` | B10 and item 22: lights, "At the light", the lot turn, the road driven; the steps preview in the banner's words (F40) and each arrival's stop name (P34) |
+| `StopTiesTest` | how a place is tied to the road (2.11; a point with its "Near ..." street line stays a map point, P18) |
 | `StateChangesTest` | 2.3: one state change for the fix that confirms off route, for the arrival fix (the `Arrived` event after it) and for the Reroute intent, seen by an unconfined collector |
 | `GuidanceRulesTest` | `guidance.json` values, refusals, the copy equal to its source |
 | `GeometricFollowerTest` | the test follower against the 2.4 contract (deciding fixes only, entry then exit, never back, `advance`, `complete`) |

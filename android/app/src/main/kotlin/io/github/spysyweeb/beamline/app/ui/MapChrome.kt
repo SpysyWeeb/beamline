@@ -31,7 +31,9 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.vector.ImageVector
+import androidx.compose.ui.semantics.LiveRegionMode
 import androidx.compose.ui.semantics.contentDescription
+import androidx.compose.ui.semantics.liveRegion
 import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.text.font.FontStyle
 import androidx.compose.ui.text.font.FontWeight
@@ -226,9 +228,11 @@ internal fun MessageCard(text: String, night: Boolean, action: Pair<String, () -
 @Composable
 internal fun Snackbar(text: String, night: Boolean, modifier: Modifier = Modifier, action: Pair<String, () -> Unit>? = null) {
     Surface(shape = RoundedCornerShape(8.dp), color = if (night) Color(0xFFE6E8EB) else Color(0xFF2B2F33),
-        contentColor = if (night) Color(0xFF1B1E22) else Color.White, shadowElevation = 6.dp, modifier = modifier) {
+        // play test P28, P10: TalkBack says each bar when it comes ("Press Back again ...", "Stop removed")
+        contentColor = if (night) Color(0xFF1B1E22) else Color.White, shadowElevation = 6.dp, modifier = modifier.semantics { liveRegion = LiveRegionMode.Polite }) {
         Row(verticalAlignment = Alignment.CenterVertically) {
-            Text(text, fontSize = 15.sp, modifier = Modifier.padding(horizontal = 16.dp, vertical = 12.dp))
+            // P58 (review 0.1.40): the line takes the room the action leaves, so a long "{name} removed" wraps beside a whole Undo
+            Text(text, fontSize = 15.sp, modifier = Modifier.weight(1f, fill = false).padding(horizontal = 16.dp, vertical = 12.dp))
             action?.let { (label, go) ->
                 TextButton(onClick = go, modifier = Modifier.padding(end = 4.dp)) {
                     Text(label, fontSize = 15.sp, fontWeight = FontWeight.SemiBold,

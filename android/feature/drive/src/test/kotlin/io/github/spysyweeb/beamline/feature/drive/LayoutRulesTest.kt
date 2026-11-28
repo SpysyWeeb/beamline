@@ -107,4 +107,36 @@ class LayoutRulesTest {
         // a line that cannot be scrolled wholly away (the part is too short) is shown whole
         assertEquals(0, sheetRestingScroll(top = 100, viewport = 260, maxScroll = 120, lines = listOf(line), card = null))
     }
+
+    @Test
+    fun `sheet - a card brought into view clear of the fade stays clear`() {
+        // P52 (review, 0.1.40): the card (300..500) brought into view with the 32 px fade under it leaves the top at 152,
+        // inside a stop line (140..260). Counting the card alone, the nearer edge (140) kept it whole but put its last
+        // 12 px under the fade; with the room it stays clear: the line is scrolled away instead (260).
+        val lines = listOf(Span(140, 260))
+        val card = Span(300, 500)
+        assertEquals(140, sheetRestingScroll(top = 152, viewport = 380, maxScroll = 400, lines = lines, card = card))
+        assertEquals(Span(300, 532), cardWithRoom(card, 32, top = 152, viewport = 380))
+        assertEquals(260, sheetRestingScroll(top = 152, viewport = 380, maxScroll = 400, lines = lines, card = cardWithRoom(card, 32, 152, 380)))
+        // a card whole but not clear of the fade now is kept whole as before (the card alone)
+        assertEquals(card, cardWithRoom(card, 32, top = 130, viewport = 380))
+        assertNull(cardWithRoom(null, 32, top = 0, viewport = 380))
+    }
+
+    @Test
+    fun `sheet - a new trip is told from a change of the same trip`() {
+        // Rule D10 (review, 0.1.40): stops by a key each (1 Krispy Kreme, 2 the swap's starting point, 3 a stop, 4 Erie Zoo)
+        // a new trip planned during a preview: none of the stops, no routes yet
+        assertTrue(newTripShown(before = listOf(1), now = listOf(4), hasRoutes = false))
+        assertTrue(newTripShown(before = listOf(3, 1), now = listOf(4), hasRoutes = false))
+        // the ends swapped (none of the stops, but the old routes shown while it replans)
+        assertTrue(!newTripShown(before = listOf(1), now = listOf(2), hasRoutes = true))
+        // a stop added, removed or moved; the routes dropped and planned again for the same stops (new maps installed)
+        assertTrue(!newTripShown(before = listOf(1), now = listOf(3, 1), hasRoutes = false))
+        assertTrue(!newTripShown(before = listOf(3, 1), now = listOf(1), hasRoutes = false))
+        assertTrue(!newTripShown(before = listOf(3, 1), now = listOf(1, 3), hasRoutes = false))
+        assertTrue(!newTripShown(before = listOf(1), now = listOf(1), hasRoutes = false))
+        // the first sheet (nothing shown before) is new by itself
+        assertTrue(!newTripShown(before = emptyList(), now = listOf(4), hasRoutes = false))
+    }
 }

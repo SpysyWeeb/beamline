@@ -60,6 +60,9 @@ internal class SavedController(
     private data class Pick(val target: SaveTarget, val place: Place? = null, val zoom: Double = 0.0, val failed: String? = null)
     private var pick: Pick? = null
 
+    /** P58: the place the last Remove took away, for its Undo (only that one; cleared by the Undo). */
+    private var lastRemoved: SavedPlace? = null
+
     init {
         scope.launch { store.places.collect { refresh() } }
         scope.launch { store.showOnMap.collect { refresh() } }
@@ -106,6 +109,22 @@ internal class SavedController(
         refresh()
     }
 
+    /**
+     * P18 (0.1.40): the street line the app found at [point]: the map pick's point there and a save dialog's
+     * point there (MAP_PIN) show it, and are saved with it. A place saved before is never rewritten (plan 6.2).
+     */
+    fun streetFound(point: GeoPoint, line: String) {
+        val text = line.trim()
+        if (text.isEmpty()) return
+        pick?.let { p ->
+            p.place?.takeIf { it.source == PlaceSource.MAP_PIN && it.point == point }?.let { pick = p.copy(place = it.copy(subtitle = text)) }
+        }
+        (dialog as? Dialog.Save)?.let { d ->
+            if (d.place.source == PlaceSource.MAP_PIN && d.place.point == point) dialog = d.copy(place = d.place.copy(subtitle = text))
+        }
+        refresh()
+    }
+
     // ---------------------------------------------------------------- events
     fun onEvent(e: SavedEvent): SavedOutput? = when (e) {
         is SavedEvent.RowTapped -> rowTapped(e.savedId)
@@ -140,6 +159,11 @@ internal class SavedController(
             }
         }
         SavedEvent.NoticeDismissed -> { store.dismissNotice(); refresh(); null }
+        is SavedEvent.UndoRemove -> {   // P58: the last removed place back, once
+            lastRemoved?.takeIf { it.id == e.savedId }?.let { lastRemoved = null; store.restore(it) }
+            refresh()
+            null
+        }
         SavedEvent.Back -> {
             listOpen = false
             refresh()
@@ -179,7 +203,13 @@ internal class SavedController(
     private fun dialogConfirm(): SavedOutput? {
         when (val d = dialog) {
             is Dialog.Save -> {
-                if (saveDialogProblem(d) != null) return null
+                val why = saveDialogProblem(d)
+                if (why == "") {   // P57: Save tapped before a point got a name: say what is needed
+                    dialog = d.copy(edited = true)
+                    refresh()
+                    return null
+                }
+                if (why != null) return null
                 val old = if (d.kind == SavedKind.OTHER) null else slot(d.kind)
                 val r = store.save(d.place, d.kind, if (d.kind == SavedKind.OTHER) d.name else null)
                 if (r is SaveResult.Refused) {
@@ -211,9 +241,14 @@ internal class SavedController(
             is Dialog.Remove -> {
                 val sp = store.byId(d.savedId)
                 dialog = null
-                if (sp != null && store.delete(sp.id) is SaveResult.Done) forgetRecents(sp)
+                val gone = sp != null && store.delete(sp.id) is SaveResult.Done
+                if (gone) {
+                    forgetRecents(sp)
+                    lastRemoved = sp
+                }
                 refresh()
-                return null
+                // P58: the app offers Undo for it
+                return if (gone) SavedOutput.Removed(sp) else null
             }
             is Dialog.Make -> {
                 val old = slot(d.kind)
@@ -248,6 +283,11 @@ internal class SavedController(
                 pick = null
                 refresh()
                 return SavedOutput.PickEnded((r as SaveResult.Done).place)
+            }
+            SaveTarget.Start -> {   // P22: nothing is saved; the trip starts there (the app sends SetOrigin)
+                pick = null
+                refresh()
+                return SavedOutput.Picked(place, SearchMode.SET_START)
             }
             is SaveTarget.Move -> {
                 val r = store.move(t.savedId, place)
@@ -386,7 +426,8 @@ internal class SavedController(
                 replaceText = old?.let { Texts.replaces(d.kind, it.description ?: it.placeName) },
                 problem = problem?.ifEmpty { null },
                 confirmText = if (old != null) Texts.REPLACE else Texts.SAVE,
-                canConfirm = problem == null,
+                // P57: on for a point's untouched empty name too; a tap then says "Type a name."
+                canConfirm = problem.isNullOrEmpty(),
             )
         }
         is Dialog.Rename -> {
@@ -400,7 +441,7 @@ internal class SavedController(
                     SavedKind.WORK -> "Remove your work?"
                     SavedKind.OTHER -> "Remove ${sp.name}?"
                 },
-                null, Texts.REMOVE,
+                null, Texts.REMOVE, destructive = true,   // P58: red, as the menu's Remove
             )
         }
         is Dialog.Make -> store.byId(d.savedId)?.let { sp ->
@@ -425,16 +466,21 @@ internal class SavedController(
                 SaveTarget.Work -> "Tap the map at your work"
                 SaveTarget.NewPlace -> "Tap the map at the place"
                 is SaveTarget.Move -> "Tap the map at the new location"
+                SaveTarget.Start -> Texts.START_PROMPT   // P22
             },
             place = place,
             title = place?.name ?: Texts.NO_POINT_YET,
-            subtitle = place?.let { pointText(it.point) },
+            // P18: a point's street once the app found it (streetFound), else its coordinates; a POI its coordinates
+            subtitle = place?.let { pl ->
+                if (pl.source == PlaceSource.MAP_PIN) pl.subtitle?.takeIf { it.isNotBlank() } ?: pointText(pl.point) else pointText(pl.point)
+            },
             note = if (place != null && !covered(installed.value, place.point)) Texts.OUTSIDE else null,
             confirmText = when (p.target) {
                 SaveTarget.Home -> Texts.SET_HOME
                 SaveTarget.Work -> Texts.SET_WORK
                 SaveTarget.NewPlace -> Texts.SAVE
                 is SaveTarget.Move -> Texts.USE_THIS_POINT
+                SaveTarget.Start -> Texts.START_HERE   // P22: "Use as start" ("Start here" could read as start guidance)
             },
             canConfirm = problem == null,
             problem = problem?.ifEmpty { null },

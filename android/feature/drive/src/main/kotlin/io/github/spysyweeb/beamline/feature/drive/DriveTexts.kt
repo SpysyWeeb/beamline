@@ -62,8 +62,19 @@ object DriveTexts {
     const val SIDE_LEFT = "On the left"
     const val SIDE_RIGHT = "On the right"
 
-    /** GuidanceStatusUi.Arrived.awayText: the straight line from the end of the route to the place ("Destination 500 ft away"). */
-    fun destinationAway(distance: String) = "Destination $distance away"
+    /** GuidanceStatusUi.Arrived.awayText: the straight line from the end of the route to the place ("Route ends 500 ft from the place", P4). */
+    fun destinationAway(distance: String) = "Route ends $distance from the place"
+
+    /**
+     * The arrival's own words, as :routing:banner writes them (B7), for the notification's one-line title (play test
+     * P34: the banner names the stop now, "Arrive on the left at Erie Zoo"). :feature:drive does not see
+     * :routing:banner (rule 1.1), so the three are repeated here.
+     */
+    fun arriveWords(kind: ManeuverKind): String = when (kind) {
+        ManeuverKind.ARRIVE_LEFT -> "Arrive, on the left"
+        ManeuverKind.ARRIVE_RIGHT -> "Arrive, on the right"
+        else -> "Arrive"
+    }
 
     /** Notification (rule D6): title in ARRIVED ("Arrived at Downs Drive"); [ARRIVED] when the trip has no name. */
     fun arrivedAt(name: String) = "Arrived at $name"
@@ -107,8 +118,13 @@ object DriveTexts {
     const val CONTINUE = "Continue"
     const val DISCARD = "Discard"
 
-    /** The resume card (rule R3: "Continue to …?"). */
-    fun continueTo(name: String) = if (name.isBlank()) "Continue your trip?" else "Continue to $name?"
+    /** The resume card (rule R3: "Continue to …?"; play test P27: a simulated drive says so). */
+    fun continueTo(name: String, simulated: Boolean = false): String = when {
+        simulated && name.isBlank() -> "Continue the simulated drive?"
+        simulated -> "Continue the simulated drive to $name?"
+        name.isBlank() -> "Continue your trip?"
+        else -> "Continue to $name?"
+    }
     fun stopsLeft(n: Int): String? = if (n > 1) "$n stops left" else null
 
     // ---- what a screen reader says (the sketch's aria labels) ----
@@ -181,9 +197,26 @@ object DriveTexts {
     const val STEPS = "Steps"
     fun showAllSteps(n: Int): String = "Show all $n steps"
 
+    /** P21: the step view at the middle height ("Step 3 of 12"), its buttons and what a screen reader calls them. */
+    fun stepOf(index: Int, count: Int): String = "Step ${index + 1} of $count"
+    const val PREVIOUS = "Previous"
+    const val NEXT = "Next"
+    const val PREVIOUS_STEP = "Previous step"
+    const val NEXT_STEP = "Next step"
+    const val BACK_TO_STEPS = "Back to the steps"
+
     /** Item 47: the stops editor lowered, and the arrival card's Save. */
     fun stopsCount(n: Int): String = if (n == 1) "1 stop" else "$n stops"
     const val SAVE_PLACE = "Save this place"
+    /** Play test P31, audit F34: the arrival card once its place is saved, and what its handle's raise does. */
+    const val SAVED = "Saved"
+    const val SHOW_DETAILS = "Show place details"
+    /** Play test P49: the stops editor's note after Best order changed the order. */
+    const val STOPS_REORDERED = "Stops reordered."
+    /** Play test P10, audit F30: the stops editor's Undo beside "Stop removed". */
+    const val UNDO = "Undo"
+    /** Play test P5: the trip bar and the notification's title outside the installed maps (rule O8). */
+    const val NO_ROUTE_FROM_HERE = "No route from here"
     /** Item 47: the From row's swap button. */
     const val SWAP = "Swap start and destination"
 

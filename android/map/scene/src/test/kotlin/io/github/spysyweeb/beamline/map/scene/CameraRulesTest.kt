@@ -2,6 +2,7 @@ package io.github.spysyweeb.beamline.map.scene
 
 import org.junit.jupiter.api.Assertions.assertEquals
 import org.junit.jupiter.api.Assertions.assertFalse
+import org.junit.jupiter.api.Assertions.assertNull
 import org.junit.jupiter.api.Test
 import org.junit.jupiter.api.assertThrows
 import java.io.File
@@ -25,6 +26,7 @@ class CameraRulesTest {
         assertEquals(48f, r.previewPaddingDp)
         assertEquals(17.0, r.arrivedZoom)
         assertEquals(800, r.transitionMs)
+        assertEquals(72f, r.overviewPaddingDp!!)   // P32 (0.1.40): the overview's own padding
         assertEquals(r, CameraRules.parse(Fx.cameraText()))
     }
 
@@ -50,6 +52,7 @@ class CameraRulesTest {
         """.trimIndent()
         val r = CameraRules.parse(text)
         assertEquals(CameraRules(45.0, 0.3, listOf(0.0 to 18.0, 30.0 to 15.0), 100.0, 16.5, 1.0, 5.0, 7.5, 15.0, 24.5f, 18.0, 0), r)
+        assertNull(r.overviewPaddingDp)   // P32: optional; absent = preview.padding_dp
     }
 
     @Test
@@ -72,7 +75,10 @@ class CameraRulesTest {
             good.replace("\"recenter_after_s\": 15", "\"recenter_after_s\": -1"),
             good.replace("\"transition_ms\": 800", "\"transition_ms\": 800.5"),
             good.replace("\"follow_zoom\": 16", "\"follow_zoom\": 40"),
-            good.replace("\"overview\": {\"return_after_s\": 10},", ""),
+            good.replace("\"overview\": {\"return_after_s\": 10, \"padding_dp\": 72},", ""),
+            // P32: the overview's padding, when given, is a number not below 0 (only the overview's key is 72)
+            good.replace("\"padding_dp\": 72", "\"padding_dp\": -1"),
+            good.replace("\"padding_dp\": 72", "\"padding_dp\": \"72\""),
         )
         for (text in bad) {
             val e = assertThrows<IllegalArgumentException>(text.take(60)) { CameraRules.parse(text) }

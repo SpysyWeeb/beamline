@@ -3,7 +3,10 @@ package io.github.spysyweeb.beamline.feature.drive
 import io.github.spysyweeb.beamline.ui.theme.LocalSheetLag
 import androidx.compose.runtime.CompositionLocalProvider
 import io.github.spysyweeb.beamline.ui.theme.SHEET_CORNER
+import io.github.spysyweeb.beamline.ui.theme.SIDE_LAYOUT_MIN_WIDTH
 import io.github.spysyweeb.beamline.ui.theme.SheetHeight
+import io.github.spysyweeb.beamline.ui.theme.isSideLayout
+import io.github.spysyweeb.beamline.ui.theme.sidePanelWidth
 import androidx.compose.animation.core.animateDpAsState
 import androidx.compose.animation.core.tween
 import android.app.Activity
@@ -17,7 +20,6 @@ import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.interaction.MutableInteractionSource
 import androidx.compose.foundation.layout.Arrangement
-import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.BoxWithConstraints
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.ColumnScope
@@ -42,6 +44,8 @@ import androidx.compose.runtime.DisposableEffect
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.NonRestartableComposable
 import androidx.compose.runtime.SideEffect
+import androidx.compose.runtime.saveable.rememberSaveable
+import androidx.compose.runtime.saveable.rememberSaveableStateHolder
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableIntStateOf
 import androidx.compose.runtime.remember
@@ -59,8 +63,8 @@ import androidx.compose.ui.semantics.contentDescription
 import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.coerceAtLeast
-import androidx.compose.ui.unit.coerceIn
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.unit.sp
 import io.github.spysyweeb.beamline.api.map.EdgeInsetsDp
 import io.github.spysyweeb.beamline.api.nav.LaneMark
 
@@ -118,14 +122,29 @@ object DriveTags {
     const val END = "end"
     const val CONTINUE = "continue"
     const val DISCARD = "discard"
+    /** P52: the fade over the route sheet's scrolling part while it scrolls further. */
+    const val MORE_BELOW = "more-below"
+    /** P21: the step view at the route sheet's middle height (which step, Previous / Next, back to the list). */
+    const val STEP_VIEW = "step-view"
+    const val STEP_TITLE = "step-title"
+    const val STEP_BACK = "step-back"
+    const val STEP_PREVIOUS = "step-previous"
+    const val STEP_NEXT = "step-next"
+    /** P19, P20: "From Butler · 1 stop" under "To ..." at the middle height. */
+    const val CONTEXT_LINE = "context-line"
+    /** Audit F27, P19: "Guidance starts from where you are." above Start. */
+    const val START_NOTE = "start-note"
+    /** Play test P49, P10: the stops editor's note line ("Stops reordered.", a problem, "Stop removed"), its Undo, and its arrival line while guided. */
+    const val STOPS_NOTE = "stops-note"
+    const val STOPS_UNDO = "stops-undo"
+    /** The 0.1.40 replay: the fade over the stops editor's last rows while they scroll further (as [MORE_BELOW]). */
+    const val STOPS_MORE_BELOW = "stops-more-below"
+    const val STOPS_ARRIVE = "stops-arrive"
+    /** Play test P31, audit F34: the arrival card's "Saved" (in place of "Save this place"). */
+    const val DESTINATION_SAVED = "destination-saved"
+    /** Play test P5: the trip bar's "No route from here". */
+    const val NO_ROUTE = "no-route"
 }
-
-/**
- * When the overlay is wider than tall and at least this wide (a phone on its side), the banner and
- * the sheets go into one panel on the start side and the map keeps the rest of the width; otherwise
- * the banner is at the top and the sheets at the bottom, across the whole width.
- */
-internal val SIDE_LAYOUT_MIN_WIDTH: Dp = 560.dp
 
 /** Rule D8: the speed pair's gap above the trip bar (or the bottom inset on its side), level with the map buttons. */
 internal val SPEED_CLUSTER_BOTTOM_GAP: Dp = 16.dp
@@ -137,51 +156,115 @@ internal val SPEED_CLUSTER_CREDIT_GAP: Dp = 36.dp
 internal val SPEED_CLUSTER_TOP_CLEARANCE: Dp = 8.dp
 internal val SPEED_CLUSTER_HEIGHT_GUESS: Dp = 76.dp
 
+/**
+ * Play test P10 (review): the least height the bottom block keeps while guided when the room under the banner is
+ * smaller: the stops editor's header, one row, its buttons and its note line (72 + 64 + 56 + 52, rounded up), times
+ * the font scale. Then the editor may cover the banner's lower part (its lanes) in a very short window.
+ */
+internal val STOPS_EDITOR_MIN_HEIGHT: Dp = 260.dp
+
+/** P49: the key of the route sheet's kept state while the stops editor has its place; one per trip shown (rule D10). */
+private fun routeSheetState(trip: Int) = "route-sheet-$trip"
+
 /** Item 22: the room the current-road label leaves at the start for the speed pair (sign, gap, badge) and at the end for the map buttons. */
 internal val CURRENT_ROAD_START_ROOM: Dp = 148.dp
 internal val CURRENT_ROAD_END_ROOM: Dp = 76.dp
 
-/** The side panel: half the width, at least 320 dp (the banner needs it) and at most 400 dp. */
-internal fun sidePanelWidth(overlayWidth: Dp): Dp = (overlayWidth / 2).coerceIn(320.dp, 400.dp)
-
 /**
  * The body of [DriveOverlay]. Upright: the banner (or the re-route card, D7) at the top under the
- * status bar, the GPS chip and the stop card under it, the route sheet, trip bar, arrival or resume
- * card at the bottom, the map buttons above it, the stops editor over everything; [onInsets] gets
- * the height of the top block and of the bottom block. On its side (see [SIDE_LAYOUT_MIN_WIDTH]): the
- * same blocks in a panel on the start side, the map buttons at the bottom end; [onInsets] gets the
- * panel's width as `start`. The chips, cards and buttons are left out of the insets, so the camera
- * does not jump when they come and go.
+ * status bar, the GPS chip and the stop card under it, the route sheet, the stops editor (in the route
+ * sheet's or the trip bar's place, play test P49; while guided never above the banner but for its
+ * [STOPS_EDITOR_MIN_HEIGHT]), trip bar, arrival or resume card at the bottom, the map buttons above it;
+ * [onInsets] gets the height of the top block and of the bottom block. On its side (`:ui:theme`'s [isSideLayout], wider
+ * than tall and at least [SIDE_LAYOUT_MIN_WIDTH]): the same blocks in a panel on the start side
+ * ([sidePanelWidth]), the map buttons at the bottom end; [onInsets] gets the panel's width as `start`.
+ * The chips, cards and buttons are left out of the insets, so the camera does not jump when they come
+ * and go.
+ *
+ * [stopWindowDp] (item 51, rule S12): the stop results' window is this high at the bottom (0 on its side,
+ * where it is in the start panel): only the top block, the chip or stop card and the speed pair above the
+ * window are drawn, and the insets are the top block's height (upright) or the panel's width (on its side).
+ * [onTopStack] (play test P7): where the top stack ends, in whole dp from the overlay's top, in both layouts.
+ * [safe]: the system bars and a display cutout, which the content keeps clear of (a parameter for the tests).
  */
 @Composable
-internal fun DriveOverlayContent(ui: DriveUi, onEvent: (DriveEvent) -> Unit, onInsets: (EdgeInsetsDp) -> Unit, modifier: Modifier = Modifier, creditShown: Boolean = false) {
+internal fun DriveOverlayContent(
+    ui: DriveUi, onEvent: (DriveEvent) -> Unit, onInsets: (EdgeInsetsDp) -> Unit, modifier: Modifier = Modifier, creditShown: Boolean = false,
+    stopWindowDp: Float? = null, onTopStack: (Float) -> Unit = {},
+    // The system bars and a display cutout: the banner's colour and the sheets reach under them, their content does not
+    // (a parameter so a screen test can give the overlay a navigation bar at the side, play test P1, P32).
+    safe: WindowInsets = WindowInsets.systemBars.union(WindowInsets.displayCutout),
+) {
     BoxWithConstraints(modifier.fillMaxSize().testTag(DriveTags.OVERLAY)) {
-        val side = maxWidth > maxHeight && maxWidth >= SIDE_LAYOUT_MIN_WIDTH
+        // play test P7: the side rule is :ui:theme's, shared with the app's browsing windows (the same 560 dp and 320-400 dp panel)
+        val side = isSideLayout(maxWidth, maxHeight)
         val panelWidth = if (side) sidePanelWidth(maxWidth) else maxWidth
         val density = LocalDensity.current
         var topPx by remember { mutableIntStateOf(0) }
         var bottomPx by remember { mutableIntStateOf(0) }
         // the sheet's remaining slide (LocalSheetLag): the camera gets the height it is going to at once
         val sheetLag = remember { mutableIntStateOf(0) }
-        if (ui.planning == null && ui.guidance == null && ui.resume == null) sheetLag.intValue = 0
-        // audit F30: the stops editor covers more of the map than the trip bar; the camera keeps above it
-        var editorPx by remember { mutableIntStateOf(0) }
-        if (ui.stopsEditor == null) editorPx = 0
+        // P49: the route sheet's own state (height, scroll, "Show all steps", the step shown) while the stops editor has its
+        // place (or the stop results' window hides the bottom block). A new trip's sheet starts afresh (rule D10): its
+        // state goes when the sheet goes, and (review, 0.1.40) a trip planned while a preview shows (PLANNING to PLANNING:
+        // a map place's Directions, a link from another app; [newTripShown]) gets a sheet of its own under a new key.
+        val sheets = rememberSaveableStateHolder()
+        var sheetTrip by rememberSaveable { mutableIntStateOf(0) }
+        // the stops last shown, a key of each (not saved: after a restart the sheet shows the same trip)
+        val shownStops = remember { arrayOf(emptyList<Int>()) }
+        val planning = ui.planning
+        if (planning == null) {
+            shownStops[0] = emptyList()
+            val gone = sheetTrip
+            SideEffect { sheets.removeState(routeSheetState(gone)) }
+        } else {
+            val stops = planning.stops.map { (it.title to it.subtitle).hashCode() }
+            if (newTripShown(shownStops[0], stops, hasRoutes = planning.cards.isNotEmpty())) {
+                val old = sheetTrip
+                SideEffect { sheets.removeState(routeSheetState(old)) }
+                sheetTrip = old + 1
+            }
+            shownStops[0] = stops
+        }
+        // P49: what the bottom block holds; when that changes, the slide left over from the sheet that went is dropped
+        // (TripBar and ResumeCard have no SheetFrame to write it again), so the camera's inset is the new content's height.
+        // Reset here, before the insets are read and before the new content's first layout writes its own slide.
+        val bottomKind = when {
+            stopWindowDp != null -> 6 // item 51: nothing at the bottom
+            ui.stopsEditor != null -> 1
+            ui.planning != null -> 2
+            ui.guidance?.status is GuidanceStatusUi.Arrived -> 3
+            ui.guidance != null -> 4
+            ui.resume != null -> 5
+            else -> 0
+        }
+        val shownKind = remember { intArrayOf(bottomKind) }
+        if (shownKind[0] != bottomKind) {
+            shownKind[0] = bottomKind
+            sheetLag.intValue = 0
+        }
         // D8 (batch B): the bottom of the chip / stop card column and the speed pair's height, to
         // know whether the pair has room between the top stack and the bottom block
         var chipBottomPx by remember { mutableIntStateOf(0) }
         var clusterPx by remember { mutableIntStateOf(0) }
+        // item 51 (rule S12): while the stop results' window shows, only the top and the speed pair are drawn; the
+        // pair sits above the window (upright) instead of above the bottom block, which is not drawn
+        val stopWindow = stopWindowDp != null
+        val bottomRoomPx = if (stopWindowDp != null) with(density) { stopWindowDp.dp.roundToPx() } else bottomPx
         val insets = when {
+            // item 51: the app pads the camera by the window itself; the top block here (or the panel on its side, where
+            // the window is, also with no banner)
+            stopWindow -> if (side) EdgeInsetsDp(start = panelWidth.value) else EdgeInsetsDp(top = topPx / density.density)
             // whole dp: the height now and the remaining slide add up to the same target every frame
-            !side -> EdgeInsetsDp(top = topPx / density.density, bottom = kotlin.math.round(maxOf(bottomPx + sheetLag.intValue, editorPx) / density.density))
+            // (P49: the stops editor is in the bottom block, so its height is the camera's inset as the sheet's is)
+            !side -> EdgeInsetsDp(top = topPx / density.density, bottom = kotlin.math.round((bottomPx + sheetLag.intValue) / density.density))
             topPx > 0 || bottomPx > 0 -> EdgeInsetsDp(start = panelWidth.value)
             else -> EdgeInsetsDp()
         }
         val reportInsets by rememberUpdatedState(onInsets)
         LaunchedEffect(insets) { reportInsets(insets) }
 
-        // The system bars and a display cutout: the banner's colour and the sheets reach under them, their content does not.
-        val safe = WindowInsets.systemBars.union(WindowInsets.displayCutout)
+        // The system bars and a display cutout ([safe]): the banner's colour and the sheets reach under them, their content does not.
         val horizontal = if (side) WindowInsetsSides.Start else WindowInsetsSides.Horizontal
         val safeTop = safe.asPaddingValues().calculateTopPadding()
         val panelAlign = if (side) Alignment.Start else Alignment.CenterHorizontally
@@ -216,11 +299,22 @@ internal fun DriveOverlayContent(ui: DriveUi, onEvent: (DriveEvent) -> Unit, onI
             }
         }
         // Under the top block: the GPS chip (or a failed change while the banner stays) and the stop card.
-        if (guidance != null && !arrived) {
+        val chipShown = guidance != null && !arrived && run {
             val chip = status != null && guidance.banner != null && status !is GuidanceStatusUi.OnRoute && status !is GuidanceStatusUi.StopReached
             val chipNoBanner = status != null && guidance.banner == null &&
                 (status is GuidanceStatusUi.WaitingForGps || status is GuidanceStatusUi.GpsWeak || status is GuidanceStatusUi.GpsLost)
-            val chipShown = chip || chipNoBanner || status is GuidanceStatusUi.StopReached
+            chip || chipNoBanner || status is GuidanceStatusUi.StopReached
+        }
+        // P7: a chip that went leaves no stale bottom
+        if (!chipShown) chipBottomPx = 0
+        // D8's top stack: the banner block, and the chip or stop card under it, from the overlay's top
+        val topStackPx = maxOf(topPx, if (chipShown) chipBottomPx else 0)
+        // P7 (0.1.40): where the top stack ends, in whole dp from the overlay's top, in both layouts: the app keeps its
+        // browsing windows under it (on its side they share the start panel with the banner; item 51: the banner stays in view)
+        val topStackDp = kotlin.math.round(topStackPx / density.density)
+        val reportTopStack by rememberUpdatedState(onTopStack)
+        LaunchedEffect(topStackDp) { reportTopStack(topStackDp) }
+        if (guidance != null && !arrived) {
             if (chipShown) {
                 Column(
                     Modifier
@@ -233,7 +327,8 @@ internal fun DriveOverlayContent(ui: DriveUi, onEvent: (DriveEvent) -> Unit, onI
                     horizontalAlignment = Alignment.CenterHorizontally,
                     verticalArrangement = Arrangement.spacedBy(8.dp),
                 ) {
-                    if (status is GuidanceStatusUi.StopReached) StopReachedCard(status) else StatusChip(status, onEvent)
+                    val shownStatus = guidance.status
+                    if (shownStatus is GuidanceStatusUi.StopReached) StopReachedCard(shownStatus) else StatusChip(shownStatus, onEvent)
                 }
             }
             // D8: the speed-limit sign and the current speed at the bottom start of the map (the owner,
@@ -243,11 +338,11 @@ internal fun DriveOverlayContent(ui: DriveUi, onEvent: (DriveEvent) -> Unit, onI
             val speedGap by animateDpAsState(if (creditShown) SPEED_CLUSTER_CREDIT_GAP else SPEED_CLUSTER_BOTTOM_GAP, tween(500), label = "speedGap")
             // In a window too short for it (split screen, about 390 dp tall) the pair is left out while
             // it would reach the top stack (banner, chip, stop card); it comes back when there is room.
-            // On its side the pair is beside the panel, clear of the stack.
+            // On its side the pair is beside the panel, clear of the stack. Item 51: above the stop
+            // results' window, left out the same way while the window leaves no room (raised high).
             val room = side || with(density) {
-                val topStack = maxOf(topPx, if (chipShown) chipBottomPx else 0)
                 val cluster = if (clusterPx > 0) clusterPx else (SPEED_CLUSTER_HEIGHT_GUESS * fontScale).roundToPx()
-                maxHeight.toPx() - bottomPx - speedGap.toPx() - cluster >= topStack + SPEED_CLUSTER_TOP_CLEARANCE.toPx()
+                maxHeight.toPx() - bottomRoomPx - speedGap.toPx() - cluster >= topStackPx + SPEED_CLUSTER_TOP_CLEARANCE.toPx()
             }
             guidance.speed?.takeIf { room }?.let { speed ->
                 SpeedCluster(
@@ -259,7 +354,7 @@ internal fun DriveOverlayContent(ui: DriveUi, onEvent: (DriveEvent) -> Unit, onI
                             if (side) {
                                 Modifier.windowInsetsPadding(safe.only(WindowInsetsSides.Bottom)).padding(start = panelWidth)
                             } else {
-                                Modifier.padding(bottom = with(density) { bottomPx.toDp() })
+                                Modifier.padding(bottom = with(density) { bottomRoomPx.toDp() })
                             },
                         )
                         .padding(start = 12.dp, bottom = speedGap)
@@ -270,7 +365,10 @@ internal fun DriveOverlayContent(ui: DriveUi, onEvent: (DriveEvent) -> Unit, onI
         }
         // Item 22: the road being driven, a small label at the bottom of the map, level with the speed
         // pair and the map buttons and centred in the room between them (left out when the window is too short).
-        if (guidance != null && !arrived) {
+        // P32 (0.1.40): also left out while Recenter shows (the overview, or the map moved by hand): the pill,
+        // level with it at the bottom end, covered its end; the driver is then not following the road's name.
+        // Item 51: not drawn while the stop results' window shows.
+        if (!stopWindow && guidance != null && !arrived && !guidance.showRecenter) {
             guidance.currentRoad?.let { road ->
                 val short = with(density) { maxHeight.toPx() - bottomPx < topPx + (SPEED_CLUSTER_HEIGHT_GUESS * fontScale).toPx() * 2 }
                 if (side || !short) {
@@ -281,7 +379,8 @@ internal fun DriveOverlayContent(ui: DriveUi, onEvent: (DriveEvent) -> Unit, onI
                             .align(Alignment.BottomCenter)
                             .then(
                                 if (side) {
-                                    Modifier.windowInsetsPadding(safe.only(WindowInsetsSides.Bottom)).padding(start = panelWidth)
+                                    // P32, P1: its end room counts from a navigation bar at the end, as the map buttons' does
+                                    Modifier.windowInsetsPadding(safe.only(WindowInsetsSides.Bottom + WindowInsetsSides.End)).padding(start = panelWidth)
                                 } else {
                                     Modifier.padding(bottom = with(density) { bottomPx.toDp() })
                                 },
@@ -291,25 +390,50 @@ internal fun DriveOverlayContent(ui: DriveUi, onEvent: (DriveEvent) -> Unit, onI
                 }
             }
         }
+        // Item 51: while the stop results' window shows, none of the bottom: no trip bar or sheet, map buttons or
+        // stops editor (they come back as they were when the window goes).
         // Bottom block: measured for the camera; never taller than the room under the status bar.
-        Column(
+        // P10 (review): while guided it stops under the banner or the re-route card (both layouts), so the stops editor
+        // does not cover the turn; the editor's rows give up room first and scroll. In a window too short for it the block
+        // keeps STOPS_EDITOR_MIN_HEIGHT (the editor's header, one row, its buttons and its note) and may then cover the
+        // banner's lower part (its lanes). topPx holds the status bar (both layouts pad it inside the top block).
+        val bottomMax = if (guidance != null && !arrived && topPx > 0) {
+            minOf(maxHeight - safeTop - 8.dp, maxOf(maxHeight - with(density) { topPx.toDp() } - 8.dp, STOPS_EDITOR_MIN_HEIGHT * density.fontScale))
+        } else {
+            maxHeight - safeTop - 8.dp
+        }
+        if (!stopWindow) Column(
             Modifier
                 .align(if (side) Alignment.BottomStart else Alignment.BottomCenter)
                 .width(panelWidth)
-                .heightIn(max = (maxHeight - safeTop - 8.dp).coerceAtLeast(0.dp))
+                .heightIn(max = bottomMax.coerceAtLeast(0.dp))
                 .onSizeChanged { bottomPx = it.height },
             horizontalAlignment = panelAlign,
         ) {
             val sheetInsets = safe.only(WindowInsetsSides.Bottom + horizontal)
             CompositionLocalProvider(LocalSheetLag provides sheetLag) { when {
-                // item 47: the routes and Start under the map, everything in the side panel
-                ui.planning != null -> BottomSheetSurface(sheetInsets) { RouteSheet(ui.planning, onEvent, opensAt = if (side) SheetHeight.FULL else SheetHeight.MIDDLE) }
+                // play test P49, P10: the stops editor in place of the route sheet or the trip bar (never stacked on them):
+                // the camera, the map buttons and the speed pair keep above it
+                ui.stopsEditor != null -> BottomSheetSurface(sheetInsets) { StopsEditor(ui.stopsEditor, onEvent) }
+                // item 47: the routes and Start under the map, everything in the side panel; its height, scroll and
+                // "Show all steps" are kept while the editor has its place (sheets, above)
+                ui.planning != null -> sheets.SaveableStateProvider(routeSheetState(sheetTrip)) {
+                    BottomSheetSurface(sheetInsets) { RouteSheet(ui.planning, onEvent, opensAt = if (side) SheetHeight.FULL else SheetHeight.MIDDLE) }
+                }
                 guidance != null && status is GuidanceStatusUi.Arrived -> BottomSheetSurface(sheetInsets) { ArrivedCard(status, onEvent) }
                 guidance != null -> BottomSheetSurface(sheetInsets) { TripBar(guidance.tripBar, onEvent) }
                 ui.resume != null -> BottomSheetSurface(sheetInsets) { ResumeCard(ui.resume, onEvent) }
             } }
         }
-        if (guidance != null && !arrived) {
+        // P49, P10: with the stops editor open the buttons sit on its top edge; in a window too short for them under the
+        // banner (and the chip or stop card) they are left out until Done. Without the editor: as before. Worked out from
+        // what is shown now (Overview a 40 dp small FAB; Recenter 10 + 10 dp round a bodyLarge line, 24 sp), never from
+        // a stale measurement.
+        val buttonsRoom = side || ui.stopsEditor == null || guidance == null || with(density) {
+            val need = if (guidance.showRecenter) (40.dp + 12.dp + 20.dp).toPx() + 24.sp.toPx() else 40.dp.toPx()
+            maxHeight.toPx() - bottomPx - 16.dp.toPx() - need >= topStackPx + SPEED_CLUSTER_TOP_CLEARANCE.toPx()
+        }
+        if (!stopWindow && guidance != null && !arrived && buttonsRoom) {
             MapButtons(
                 showRecenter = guidance.showRecenter,
                 onEvent = onEvent,
@@ -324,19 +448,6 @@ internal fun DriveOverlayContent(ui: DriveUi, onEvent: (DriveEvent) -> Unit, onI
                     )
                     .padding(bottom = 16.dp, end = 12.dp),
             )
-        }
-        // The stops editor over everything else; item 47: a sheet, the map stays usable above it (Done or Back closes it).
-        if (ui.stopsEditor != null) {
-            Column(
-                Modifier
-                    .align(if (side) Alignment.BottomStart else Alignment.BottomCenter)
-                    .width(panelWidth)
-                    .heightIn(max = (maxHeight - safeTop - 8.dp).coerceAtLeast(0.dp)),
-            ) {
-                Box(Modifier.onSizeChanged { editorPx = it.height }) {
-                    BottomSheetSurface(safe.only(WindowInsetsSides.Bottom + horizontal)) { StopsEditor(ui.stopsEditor, onEvent) }
-                }
-            }
         }
     }
 }

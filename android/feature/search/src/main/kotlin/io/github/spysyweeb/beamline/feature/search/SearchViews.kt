@@ -2,6 +2,13 @@ package io.github.spysyweeb.beamline.feature.search
 
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.layout.ColumnScope
+import androidx.compose.foundation.layout.FlowRow
+import androidx.compose.foundation.layout.displayCutout
+import androidx.compose.foundation.layout.systemBars
+import androidx.compose.foundation.layout.union
+import androidx.compose.runtime.SideEffect
+import androidx.compose.ui.text.TextRange
+import androidx.compose.ui.text.input.TextFieldValue
 import androidx.compose.material3.Icon
 import androidx.compose.ui.graphics.vector.ImageVector
 import io.github.spysyweeb.beamline.ui.theme.PRIMARY_BUTTON_HEIGHT
@@ -29,15 +36,20 @@ import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
+import androidx.compose.foundation.layout.WindowInsets
+import androidx.compose.foundation.layout.WindowInsetsSides
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.imePadding
 import androidx.compose.foundation.layout.navigationBarsPadding
+import androidx.compose.foundation.layout.only
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.safeDrawing
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.statusBarsPadding
 import androidx.compose.foundation.layout.widthIn
+import androidx.compose.foundation.layout.windowInsetsPadding
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.LazyListScope
 import androidx.compose.foundation.rememberScrollState
@@ -59,6 +71,7 @@ import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.rememberUpdatedState
 import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
@@ -66,10 +79,15 @@ import androidx.compose.ui.ExperimentalComposeUiApi
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.focus.FocusRequester
 import androidx.compose.ui.focus.focusRequester
+import androidx.compose.ui.geometry.Offset
+import androidx.compose.ui.geometry.Size
+import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.SolidColor
 import androidx.compose.ui.graphics.luminance
 import androidx.compose.ui.platform.InterceptPlatformTextInput
+import androidx.compose.ui.platform.LocalAccessibilityManager
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.platform.PlatformTextInputMethodRequest
 import androidx.compose.ui.platform.testTag
@@ -83,8 +101,11 @@ import androidx.compose.ui.semantics.onClick as semanticsOnClick
 import androidx.compose.ui.semantics.role
 import androidx.compose.ui.semantics.selected
 import androidx.compose.ui.semantics.semantics
+import androidx.compose.ui.text.SpanStyle
 import androidx.compose.ui.text.TextStyle
+import androidx.compose.ui.text.buildAnnotatedString
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.withStyle
 import androidx.compose.ui.text.input.ImeAction
 import androidx.compose.ui.text.input.KeyboardCapitalization
 import androidx.compose.ui.text.input.KeyboardType
@@ -113,10 +134,12 @@ internal class Palette(
 )
 
 internal fun palette(night: Boolean) = if (night) {
-    Palette(Color(0xF215191E), Color(0xFFD0D4DA), Color(0xFF8E99A6), Color(0xFF2A333D), Color(0xFF5AA5FF), Color(0xFFFF8A80),
+    // P9 (0.1.40): the panels are opaque (the place window, the pick's prompt and bar, the pill, the headers):
+    // map labels never show through their text
+    Palette(Color(0xFF15191E), Color(0xFFD0D4DA), Color(0xFF8E99A6), Color(0xFF2A333D), Color(0xFF5AA5FF), Color(0xFFFF8A80),
         onAccent = Color(0xFF0B1A2E), off = Color(0xFF2A333D), offText = Color(0xFF7D8894))
 } else {
-    Palette(Color(0xF2FFFFFF), Color(0xFF333333), Color(0xFF66717D), Color(0xFFE1E6EB), Color(0xFF2A74D8), Color(0xFFC62828),
+    Palette(Color(0xFFFFFFFF), Color(0xFF333333), Color(0xFF66717D), Color(0xFFE1E6EB), Color(0xFF2A74D8), Color(0xFFC62828),
         onAccent = Color.White, off = Color(0xFFE1E6EB), offText = Color(0xFF7D8894))
 }
 
@@ -151,17 +174,33 @@ internal val privateKeyboard = KeyboardOptions(
     capitalization = KeyboardCapitalization.None, autoCorrectEnabled = false, keyboardType = KeyboardType.Text, imeAction = ImeAction.Search,
 )
 
-/** A one-line text field with a hint, in the panel colours; PV8 applied. */
+/**
+ * A one-line text field with a hint, in the panel colours; PV8 applied. It holds its own selection (P56, 0.1.40):
+ * it opens with the cursor at the end of [value], or with all of it selected ([selectAll], the Save and Rename
+ * dialogs), and otherwise behaves as BasicTextField(String) (the caller's text, the last text reported).
+ */
 @Composable
 internal fun PrivateField(
     value: String, onChange: (String) -> Unit, hint: String, night: Boolean, label: String? = null,
-    focus: Boolean = false, modifier: Modifier = Modifier, onSearch: (() -> Unit)? = null,
+    focus: Boolean = false, modifier: Modifier = Modifier, onSearch: (() -> Unit)? = null, selectAll: Boolean = false,
 ) {
     val p = palette(night)
     val fr = remember { FocusRequester() }
+    var field by remember { mutableStateOf(TextFieldValue(value, if (selectAll) TextRange(0, value.length) else TextRange(value.length))) }
+    val current = field.copy(text = value)   // the caller's text; the selection coerced into it, as BasicTextField(String) does
+    SideEffect { if (current.selection != field.selection || current.composition != field.composition) field = current }
+    // as BasicTextField(String): a change is what differs from the text last reported
+    var lastText by remember(value) { mutableStateOf(value) }
     NoLearningKeyboard {
         BasicTextField(
-            value = value, onValueChange = onChange, singleLine = true,
+            value = current,
+            onValueChange = { v ->
+                field = v
+                val changed = lastText != v.text
+                lastText = v.text
+                if (changed) onChange(v.text)
+            },
+            singleLine = true,
             textStyle = TextStyle(color = p.panelText, fontSize = 17.sp),
             cursorBrush = SolidColor(p.accent),
             keyboardOptions = privateKeyboard.copy(imeAction = if (label == null) ImeAction.Search else ImeAction.Done),
@@ -169,8 +208,10 @@ internal fun PrivateField(
             modifier = modifier.focusRequester(fr).semantics { contentDescription = label ?: hint },
             decorationBox = { inner ->
                 Box(Modifier.heightIn(min = 48.dp).padding(horizontal = 12.dp), contentAlignment = Alignment.CenterStart) {
-                    // the hint is drawn only; the field's description already says it (not read twice)
-                    if (value.isEmpty()) Text(hint, color = p.subtle, fontSize = 17.sp, maxLines = 1, modifier = Modifier.clearAndSetSemantics {})
+                    // the hint is drawn only; the field's description already says it (not read twice). The tag (P57) sits
+                    // before the clearing, so tests find it while screen readers do not
+                    if (value.isEmpty()) Text(hint, color = p.subtle, fontSize = 17.sp, maxLines = 1,
+                        modifier = Modifier.testTag(FIELD_HINT_TAG).clearAndSetSemantics {})
                     inner()
                 }
             },
@@ -178,6 +219,9 @@ internal fun PrivateField(
     }
     if (focus) LaunchedEffect(Unit) { runCatching { fr.requestFocus() } }
 }
+
+/** Test tag of a field's drawn hint (P57); never read by a screen reader. */
+internal const val FIELD_HINT_TAG = "field-hint"
 
 // ---------------------------------------------------------------------------------------------
 // SP2: the pill
@@ -210,16 +254,31 @@ internal fun SearchPill(onClick: () -> Unit, modifier: Modifier, query: String? 
             if (shown != null) {
                 // ends the results on the map and empties the bar
                 androidx.compose.material3.IconButton(onClick = onClear, modifier = Modifier.testTag("search-bar-clear")) {
-                    androidx.compose.foundation.Canvas(Modifier.size(20.dp).semantics { contentDescription = Texts.CLEAR_SEARCH }) {
-                        val w = size.minDimension
-                        val a = w * 0.22f
-                        val stroke = w * 0.11f
-                        drawLine(p.panelText, androidx.compose.ui.geometry.Offset(a, a), androidx.compose.ui.geometry.Offset(w - a, w - a), strokeWidth = stroke, cap = androidx.compose.ui.graphics.StrokeCap.Round)
-                        drawLine(p.panelText, androidx.compose.ui.geometry.Offset(w - a, a), androidx.compose.ui.geometry.Offset(a, w - a), strokeWidth = stroke, cap = androidx.compose.ui.graphics.StrokeCap.Round)
-                    }
+                    CrossGlyph(p.panelText, Modifier.semantics { contentDescription = Texts.CLEAR_SEARCH })
                 }
             }
         }
+    }
+}
+
+/** The X of the pill and of the field (20 dp); draws only, no semantics of its own: each caller names its button. */
+@Composable
+private fun CrossGlyph(color: Color, modifier: Modifier = Modifier) {
+    androidx.compose.foundation.Canvas(modifier.size(20.dp)) {
+        val w = size.minDimension
+        val a = w * 0.22f
+        val stroke = w * 0.11f
+        drawLine(color, Offset(a, a), Offset(w - a, w - a), strokeWidth = stroke, cap = androidx.compose.ui.graphics.StrokeCap.Round)
+        drawLine(color, Offset(w - a, a), Offset(a, w - a), strokeWidth = stroke, cap = androidx.compose.ui.graphics.StrokeCap.Round)
+    }
+}
+
+/** P44 (0.1.40, audit F50): empties the search field; one button named "Clear text". */
+@Composable
+private fun ClearTextButton(night: Boolean, onClick: () -> Unit) {
+    Box(contentAlignment = Alignment.Center, modifier = Modifier.size(48.dp).clickable(onClick = onClick)
+        .semantics { contentDescription = Texts.CLEAR_TEXT; role = Role.Button }) {
+        CrossGlyph(palette(night).subtle)
     }
 }
 
@@ -248,10 +307,12 @@ internal fun PlaceRow(
     iconName: String?, title: String, subtitle: String?, distance: String?, note: String?, night: Boolean,
     onClick: (() -> Unit)?, editLabel: String? = null, onEdit: (() -> Unit)? = null, trailing: (@Composable () -> Unit)? = null,
     hours: HoursUi? = null,
+    /** Item 51: the time a stop result adds ("+4 min", "On the way"): at the end above the distance, or first in the stacked line. */
+    lead: String? = null,
 ) {
     val p = palette(night)
     val stack = stacked()
-    val words = listOfNotNull(title, subtitle, hours?.let(::hoursWords), distance, note).joinToString(", ")
+    val words = listOfNotNull(title, subtitle, lead, hours?.let(::hoursWords), distance, note).joinToString(", ")
     Row(   // SP6: when stacked, "Edit" sits at the end of the title line
         verticalAlignment = if (stack) Alignment.Top else Alignment.CenterVertically,
         modifier = Modifier.fillMaxWidth().heightIn(min = 56.dp).padding(start = 16.dp, end = 8.dp),
@@ -272,13 +333,21 @@ internal fun PlaceRow(
                 Text(title, color = p.panelText, fontSize = 16.sp, fontWeight = FontWeight.Medium, maxLines = 1, overflow = TextOverflow.Ellipsis)
                 if (subtitle != null) Text(subtitle, color = p.subtle, fontSize = 14.sp, maxLines = 2, overflow = TextOverflow.Ellipsis)
                 if (hours != null) HoursLine(hours, night, fontSize = 13)
-                if (stack && (distance != null || note != null)) {
-                    Text(listOfNotNull(distance, note).joinToString(" · "), color = p.subtle, fontSize = 13.sp)
+                if (stack && (lead != null || distance != null || note != null)) {
+                    val rest = listOfNotNull(distance, note).joinToString(" · ")
+                    Text(buildAnnotatedString {
+                        if (lead != null) {
+                            withStyle(SpanStyle(color = p.panelText, fontWeight = FontWeight.SemiBold)) { append(lead) }
+                            if (rest.isNotEmpty()) append(" · ")
+                        }
+                        append(rest)
+                    }, color = p.subtle, fontSize = 13.sp)
                 }
             }
-            if (!stack && (distance != null || note != null)) {
+            if (!stack && (lead != null || distance != null || note != null)) {
                 Spacer(Modifier.size(8.dp))
                 Column(horizontalAlignment = Alignment.End) {
+                    if (lead != null) Text(lead, color = p.panelText, fontSize = 15.sp, fontWeight = FontWeight.SemiBold, maxLines = 1, softWrap = false)
                     if (distance != null) Text(distance, color = p.subtle, fontSize = 13.sp, maxLines = 1, softWrap = false)
                     if (note != null) Text(note, color = p.subtle, fontSize = 12.sp, maxLines = 2)
                 }
@@ -293,15 +362,24 @@ internal fun PlaceRow(
     }
 }
 
+/** A row that acts ("Use my position", "Choose on the map", "Add a place"); P60 (0.1.40): its icon in front, the text in PlaceRow's column. */
 @Composable
-internal fun PlainRow(text: String, night: Boolean, onClick: () -> Unit) {
+internal fun PlainRow(text: String, night: Boolean, icon: ImageVector? = null, onClick: () -> Unit) {
     val p = palette(night)
-    Box(
-        contentAlignment = Alignment.CenterStart,
+    Row(
+        verticalAlignment = Alignment.CenterVertically,
         modifier = Modifier.fillMaxWidth().heightIn(min = 52.dp).clickable(onClick = onClick)
-            .semantics(mergeDescendants = true) { role = Role.Button }.padding(start = 54.dp, end = 16.dp),
-    ) { Text(text, color = p.accent, fontSize = 16.sp, fontWeight = FontWeight.Medium) }
+            .semantics(mergeDescendants = true) { role = Role.Button }.padding(start = 16.dp, end = 16.dp),
+    ) {
+        if (icon != null) Icon(icon, contentDescription = null, tint = p.accent, modifier = Modifier.size(24.dp).testTag(PLAIN_ROW_ICON_TAG))
+        else Spacer(Modifier.size(24.dp))
+        Spacer(Modifier.width(14.dp))
+        Text(text, color = p.accent, fontSize = 16.sp, fontWeight = FontWeight.Medium)
+    }
 }
+
+/** Test tag of a plain row's icon (P60). */
+internal const val PLAIN_ROW_ICON_TAG = "plain-row-icon"
 
 @Composable
 internal fun NoticeCard(text: String, night: Boolean, onOk: (() -> Unit)?) {
@@ -322,19 +400,26 @@ internal fun NoticeCard(text: String, night: Boolean, onOk: (() -> Unit)?) {
 }
 
 @Composable
-internal fun BackButton(night: Boolean, onClick: () -> Unit) {
+internal fun BackButton(night: Boolean, label: String = Texts.BACK, onClick: () -> Unit) {
     val p = palette(night)
     Box(
         contentAlignment = Alignment.Center,
-        modifier = Modifier.size(48.dp).clickable(onClick = onClick).semantics { contentDescription = Texts.BACK; role = Role.Button },
+        modifier = Modifier.size(48.dp).clickable(onClick = onClick).semantics { contentDescription = label; role = Role.Button },
     ) { androidx.compose.material3.Icon(BeamlineIcons.Back, contentDescription = null, tint = p.panelText) }
 }
 
 // ---------------------------------------------------------------------------------------------
 // The search screen (2.1)
 
+/**
+ * The search screen (2.1). [sideInsets] (P47, 0.1.40): the sides a side navigation bar or a cutout takes in
+ * landscape; the content, the field's X, the chip fades and the Undo bar stay clear of them.
+ */
 @Composable
-internal fun SearchScreenContent(ui: SearchUi, onEvent: (SearchEvent) -> Unit, modifier: Modifier) {
+internal fun SearchScreenContent(
+    ui: SearchUi, onEvent: (SearchEvent) -> Unit, modifier: Modifier,
+    sideInsets: WindowInsets = WindowInsets.safeDrawing.only(WindowInsetsSides.Horizontal),
+) {
     // Batch O3 (item 27): "View all" shows every place type over the search screen
     ui.allTypes?.let { groups ->
         AllTypesScreen(groups, onEvent, modifier)
@@ -342,19 +427,43 @@ internal fun SearchScreenContent(ui: SearchUi, onEvent: (SearchEvent) -> Unit, m
     }
     val night = isNight()
     val p = palette(night)
-    Column(modifier.fillMaxSize().background(MaterialTheme.colorScheme.background).statusBarsPadding().imePadding()) {
+    Column(modifier.fillMaxSize().background(MaterialTheme.colorScheme.background).statusBarsPadding().windowInsetsPadding(sideInsets).imePadding()) {
         Surface(color = p.panel, shadowElevation = 2.dp) {
             Column(Modifier.fillMaxWidth().padding(bottom = 4.dp)) {
-                if (ui.title != null) {
-                    Text(ui.title, color = p.panelText, fontSize = 18.sp, fontWeight = FontWeight.SemiBold,
-                        modifier = Modifier.padding(start = 56.dp, top = 8.dp).semantics { heading() })
-                }
-                Row(verticalAlignment = Alignment.CenterVertically) {
+                val title = ui.title
+                // P60 (0.1.40): a titled search has the other pages' header; a short window (landscape, the keyboard
+                // up) keeps one row, so the results keep their room
+                val tall = title != null && LocalConfiguration.current.screenHeightDp >= TITLED_TWO_ROWS_MIN_DP
+                if (tall) {
+                    // Back and the title on one row; the field under them in a box (as the dialogs' Name field), so
+                    // it still reads as a field with the keyboard down
+                    Row(verticalAlignment = Alignment.CenterVertically, modifier = Modifier.fillMaxWidth().heightIn(min = 56.dp)) {
+                        BackButton(night) { onEvent(SearchEvent.Close) }
+                        Text(title, color = p.panelText, fontSize = 20.sp, fontWeight = FontWeight.SemiBold, maxLines = 2, overflow = TextOverflow.Ellipsis,
+                            modifier = Modifier.weight(1f).padding(end = 16.dp).semantics { heading() })
+                    }
+                    Surface(shape = RoundedCornerShape(8.dp), border = BorderStroke(1.dp, p.divider), color = Color.Transparent,
+                        modifier = Modifier.fillMaxWidth().padding(horizontal = 16.dp)) {
+                        Row(verticalAlignment = Alignment.CenterVertically) {
+                            PrivateField(ui.query, { onEvent(SearchEvent.QueryChanged(it)) }, Texts.SEARCH_HINT, night,
+                                focus = ui.focusField, modifier = Modifier.weight(1f), onSearch = { onEvent(SearchEvent.Submit) })
+                            // P44 (audit F50): the words stay more often now; one tap empties them
+                            if (ui.query.isNotEmpty()) ClearTextButton(night) { onEvent(SearchEvent.QueryChanged("")) }
+                        }
+                    }
+                } else Row(verticalAlignment = Alignment.CenterVertically) {
                     BackButton(night) { onEvent(SearchEvent.Close) }
+                    // P60: a short titled window: the title on one line beside Back, then the field
+                    if (title != null) Text(title, color = p.panelText, fontSize = 18.sp, fontWeight = FontWeight.SemiBold, maxLines = 1,
+                        overflow = TextOverflow.Ellipsis, modifier = Modifier.widthIn(max = 200.dp).padding(end = 8.dp).semantics { heading() })
                     PrivateField(ui.query, { onEvent(SearchEvent.QueryChanged(it)) }, Texts.SEARCH_HINT, night,
                         focus = ui.focusField, modifier = Modifier.weight(1f), onSearch = { onEvent(SearchEvent.Submit) })
+                    // P44 (audit F50): the words stay more often now; one tap empties them
+                    if (ui.query.isNotEmpty()) ClearTextButton(night) { onEvent(SearchEvent.QueryChanged("")) }
                 }
-                if (ui.nearText != null) Text(ui.nearText, color = p.subtle, fontSize = 13.sp, modifier = Modifier.padding(start = 60.dp, bottom = 2.dp))
+                // P6: town names vary in length ("Near the map center · no position yet" wraps at font 1.3)
+                if (ui.nearText != null) Text(ui.nearText, color = p.subtle, fontSize = 13.sp, maxLines = 2, overflow = TextOverflow.Ellipsis,
+                    modifier = Modifier.padding(start = if (tall) 28.dp else 60.dp, end = 16.dp, top = if (tall) 4.dp else 0.dp, bottom = 2.dp))
             }
         }
         if (ui.phase == SearchPhase.SEARCHING) LinearProgressIndicator(Modifier.fillMaxWidth())
@@ -368,31 +477,42 @@ internal fun SearchScreenContent(ui: SearchUi, onEvent: (SearchEvent) -> Unit, m
             if (ui.query.isBlank()) startRows(ui, onEvent, night) else resultRows(ui, onEvent, night)
             item { Spacer(Modifier.navigationBarsPadding().size(16.dp)) }
         }
+        // P45: "Recent places cleared" with Undo, above the keyboard (the screen pads for it)
+        ui.undoText?.let { UndoBar(it, night, onEvent) }
     }
 }
 
+/** P60: a titled search window at least this tall (dp) puts its title on its own row beside Back, the field under it. */
+private const val TITLED_TWO_ROWS_MIN_DP = 480
+
 private fun LazyListScope.startRows(ui: SearchUi, onEvent: (SearchEvent) -> Unit, night: Boolean) {
-    if (ui.useMyPosition) item { PlainRow(Texts.USE_MY_POSITION, night) { onEvent(SearchEvent.UseMyPosition) } }
-    if (ui.chooseOnMap) item { PlainRow(Texts.CHOOSE_ON_MAP, night) { onEvent(SearchEvent.ChooseOnMap) } }
+    // P22: Change start's own words for the current position; P60: the rows' icons
+    if (ui.useMyPosition) item {
+        PlainRow(if (ui.mode == SearchMode.SET_START) Texts.YOUR_POSITION else Texts.USE_MY_POSITION, night, BeamlineIcons.MyLocation) { onEvent(SearchEvent.UseMyPosition) }
+    }
+    if (ui.chooseOnMap) item { PlainRow(Texts.CHOOSE_ON_MAP, night, BeamlineIcons.Pin) { onEvent(SearchEvent.ChooseOnMap) } }
     for (s in ui.slots) item(key = "slot:${s.kind}") {
         PlaceRow(s.iconName, s.title, s.subtitle, s.distanceText, s.note, night, onClick = { onEvent(SearchEvent.SlotTapped(s.kind)) })
     }
     if (ui.savedPlacesText != null) item {
         PlaceRow(Icons.SAVED_PLACE, Texts.SAVED_PLACES, ui.savedPlacesText, null, null, night, onClick = { onEvent(SearchEvent.OpenSavedPlaces) })
     }
-    if (ui.phase == SearchPhase.NO_SEARCH_DATA) item { NoSearchData(ui.message, night, onEvent) }
+    if (ui.phase == SearchPhase.NO_SEARCH_DATA) item { NoSearchData(ui.message, ui.statesOffered, night, onEvent) }
     if (ui.shortcuts.isNotEmpty()) item { Shortcuts(ui.shortcuts, night, onEvent) }
     if (ui.recents.isNotEmpty()) {
         item {
             val p = palette(night)
             Row(verticalAlignment = Alignment.CenterVertically, modifier = Modifier.fillMaxWidth().padding(start = 16.dp, top = 8.dp)) {
                 Text(Texts.RECENT, color = p.subtle, fontSize = 13.sp, fontWeight = FontWeight.Medium, modifier = Modifier.weight(1f).semantics { heading() })
-                TextButton(onClick = { onEvent(SearchEvent.ClearRecents) }, modifier = Modifier.heightIn(min = 48.dp)) { Text(Texts.CLEAR, color = p.accent) }
+                // P45 (audit F49): "Clear" says what it clears
+                TextButton(onClick = { onEvent(SearchEvent.ClearRecents) }, modifier = Modifier.heightIn(min = 48.dp).semantics { contentDescription = Texts.CLEAR_RECENTS }) {
+                    Text(Texts.CLEAR, color = p.accent, modifier = Modifier.clearAndSetSemantics {})
+                }
             }
         }
         for (r in ui.recents) item(key = r.key) {
             PlaceRow(r.iconName, r.title, r.subtitle, r.distanceText, r.note, night, onClick = { onEvent(SearchEvent.RowTapped(r.key)) },
-                trailing = { RemoveButton(night) { onEvent(SearchEvent.RemoveRecent(r.key)) } })
+                trailing = { RemoveButton(night, r.title) { onEvent(SearchEvent.RemoveRecent(r.key)) } })
         }
     }
 }
@@ -402,78 +522,157 @@ private fun LazyListScope.resultRows(ui: SearchUi, onEvent: (SearchEvent) -> Uni
         PlaceRow(r.iconName, r.title, r.subtitle, r.distanceText, r.note, night, onClick = { onEvent(SearchEvent.RowTapped(r.key)) })
     }
     if (ui.savedResults.isNotEmpty() && ui.results.isNotEmpty()) item { HorizontalDivider(color = palette(night).divider) }
-    for (r in ui.results) item(key = r.key) {
-        ResultRow(r, night) { onEvent(SearchEvent.RowTapped(r.key)) }
+    ui.results.forEachIndexed { i, r ->
+        // P2: the name matches after the category's own, under their heading (each heading its own key, review F1)
+        if (i > 0 && r.otherMatch && !ui.results[i - 1].otherMatch) item(key = "$OTHER_MATCHES_TAG:$i") { OtherMatchesHeading(night) }
+        item(key = r.key) { ResultRow(r, night) { onEvent(SearchEvent.RowTapped(r.key)) } }
     }
     when (ui.phase) {
+        // P47: a hint after typed words, and in GO_TO a way on; the live region stays on the first line alone
+        // (TalkBack does not repeat the hint after each letter)
         SearchPhase.NO_RESULTS -> item {
-            Text(ui.message ?: "", color = palette(night).subtle, fontSize = 15.sp,
-                modifier = Modifier.padding(16.dp).semantics { liveRegion = LiveRegionMode.Polite })
+            val p = palette(night)
+            Column(Modifier.fillMaxWidth().padding(16.dp)) {
+                Text(ui.message ?: "", color = p.panelText, fontSize = 15.sp, modifier = Modifier.semantics { liveRegion = LiveRegionMode.Polite })
+                if (ui.noResultsHint != null) {
+                    Spacer(Modifier.size(4.dp))
+                    Text(ui.noResultsHint, color = p.subtle, fontSize = 14.sp)
+                }
+                if (ui.mode == SearchMode.GO_TO && ui.statesOffered) {   // review F4: not during a trip (P30)
+                    Spacer(Modifier.size(12.dp))
+                    PillButton(Texts.ADD_STATE_BUTTON, night) { onEvent(SearchEvent.OpenStates) }
+                }
+            }
         }
-        SearchPhase.NO_SEARCH_DATA -> item { NoSearchData(ui.message, night, onEvent) }
+        SearchPhase.NO_SEARCH_DATA -> item { NoSearchData(ui.message, ui.statesOffered, night, onEvent) }
         else -> {}
     }
 }
 
 @Composable
-private fun NoSearchData(message: String?, night: Boolean, onEvent: (SearchEvent) -> Unit) {
+private fun NoSearchData(message: String?, statesOffered: Boolean, night: Boolean, onEvent: (SearchEvent) -> Unit) {
     val p = palette(night)
     Column(Modifier.fillMaxWidth().padding(16.dp)) {
         if (message != null) Text(message, color = p.panelText, fontSize = 15.sp, modifier = Modifier.semantics { liveRegion = LiveRegionMode.Polite })
-        Spacer(Modifier.size(8.dp))
-        PillButton(Texts.ADD_STATE_BUTTON, night, primary = true) { onEvent(SearchEvent.OpenStates) }
+        if (statesOffered) {   // review F4: not during a trip (P30)
+            Spacer(Modifier.size(8.dp))
+            PillButton(Texts.ADD_STATE_BUTTON, night, primary = true) { onEvent(SearchEvent.OpenStates) }
+        }
     }
 }
 
 @Composable
 private fun Shortcuts(list: List<ShortcutUi>, night: Boolean, onEvent: (SearchEvent) -> Unit) {
     val p = palette(night)
-    Row(Modifier.fillMaxWidth().horizontalScroll(rememberScrollState()).padding(horizontal = 12.dp, vertical = 8.dp),
-        horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-        for (s in list) {
+    val scroll = rememberScrollState()
+    val bg = MaterialTheme.colorScheme.background
+    Box(Modifier.fillMaxWidth().padding(vertical = 8.dp)) {
+        Row(Modifier.fillMaxWidth().horizontalScroll(scroll).padding(horizontal = 12.dp).testTag(SHORTCUTS_ROW_TAG),
+            horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+            for (s in list) {
+                Surface(
+                    onClick = { onEvent(SearchEvent.ShortcutTapped(s.id)) }, shape = RoundedCornerShape(20.dp), color = p.panel,
+                    contentColor = p.panelText, border = BorderStroke(1.dp, p.divider),
+                    modifier = Modifier.heightIn(min = 48.dp).semantics(mergeDescendants = true) { contentDescription = s.label; role = Role.Button },
+                ) {
+                    Row(verticalAlignment = Alignment.CenterVertically, modifier = Modifier.padding(horizontal = 12.dp, vertical = 10.dp).clearAndSetSemantics {}) {
+                        SpriteIcon(s.iconName, night, 20.dp)
+                        Spacer(Modifier.size(6.dp))
+                        Text(s.label, fontSize = 15.sp, softWrap = false)
+                    }
+                }
+            }
+            // Batch O3 (docs/next-round.md item 27): every place type, in a grid
             Surface(
-                onClick = { onEvent(SearchEvent.ShortcutTapped(s.id)) }, shape = RoundedCornerShape(20.dp), color = p.panel,
-                contentColor = p.panelText, border = BorderStroke(1.dp, p.divider),
-                modifier = Modifier.heightIn(min = 48.dp).semantics(mergeDescendants = true) { contentDescription = s.label; role = Role.Button },
+                onClick = { onEvent(SearchEvent.ViewAll) }, shape = RoundedCornerShape(20.dp), color = p.panel,
+                contentColor = p.accent, border = BorderStroke(1.dp, p.divider),
+                modifier = Modifier.heightIn(min = 48.dp).testTag(VIEW_ALL_TAG)
+                    .semantics(mergeDescendants = true) { contentDescription = Texts.VIEW_ALL; role = Role.Button },
             ) {
-                Row(verticalAlignment = Alignment.CenterVertically, modifier = Modifier.padding(horizontal = 12.dp, vertical = 10.dp).clearAndSetSemantics {}) {
-                    SpriteIcon(s.iconName, night, 20.dp)
-                    Spacer(Modifier.size(6.dp))
-                    Text(s.label, fontSize = 15.sp, softWrap = false)
+                Row(verticalAlignment = Alignment.CenterVertically, modifier = Modifier.padding(horizontal = 14.dp, vertical = 10.dp).clearAndSetSemantics {}) {
+                    Text(Texts.VIEW_ALL, fontSize = 15.sp, fontWeight = FontWeight.Medium, softWrap = false)
                 }
             }
         }
-        // Batch O3 (docs/next-round.md item 27): every place type, in a grid
-        Surface(
-            onClick = { onEvent(SearchEvent.ViewAll) }, shape = RoundedCornerShape(20.dp), color = p.panel,
-            contentColor = p.accent, border = BorderStroke(1.dp, p.divider),
-            modifier = Modifier.heightIn(min = 48.dp).testTag(VIEW_ALL_TAG)
-                .semantics(mergeDescendants = true) { contentDescription = Texts.VIEW_ALL; role = Role.Button },
-        ) {
-            Row(verticalAlignment = Alignment.CenterVertically, modifier = Modifier.padding(horizontal = 14.dp, vertical = 10.dp).clearAndSetSemantics {}) {
-                Text(Texts.VIEW_ALL, fontSize = 15.sp, fontWeight = FontWeight.Medium, softWrap = false)
-            }
-        }
+        // P47 (0.1.40): at large text the row runs off the screen; a fade at the side with more says it scrolls
+        if (scroll.canScrollForward) EdgeFade(bg, atEnd = true, Modifier.matchParentSize().testTag(SHORTCUTS_FADE_TAG))
+        if (scroll.canScrollBackward) EdgeFade(bg, atEnd = false, Modifier.matchParentSize())
     }
 }
 
+/** P47: a 32 dp fade into [color] at the row's end ([atEnd]) or start; draws only, takes no touch. */
 @Composable
-private fun RemoveButton(night: Boolean, onClick: () -> Unit) {
+private fun EdgeFade(color: Color, atEnd: Boolean, modifier: Modifier) {
+    androidx.compose.foundation.Canvas(modifier) {
+        val w = 32.dp.toPx().coerceAtMost(size.width)
+        val x0 = if (atEnd) size.width - w else 0f
+        val colors = if (atEnd) listOf(color.copy(alpha = 0f), color) else listOf(color, color.copy(alpha = 0f))
+        drawRect(Brush.horizontalGradient(colors, startX = x0, endX = x0 + w), topLeft = Offset(x0, 0f), size = Size(w, size.height))
+    }
+}
+
+internal const val SHORTCUTS_ROW_TAG = "shortcuts-row"
+internal const val SHORTCUTS_FADE_TAG = "shortcuts-fade"
+
+/** P45 (audit F49): the X of a recent says which place it removes. */
+@Composable
+private fun RemoveButton(night: Boolean, name: String, onClick: () -> Unit) {
     val p = palette(night)
     Box(contentAlignment = Alignment.Center, modifier = Modifier.size(48.dp).clickable(onClick = onClick)
-        .semantics { contentDescription = "Remove from recents"; role = Role.Button }) {
+        .semantics { contentDescription = Texts.removeRecent(name); role = Role.Button }) {
         Text("×", color = p.subtle, fontSize = 22.sp, modifier = Modifier.clearAndSetSemantics {})
     }
 }
 
+/** P45: the bar's time without accessibility settings, as long as the End bar's (END_UNDO_MS). */
+internal const val RECENTS_UNDO_MS = 10_000L
+internal const val UNDO_BAR_TAG = "undo-bar"
+
+/**
+ * P45: the bar after "Clear" (the app's snackbar's colours), above the keyboard, read out once. It goes
+ * after RECENTS_UNDO_MS, or the longer time the phone's accessibility setting asks for; while TalkBack
+ * explores by touch it stays until Undo, typing or Back (Undo is the screen's last element).
+ */
 @Composable
-internal fun PillButton(text: String, night: Boolean, primary: Boolean = false, enabled: Boolean = true, icon: ImageVector? = null, onClick: () -> Unit) {
+private fun UndoBar(text: String, night: Boolean, onEvent: (SearchEvent) -> Unit) {
+    val a11y = LocalAccessibilityManager.current
+    val context = LocalContext.current
+    val send by rememberUpdatedState(onEvent)   // the effect outlives recompositions: it sends to the current handler
+    LaunchedEffect(text) {
+        val touch = context.getSystemService(android.view.accessibility.AccessibilityManager::class.java)?.isTouchExplorationEnabled == true
+        if (touch) return@LaunchedEffect
+        delay(a11y?.calculateRecommendedTimeoutMillis(RECENTS_UNDO_MS, containsIcons = false, containsText = true, containsControls = true) ?: RECENTS_UNDO_MS)
+        send(SearchEvent.UndoExpired)
+    }
+    Surface(
+        shape = RoundedCornerShape(8.dp), color = if (night) Color(0xFFE6E8EB) else Color(0xFF2B2F33),
+        contentColor = if (night) Color(0xFF1B1E22) else Color.White, shadowElevation = 6.dp,
+        modifier = Modifier.fillMaxWidth().navigationBarsPadding().padding(horizontal = 12.dp, vertical = 8.dp).testTag(UNDO_BAR_TAG),
+    ) {
+        Row(verticalAlignment = Alignment.CenterVertically) {
+            Text(text, fontSize = 15.sp, modifier = Modifier.weight(1f).padding(horizontal = 16.dp, vertical = 12.dp)
+                .semantics { liveRegion = LiveRegionMode.Polite })
+            TextButton(onClick = { onEvent(SearchEvent.UndoClearRecents) }, modifier = Modifier.heightIn(min = 48.dp).padding(end = 4.dp)) {
+                Text(Texts.UNDO, fontSize = 15.sp, fontWeight = FontWeight.SemiBold, color = if (night) Color(0xFF1F5FBF) else Color(0xFF8AB4F8))
+            }
+        }
+    }
+}
+
+@Composable
+internal fun PillButton(
+    text: String, night: Boolean, primary: Boolean = false, enabled: Boolean = true, icon: ImageVector? = null,
+    /** P58 (0.1.40): a primary that removes something is red, as the menu's Remove. */
+    destructive: Boolean = false, onClick: () -> Unit,
+) {
     val p = palette(night)
     Surface(
         onClick = onClick, enabled = enabled, shape = RoundedCornerShape(22.dp),
         // item 47's style rules: one blue for the primary; a secondary is grey-filled with dark text (10:1 by
-        // day, 8.6:1 by night), never outlined; both 52 dp tall
+        // day, 8.6:1 by night), never outlined; both 52 dp tall. P58: a destructive primary is red (white on
+        // #C62828 by day, 5.6:1; the dark blue on #FF8A80 by night, about 7:1)
         color = when {
+            primary && enabled && destructive -> p.problem
             primary && enabled -> p.accent
             else -> p.off
         },
@@ -503,16 +702,18 @@ internal fun PillButton(text: String, night: Boolean, primary: Boolean = false, 
  * title line alone (the map free), the sheet of batch B (status, buttons) and the details height
  * (everything the packs say: the whole week, every number and web address written out, the address,
  * what the place is). A drag or a tap on the handle or the title line moves between them; a tap on
- * the status line raises it to the details height. A new place opens at the lowest height (item 47:
- * name, distance, whether it is open, the main button and Save). The
- * details height is at most [DETAILS_MAX_SHARE] of the window and scrolls inside.
+ * the status line raises it to the details height. A new place opens at the lowest height (item 47;
+ * 0.1.40 P9/P51/P53: name, distance and where it is on one line, whether it is open, the main button and
+ * Save). The details height is at most [DETAILS_MAX_SHARE] of the window and scrolls inside. [insets]
+ * (P1, 0.1.40): what its content keeps clear of (its surface reaches under them).
  */
 @Composable
-internal fun PlaceSheetContent(ui: PlaceSheetUi, onEvent: (PlaceSheetEvent) -> Unit, modifier: Modifier) {
+internal fun PlaceSheetContent(ui: PlaceSheetUi, onEvent: (PlaceSheetEvent) -> Unit, modifier: Modifier, insets: WindowInsets = sheetInsets()) {
     val night = isNight()
     val p = palette(night)
-    // item 47 (the owner, 2026-11-25): a place opens at peek (name, status, Directions, Save)
-    val sheet = rememberSheetState(SheetSteps.THREE, SheetHeight.LOW, ui.place)
+    // item 47 (the owner, 2026-11-25): a place opens at peek (name, status, Directions, Save); F42 (0.1.40): the
+    // same place keeps its height while its line fills in or it is saved
+    val sheet = rememberSheetState(SheetSteps.THREE, SheetHeight.LOW, placeSheetKey(ui.place))
     val open = sheet.height != SheetHeight.LOW
     val details = sheet.height == SheetHeight.FULL
     val maxHeight = (LocalConfiguration.current.screenHeightDp * DETAILS_MAX_SHARE).dp
@@ -521,20 +722,29 @@ internal fun PlaceSheetContent(ui: PlaceSheetUi, onEvent: (PlaceSheetEvent) -> U
         modifier = modifier.fillMaxWidth().heightIn(max = maxHeight).testTag(PLACE_SHEET_TAG),
     ) {
         SheetFrame(
-            sheet, Texts.PLACE_DETAILS, p.subtle, Modifier.navigationBarsPadding(),
+            sheet, Texts.PLACE_DETAILS, p.subtle, Modifier.windowInsetsPadding(insets),
             header = {
                 Row(verticalAlignment = Alignment.Top, modifier = Modifier.padding(start = 16.dp, end = 16.dp, bottom = if (open) 0.dp else 8.dp)) {
-                    SpriteIcon(ui.iconName, night, 28.dp, Modifier.padding(top = 2.dp))
+                    // P17 (0.1.40): a dropped pin is a pin (the address row's outline pin, in the blue of the map's pin), not the town ring
+                    if (ui.place.source == PlaceSource.MAP_PIN) Icon(BeamlineIcons.Pin, contentDescription = null, tint = p.accent,
+                        modifier = Modifier.padding(top = 2.dp).size(28.dp).testTag(PLACE_PIN_ICON_TAG))
+                    else SpriteIcon(ui.iconName, night, 28.dp, Modifier.padding(top = 2.dp))
                     Spacer(Modifier.size(12.dp))
                     Column(Modifier.weight(1f).semantics(mergeDescendants = true) {}) {
                         Text(ui.title, fontSize = 19.sp, fontWeight = FontWeight.SemiBold, maxLines = if (open) 2 else 1, overflow = TextOverflow.Ellipsis,
                             modifier = Modifier.semantics { heading() })
-                        if (open && ui.subtitle != null) Text(ui.subtitle, color = p.subtle, fontSize = 14.sp, maxLines = 3)
-                        val line = listOfNotNull(ui.distanceText, ui.savedText).joinToString(" · ")
+                        // P9, P17, P51, P53 (F41), 0.1.40: where the place is, at every height: its own line, else the pack's
+                        // address (a map label). From half up it has its own line (up to 3) above "distance · Saved as ...".
+                        // At peek it shares the distance's line, distance first: the peek keeps its number of lines, the
+                        // ellipsis never eats the distance, and a map label's address arriving late does not grow the peek
+                        val where = ui.subtitle ?: ui.address
+                        if (open && where != null) Text(where, color = p.subtle, fontSize = 14.sp, maxLines = 3, overflow = TextOverflow.Ellipsis)
+                        val line = listOfNotNull(ui.distanceText, if (open) ui.savedText else where ?: ui.savedText).joinToString(" · ")
                         if (line.isNotEmpty()) Text(line, color = p.subtle, fontSize = 14.sp, maxLines = 1, overflow = TextOverflow.Ellipsis)
                         // item 47: peek says whether it is open now (the full line is under the header from half up)
                         if (!open && ui.hours != null) HoursLine(ui.hours, night, fontSize = 14)
-                        if (open && ui.note != null) Text(ui.note, color = p.panelText, fontSize = 14.sp, fontWeight = FontWeight.Medium)
+                        // F41: why the main button reads "Add a state", at peek too
+                        if (ui.note != null) Text(ui.note, color = p.panelText, fontSize = 14.sp, fontWeight = FontWeight.Medium)
                         // Batch O3 (item 26): the values shown are the user's own, until the map update has them
                         if (ui.ownTag != null) Surface(
                             shape = RoundedCornerShape(8.dp), color = p.accent.copy(alpha = 0.14f), contentColor = p.panelText,
@@ -550,8 +760,9 @@ internal fun PlaceSheetContent(ui: PlaceSheetUi, onEvent: (PlaceSheetEvent) -> U
             if (!open) {
                 val main = ui.actions.firstOrNull { it == PlaceAction.DIRECTIONS || it == PlaceAction.ADD_STOP || it == PlaceAction.OPEN_STATES }
                 val keep = ui.actions.firstOrNull { it == PlaceAction.SAVE || it == PlaceAction.EDIT }
-                if (main != null || keep != null) Row(
-                    horizontalArrangement = Arrangement.spacedBy(8.dp),
+                // F41 (0.1.40): Save wraps under the main button when both do not fit (large text, a long drive time), never cut off
+                if (main != null || keep != null) FlowRow(
+                    horizontalArrangement = Arrangement.spacedBy(8.dp), verticalArrangement = Arrangement.spacedBy(8.dp),
                     modifier = Modifier.padding(start = 16.dp, end = 16.dp, bottom = 14.dp).testTag(PLACE_PEEK_ACTIONS_TAG),
                 ) {
                     if (main != null) PillButton(placeActionLabel(main, ui.driveTimeText), night, primary = true) { onEvent(PlaceSheetEvent.Act(main)) }
@@ -563,21 +774,24 @@ internal fun PlaceSheetContent(ui: PlaceSheetUi, onEvent: (PlaceSheetEvent) -> U
             ) {
                 val hours = ui.hours
                 if (hours != null) {
-                    // S10: the status; a tap shows the whole week (the details height)
+                    // S10: the status; a tap shows the whole week (the details height). The 0.1.40 replay: the line sits right
+                    // under the distance (centred in its 48 dp tap box it read as a missing row above it); at the middle
+                    // height the tap box goes on below the line, at the details height (no tap) there is none
                     Column(
-                        Modifier.fillMaxWidth().padding(start = 40.dp, top = 6.dp).heightIn(min = 48.dp)
-                            .then(if (details) Modifier else Modifier.clickable { sheet.set(SheetHeight.FULL) })
+                        Modifier.fillMaxWidth().padding(start = 40.dp, top = 2.dp)
+                            .then(if (details) Modifier else Modifier.heightIn(min = 48.dp).clickable { sheet.set(SheetHeight.FULL) })
                             .semantics(mergeDescendants = true) {
                                 if (!details) role = Role.Button
                                 contentDescription = hoursWords(hours) + if (details) "" else ", " + Texts.SHOW_DETAILS.lowercase()
                             }
                             .testTag(PLACE_STATUS_TAG),
-                        verticalArrangement = Arrangement.Center,
+                        verticalArrangement = Arrangement.Top,
                     ) {
                         HoursLine(hours, night, fontSize = 15)
                     }
                 }
-                Spacer(Modifier.size(12.dp))
+                // the buttons 12 dp under what is above them (at the middle height the status line's tap box is that room)
+                if (hours == null || details) Spacer(Modifier.size(12.dp))
                 Row(horizontalArrangement = Arrangement.spacedBy(8.dp), modifier = Modifier.horizontalScroll(rememberScrollState())) {
                     for (a in ui.actions) {
                         val label = placeActionLabel(a, ui.driveTimeText)
@@ -630,6 +844,17 @@ internal fun placeActionLabel(a: PlaceAction, driveTime: String? = null): String
 
 /** Test tag of the buttons a place shows at peek (item 47). */
 internal const val PLACE_PEEK_ACTIONS_TAG = "place-peek-actions"
+
+/** Test tag of a dropped pin's pin icon in its window's header (P17). */
+internal const val PLACE_PIN_ICON_TAG = "place-pin-icon"
+
+/**
+ * P1 (0.1.40): what a bottom sheet's content keeps clear of: the navigation bar and a display cutout at the
+ * bottom and on either side (its surface reaches under them), as the drive overlay's sheets.
+ */
+@Composable
+internal fun sheetInsets(): WindowInsets =
+    WindowInsets.systemBars.union(WindowInsets.displayCutout).only(WindowInsetsSides.Bottom + WindowInsetsSides.Horizontal)
 
 /** The highest share of the window the place sheet's details height takes (the map keeps the rest; batch G). */
 internal const val DETAILS_MAX_SHARE = 0.7f
@@ -789,7 +1014,7 @@ internal fun SavedPlacesContent(ui: SavedListUi, onEvent: (SavedEvent) -> Unit, 
                 )
             }
             if (ui.hint != null) item { Text(ui.hint, color = p.subtle, fontSize = 14.sp, modifier = Modifier.padding(16.dp)) }
-            if (ui.canAdd) item { PlainRow(Texts.ADD_A_PLACE, night) { onEvent(SavedEvent.AddTapped) } }
+            if (ui.canAdd) item { PlainRow(Texts.ADD_A_PLACE, night, BeamlineIcons.Add) { onEvent(SavedEvent.AddTapped) } }
             item { Spacer(Modifier.navigationBarsPadding().size(16.dp)) }
         }
     }
@@ -802,61 +1027,69 @@ internal fun SavedPlacesContent(ui: SavedListUi, onEvent: (SavedEvent) -> Unit, 
 internal fun SavedDialogContent(ui: SavedDialogUi, onEvent: (SavedEvent) -> Unit, modifier: Modifier) {
     val night = isNight()
     val p = palette(night)
-    // a tap outside the dialog dismisses it; a plain gesture, not a screen-reader stop (the dialog has "Cancel" and Back)
-    Box(modifier.fillMaxSize().background(Color(0x66000000)).pointerInput(Unit) { detectTapGestures { onEvent(SavedEvent.DialogDismiss) } },
+    // a tap outside the dialog dismisses it; a plain gesture, not a screen-reader stop (the dialog has "Cancel" and Back).
+    // F47 (0.1.40): the scrim stops at the keyboard (the dialog centres in what is left); the body scrolls; the problem
+    // line and Cancel / Save stay at the bottom, so landscape, large text and the keyboard never push them out
+    Box(modifier.fillMaxSize().background(Color(0x66000000)).pointerInput(Unit) { detectTapGestures { onEvent(SavedEvent.DialogDismiss) } }.imePadding(),
         contentAlignment = Alignment.Center) {
         Surface(
             shape = RoundedCornerShape(16.dp), color = MaterialTheme.colorScheme.surface, contentColor = p.panelText, shadowElevation = 8.dp,
             // taps inside the dialog stay inside it
             modifier = Modifier.padding(24.dp).widthIn(max = 420.dp).fillMaxWidth().pointerInput(Unit) { detectTapGestures { } },
         ) {
-            Column(Modifier.padding(20.dp).imePadding()) {
-                when (ui) {
-                    is SavedDialogUi.Menu -> {
-                        DialogTitle(ui.title, p)
-                        for (item in ui.items) {
-                            Box(Modifier.fillMaxWidth().heightIn(min = 48.dp).clickable { onEvent(SavedEvent.MenuChosen(item.action)) }
-                                .semantics { role = Role.Button }, contentAlignment = Alignment.CenterStart) {
-                                Text(item.label, fontSize = 16.sp, color = if (item.action == EditAction.DELETE) p.problem else p.panelText)
+            Column(Modifier.padding(20.dp)) {
+                Column(Modifier.weight(1f, fill = false).verticalScroll(rememberScrollState())) {
+                    when (ui) {
+                        is SavedDialogUi.Menu -> {
+                            DialogTitle(ui.title, p)
+                            for (item in ui.items) {
+                                Box(Modifier.fillMaxWidth().heightIn(min = 48.dp).clickable { onEvent(SavedEvent.MenuChosen(item.action)) }
+                                    .semantics { role = Role.Button }, contentAlignment = Alignment.CenterStart) {
+                                    Text(item.label, fontSize = 16.sp, color = if (item.action == EditAction.DELETE) p.problem else p.panelText)
+                                }
                             }
                         }
-                        Buttons(night, null, true, onEvent)
-                    }
-                    is SavedDialogUi.Save -> {
-                        DialogTitle(Texts.SAVE_PLACE, p)
-                        Text(ui.placeTitle, fontSize = 16.sp, fontWeight = FontWeight.Medium, maxLines = 2, overflow = TextOverflow.Ellipsis)
-                        if (ui.placeSubtitle != null) Text(ui.placeSubtitle, color = p.subtle, fontSize = 14.sp, maxLines = 2)
-                        Spacer(Modifier.size(12.dp))
-                        Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                            for (k in ui.kinds) KindChip(k, night) { onEvent(SavedEvent.KindChosen(k.kind)) }
-                        }
-                        if (ui.name != null) {
+                        is SavedDialogUi.Save -> {
+                            DialogTitle(Texts.SAVE_PLACE, p)
+                            Text(ui.placeTitle, fontSize = 16.sp, fontWeight = FontWeight.Medium, maxLines = 2, overflow = TextOverflow.Ellipsis)
+                            if (ui.placeSubtitle != null) Text(ui.placeSubtitle, color = p.subtle, fontSize = 14.sp, maxLines = 2)
                             Spacer(Modifier.size(12.dp))
+                            // F47: the chips wrap, so "Other" (a point's default) is never cut off
+                            FlowRow(horizontalArrangement = Arrangement.spacedBy(8.dp), verticalArrangement = Arrangement.spacedBy(8.dp)) {
+                                for (k in ui.kinds) KindChip(k, night) { onEvent(SavedEvent.KindChosen(k.kind)) }
+                            }
+                            if (ui.name != null) {
+                                Spacer(Modifier.size(12.dp))
+                                Text(Texts.NAME, color = p.subtle, fontSize = 13.sp)
+                                Surface(shape = RoundedCornerShape(8.dp), border = BorderStroke(1.dp, p.divider), color = Color.Transparent) {
+                                    // P57: a hint says what goes here; P56: the name given opens selected
+                                    PrivateField(ui.name, { onEvent(SavedEvent.NameChanged(it)) }, Texts.NAME_HINT, night, label = Texts.NAME, focus = true,
+                                        modifier = Modifier.fillMaxWidth(), selectAll = true)
+                                }
+                            }
+                            if (ui.replaceText != null) Text(ui.replaceText, fontSize = 14.sp, modifier = Modifier.padding(top = 10.dp))
+                        }
+                        is SavedDialogUi.Rename -> {
+                            DialogTitle(Texts.RENAME, p)
                             Text(Texts.NAME, color = p.subtle, fontSize = 13.sp)
                             Surface(shape = RoundedCornerShape(8.dp), border = BorderStroke(1.dp, p.divider), color = Color.Transparent) {
-                                PrivateField(ui.name, { onEvent(SavedEvent.NameChanged(it)) }, "", night, label = Texts.NAME, focus = true,
-                                    modifier = Modifier.fillMaxWidth())
+                                // P56: the old name opens selected, so typing replaces it
+                                PrivateField(ui.name, { onEvent(SavedEvent.NameChanged(it)) }, Texts.NAME_HINT, night, label = Texts.NAME, focus = true,
+                                    modifier = Modifier.fillMaxWidth(), selectAll = true)
                             }
                         }
-                        if (ui.replaceText != null) Text(ui.replaceText, fontSize = 14.sp, modifier = Modifier.padding(top = 10.dp))
-                        Problem(ui.problem, p)
-                        Buttons(night, ui.confirmText, ui.canConfirm, onEvent)
-                    }
-                    is SavedDialogUi.Rename -> {
-                        DialogTitle(Texts.RENAME, p)
-                        Text(Texts.NAME, color = p.subtle, fontSize = 13.sp)
-                        Surface(shape = RoundedCornerShape(8.dp), border = BorderStroke(1.dp, p.divider), color = Color.Transparent) {
-                            PrivateField(ui.name, { onEvent(SavedEvent.NameChanged(it)) }, "", night, label = Texts.NAME, focus = true,
-                                modifier = Modifier.fillMaxWidth())
+                        is SavedDialogUi.Confirm -> {
+                            DialogTitle(ui.title, p)
+                            if (ui.text != null) Text(ui.text, fontSize = 15.sp)
                         }
-                        Problem(ui.problem, p)
-                        Buttons(night, Texts.SAVE, ui.canConfirm, onEvent)
                     }
-                    is SavedDialogUi.Confirm -> {
-                        DialogTitle(ui.title, p)
-                        if (ui.text != null) Text(ui.text, fontSize = 15.sp)
-                        Buttons(night, ui.confirmText, true, onEvent)
-                    }
+                }
+                when (ui) {
+                    is SavedDialogUi.Menu -> Buttons(night, null, true, onEvent)
+                    is SavedDialogUi.Save -> { Problem(ui.problem, p); Buttons(night, ui.confirmText, ui.canConfirm, onEvent) }
+                    is SavedDialogUi.Rename -> { Problem(ui.problem, p); Buttons(night, Texts.SAVE, ui.canConfirm, onEvent) }
+                    // P58: Remove's confirm is red, as the menu's Remove
+                    is SavedDialogUi.Confirm -> Buttons(night, ui.confirmText, true, onEvent, destructive = ui.destructive)
                 }
             }
         }
@@ -875,12 +1108,12 @@ private fun Problem(text: String?, p: Palette) {
 }
 
 @Composable
-private fun Buttons(night: Boolean, confirm: String?, enabled: Boolean, onEvent: (SavedEvent) -> Unit) {
+private fun Buttons(night: Boolean, confirm: String?, enabled: Boolean, onEvent: (SavedEvent) -> Unit, destructive: Boolean = false) {
     Row(Modifier.fillMaxWidth().padding(top = 16.dp), horizontalArrangement = Arrangement.End) {
         PillButton(Texts.CANCEL, night) { onEvent(SavedEvent.DialogDismiss) }
         if (confirm != null) {
             Spacer(Modifier.size(8.dp))
-            PillButton(confirm, night, primary = true, enabled = enabled) { onEvent(SavedEvent.DialogConfirm) }
+            PillButton(confirm, night, primary = true, enabled = enabled, destructive = destructive) { onEvent(SavedEvent.DialogConfirm) }
         }
     }
 }
@@ -920,7 +1153,7 @@ internal fun MapPickContent(ui: MapPickUi, onEvent: (SavedEvent) -> Unit, modifi
         }
         Surface(
             shape = RoundedCornerShape(topStart = SHEET_CORNER, topEnd = SHEET_CORNER), color = p.panel, contentColor = p.panelText, shadowElevation = 6.dp,
-            modifier = Modifier.align(Alignment.BottomCenter).fillMaxWidth(),
+            modifier = Modifier.align(Alignment.BottomCenter).fillMaxWidth().testTag(MAP_PICK_BAR_TAG),
         ) {
             Column(Modifier.navigationBarsPadding().padding(16.dp)) {
                 Text(ui.title, fontSize = 17.sp, fontWeight = FontWeight.SemiBold, maxLines = 2, overflow = TextOverflow.Ellipsis)
@@ -936,6 +1169,9 @@ internal fun MapPickContent(ui: MapPickUi, onEvent: (SavedEvent) -> Unit, modifi
         }
     }
 }
+
+/** Test tag of the map pick's bar at the bottom (P9). */
+internal const val MAP_PICK_BAR_TAG = "map-pick-bar"
 
 /** Kinds as words for a chip's semantics (SP5 item 3). */
 @Suppress("unused")

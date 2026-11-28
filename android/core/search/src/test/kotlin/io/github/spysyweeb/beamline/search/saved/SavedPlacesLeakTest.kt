@@ -159,6 +159,13 @@ class SavedPlacesLeakTest {
             { s.makeKind("s00000000000000ff", SavedKind.HOME) }, { s.delete("s00000000000000ff") }, { s.byId("s00000000000000ff") })) {
             noteThrown(r)
         }
+        // P58: every refused Undo of a removal (restore)
+        val q = s.byId(id)!!
+        noteThrown { newer.restore(q) }                                                  // READ_ONLY
+        noteThrown { s.restore(q) }                                                      // ALREADY_SAVED: its id is in the list
+        noteThrown { s.delete(id) }
+        noteThrown { s.save(canary, SavedKind.OTHER, "Quokka Shop") }                   // the name taken again, by a new id
+        noteThrown { s.restore(q) }                                                      // NAME_TAKEN
         note(s.places.value)
         // a crash on another thread goes to the default handler: its text holds no canary either
         val t = Thread { s.save(canary.copy(source = PlaceSource.SAVED, savedId = id), SavedKind.HOME) }

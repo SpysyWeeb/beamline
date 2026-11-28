@@ -20,13 +20,15 @@ import java.io.IOException
 
 /**
  * trip.json, format beamline-trip/1 (docs/architecture.md 2.12, rules R1-R3): the stops with
- * their reached flags, the trip's route type and options, and the wall-clock time of the write.
+ * their reached flags, the trip's route type and options, whether it is a simulated drive (play test
+ * P27: the key only for one), and the wall-clock time of the write.
  *
  * ```
  * {"format": "beamline-trip/1", "saved_epoch_ms": 1763280000000, "route_type": "fastest",
  *  "options": {"avoid_highways": false, "avoid_tolls": false},
  *  "stops": [{"reached": false, "place": {"name": "...", "lat": 42.05, "lon": -80.08, "source": "SAVED",
- *             "subtitle": null, "category_id": null, "search_id": null, "pack_id": null, "saved_id": "s0123..."}}]}
+ *             "subtitle": null, "category_id": null, "search_id": null, "pack_id": null, "saved_id": "s0123..."}}],
+ *  "simulated": true}                                   (only for a simulated drive)
  * ```
  *
  * Written atomically (a temporary file beside it, fsync, rename). The file names places, so it
@@ -67,7 +69,7 @@ internal class TripFile(private val file: File) {
     companion object {
         const val FORMAT = "beamline-trip/1"
 
-        fun encode(s: TripSnapshot): String = JsonObject(linkedMapOf(
+        fun encode(s: TripSnapshot): String = JsonObject(linkedMapOf<String, JsonElement>(
             "format" to JsonPrimitive(FORMAT),
             "saved_epoch_ms" to JsonPrimitive(s.savedEpochMs),
             "route_type" to JsonPrimitive(s.routeType),
@@ -78,7 +80,10 @@ internal class TripFile(private val file: File) {
             "stops" to JsonArray(s.stops.map { st ->
                 JsonObject(linkedMapOf("reached" to JsonPrimitive(st.reached), "place" to place(st.place)))
             }),
-        )).toString()
+        ).apply {
+            // play test P27: an optional key, so a real trip's file stays as it was (and an older file reads as not simulated)
+            if (s.simulated) put("simulated", JsonPrimitive(true))
+        }).toString()
 
         private fun place(p: Place): JsonObject = JsonObject(linkedMapOf(
             "name" to JsonPrimitive(p.name),
@@ -108,7 +113,8 @@ internal class TripFile(private val file: File) {
                 TripStop(placeOf(o["place"]) ?: return null, (o["reached"] as? JsonPrimitive)?.booleanOrNull ?: return null)
             }
             if (stops.isEmpty()) return null
-            return TripSnapshot(saved, stops, type, options)
+            val simulated = (root["simulated"] as? JsonPrimitive)?.booleanOrNull ?: false
+            return TripSnapshot(saved, stops, type, options, simulated)
         }
 
         private fun placeOf(e: JsonElement?): Place? {

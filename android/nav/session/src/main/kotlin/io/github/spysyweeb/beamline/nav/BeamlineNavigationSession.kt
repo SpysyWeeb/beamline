@@ -65,12 +65,15 @@ class BeamlineNavigationSession(
  * What survives process death during a trip (trip.json; format beamline-trip/1). [savedEpochMs]
  * is the wall-clock time of the last write: the session rewrites the file every resume.refresh_s
  * while a trip is guided, so its age says how long ago the trip was last alive (rule R1).
+ * [simulated] (play test P27): the trip is a simulated drive; offered again it says so, and Resume
+ * simulates it again (TripState.resumeSimulated).
  */
 data class TripSnapshot(
     val savedEpochMs: Long,
     val stops: List<TripStop>,
     val routeType: String,
     val options: RouteOptions,
+    val simulated: Boolean = false,
 )
 
 /** trip.json in the app's no-backup folder (getNoBackupFilesDir), written atomically (temporary file, fsync, rename). */

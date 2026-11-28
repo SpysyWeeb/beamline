@@ -355,6 +355,8 @@ class ArrivalAndStopsTest {
         h.advance(1_000)
         assertEquals(listOf("On I-90", "Peach St stop", "Downs Drive"), h.state.stops.map { it.place.name })
         assertEquals(1, h.engine.asked.count { "sources" in it })
+        // play test P49: Best order says what it did (the stops editor's "Stops reordered.")
+        assertEquals(1, h.events.count { it == TripEvent.StopsReordered }, "a changed order is told")
         assertEquals(Phase.CHOOSING, h.phase(), "re-planned as C2")
         // no connected order: unchanged, NO_ROUTE
         h.engine.failWhen = { req -> if ("sources" in req) EngineException(442, "no") else null }
@@ -364,6 +366,7 @@ class ArrivalAndStopsTest {
         h.advance(500)
         assertEquals(listOf("Peach St stop", "On I-90", "Downs Drive"), h.state.stops.map { it.place.name })
         assertEquals(ProblemKind.NO_ROUTE, h.state.problem!!.kind)
+        assertEquals(1, h.events.count { it == TripEvent.StopsReordered }, "a refused reorder says nothing more")
     }
 
     private fun JsonObject.auto() = (this["costing_options"]?.jsonObject?.get("auto") as? JsonObject) ?: JsonObject(emptyMap())

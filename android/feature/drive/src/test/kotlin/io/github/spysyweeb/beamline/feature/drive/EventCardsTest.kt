@@ -62,6 +62,35 @@ class EventCardsTest {
         assertNull(cards.shown(3_000))
     }
 
+    /** Play test P49: "Stops reordered." (the stops editor's note) for the card time, in its own slot: it never takes a card's place. */
+    @Test
+    fun `Best order's reorder has its own slot and never replaces a card`() {
+        val cards = EventCards(8_000)
+        cards.onEvent(TripEvent.StopsReordered, 0)
+        assertEquals(TripEvent.StopsReordered, cards.shown(0))
+        assertEquals(TripEvent.StopsReordered, cards.shown(7_999))
+        assertNull(cards.shown(8_000))
+        // a stop card first: the reorder after it does not replace it, and shows once the card's time is up
+        cards.onEvent(stop, 10_000)
+        cards.onEvent(TripEvent.StopsReordered, 11_000)
+        assertEquals(stop, cards.shown(11_000))
+        assertEquals(stop, cards.shown(17_999))
+        assertEquals(TripEvent.StopsReordered, cards.shown(18_000))
+        assertNull(cards.shown(19_000))
+        // a card that comes while the reorder shows takes the slot for its time (Risks 5)
+        cards.onEvent(TripEvent.StopsReordered, 20_000)
+        cards.onEvent(arrived, 21_000)
+        assertEquals(arrived, cards.shown(21_000))
+        assertNull(cards.shown(29_000))
+        // a trip that starts or ends drops it
+        cards.onEvent(TripEvent.StopsReordered, 30_000)
+        cards.onEvent(TripEvent.GuidanceStarted(4, simulated = false), 30_500)
+        assertNull(cards.shown(30_500))
+        cards.onEvent(TripEvent.StopsReordered, 40_000)
+        cards.onEvent(TripEvent.GuidanceEnded, 40_100)
+        assertNull(cards.shown(40_100))
+    }
+
     @Test
     fun `two EventCards do not share their card`() {
         val a = EventCards(8_000)

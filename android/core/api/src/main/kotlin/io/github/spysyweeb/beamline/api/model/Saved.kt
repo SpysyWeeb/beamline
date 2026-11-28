@@ -18,7 +18,7 @@ data class SavedPlace(
     /** What lists, sheets, stops and cards show: "Home", "Work", or the user's own name ("Mom's"). */
     val name: String,
     val point: GeoPoint,
-    /** The place's own name when saved or moved ("Erie Maritime Museum"); for a point, its coordinates ("42.08418, -80.17321"). */
+    /** The place's own name when saved or moved ("Erie Maritime Museum"); for a point, the street it is near ("Near East 5th Street, Erie") when one was found, else its coordinates ("42.08418, -80.17321"). */
     val placeName: String,
     /** The place's own subtitle then ("100 East Front Street, Erie"); null when it had none. */
     val subtitle: String? = null,

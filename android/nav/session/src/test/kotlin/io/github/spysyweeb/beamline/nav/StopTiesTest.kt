@@ -27,6 +27,16 @@ class StopTiesTest {
         assertTrue(StopTies.isMapPoint(Place("Point on map", p, PlaceSource.RECENT, subtitle = "42.12435, -80.07771")))
         assertFalse(StopTies.isMapPoint(Place("Family Dollar", p, PlaceSource.SEARCH, subtitle = "155 East 12th Street, Erie")))
         assertNull(StopTies.street(Place("Dropped pin", p, PlaceSource.MAP_PIN, subtitle = "155 East 12th Street, Erie")))
+        // play test P18 (0.1.40): a point saved, kept in the recents or resumed with its street line ("Near ...") stays a map point
+        val savedNear = Place("Mom's", p, PlaceSource.SAVED, subtitle = "Near East 5th Street, Erie", savedId = "s0123456789abcdef")
+        assertTrue(StopTies.isMapPoint(savedNear))
+        assertTrue(StopTies.isMapPoint(Place("Dropped pin", p, PlaceSource.RECENT, subtitle = "Near 10 North Park Row, Erie")))
+        assertTrue(StopTies.isMapPoint(Place("Dropped pin", p, PlaceSource.RESUMED, subtitle = "Near 10 North Park Row, Erie")))
+        assertNull(StopTies.street(savedNear))
+        // never a map label or a place with an address or a category
+        assertFalse(StopTies.isMapPoint(Place("Near East Side Market", p, PlaceSource.MAP_POI, subtitle = "Near East 5th Street, Erie")))
+        assertFalse(StopTies.isMapPoint(Place("Erie Art Museum", p, PlaceSource.SEARCH, "20 East 5th Street, Erie", "museum")))
+        assertFalse(StopTies.isMapPoint(Place("Corner Cafe", p, PlaceSource.RECENT, subtitle = "Near East 5th Street, Erie", categoryId = "cafe")))
     }
 
     @Test

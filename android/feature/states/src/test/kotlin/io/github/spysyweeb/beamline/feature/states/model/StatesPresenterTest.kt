@@ -74,10 +74,12 @@ class StatesPresenterTest {
         sheet: Boolean = false,
         kind: SheetKind = SheetKind.STATE,
         include: Boolean = true,
+        query: String = "",
+        selectedOnMap: Boolean = false,
     ) = StatesInput(
         mode = mode, names = names, neighbours = mapOf("RI" to listOf("CT", "MA")), catalog = catalog, installed = installed, job = job,
         network = network, units = units, nowMs = now, zone = zone, freeBytes = free, moves = true, selected = selected, sheetOpen = sheet,
-        sheetKind = kind, includeAddresses = include, changesOptionalParts = true,
+        sheetKind = kind, includeAddresses = include, changesOptionalParts = true, query = query, selectedOnMap = selectedOnMap,
     )
 
     private fun job(phase: JobPhase, done: Long = 238_000_000, wait: WaitReason? = null, pause: PauseReason? = null, fail: FailReason? = null,
@@ -123,9 +125,12 @@ class StatesPresenterTest {
         assertEquals("Available", ui.availableTitle)
         assertEquals("579 MB download · data from Nov 14, 2026", ui.available.single { it.code == "PA" }.line)
         assertEquals("Not available yet", ui.notAvailableTitle)
-        assertEquals("Not available yet", ui.notAvailable.first { it.code == "RI" }.line)
+        // P63: the heading says it; the row does not repeat it (TalkBack still hears it as the row's state)
+        assertNull(ui.notAvailable.first { it.code == "RI" }.line)
+        assertEquals("Not available yet", ui.notAvailable.first { it.code == "RI" }.stateDescription)
         assertEquals("Needs a newer Beamline", ui.needsNewerTitle)
-        assertEquals("Needs a newer version of Beamline", ui.needsNewer.single().line)
+        assertNull(ui.needsNewer.single().line)
+        assertEquals("Needs a newer version of Beamline", ui.needsNewer.single().stateDescription)
         assertEquals(listOf("Use a file instead", "Not now"), ui.bottomBar.map { it.label })
         assertEquals(StateStatus.AVAILABLE, ui.mapStatus["PA"])
         assertEquals(StateStatus.NOT_AVAILABLE, ui.mapStatus["RI"])
@@ -225,11 +230,19 @@ class StatesPresenterTest {
     @Test
     fun aStateWithoutAPackAndOneThatNeedsANewerApp() {
         val ri = StatesPresenter.present(input(selected = "RI", sheet = true)).sheet!!
-        assertEquals(listOf("There's no download for Rhode Island yet.", "Nearby states you can download: Connecticut, Massachusetts."), ri.lines)
-        assertEquals(listOf("Use a file instead", "Close"), listOf(ri.primary!!.label, ri.secondary!!.label))
+        // P25: the sheet says what a file is, and "Use a file instead" is a text action, not the main button
+        assertEquals(listOf("There's no download for Rhode Island yet.", "Nearby states you can download: Connecticut, Massachusetts.",
+            "You can also install a state file (.tar) copied to this phone."), ri.lines)
+        assertNull(ri.primary)
+        assertEquals(listOf("Use a file instead"), ri.actions.map { it.label })
+        assertEquals(StatesEvent.UseFile, ri.actions.single().event)
+        assertEquals("Close", ri.secondary!!.label)
         val newer = StatesPresenter.present(input(catalog = catalog(pa(), unusable = listOf(UnusablePack("us-oh", "OH", "Ohio", Unusable.NEEDS_NEWER_APP, "x"))), selected = "OH", sheet = true)).sheet!!
         assertEquals(listOf("This download needs a newer version of Beamline."), newer.lines)
-        assertEquals("Use a file instead", newer.primary!!.label)
+        assertNull(newer.primary)
+        assertEquals("Use a file instead", newer.actions.single().label)
+        // downloads off: a file is the only way to add a state there, so it stays the main button
+        assertEquals("Use a file instead", StatesPresenter.present(input(catalog = CatalogState.Off, selected = "RI", sheet = true)).sheet!!.primary!!.label)
     }
 
     @Test
@@ -351,10 +364,11 @@ class StatesPresenterTest {
         assertEquals("States", ui.title)
         assertEquals("On this phone", ui.onPhoneTitle)
         val row = ui.onPhone.single()
-        assertEquals("On this phone · data from Nov 14, 2026 · 1.1 GB", row.line)
+        // P63: the heading says "On this phone"; the row does not say it again
+        assertEquals("Data from Nov 14, 2026 · 1.1 GB", row.line)
         // when the pack was built: two packs of one OpenStreetMap day are told apart by it (the owner, 2026-11-21)
         assertEquals("Built Nov 15, 2026", row.builtLine)
-        assertEquals("On this phone · data from Nov 14, 2026 · 1.1 GB. Built Nov 15, 2026. House numbers: included", row.stateDescription)
+        assertEquals("Data from Nov 14, 2026 · 1.1 GB. Built Nov 15, 2026. House numbers: included", row.stateDescription)
         val old = StatesPresenter.present(input(mode = StatesMode.MANAGE, installed = InstalledSet(scanned = true, packs = listOf(installedPa(version = null)))))
         assertEquals(null, old.onPhone.single().builtLine, "a pack without a build time says nothing")
         assertEquals("Built Nov 21, 2026", Texts.builtLine(202611210936))
@@ -412,7 +426,7 @@ class StatesPresenterTest {
         val base = input(mode = StatesMode.MANAGE, installed = InstalledSet(scanned = true, packs = listOf(installedPa())))
         val remove = StatesPresenter.present(base.copy(dialog = Dialog.Remove("us-pa"))).dialog!!
         assertEquals("Remove Pennsylvania?", remove.title)
-        assertEquals("Its maps, directions and search are deleted from this phone. You can download it again.", remove.text)
+        assertEquals("Its maps, directions and search are deleted from this phone. This frees 1.1 GB. You can download it again.", remove.text)
         assertEquals(listOf("Remove", "Keep"), listOf(remove.confirm.label, remove.dismiss!!.label))
         val hn = StatesPresenter.present(base.copy(dialog = Dialog.RemoveHouseNumbers("us-pa"))).dialog!!
         assertEquals("Remove house numbers from Pennsylvania?", hn.title)
@@ -552,5 +566,104 @@ class StatesPresenterTest {
         assertEquals("Nothing was changed on this phone.", unreadable.readyBanner!!.detail)
         assertEquals(StatesEvent.Details, unreadable.readyBanner!!.action!!.event)
         assertEquals("This file is not a Beamline state pack.", StatesPresenter.present(input().copy(dialog = Dialog.Details(Texts.FILE_NOT_A_PACK))).dialog!!.text)
+    }
+
+    /** P12: a search that matches nothing says so; the states on this phone are searched too; no empty "Add a state". */
+    @Test
+    fun aSearchThatMatchesNothingSaysSo() {
+        val installed = InstalledSet(scanned = true, packs = listOf(installedPa()))
+        val none = StatesPresenter.present(input(mode = StatesMode.MANAGE, installed = installed, query = "zz"))
+        assertTrue(none.onPhone.isEmpty(), "Pennsylvania is not listed for zz")
+        assertNull(none.addTitle)
+        assertTrue(none.available.isEmpty() && none.notAvailable.isEmpty())
+        assertEquals("No state matches your search.", none.noMatch)
+        val penn = StatesPresenter.present(input(mode = StatesMode.MANAGE, installed = installed, query = "penn"))
+        assertEquals(listOf("PA"), penn.onPhone.map { it.code })
+        assertNull(penn.addTitle, "nothing to add matches: no empty heading")
+        assertNull(penn.noMatch)
+        val all = StatesPresenter.present(input(mode = StatesMode.MANAGE, installed = installed))
+        assertEquals("Add a state", all.addTitle)
+        assertNull(all.noMatch)
+        val ohio = StatesPresenter.present(input(mode = StatesMode.MANAGE, installed = installed, query = "oh"))
+        assertEquals("Add a state", ohio.addTitle, "something to add matches")
+        assertTrue(ohio.onPhone.isEmpty())
+        // the first run says it too (before: a blank list)
+        assertEquals("No state matches your search.", StatesPresenter.present(input(query = "zz")).noMatch)
+        assertNull(StatesPresenter.present(input(query = "penn")).noMatch)
+        // the shared rule: the name contains the words, or the postal code is them
+        assertTrue(StatesPresenter.matches("PA", "Pennsylvania", " penn "))
+        assertTrue(StatesPresenter.matches("PA", "Pennsylvania", "pa"))
+        assertFalse(StatesPresenter.matches("OH", "Ohio", "oio"))
+    }
+
+    /**
+     * P12 with P44 (audit F50): the X in the search field, which empties the typed words, is named
+     * "Clear text" as the place search field's X is. "Clear search" is the map pill's X (it ends the
+     * results), so no text of this screen uses it.
+     */
+    @Test
+    fun theSearchFieldsClearButtonIsNamedAsThePlaceSearchFields() {
+        val texts = Texts::class.java.declaredFields
+            .filter { java.lang.reflect.Modifier.isStatic(it.modifiers) && it.type == String::class.java }
+            .associate { it.isAccessible = true; it.name to it.get(null) as String }
+        assertEquals("Clear text", texts["CLEAR_TEXT"], "the field's X: $texts")
+        assertFalse("Clear search" in texts.values, "the map pill's name is not used here: $texts")
+    }
+
+    /** P14: the window of a state on this phone shows what its row shows. */
+    @Test
+    fun anInstalledStatesSheetShowsItsRowAndActions() {
+        val installed = InstalledSet(scanned = true, packs = listOf(installedPa()))
+        val s = StatesPresenter.present(input(mode = StatesMode.MANAGE, installed = installed, selected = "PA", sheet = true)).sheet!!
+        assertEquals("Pennsylvania", s.title)
+        assertEquals(listOf("On this phone · data from Nov 14, 2026 · 1.1 GB", "Built Nov 15, 2026", "Up to date. List checked Nov 16, 2026."), s.lines)
+        assertEquals("House numbers: included", s.houseNumbersLine)
+        assertEquals("Remove house numbers", s.houseNumbersAction!!.label)
+        assertEquals(listOf("Remove"), s.actions.map { it.label })
+        assertTrue(s.actions.single().destructive)
+        assertEquals(StatesEvent.Remove("us-pa"), s.actions.single().event)
+        assertNull(s.primary)
+        assertEquals("Close", s.secondary!!.label)
+
+        val older = InstalledSet(scanned = true, packs = listOf(installedPa(version = 1, addresses = false)))
+        val u = StatesPresenter.present(input(mode = StatesMode.MANAGE, installed = older, selected = "PA", sheet = true)).sheet!!
+        assertEquals("Pennsylvania", u.title)
+        assertTrue("Update available · data from Nov 14, 2026 · 548 MB download" in u.lines, "${u.lines}")
+        assertEquals("House numbers: not included", u.houseNumbersLine)
+        assertEquals(listOf("Update", "Remove"), u.actions.map { it.label })
+        assertFalse(u.lines.any { it.startsWith("Up to date") }, "an update is offered")
+
+        val loading = StatesPresenter.present(input(mode = StatesMode.MANAGE, catalog = CatalogState.Loading(null), installed = installed, selected = "PA", sheet = true)).sheet!!
+        assertTrue(loading.lines.first().startsWith("On this phone · data from"), "${loading.lines}")
+
+        val trip = InstalledSet(scanned = true, packs = listOf(installedPa()), changesHeldBy = "Not while guiding")
+        val held = StatesPresenter.present(input(mode = StatesMode.MANAGE, installed = trip, selected = "PA", sheet = true)).sheet!!
+        assertTrue("You can't remove a state during a trip." in held.lines, "${held.lines}")
+        assertFalse(held.actions.single { it.label == "Remove" }.enabled)
+        // the first run keeps its plain window (a state is installed there only for the moment before the screen closes)
+        val first = StatesPresenter.present(input(installed = installed, selected = "PA", sheet = true)).sheet!!
+        assertTrue(first.actions.isEmpty())
+    }
+
+    /** P62: Remove says what it frees. */
+    @Test
+    fun removeIsMarkedAsDestructiveAndSaysWhatItFrees() {
+        val base = input(mode = StatesMode.MANAGE, installed = InstalledSet(scanned = true, packs = listOf(installedPa())))
+        assertTrue(StatesPresenter.present(base).onPhone.single().actions.single { it.label == "Remove" }.destructive)
+        val remove = StatesPresenter.present(base.copy(dialog = Dialog.Remove("us-pa"))).dialog!!
+        assertEquals("Its maps, directions and search are deleted from this phone. This frees 1.1 GB. You can download it again.", remove.text)
+        assertTrue(remove.confirm.destructive)
+        assertFalse(remove.dismiss!!.destructive)
+        assertTrue(StatesPresenter.present(base.copy(dialog = Dialog.RemoveHouseNumbers("us-pa"))).dialog!!.confirm.destructive)
+        assertTrue(StatesPresenter.present(input(job = job(JobPhase.DOWNLOADING)).copy(dialog = Dialog.CancelJob)).dialog!!.confirm.destructive)
+        // a pack whose size is unknown: the text without a size
+        assertEquals(Texts.REMOVE_TEXT, Texts.removeText(0))
+    }
+
+    /** P25: where a selection was made goes to the screen (a map pick is outlined, not zoomed). */
+    @Test
+    fun aSelectionKnowsWhereItWasMade() {
+        assertTrue(StatesPresenter.present(input(selected = "PA", selectedOnMap = true)).selectedOnMap)
+        assertFalse(StatesPresenter.present(input(selected = "PA")).selectedOnMap)
     }
 }

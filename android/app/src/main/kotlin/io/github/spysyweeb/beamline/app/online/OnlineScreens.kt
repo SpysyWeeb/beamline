@@ -57,6 +57,8 @@ object OnlineTexts {
         "what each feature needs, when you use it, and tells you what that is first."
 
     const val SETTINGS_MAIN = "Online features"
+    // P55 / F88: Settings' heading of the online switches; not "Online features", the main switch's own name
+    const val SETTINGS_SECTION = "Internet"
     const val SETTINGS_MAIN_ON = "Beamline uses the internet only for the features below, when you use them."
     const val SETTINGS_MAIN_OFF = "Offline only: no internet requests except the state downloads you start."
     const val SETTINGS_OSM = "Contribute to OpenStreetMap"
@@ -64,9 +66,9 @@ object OnlineTexts {
     /** Item 40. */
     /** Item 41. */
     const val SETTINGS_APP_UPDATES = "Check for app updates"
-    const val SETTINGS_APP_UPDATES_TEXT = "Once a day when you open Beamline, it looks for a newer version on GitHub, downloads it on Wi-Fi and installs it when you are not driving."
+    const val SETTINGS_APP_UPDATES_TEXT = "Once a day, looks on GitHub for a newer Beamline. Downloads it on Wi-Fi and installs it when you are not driving."
     const val SETTINGS_MAP_UPDATES = "Check for map updates"
-    const val SETTINGS_MAP_UPDATES_TEXT = "Once a day when you open Beamline, it asks for the list of states (a few kilobytes) and tells you on the map when one of yours has newer map data. It never downloads a state by itself."
+    const val SETTINGS_MAP_UPDATES_TEXT = "Once a day, tells you on the map when your states have newer map data. It never downloads a state by itself."
     const val SIGN_IN = "Sign in to OpenStreetMap"
     const val SIGN_IN_TEXT = "Needed to fix or add a place. Notes can go without it. You sign in on OpenStreetMap's own page."
     const val SIGN_OUT = "Sign out"

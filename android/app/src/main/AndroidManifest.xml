@@ -70,6 +70,60 @@
                 <category android:name="android.intent.category.BROWSABLE" />
                 <data android:scheme="io.github.spysyweeb.beamline" android:host="oauth" />
             </intent-filter>
+            <!-- Item 52 (docs/architecture.md 3.11, rule H1): directions handed over by another app ("Get
+                 Directions" choosers, map links). One filter per form, so that the scheme, host and path of
+                 one form never combine with another's. No android:autoVerify: Beamline cannot prove it owns
+                 Google's or OpenStreetMap's sites, so from Android 12 those web links open elsewhere unless the
+                 user allows them for Beamline ("Open by default"); geo: and google.navigation: need no such
+                 step. Short links (maps.app.goo.gl, goo.gl/maps) are not taken: they need the network. -->
+            <intent-filter>
+                <action android:name="android.intent.action.VIEW" />
+                <category android:name="android.intent.category.DEFAULT" />
+                <category android:name="android.intent.category.BROWSABLE" />
+                <data android:scheme="geo" />
+            </intent-filter>
+            <intent-filter>
+                <action android:name="android.intent.action.VIEW" />
+                <category android:name="android.intent.category.DEFAULT" />
+                <category android:name="android.intent.category.BROWSABLE" />
+                <data android:scheme="google.navigation" />
+            </intent-filter>
+            <!-- maps.google.com is Google Maps throughout: every path, also none ("https://maps.google.com?q=...") -->
+            <intent-filter>
+                <action android:name="android.intent.action.VIEW" />
+                <category android:name="android.intent.category.DEFAULT" />
+                <category android:name="android.intent.category.BROWSABLE" />
+                <data android:scheme="https" />
+                <data android:scheme="http" />
+                <data android:host="maps.google.com" />
+            </intent-filter>
+            <!-- www.google.com and google.com: only the Maps forms the parser reads (K19: not /maps/placelists and the like) -->
+            <intent-filter>
+                <action android:name="android.intent.action.VIEW" />
+                <category android:name="android.intent.category.DEFAULT" />
+                <category android:name="android.intent.category.BROWSABLE" />
+                <data android:scheme="https" />
+                <data android:scheme="http" />
+                <data android:host="www.google.com" />
+                <data android:host="google.com" />
+                <data android:path="/maps" />
+                <data android:path="/maps/" />
+                <data android:path="/maps/dir" />
+                <data android:pathPrefix="/maps/dir/" />
+                <data android:path="/maps/search" />
+                <data android:pathPrefix="/maps/search/" />
+                <data android:pathPrefix="/maps/place/" />
+                <data android:pathPrefix="/maps/@" />
+            </intent-filter>
+            <intent-filter>
+                <action android:name="android.intent.action.VIEW" />
+                <category android:name="android.intent.category.DEFAULT" />
+                <category android:name="android.intent.category.BROWSABLE" />
+                <data android:scheme="https" />
+                <data android:host="www.openstreetmap.org" />
+                <data android:host="openstreetmap.org" />
+                <data android:path="/" />
+            </intent-filter>
         </activity>
 
         <!-- Keeps the process at foreground priority while a trip is guided (docs/architecture.md 4). -->

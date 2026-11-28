@@ -37,7 +37,7 @@ As the owner set it (2026-11-16):
     Beamline sends only what each feature needs, when you use it, and tells you what that is
     first." (Batch O2, the owner's answers after batch H: no mention of finding places online until
     batch O4 brings it; it comes back into this text then.)
-- **In Settings**, an "Online features" section: the main switch, and under it one switch per
+- **In Settings**, a section headed "Internet" (0.1.40, P55 / F88: the heading no longer repeats the main switch's name): the main switch, and under it one switch per
   feature ("Contribute to OpenStreetMap", later "Find places online"), and the OSM account line
   ("Sign in to OpenStreetMap" / "Signed in as … · Sign out"). Turning the main switch on (on first
   run or in Settings) turns on every online feature: those that only work online and those that

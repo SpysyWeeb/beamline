@@ -34,8 +34,7 @@ import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.remember
 import androidx.compose.ui.platform.LocalConfiguration
-import androidx.compose.ui.platform.LocalView
-import androidx.core.view.WindowCompat
+import androidx.compose.ui.unit.dp
 import androidx.lifecycle.Lifecycle
 import androidx.lifecycle.lifecycleScope
 import androidx.lifecycle.repeatOnLifecycle
@@ -45,13 +44,16 @@ import io.github.spysyweeb.beamline.api.model.Place
 import io.github.spysyweeb.beamline.api.model.PlaceSource
 import io.github.spysyweeb.beamline.api.nav.Origin
 import io.github.spysyweeb.beamline.app.guidance.GuidanceService
+import io.github.spysyweeb.beamline.app.handover.HandoverRules
 import io.github.spysyweeb.beamline.app.map.FrameRateRequest
 import io.github.spysyweeb.beamline.app.ui.AppFlows
 import io.github.spysyweeb.beamline.app.ui.AppRoot
+import io.github.spysyweeb.beamline.app.ui.BarIconsAfterRotation
 import io.github.spysyweeb.beamline.app.ui.Host
 import io.github.spysyweeb.beamline.app.ui.RootActions
 import io.github.spysyweeb.beamline.feature.about.FIRST_RUN_NOTICE_VERSION
 import io.github.spysyweeb.beamline.feature.about.Splash
+import io.github.spysyweeb.beamline.ui.theme.isSideLayout
 import io.github.spysyweeb.beamline.settings.DisplayMode
 import io.github.spysyweeb.beamline.settings.FrameRate
 import io.github.spysyweeb.beamline.settings.FrameRates
@@ -66,7 +68,7 @@ import kotlinx.coroutines.launch
  * The app's one activity (docs/architecture.md 5.4 items 3, 7, 9, 12): the system splash, the
  * window (edge to edge, bar icons from the map's theme), the permissions asked in context, the
  * notification intents of the downloads, keep-screen-on and the guidance service while guiding,
- * and the test extras.
+ * the links handed over by other apps (item 52, docs/architecture.md 3.11), and the test extras.
  */
 class MainActivity : ComponentActivity(), Host {
 
@@ -121,7 +123,14 @@ class MainActivity : ComponentActivity(), Host {
             Log.i(TAG, "test extras: first-run notice reset")
         }
         useDarkBars(true) // the start is the dark splash; Root sets the bars from the map's theme afterwards
-        if (savedInstanceState == null) handle(intent)
+        if (savedInstanceState == null) {
+            handle(intent)
+        } else if (intent.action == Intent.ACTION_VIEW) {
+            // Item 52 (rule H3, K14): a restored activity (also after process death) gets its original intent back;
+            // its link was used or dropped then. Its data goes now, unused, so nothing reads or hands it on later
+            // (the assistant reads the intent of the activity in front).
+            intent.data = null
+        }
         // K1 (docs/next-round.md item 5): a cold start with location allowed opens on the puck in
         // the follow mode, from the last known position, moving when the first fix comes. Without a
         // position the map shows where it was left (PackMap). Location is never asked for here.
@@ -162,14 +171,17 @@ class MainActivity : ComponentActivity(), Host {
         // System bar icons follow the map (a night map under a light status bar would be glaring);
         // dark bars while the reveal plays (A's README).
         LaunchedEffect(night, flows.revealDone) { useDarkBars(night || !flows.revealDone) }
-        // A rotation lets the platform redraw the navigation bar with light icons (seen on the emulator:
-        // invisible on the day map's light band): set its icon colour again. Navigation bar only, so the
-        // drive overlay's status-bar handling (d-overlay.md) is not touched.
-        val orientation = LocalConfiguration.current.orientation
-        val view = LocalView.current
-        LaunchedEffect(night, flows.revealDone, orientation) {
-            WindowCompat.getInsetsController(window, view).isAppearanceLightNavigationBars = !(night || !flows.revealDone)
-        }
+        // A rotation lets the platform redraw the system bars with light icons (the navigation bar on the
+        // day map, and P39: the status bar's clock white over the day map in landscape): both are set again
+        // from the map, the status bar not while the drive overlay's dark banner is under it. Upright is
+        // the overlay's own test (isSideLayout), so the two agree on when it holds the bar.
+        val config = LocalConfiguration.current
+        BarIconsAfterRotation(
+            window, night, flows.revealDone,
+            upright = !isSideLayout(config.screenWidthDp.dp, config.screenHeightDp.dp),
+            rotation = config.orientation,
+            driveDarkTop = { flows.driveDarkTop },
+        )
         val settings by graph.settings.settings.collectAsState()
         val modes = remember { displayModes() }
         // Settings no longer offers a frame rate (the owner, 2026-11-21): always the screen's fastest, also where
@@ -256,6 +268,8 @@ class MainActivity : ComponentActivity(), Host {
 
     override fun onDestroy() {
         if (flows.host === this) flows.host = null
+        // Item 52 (K15): leaving for good: a link still waiting is not opened by a later launch
+        if (isFinishing) flows.dropPendingLink()
         super.onDestroy()
     }
 
@@ -314,6 +328,11 @@ class MainActivity : ComponentActivity(), Host {
         askNotifications.launch(Manifest.permission.POST_NOTIFICATIONS)
     }
 
+    /** Play test P28: the second Back of a pair while a trip is driven or offered: what Back on a root activity does since Android 12. */
+    override fun leaveApp() {
+        moveTaskToBack(true)
+    }
+
     /** My-location: asked here, when the user wants their position, never at launch (K1: BROWSE_FOLLOW). */
     private fun myLocation() {
         val follow = {
@@ -340,6 +359,14 @@ class MainActivity : ComponentActivity(), Host {
         if (intent.action == Intent.ACTION_VIEW && data != null && data.scheme == OAUTH_SCHEME && data.host == OAUTH_HOST) {
             intent.data = null
             flows.finishSignIn(data.toString())
+        } else {
+            // Item 52 (rules H1, H3): directions handed over by another app, used once. The data leaves the
+            // intent now (a later look at getIntent finds none), and a start from Recents, which hands the
+            // task's first intent back, is not a new link. Nothing of it is logged here (PV2).
+            val link = intent.dataString
+            val fromHistory = intent.flags and Intent.FLAG_ACTIVITY_LAUNCHED_FROM_HISTORY != 0
+            if (HandoverRules.takes(intent.action, link, fromHistory)) flows.receiveLink(link!!)
+            if (intent.action == Intent.ACTION_VIEW) intent.data = null
         }
         if (BuildConfig.TEST_EXTRAS) readTestExtras(intent)
     }

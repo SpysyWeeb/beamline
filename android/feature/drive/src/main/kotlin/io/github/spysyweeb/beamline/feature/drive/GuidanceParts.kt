@@ -46,6 +46,7 @@ import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import io.github.spysyweeb.beamline.api.nav.NavIntent
+import io.github.spysyweeb.beamline.ui.theme.BeamlineIcons
 
 /** Status colours: amber for a weak or lost signal and for problems, the theme's surface otherwise. */
 private val Amber = Color(0xFFF2A93B)
@@ -139,6 +140,8 @@ internal fun StopReachedCard(status: GuidanceStatusUi.StopReached, modifier: Mod
 /**
  * At the destination: its name and side, and Done (rule A3). Item 47: on the sheet frame; Save is a
  * link under Done; a drag up (or a tap on its handle) opens the place's own window, its details.
+ * Play test P31, audit F34: once the place is saved ([GuidanceStatusUi.Arrived.saved]) the link reads
+ * "Saved" with a check and cannot save twice; a screen reader hears the handle's raise as "Show place details".
  */
 @Composable
 internal fun ArrivedCard(status: GuidanceStatusUi.Arrived, onEvent: (DriveEvent) -> Unit, modifier: Modifier = Modifier) {
@@ -149,7 +152,10 @@ internal fun ArrivedCard(status: GuidanceStatusUi.Arrived, onEvent: (DriveEvent)
             height.set(SheetHeight.LOW)
         }
     }
-    SheetFrame(height, DriveTexts.ARRIVED, MaterialTheme.colorScheme.onSurfaceVariant, modifier.fillMaxWidth().testTag(DriveTags.ARRIVED_CARD)) {
+    SheetFrame(
+        height, DriveTexts.ARRIVED, MaterialTheme.colorScheme.onSurfaceVariant, modifier.fillMaxWidth().testTag(DriveTags.ARRIVED_CARD),
+        raiseLabel = DriveTexts.SHOW_DETAILS,
+    ) {
         // audit F34: a long name, landscape or large text scrolls it, never cutting Done off
         Column(Modifier.fillMaxWidth().verticalScroll(rememberScrollState()).padding(start = 20.dp, end = 20.dp, bottom = 12.dp).semantics { liveRegion = LiveRegionMode.Polite }) {
             Text(DriveTexts.ARRIVED, style = MaterialTheme.typography.labelLarge, color = MaterialTheme.colorScheme.primary)
@@ -160,14 +166,31 @@ internal fun ArrivedCard(status: GuidanceStatusUi.Arrived, onEvent: (DriveEvent)
             Button(onClick = { onEvent(DriveEvent.Nav(NavIntent.Done)) }, modifier = Modifier.fillMaxWidth().heightIn(min = 52.dp).testTag(DriveTags.DONE)) {
                 Text(DriveTexts.DONE)
             }
-            TextButton(onClick = { onEvent(DriveEvent.SaveDestination) }, modifier = Modifier.align(Alignment.CenterHorizontally).heightIn(min = 48.dp).testTag(DriveTags.SAVE_DESTINATION)) {
-                Text(DriveTexts.SAVE_PLACE)
+            if (status.saved) {
+                // play test P31, audit F34: saved once, said so; no second save (the column is a polite live region)
+                Row(
+                    Modifier.align(Alignment.CenterHorizontally).heightIn(min = 48.dp)
+                        .semantics(mergeDescendants = true) {}.testTag(DriveTags.DESTINATION_SAVED),
+                    verticalAlignment = Alignment.CenterVertically,
+                ) {
+                    Icon(BeamlineIcons.Check, contentDescription = null, tint = MaterialTheme.colorScheme.primary, modifier = Modifier.size(18.dp))
+                    Spacer(Modifier.width(6.dp))
+                    Text(DriveTexts.SAVED, style = MaterialTheme.typography.labelLarge, color = MaterialTheme.colorScheme.primary)
+                }
+            } else {
+                TextButton(onClick = { onEvent(DriveEvent.SaveDestination) }, modifier = Modifier.align(Alignment.CenterHorizontally).heightIn(min = 48.dp).testTag(DriveTags.SAVE_DESTINATION)) {
+                    Text(DriveTexts.SAVE_PLACE)
+                }
             }
         }
     }
 }
 
-/** Rule D3: arrival clock, remaining time and distance, the next stop, the "Simulated" badge; stops and End. */
+/**
+ * Rule D3: arrival clock, remaining time and distance, the next stop, the "Simulated" badge; stops and End.
+ * Play test P5: with no route from the car (outside the installed maps) "No route from here" in place of the
+ * old route's arrival and remaining time and distance.
+ */
 @Composable
 internal fun TripBar(bar: TripBarUi, onEvent: (DriveEvent) -> Unit, modifier: Modifier = Modifier) {
     Row(
@@ -175,29 +198,23 @@ internal fun TripBar(bar: TripBarUi, onEvent: (DriveEvent) -> Unit, modifier: Mo
         verticalAlignment = Alignment.CenterVertically,
     ) {
         Column(Modifier.weight(1f)) {
-            Text(bar.arriveText, style = MaterialTheme.typography.titleLarge, fontWeight = FontWeight.SemiBold, maxLines = 1, overflow = TextOverflow.Ellipsis)
-            // The badge goes to the next line when the remaining time and distance need the room.
-            FlowRow(horizontalArrangement = Arrangement.spacedBy(8.dp), itemVerticalAlignment = Alignment.CenterVertically) {
-                Text(
-                    "${bar.remainingTimeText}${DriveTexts.LABEL_SEPARATOR}${bar.remainingDistanceText}",
-                    style = MaterialTheme.typography.bodyLarge,
-                    color = MaterialTheme.colorScheme.onSurfaceVariant,
-                    maxLines = 1,
-                    overflow = TextOverflow.Ellipsis,
-                )
-                if (bar.simulated) {
+            val noRoute = bar.noRouteText
+            if (noRoute != null) {
+                // play test P5: the old route's times are not the trip's
+                Text(noRoute, style = MaterialTheme.typography.titleLarge, fontWeight = FontWeight.SemiBold, maxLines = 2, overflow = TextOverflow.Ellipsis, modifier = Modifier.testTag(DriveTags.NO_ROUTE))
+                if (bar.simulated) SimulatedBadge()
+            } else {
+                Text(bar.arriveText, style = MaterialTheme.typography.titleLarge, fontWeight = FontWeight.SemiBold, maxLines = 1, overflow = TextOverflow.Ellipsis)
+                // The badge goes to the next line when the remaining time and distance need the room.
+                FlowRow(horizontalArrangement = Arrangement.spacedBy(8.dp), itemVerticalAlignment = Alignment.CenterVertically) {
                     Text(
-                        DriveTexts.SIMULATED,
-                        color = MaterialTheme.colorScheme.primary,
-                        fontSize = 12.sp,
-                        fontWeight = FontWeight.SemiBold,
+                        "${bar.remainingTimeText}${DriveTexts.LABEL_SEPARATOR}${bar.remainingDistanceText}",
+                        style = MaterialTheme.typography.bodyLarge,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant,
                         maxLines = 1,
-                        softWrap = false,
-                        modifier = Modifier
-                            .border(1.dp, MaterialTheme.colorScheme.primary, RoundedCornerShape(6.dp))
-                            .padding(horizontal = 6.dp, vertical = 1.dp)
-                            .testTag(DriveTags.SIMULATED),
+                        overflow = TextOverflow.Ellipsis,
                     )
+                    if (bar.simulated) SimulatedBadge()
                 }
             }
             bar.nextStopText?.let {
@@ -223,6 +240,23 @@ internal fun TripBar(bar: TripBarUi, onEvent: (DriveEvent) -> Unit, modifier: Mo
             Icon(DriveIcons.close, contentDescription = DriveTexts.END_TRIP)
         }
     }
+}
+
+/** The trip bar's "Simulated" badge (a simulated drive, D4). */
+@Composable
+private fun SimulatedBadge() {
+    Text(
+        DriveTexts.SIMULATED,
+        color = MaterialTheme.colorScheme.primary,
+        fontSize = 12.sp,
+        fontWeight = FontWeight.SemiBold,
+        maxLines = 1,
+        softWrap = false,
+        modifier = Modifier
+            .border(1.dp, MaterialTheme.colorScheme.primary, RoundedCornerShape(6.dp))
+            .padding(horizontal = 6.dp, vertical = 1.dp)
+            .testTag(DriveTags.SIMULATED),
+    )
 }
 
 /** The map buttons while guided: Overview always, Recenter when the camera left the car (K4, K5). */
@@ -254,11 +288,11 @@ internal fun MapButtons(showRecenter: Boolean, onEvent: (DriveEvent) -> Unit, mo
     }
 }
 
-/** Rule R3: "Continue to …?" in the visible app after a restart; Continue or Discard. */
+/** Rule R3: "Continue to …?" in the visible app after a restart; Continue or Discard. Play test P27: a simulated drive says so. */
 @Composable
 internal fun ResumeCard(resume: ResumeUi, onEvent: (DriveEvent) -> Unit, modifier: Modifier = Modifier) {
     Column(modifier.fillMaxWidth().padding(20.dp).testTag(DriveTags.RESUME_CARD)) {
-        Text(DriveTexts.continueTo(resume.destinationName), style = MaterialTheme.typography.titleLarge, fontWeight = FontWeight.SemiBold)
+        Text(DriveTexts.continueTo(resume.destinationName, resume.simulated), style = MaterialTheme.typography.titleLarge, fontWeight = FontWeight.SemiBold)
         DriveTexts.stopsLeft(resume.stopsLeft)?.let {
             Text(it, style = MaterialTheme.typography.bodyLarge, color = MaterialTheme.colorScheme.onSurfaceVariant)
         }

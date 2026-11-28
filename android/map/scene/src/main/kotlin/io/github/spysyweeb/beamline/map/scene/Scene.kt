@@ -28,10 +28,13 @@ class MapSceneMapper(savedRules: SavedMarkerRules = SavedMarkerRules.bundled()) 
      * GUIDING and REROUTING (SP43). The arrow replaces the puck while a trip is guided.
      * [results]: the search results on the map (rule S11), RESULT pins "result:<index>"; the one at
      * the point of [picked] (the selected result, whose sheet is open) is left out: the PICKED pin
-     * stands there instead.
+     * stands there instead. Item 51: with [TripState.stopPreview]'s route (PLANNING to REROUTING) the
+     * route drawn is that route, the trip's own route ahead in grey under it (an alternative line).
+     * [step]: the route step the route sheet shows (MapScene.step), drawn in PLANNING and CHOOSING only.
+     * A chosen start (Origin.FromPlace) is the START pin "start" in PLANNING and CHOOSING (P22).
      */
-    fun scene(trip: TripState, puck: PuckState?, theme: MapTheme, picked: Place?, saved: List<SavedPlace> = emptyList(), results: List<GeoPoint> = emptyList()): MapScene =
-        builder.scene(trip, puck, theme, picked, saved, results)
+    fun scene(trip: TripState, puck: PuckState?, theme: MapTheme, picked: Place?, saved: List<SavedPlace> = emptyList(), results: List<GeoPoint> = emptyList(), step: GeoPoint? = null): MapScene =
+        builder.scene(trip, puck, theme, picked, saved, results, step)
 
     private val builder = SceneBuilder(savedRules)
 }
@@ -64,6 +67,7 @@ data class CameraRules(
     val transitionMs: Int,                  // transition_ms
     val bearingTurnDeg: Double = 0.0,       // guide.bearing_turn_deg (optional; 0 = plain smoothing)
     val lean: LeanRules? = null,            // guide.lean (optional; absent = the camera never leans into a turn)
+    val overviewPaddingDp: Float? = null,   // overview.padding_dp (optional; absent = preview.padding_dp)
 ) {
     companion object {
         fun parse(text: String): CameraRules = CameraFile.cameraRules(text)
@@ -111,6 +115,34 @@ class CameraDirector(rules: CameraRules, clock: Clock) {
     fun onShowPlace(point: GeoPoint): Unit = director.onShowPlace(point)
     /** The picked place's sheet closed or another place replaced it, or the results on the map closed: the camera stays where it is (K1, S11). */
     fun onPlaceLeft(): Unit = director.onPlaceLeft()
+    /**
+     * K1b (P8): a place tapped on the map whose sheet opened (a POI label, a saved place's marker, a
+     * dropped pin). On a browsing map that is not following, the camera stays while the place's pin is
+     * wholly in the area the insets leave free; once it is not (the sheet raised over it, the search
+     * bar over it at the tap) the camera centres it there at the map's zoom and bearing and keeps it
+     * there like a picked place, until a gesture, my-location, another place or [onPlaceLeft]. While
+     * following, or while a trip exists, nothing changes.
+     */
+    fun onPlaceTapped(point: GeoPoint): Unit = director.onPlaceTapped(point)
+    /**
+     * K1b: where the camera is: [middle], the point at the middle of the map view, at [zoom], turned to
+     * [bearingDeg]; sent by the map's idle callback and at each tap or long press.
+     */
+    fun onCameraAt(middle: GeoPoint, zoom: Double, bearingDeg: Double): Unit = director.onCameraAt(middle, zoom, bearingDeg)
+    /**
+     * K2a (P46): Back from directions reopens [point]'s window; sent before the session's End. The
+     * preview stays until the trip has ended, then the camera shows the place as a picked one (K1);
+     * while browsing already, as [onShowPlace]. A route closed without it follows the user (K2a, P50).
+     */
+    fun onShowPlaceAfterRoute(point: GeoPoint): Unit = director.onShowPlaceAfterRoute(point)
+    /**
+     * Item 51 (rule K8): adding a stop on the map. While a route is chosen or guided the camera looks
+     * top-down, north up at [points] (the stop results and where they join the trip, or the way to the
+     * stop looked at) in the area the insets leave free; guiding, the vehicle is kept in the view (a new
+     * fit when it nears the edge) and guidance does not follow meanwhile. Empty [points]: adding a stop
+     * ended, back to K2 or K3. Ignored in other phases.
+     */
+    fun onStopView(points: List<GeoPoint>): Unit = director.onStopView(points)
     fun tick(): Unit = director.tick()
     /** K1a: the map's bearing when the camera stopped (browsing keeps a user's own turn). */
     fun onMapBearing(deg: Double): Unit = director.onMapBearing(deg)

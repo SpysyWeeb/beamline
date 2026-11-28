@@ -109,6 +109,9 @@ class SearchService(
     /** Item 36: the pack's traffic lights in the given cells, each as (lat, lon) ([SearchEngine.signals]). */
     fun signals(cells: Collection<Long>): List<Pair<Double, Double>> = engine.signals(cells)
 
+    /** P6 (0.1.40): the town nearest a point within [withinKm], or null ([SearchEngine.placeNear]). */
+    fun placeNear(lat: Double, lon: Double, withinKm: Double): String? = engine.placeNear(lat, lon, withinKm)
+
     /** Item 31: the street at a point (a dropped pin), or null ([SearchEngine.nearStreet]). */
     fun nearStreet(lat: Double, lon: Double): NearStreet? = engine.nearStreet(lat, lon)
 

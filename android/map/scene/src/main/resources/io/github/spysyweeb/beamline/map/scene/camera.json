@@ -7,7 +7,7 @@
             "lean": {"within_m": 120, "within_s": 7, "bearing_share": 0.5, "max_bearing_deg": 55, "zoom_add": 0.5,
                      "pitch_deg": 50, "min_turn_deg": 30, "look_m": 35, "hold_ms": 4000},
             "recenter_after_s": 15},
-  "overview": {"return_after_s": 10},
+  "overview": {"return_after_s": 10, "padding_dp": 72},
   "browse": {"follow_zoom": 16},
   "preview": {"padding_dp": 48},
   "arrived": {"zoom": 17},

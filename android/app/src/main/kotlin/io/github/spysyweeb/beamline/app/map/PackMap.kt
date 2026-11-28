@@ -157,6 +157,7 @@ private class MapHost(context: Context, private val g: AppGraph, private val flo
                 }
                 // K1a: the bearing the camera stopped at (browsing keeps a user's own turn)
                 g.director.onMapBearing(cp.bearing)
+                reportCamera(m)   // K1b (P8): where the camera rests
                 // One line per camera stop, for the emulator checks: zoom, pitch and bearing, never where (PV2).
                 Log.i(TAG, "camera idle z=%.2f pitch=%.0f bearing=%.0f".format(cp.zoom, cp.tilt, cp.bearing)) // log-ok: zoom, pitch and bearing (numbers)
             }
@@ -326,14 +327,18 @@ private class MapHost(context: Context, private val g: AppGraph, private val flo
         g.scope.launch(Dispatchers.IO) { store.write(LastCameraStore.Camera(centre, zoom)) }
     }
 
-    /** `--ef lat/lon/zoom`: one camera move; the director leaves a follow mode as for a user's pan. */
+    /**
+     * `--ef lat/lon/zoom`: one camera move, as a user's pan: the director leaves a follow mode and, since
+     * 0.1.40 (P6), the app's flows see it too (S1b counts it as the user's move; "Search this area" over
+     * results; the credit fades).
+     */
     fun moveFromTest(target: CameraTarget) {
         val c = controller
         if (c == null || !styleLoaded) {
             pendingRequest = target // kept until the style is loaded, never dropped
             return
         }
-        g.director.onGesture(MapGesture.CameraMovedByUser)
+        onGesture(MapGesture.CameraMovedByUser)
         c.moveCamera(target)
     }
 
@@ -358,7 +363,18 @@ private class MapHost(context: Context, private val g: AppGraph, private val flo
             east = corners.maxOf { it.longitude }, north = corners.maxOf { it.latitude })
     }
 
+    /** K1b (P8): the camera now (the point at the view's middle, the zoom, the bearing), for the director's check of a tapped place. */
+    private fun reportCamera(m: MapLibreMap) {
+        if (!cameraPlaced || view.width == 0 || view.height == 0) return
+        val mid = m.projection.fromScreenLocation(android.graphics.PointF(view.width / 2f, view.height / 2f))
+        val cp = m.cameraPosition
+        g.director.onCameraAt(GeoPoint(mid.latitude, mid.longitude), cp.zoom, cp.bearing)
+    }
+
     private fun onGesture(gesture: MapGesture) {
+        // K1b (P8): a tap may come while the camera still glides or turns: the director judges the tapped
+        // place against the camera now, not where it last stopped
+        if (gesture is MapGesture.Tap || gesture is MapGesture.LongPress) map?.let(::reportCamera)
         flows.onGesture(gesture)
     }
 

@@ -175,6 +175,53 @@ class RouteLightsTest {
         assertEquals("At the light, turn left", Views.atLights(banners, geo, RouteLights(listOf(geo.maneuverAlong[left] - 4.0), listOf(p)))[left].primary)
     }
 
+    /** Play test P34: the last 5 mi said only "Arrive, on the left"; each arrival names the stop its leg ends at. */
+    @Test
+    fun `P34 each arrival names its stop, a dropped pin keeps Arrive`() {
+        val banners = Views.banners(Data.exit24, rules)
+        val zoo = Place("Erie Zoo", Data.DOWNS_DRIVE.point, PlaceSource.SEARCH)
+        val out = Views.atStops(banners, geo, listOf(zoo))
+        val last = banners.last()
+        assertEquals(ManeuverKind.ARRIVE, last.kind, "exit 24 arrives with no side")
+        assertEquals("Arrive at Erie Zoo", out.last().primary)
+        assertEquals(Views.arriveAt(last.kind, "Erie Zoo"), out.last().primary)
+        assertEquals(last.copy(primary = "Arrive at Erie Zoo"), out.last(), "nothing else of the banner changes")
+        assertEquals(banners.dropLast(1), out.dropLast(1), "every other banner unchanged")
+        assertEquals(banners, Views.atStops(banners, geo, listOf(Data.DOWNS_DRIVE)), "a dropped pin (MAP_PIN) keeps the plain words")
+        assertEquals(banners, Views.atStops(banners, geo, emptyList()))
+        assertEquals(banners, Views.atStops(banners, geo, listOf(zoo.copy(name = "  "))), "no name: the plain words")
+        assertEquals("Arrive on the left at Erie Zoo", Views.arriveAt(ManeuverKind.ARRIVE_LEFT, "Erie Zoo"))
+        assertEquals("Arrive at Erie Zoo", Views.arriveAt(ManeuverKind.ARRIVE, "Erie Zoo"))
+        // the steps preview says the same (audit F40)
+        val geometry = Data.exit24.shape.map { GeoPoint(it.lat, it.lon) }
+        assertEquals("Arrive on the right at Erie Zoo", Views.arriveAt(ManeuverKind.ARRIVE_RIGHT, "Erie Zoo"))
+        assertEquals("Arrive at Erie Zoo", Views.steps(Data.exit24, rules, geometry, legPlaces = listOf(zoo)).last().primary)
+        assertEquals(banners.last().primary, Views.steps(Data.exit24, rules, geometry).last().primary, "without the stops: as before")
+    }
+
+    /**
+     * Review F-n 2: item 52 hands over a point with no label (named by its coordinates or its street line); driven
+     * to, it is a recent, and a recent or resumed copy of a point still has no name of its own: the plain words.
+     */
+    @Test
+    fun `P34 a point named by its coordinates or its street line keeps Arrive, also as a recent`() {
+        val banners = Views.banners(Data.exit24, rules)
+        val at = Data.DOWNS_DRIVE.point
+        val coords = "42.05331, -80.07958"
+        for (source in listOf(PlaceSource.RECENT, PlaceSource.RESUMED, PlaceSource.SEARCH, PlaceSource.SAVED)) {
+            assertEquals(banners, Views.atStops(banners, geo, listOf(Place(coords, at, source))), "$source named by its coordinates")
+            assertEquals(banners, Views.atStops(banners, geo, listOf(Place("Near Downs Drive, Erie", at, source, subtitle = coords))),
+                "$source named by its street line")
+        }
+        // a name of its own stays: a saved point the driver named, another app's label for a point
+        assertEquals("Arrive at Grandma's", Views.atStops(banners, geo,
+            listOf(Place("Grandma's", at, PlaceSource.SAVED, subtitle = coords, savedId = "s0000000000000001"))).last().primary)
+        assertEquals("Arrive at Erie Zoo", Views.atStops(banners, geo, listOf(Place("Erie Zoo", at, PlaceSource.RECENT, subtitle = coords))).last().primary)
+        // the steps preview says the same
+        val geometry = Data.exit24.shape.map { GeoPoint(it.lat, it.lon) }
+        assertEquals(banners.last().primary, Views.steps(Data.exit24, rules, geometry, legPlaces = listOf(Place(coords, at, PlaceSource.RECENT))).last().primary)
+    }
+
     @Test
     fun `the road being driven is named by the stretch behind the banner's maneuver`() {
         val mans = Data.exit24.maneuvers
@@ -204,6 +251,50 @@ class RouteLightsTest {
         assertEquals(0, seen.last().third, "every light is behind at the end")
     }
 
+    /** Audit F40: the route sheet's steps preview says what the banner will say ("At the light, turn left"). */
+    @Test
+    fun `F40 the steps preview says At the light as the banner does`() = sessionTest { h ->
+        h.planExit24()
+        h.advance(1_000)
+        h.assertAllRecorded()
+        assertEquals(Phase.CHOOSING, h.phase(), "${h.state.problem}")
+        val step = h.state.choices.first { it.id == h.state.selectedChoiceId }.steps.first { it.kind == ManeuverKind.LEFT }
+        assertEquals("At the light, turn left", step.primary, "the preview in the banner's words")
+        h.send(NavIntent.Start())
+        assertEquals(Phase.GUIDING, h.phase(), "${h.state.problem}")
+        h.drive(4100.0, m(1) + 15.0, stepM = 20.0)
+        assertEquals(2, h.state.u)
+        assertEquals(step.primary, h.state.guidance!!.banner!!.view.primary, "the banner says what the preview said")
+        val guided = h.state.guidance!!.route.steps.first { it.kind == ManeuverKind.LEFT }
+        assertEquals("At the light, turn left", guided.primary, "the guided route's steps too")
+    }
+
+    /**
+     * Review F-n 3: Start tapped while the steps preview's lights walk runs on the routing thread (it cannot be
+     * stopped there) waits for that walk and uses it: the route's lights are walked once, not twice.
+     */
+    @Test
+    fun `F40 Start while the preview's lights walk runs uses that walk`() = sessionTest { h ->
+        fun lights(req: kotlinx.serialization.json.JsonObject) =
+            req["filters"]?.jsonObject?.get("attributes")?.jsonArray?.any { it.jsonPrimitive.content == "node.traffic_signal" } == true
+        var tapped = false
+        h.engine.failWhen = { req ->
+            if (!tapped && lights(req)) {
+                tapped = true
+                h.session.send(NavIntent.Start())   // handled on the session thread while the walk runs
+            }
+            null
+        }
+        h.planExit24()
+        h.advance(1_000)
+        assertTrue(tapped, "the preview walked the lights")
+        assertEquals(Phase.GUIDING, h.phase(), "${h.state.problem}")
+        assertEquals(1, h.engine.asked.count(::lights), "one walk for the preview and Start")
+        h.drive(4100.0, m(1) + 15.0, stepM = 20.0)
+        assertEquals(2, h.state.u)
+        assertEquals("At the light, turn left", h.state.guidance!!.banner!!.view.primary, "Start has the walk's lights")
+    }
+
     /**
      * A turn into a store's lot: the plan of reference_routes.py door_parking (a Walmart Supercenter, its
      * end in its lot by the door) says "into the parking lot" on the turn that leaves the last named road.
@@ -218,6 +309,10 @@ class RouteLightsTest {
             h.send(NavIntent.PlanTo(store))
             h.send(NavIntent.SetOrigin(Origin.FromPlace(from, null)))
             h.advance(1_000)
+            // audit F40, play test P34: the steps preview says it too, and its arrival names the store
+            val steps = h.state.choices.first { it.id == h.state.selectedChoiceId }.steps
+            assertEquals(1, steps.count { it.primary.endsWith(Views.INTO_THE_PARKING_LOT) }, "${steps.map { it.primary }}")
+            assertTrue(steps.last().primary.startsWith("Arrive") && steps.last().primary.endsWith(" at Walmart Supercenter"), steps.last().primary)
             h.send(NavIntent.Start(Simulation(speedFactor = 4.0)))
             h.advance(1_000)
             h.assertAllRecorded()
@@ -233,6 +328,8 @@ class RouteLightsTest {
             val into = texts.filter { it.endsWith(Views.INTO_THE_PARKING_LOT) }
             assertEquals(1, into.size, "$texts")
             assertTrue(into.single().startsWith("Turn ") || into.single().startsWith("At the light, turn "), into.single())
+            // play test P34: the last stretch's banner names the stop it ends at
+            assertTrue(texts.any { it.startsWith("Arrive") && it.endsWith(" at Walmart Supercenter") }, "$texts")
         } finally {
             h.close()
         }

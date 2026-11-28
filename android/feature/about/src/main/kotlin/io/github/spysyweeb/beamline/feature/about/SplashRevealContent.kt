@@ -35,6 +35,7 @@ import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.res.imageResource
 import androidx.compose.ui.semantics.clearAndSetSemantics
+import androidx.compose.ui.semantics.contentDescription
 import androidx.compose.ui.unit.IntOffset
 import androidx.compose.ui.unit.IntSize
 import androidx.compose.ui.unit.dp
@@ -99,7 +100,10 @@ internal fun SplashRevealContent(mapReady: Boolean, onFinished: () -> Unit, modi
         modifier
             .fillMaxSize()
             .graphicsLayer { alpha = frame.sceneAlpha }
-            .clearAndSetSemantics { }
+            // Play test P29: the reveal covers the window for screen readers too. With a description it is a
+            // node that counts, so Compose leaves the controls it covers (the map's buttons, which get no
+            // touches either, below) out of the accessibility tree until it has gone.
+            .clearAndSetSemantics { contentDescription = AboutTexts.STARTING }
             // The map under the reveal gets no touches until it has gone.
             .pointerInput(Unit) {
                 awaitPointerEventScope {

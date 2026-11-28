@@ -78,8 +78,9 @@ class SavedPlaces(file: File, rules: SavedRules, writer: Executor, newId: () -> 
     /**
      * HOME or WORK: [place] fills that slot, replacing (deleting) the place there; [name] is ignored.
      * OTHER: a new place named [name] (required), refused by SP55 or SP56. A MAP_PIN place is kept
-     * with its coordinates as placeName and no subtitle (3.1). A [place] with source SAVED is a
-     * programming error (IllegalArgumentException with a fixed message).
+     * with its subtitle as placeName (the street line the app found for it, "Near East 5th Street,
+     * Erie", or its coordinates), its coordinates when it has none, and no subtitle (3.1). A [place]
+     * with source SAVED is a programming error (IllegalArgumentException with a fixed message).
      */
     fun save(place: Place, kind: SavedKind, name: String? = null): SaveResult = impl.save(place, kind, name)
     /** OTHER places only. */
@@ -89,6 +90,12 @@ class SavedPlaces(file: File, rules: SavedRules, writer: Executor, newId: () -> 
     /** An OTHER place becomes HOME or WORK: the place in that slot is deleted, the name becomes "Home" or "Work". */
     fun makeKind(id: String, kind: SavedKind): SaveResult = impl.makeKind(id, kind)
     fun delete(id: String): SaveResult = impl.delete(id)
+    /**
+     * Undo of a [delete] (0.1.40, P58): puts [place] back exactly as it was (its id, kind, name and
+     * copies). Refused: READ_ONLY; ALREADY_SAVED when its id is in the list again or its HOME or WORK
+     * slot was filled meanwhile; NAME_TAKEN and LIMIT for an OTHER place, as SP55 and SP56 say.
+     */
+    fun restore(place: SavedPlace): SaveResult = impl.restore(place)
     fun setShowOnMap(show: Boolean): SaveResult = impl.setShowOnMap(show)
 
     // Track S: the store behind the contract above (SavedStore.kt).

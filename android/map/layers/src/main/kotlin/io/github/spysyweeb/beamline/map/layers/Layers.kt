@@ -57,8 +57,9 @@ import kotlin.math.hypot
  * shields and every label: route_colors.json layer_order) the saved markers' "under" layer, then the
  * alternatives, the driven part and the chosen line ahead, each a casing and a fill, the driven part
  * and the part ahead each in a far and a near layer ([RouteCut]: a cursor step sends only the short
- * near pieces); above every style layer the saved markers' "over" layer, the pins, the puck (cone,
- * dot) and the arrow (beam, glow, arrow, lit lenses). While guiding (the arrow shows) the chosen line
+ * near pieces); above every style layer the saved markers' "over" layer, the traffic lights, the route
+ * step (P21), the pins, the puck (cone, dot) and the arrow (beam, glow, arrow, lit lenses); the style's
+ * labels give way to the browsing dot (P42), every other marker lets them be drawn under it. While guiding (the arrow shows) the chosen line
  * ahead is drawn instead in a copy above the road labels and below the POI and place names
  * ([Ids.GUIDE_ROUTE_ON_TOP]), so road names do not sit on it in the tilted view; the style's shield
  * layers are moved above that copy meanwhile and back when guiding ends ([Ids.GUIDE_SHIELDS]: the
@@ -88,6 +89,8 @@ internal class Layers(context: Context, private val map: MapLibreMap) {
     private val routeSources = RouteSources()
     private var drawnPins: List<MapPin>? = null
     private var drawnLights: List<GeoPoint>? = null
+    /** P21: the step mark drawn now (null: none). */
+    private var drawnStep: GeoPoint? = null
     /** The size each road-name layer had before guiding made it larger ([applyGuideLabels]); empty when none is changed. */
     private val roadLabelSizes = HashMap<String, Float>()
     /** The filter each driving-places layer had before guiding narrowed it ([applyGuideLabels]). */
@@ -184,6 +187,7 @@ internal class Layers(context: Context, private val map: MapLibreMap) {
         drivingNarrowed.clear()
         drawnPins = null
         drawnLights = null
+        drawnStep = null
         drawnSaved = null
         drawnBelow = null
         drawnTheme = null
@@ -347,12 +351,17 @@ internal class Layers(context: Context, private val map: MapLibreMap) {
         shieldsOver = over
     }
 
-    /** [image]: an expression, or a String for one fixed image (MapLibre refuses a bare literal expression there). */
-    private fun marker(id: String, image: Any, filter: Expression, flat: Boolean, rotate: String?): SymbolLayer {
+    /**
+     * [image]: an expression, or a String for one fixed image (MapLibre refuses a bare literal expression there).
+     * Every marker is always drawn (overlap allowed). With [labelsGiveWay] it also takes its room in
+     * MapLibre's placement, so a style label that would touch it is hidden while it is there (P42: the
+     * browsing dot; the app's layers are above every style layer and are placed first).
+     */
+    private fun marker(id: String, image: Any, filter: Expression, flat: Boolean, rotate: String?, labelsGiveWay: Boolean = false): SymbolLayer {
         val props = mutableListOf(
             if (image is Expression) PropertyFactory.iconImage(image) else PropertyFactory.iconImage(image as String),
             PropertyFactory.iconAllowOverlap(true),
-            PropertyFactory.iconIgnorePlacement(true),
+            PropertyFactory.iconIgnorePlacement(!labelsGiveWay),
             PropertyFactory.iconPitchAlignment(if (flat) Property.ICON_PITCH_ALIGNMENT_MAP else Property.ICON_PITCH_ALIGNMENT_VIEWPORT),
             PropertyFactory.iconRotationAlignment(Property.ICON_ROTATION_ALIGNMENT_MAP),
         )
@@ -390,6 +399,14 @@ internal class Layers(context: Context, private val map: MapLibreMap) {
                 PropertyFactory.iconPitchAlignment(Property.ICON_PITCH_ALIGNMENT_VIEWPORT),
                 PropertyFactory.iconRotationAlignment(Property.ICON_ROTATION_ALIGNMENT_VIEWPORT),
             ).apply { minZoom = Ids.LIGHTS_MIN_ZOOM },
+            // P21: the route step the route sheet shows: a white disc ringed in the route's casing (applyTheme), flat on the map
+            CircleLayer(Ids.L_STEP, Ids.SRC_STEP).withProperties(
+                PropertyFactory.circleRadius(STEP_RADIUS_DP),
+                PropertyFactory.circleColor(STEP_FILL),
+                PropertyFactory.circleStrokeWidth(STEP_RING_DP),
+                PropertyFactory.circleStrokeColor(colors.lines(MapTheme.DAY).route.casing),
+                PropertyFactory.circlePitchAlignment(Property.CIRCLE_PITCH_ALIGNMENT_MAP),
+            ),
             SymbolLayer(Ids.L_PINS, Ids.SRC_PINS).withProperties(
                 PropertyFactory.iconImage(get("image")),
                 PropertyFactory.iconAnchor(Property.ICON_ANCHOR_BOTTOM),
@@ -399,11 +416,13 @@ internal class Layers(context: Context, private val map: MapLibreMap) {
                 PropertyFactory.iconPitchAlignment(Property.ICON_PITCH_ALIGNMENT_VIEWPORT),
                 PropertyFactory.iconRotationAlignment(Property.ICON_ROTATION_ALIGNMENT_VIEWPORT),
             ),
-            // Browsing: the cone turns with the compass and lies on the map; the dot stays round.
+            // Browsing: the cone turns with the compass and lies on the map; the dot stays round. P42: the
+            // style's labels give way to the dot (64 dp), not to the cone (176 dp: it would clear a wide
+            // square of names around the user).
             marker(Ids.L_PUCK_CONE, switchCase(night, img("puck_cone_night"), img("puck_cone_day")),
                 all(isPuck, has("cone"), not(stale)), flat = true, rotate = "cone"),
             marker(Ids.L_PUCK, switchCase(stale, img("puck_stale"), night, img("puck_night"), img("puck_day")),
-                isPuck, flat = false, rotate = null),
+                isPuck, flat = false, rotate = null, labelsGiveWay = true),
             // Driving: beam (night map only), glow (stopped), arrow, lit lenses (stopped); all turn with the course and lie on the road.
             marker(Ids.L_BEAM, Ids.marker("arrow_beam"), all(isArrow, not(stale), night), flat = true, rotate = "bearing"),
             marker(Ids.L_GLOW, switchCase(night, img("arrow_brake_glow_night"), img("arrow_brake_glow_day")),
@@ -439,6 +458,11 @@ internal class Layers(context: Context, private val map: MapLibreMap) {
             style.getSourceAs<GeoJsonSource>(Ids.SRC_LIGHTS)?.setGeoJson(FeatureCollection.fromFeatures(points))
             drawnLights = scene.lights
         }
+        if (scene.step != drawnStep) {
+            val features = listOfNotNull(scene.step?.let { Feature.fromGeometry(Point.fromLngLat(it.lon, it.lat)) })
+            style.getSourceAs<GeoJsonSource>(Ids.SRC_STEP)?.setGeoJson(FeatureCollection.fromFeatures(features))
+            drawnStep = scene.step
+        }
         if (scene.saved != drawnSaved) {
             val features = SceneParts.savedInOrder(scene.saved).map(::savedFeature)
             style.getSourceAs<GeoJsonSource>(Ids.SRC_SAVED)?.setGeoJson(FeatureCollection.fromFeatures(features))
@@ -470,20 +494,28 @@ internal class Layers(context: Context, private val map: MapLibreMap) {
         val t = colors.lines(theme)
         for (id in Ids.ROUTE_LINES) {
             val colour = when (id) {
-                Ids.L_ALT_CASING -> t.alternative.casing
-                Ids.L_ALT -> t.alternative.fill
+                Ids.L_ALT_CASING, Ids.L_ALT -> null   // per line, below
                 Ids.L_TRAVELED_CASING, Ids.L_TRAVELED_NEAR_CASING -> t.traveled.casing
                 Ids.L_TRAVELED, Ids.L_TRAVELED_NEAR -> t.traveled.fill
                 Ids.L_ROUTE_CASING, Ids.L_ROUTE_NEAR_CASING -> t.route.casing
                 else -> t.route.fill
-            }
+            } ?: continue
             style.getLayer(id)?.setProperties(PropertyFactory.lineColor(colour))
             style.getLayer(Ids.overview(id))?.setProperties(PropertyFactory.lineColor(colour))
+        }
+        // P23, item 51: a route choice in "alternative", the trip's own route under a stop preview (its line's "trip") in "trip_route"
+        for ((id, casing) in listOf(Ids.L_ALT_CASING to true, Ids.L_ALT to false)) {
+            val choice = if (casing) t.alternative.casing else t.alternative.fill
+            val trip = if (casing) t.tripRoute.casing else t.tripRoute.fill
+            val byLine = switchCase(eq(get(PROP_TRIP), literal(true)), Expression.toColor(literal(trip)), Expression.toColor(literal(choice)))
+            style.getLayer(id)?.setProperties(PropertyFactory.lineColor(byLine))
+            style.getLayer(Ids.overview(id))?.setProperties(PropertyFactory.lineColor(byLine))
         }
         style.getLayer(Ids.L_ROUTE_TOP_CASING)?.setProperties(PropertyFactory.lineColor(t.route.casing))
         style.getLayer(Ids.L_ROUTE_NEAR_TOP_CASING)?.setProperties(PropertyFactory.lineColor(t.route.casing))
         style.getLayer(Ids.L_ROUTE_TOP)?.setProperties(PropertyFactory.lineColor(t.route.fill))
         style.getLayer(Ids.L_ROUTE_NEAR_TOP)?.setProperties(PropertyFactory.lineColor(t.route.fill))
+        style.getLayer(Ids.L_STEP)?.setProperties(PropertyFactory.circleStrokeColor(t.route.casing))
     }
 
     /** Sends only the route sources whose content changed ([RouteSources]); one cursor step: the near pieces. */
@@ -497,7 +529,14 @@ internal class Layers(context: Context, private val map: MapLibreMap) {
             style.getSourceAs<GeoJsonSource>(Ids.SRC_ROUTE_NEAR)?.setGeoJson(FeatureCollection.fromFeatures(features))
         }
         update.alternatives?.let { alternatives ->
-            style.getSourceAs<GeoJsonSource>(Ids.SRC_ALTERNATIVES)?.setGeoJson(lines(alternatives))
+            // P23: each with its choice id, for the tap; item 51: the trip's own route under a stop preview is marked (grey, never tapped)
+            val features = alternatives.mapNotNull { a ->
+                lineFeature(a.points)?.apply {
+                    addNumberProperty(PROP_ID, a.id)
+                    addBooleanProperty(PROP_TRIP, a.tripRoute)
+                }
+            }
+            style.getSourceAs<GeoJsonSource>(Ids.SRC_ALTERNATIVES)?.setGeoJson(FeatureCollection.fromFeatures(features))
         }
     }
 
@@ -704,7 +743,15 @@ internal class Layers(context: Context, private val map: MapLibreMap) {
                 .let { s -> hypot((s.x - p.x).toDouble(), (s.y - p.y).toDouble()) }
             poi to d
         }
-        val (pinId, hitPoi) = SceneParts.tap(pins, saved, SceneParts.nearestPoi(pois))
+        // P23: a route choice under the finger, where it runs apart from the chosen line (on a shared road the tap is
+        // the chosen route's: nothing); item 51's line of the trip's own route is no choice
+        val alternatives = arrayOf(Ids.L_ALT, Ids.L_ALT_CASING, Ids.overview(Ids.L_ALT), Ids.overview(Ids.L_ALT_CASING))
+        val routes = query(*alternatives).mapNotNull { f ->
+            val trip = f.hasProperty(PROP_TRIP) && f.getBooleanProperty(PROP_TRIP)
+            if (!trip && f.hasProperty(PROP_ID)) f.getNumberProperty(PROP_ID).toLong() else null
+        }.distinct()
+        val onChosen = routes.isNotEmpty() && query(*Ids.ROUTE_AHEAD.flatMap { listOf(it, Ids.overview(it)) }.toTypedArray()).isNotEmpty()
+        val (pinId, hitPoi) = SceneParts.tap(pins, saved, SceneParts.nearestPoi(pois), if (onChosen) emptyList() else routes)
         _gestures.tryEmit(MapGesture.Tap(at, pinId, hitPoi))
     }
 
@@ -740,6 +787,15 @@ internal class Layers(context: Context, private val map: MapLibreMap) {
         const val BUBBLE_EDGE_OPACITY = 0.5f
         const val BUBBLE_EDGE_DP = 1.5f
         const val BUBBLE_EDGE_BLUR_DP = 2f
+
+        /** P21: the step mark, a white disc of this radius with a ring of the route's casing this wide (dp). */
+        const val STEP_RADIUS_DP = 7f
+        const val STEP_RING_DP = 3.5f
+        const val STEP_FILL = "#FFFFFF"
+
+        /** An alternative line's properties (Ids.SRC_ALTERNATIVES, P23): its AlternativeLine.id, and true for the trip's own route (item 51). */
+        const val PROP_ID = "id"
+        const val PROP_TRIP = "trip"
 
         /** The "part" of a near piece (Ids.SRC_ROUTE_NEAR). */
         const val PART_DRIVEN = "driven"

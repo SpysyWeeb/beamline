@@ -83,7 +83,14 @@ private fun label(style: MapStyle) = when (style) {
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 internal fun MapStyleSheet(current: MapStyle, onPick: (MapStyle) -> Unit, onClose: () -> Unit) {
-    ModalBottomSheet(onDismissRequest = onClose, sheetState = rememberModalBottomSheetState(skipPartiallyExpanded = true)) {
+    ModalBottomSheet(
+        onDismissRequest = onClose,
+        sheetState = rememberModalBottomSheetState(skipPartiallyExpanded = true),
+        // P41: the app's sheet colour (Material's baseline lavender is not in BeamlineTheme), also under the nav bar now
+        containerColor = MaterialTheme.colorScheme.surface,
+        tonalElevation = 0.dp,
+    ) {
+        SheetWindowBars()
         Column(
             Modifier.fillMaxWidth().verticalScroll(rememberScrollState()).padding(start = 16.dp, end = 16.dp, bottom = 16.dp).navigationBarsPadding().testTag("map-style-sheet"),
             verticalArrangement = Arrangement.spacedBy(14.dp),

@@ -37,7 +37,8 @@ class StatusPresentTest {
         val mall = io.github.spysyweeb.beamline.api.model.Place("Mall store", io.github.spysyweeb.beamline.api.model.GeoPoint(end.lat + 150.0 / 111_320.0, end.lon),
             io.github.spysyweeb.beamline.api.model.PlaceSource.SEARCH)
         val far = status(guiding(banner = arrived, phase = Phase.ARRIVED, stops = listOf(TripStop(mall)))) as GuidanceStatusUi.Arrived
-        assertEquals("Destination 500 ft away", far.awayText, "150 m in the units shown (US: feet, rounded)")
+        // play test P4: the line says what the distance is (it read as a contradiction of "Arrived")
+        assertEquals("Route ends 500 ft from the place", far.awayText, "150 m in the units shown (US: feet, rounded)")
         val near = io.github.spysyweeb.beamline.api.model.Place("Shop", io.github.spysyweeb.beamline.api.model.GeoPoint(end.lat + 90.0 / 111_320.0, end.lon),
             io.github.spysyweeb.beamline.api.model.PlaceSource.SEARCH)
         assertNull((status(guiding(banner = arrived, phase = Phase.ARRIVED, stops = listOf(TripStop(near)))) as GuidanceStatusUi.Arrived).awayText)

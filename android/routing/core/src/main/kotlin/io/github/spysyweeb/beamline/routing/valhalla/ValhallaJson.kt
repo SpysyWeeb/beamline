@@ -82,9 +82,17 @@ object ValhallaRequests {
     }
 
     fun matrix(sources: List<LatLon>, targets: List<LatLon>, costingOptions: JsonObject = JsonObject(emptyMap())) =
+        matrixOf(sources.map { Stop(it) }, targets.map { Stop(it) }, costingOptions)
+
+    /**
+     * Item 51 (rule C8): sources_to_targets with whole stops (a heading and a radius for the car, as a
+     * re-route's origin has them). A different name from [matrix]: an overload on List<Stop> would clash on
+     * the JVM with List<LatLon>.
+     */
+    fun matrixOf(sources: List<Stop>, targets: List<Stop>, costingOptions: JsonObject = JsonObject(emptyMap())) =
         buildJsonObject {
-            put("sources", JsonArray(sources.map { location(Stop(it)) }))
-            put("targets", JsonArray(targets.map { location(Stop(it)) }))
+            put("sources", JsonArray(sources.map { location(it) }))
+            put("targets", JsonArray(targets.map { location(it) }))
             put("costing", COSTING)
             put("costing_options", buildJsonObject { put(COSTING, costingOptions) })
             put("units", "kilometers")

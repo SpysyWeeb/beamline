@@ -35,19 +35,14 @@ import io.github.spysyweeb.beamline.app.online.SpeedPickDialog
 import android.content.Context
 import androidx.activity.compose.BackHandler
 import androidx.compose.foundation.background
-import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
-import androidx.compose.foundation.layout.Column
-import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.WindowInsets
 import androidx.compose.foundation.layout.asPaddingValues
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.navigationBars
-import androidx.compose.foundation.layout.navigationBarsPadding
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.statusBars
-import androidx.compose.foundation.layout.statusBarsPadding
 import androidx.compose.foundation.layout.windowInsetsBottomHeight
 import androidx.compose.foundation.layout.windowInsetsTopHeight
 import androidx.compose.material3.AlertDialog
@@ -56,6 +51,7 @@ import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.DisposableEffect
 import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.SideEffect
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.produceState
@@ -65,10 +61,17 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.layout.boundsInRoot
+import androidx.compose.ui.layout.onGloballyPositioned
 import androidx.compose.ui.layout.onSizeChanged
+import androidx.compose.ui.semantics.LiveRegionMode
+import androidx.compose.ui.semantics.liveRegion
+import androidx.compose.ui.semantics.semantics
+import androidx.compose.ui.platform.LocalAccessibilityManager
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.unit.Dp
+import androidx.compose.ui.unit.LayoutDirection
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.Lifecycle
 import androidx.lifecycle.LifecycleEventObserver
@@ -84,6 +87,9 @@ import io.github.spysyweeb.beamline.app.update.UpdateTexts
 import io.github.spysyweeb.beamline.app.AppGraph
 import io.github.spysyweeb.beamline.app.BuildConfig
 import io.github.spysyweeb.beamline.app.MapStyleState
+import io.github.spysyweeb.beamline.app.handover.HandoverNote
+import io.github.spysyweeb.beamline.app.handover.HandoverRules
+import io.github.spysyweeb.beamline.app.handover.HandoverTexts
 import io.github.spysyweeb.beamline.app.map.FrameRateRequest
 import io.github.spysyweeb.beamline.app.map.PackMap
 import io.github.spysyweeb.beamline.app.settings.SettingsScreen
@@ -91,6 +97,7 @@ import io.github.spysyweeb.beamline.feature.about.AboutEvent
 import io.github.spysyweeb.beamline.feature.about.AboutPackUi
 import io.github.spysyweeb.beamline.feature.about.AboutScreen
 import io.github.spysyweeb.beamline.feature.about.AboutUi
+import io.github.spysyweeb.beamline.feature.about.DriverNoticeScreen
 import io.github.spysyweeb.beamline.feature.about.FIRST_RUN_NOTICE_VERSION
 import io.github.spysyweeb.beamline.feature.about.FirstRunNotice
 import io.github.spysyweeb.beamline.feature.about.LicencesScreen
@@ -99,6 +106,7 @@ import io.github.spysyweeb.beamline.feature.about.SplashReveal
 import io.github.spysyweeb.beamline.feature.about.loadNotices
 import io.github.spysyweeb.beamline.feature.drive.DriveOverlay
 import io.github.spysyweeb.beamline.feature.drive.DrivePresenter
+import io.github.spysyweeb.beamline.feature.drive.DriveUi
 import io.github.spysyweeb.beamline.feature.search.MapPickBar
 import io.github.spysyweeb.beamline.feature.search.MapPickUi
 import io.github.spysyweeb.beamline.feature.search.PlaceSheet
@@ -113,6 +121,8 @@ import io.github.spysyweeb.beamline.feature.states.StatesScreen
 import io.github.spysyweeb.beamline.feature.states.model.Texts as StatesTexts
 import io.github.spysyweeb.beamline.ui.theme.BeamlineIcons
 import io.github.spysyweeb.beamline.ui.theme.BeamlineTheme
+import io.github.spysyweeb.beamline.ui.theme.isSideLayout
+import io.github.spysyweeb.beamline.ui.theme.sidePanelWidth
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.withContext
@@ -184,21 +194,38 @@ fun AppRoot(g: AppGraph, flows: AppFlows, frameRate: FrameRateRequest, screenMax
         val pickerShown = flows.revealDone && !noticeNeeded && !onlineChoiceNeeded && showPicker && !flows.firstRunClosed
         // S8 / SP1: the pill (and G's chip with it) while no trip exists and no search, list or pick is open.
         val pillShown = (phase == Phase.IDLE || phase == Phase.RESUME_OFFERED) && !searchOpen && pick == null
+        // P10, F30 (W3): the Undo offer standing, while it can still do something for the trip as it is
+        val undoShown = flows.undoOffer?.takeIf { it.stillUseful(trip) }
+        // P31, F34: the arrival card says "Saved" once the destination is a saved place
+        val destinationSaved = remember(trip.stops, savedPlaces, flows.arrivalSavedId) { flows.destinationSaved() }
         var sheetHeight by remember { mutableStateOf(0.dp) }
         var resultsHeight by remember { mutableStateOf(0.dp) }
         // their remaining slides (LocalSheetLag): the camera gets the heights they are going to at once
         val placeLag = remember { mutableIntStateOf(0) }
         val resultsLag = remember { mutableIntStateOf(0) }
         var pillHeight by remember { mutableStateOf(0.dp) }
+        // P7 (0.1.40): the window's size (measured on the root box); where the pill's two columns end (from the
+        // window's top); where the drive overlay's top stack ends (banner, chip, stop card)
+        var windowPx by remember { mutableStateOf(IntSize.Zero) }
+        var pillStartBottom by remember { mutableStateOf(0.dp) }
+        var pillEndBottom by remember { mutableStateOf(0.dp) }
+        var overlayTop by remember { mutableStateOf(0.dp) }
+        // K1b (P8): the search bar's bottom edge from the top of the window, for the camera's top inset over a place sheet
+        var searchBarBottom by remember { mutableStateOf(0.dp) }
         // S11: the results list at the bottom while browsing, no sheet, screen or pick over it
-        val resultsShown = results != null && sheetPlace == null && pick == null && top == null &&
+        val resultsShown = results != null && results?.stop == null && sheetPlace == null && pick == null && top == null &&
             (phase == Phase.IDLE || phase == Phase.RESUME_OFFERED)
+        // item 51 (rule S12): the stop results' window over the trip's map (in every trip phase), no sheet, screen or pick over it
+        val stopShown = results?.stop != null && sheetPlace == null && pick == null && top == null
+        var stopHeight by remember { mutableStateOf(0.dp) }
+        val stopLag = remember { mutableIntStateOf(0) }
         // S10: the statuses follow the clock (each minute)
         val minute = now / 60_000L
         LaunchedEffect(minute) { g.search.refreshHours() }
         // item 47: the drive time for the place window's Directions (the session answers in IDLE only)
         val hasFix by remember { g.sharedPositions.latest.map { it != null }.distinctUntilChanged() }.collectAsState(initial = false)
-        LaunchedEffect(sheetPlace, trip.phase == Phase.IDLE, hasFix) {
+        // P17: keyed on the point, so a dropped pin's street line coming in does not ask a second time
+        LaunchedEffect(sheetPlace?.point, trip.phase == Phase.IDLE, hasFix) {
             val p = sheetPlace
             if (p != null && trip.phase == Phase.IDLE) {
                 delay(ESTIMATE_SETTLE_MS) // audit F26: a run of taps on places asks once, for the last one
@@ -208,14 +235,33 @@ fun AppRoot(g: AppGraph, flows: AppFlows, frameRate: FrameRateRequest, screenMax
         var creditRowHeight by remember { mutableStateOf(0.dp) }
         val density = LocalDensity.current
         val statusBarTop = WindowInsets.statusBars.asPaddingValues().calculateTopPadding()
+        // P1 (0.1.40): the map's own chrome keeps clear of the system bars and a display cutout on every side
+        val safe = mapSafeInsets()
+        // P7 (0.1.40): on its side (the drive overlay's rule, :ui:theme) the place window, the results list and
+        // the stop results go into a panel on the start side, as wide as the overlay's; my-location stays at the bottom end
+        val windowW = with(density) { windowPx.width.toDp() }
+        val windowH = with(density) { windowPx.height.toDp() }
+        val panel: Dp? = if (isSideLayout(windowW, windowH)) sidePanelWidth(windowW) else null
+        val sheetShown = sheetPlace != null && pick == null
+        val sheetInPanel = panel != null && (sheetShown || resultsShown || stopShown)
         // What the camera pads by: the overlay, the status bar's band, and the credit row above a sheet (K2).
-        val cameraInsets = AppRules.cameraInsets(flows.overlayInsets, statusBarTop.value, creditRowHeight.value + 8f, driving,
+        // P4: ARRIVED counts the destination's window (guideCamera: guiding and re-routing only leave it out).
+        val cameraInsets = AppRules.cameraInsets(flows.overlayInsets, statusBarTop.value, creditRowHeight.value + 8f, AppRules.guideCamera(phase),
             placeSheet = when {
-                sheetPlace != null && pick == null -> kotlin.math.round(sheetHeight.value + placeLag.intValue / density.density)
+                sheetShown -> kotlin.math.round(sheetHeight.value + placeLag.intValue / density.density)
                 resultsShown -> kotlin.math.round(resultsHeight.value + resultsLag.intValue / density.density)
                 else -> 0f
             },
-            topChrome = if (resultsShown && pillShown) pillHeight.value else 0f)
+            // K1b (P8): the search bar over a place sheet; S11: the pill's block over the results
+            topChrome = AppRules.cameraTopChrome(pillShown, resultsShown, sheetShown = sheetShown,
+                pillBlock = pillHeight.value, barBottom = searchBarBottom.value),
+            // P7: a browsing window in the side panel; P1: a navigation bar or a cutout at the sides
+            sheetPanel = if (sheetInPanel) panel.value else 0f,
+            safeLeft = safe.getLeft(density, LayoutDirection.Ltr) / density.density,
+            safeRight = safe.getRight(density, LayoutDirection.Ltr) / density.density,
+            // item 51: the stop results' window, also while driving (the camera is top-down then); on its side it
+            // is in the panel, which the stop overlay's start inset keeps clear
+            stopSheet = if (stopShown && panel == null) kotlin.math.round(stopHeight.value + stopLag.intValue / density.density) else 0f)
         // item 47: the insets settle for INSETS_SETTLE_MS before the camera takes them; since 0.1.39 the
         // sheets report the height they are going to at once (LocalSheetLag), so this only merges the
         // first frames of a change
@@ -246,73 +292,76 @@ fun AppRoot(g: AppGraph, flows: AppFlows, frameRate: FrameRateRequest, screenMax
         // The root's Back comes first so that the screens' own handlers (About, licences, States) win.
         BackHandler(enabled = flows.canGoBack()) { flows.onBack() }
 
-        Box(Modifier.fillMaxSize()) {
+        Box(Modifier.fillMaxSize().onSizeChanged { windowPx = it }) {
             PackMap(g, flows, frameRate, Modifier.fillMaxSize())
 
             // The map fills the whole screen, behind the status bar and the navigation bar (the owner,
             // 2026-11-24: "We want to take up the full screen"); the bars' icons follow the map's theme.
 
             if (mapStyle is MapStyleState.Failed) {
-                MessageCard((mapStyle as MapStyleState.Failed).message, night, "States" to flows::openStates, onDismiss = {})
+                // P1 (0.1.40): under the top chrome and clear of a navigation bar or a cutout at the sides (it had no inset)
+                MapTopCard(safe, top = if (pillShown) pillHeight else statusBarTop + 8.dp, Modifier.align(Alignment.TopStart)) {
+                    MessageCard((mapStyle as MapStyleState.Failed).message, night, "States" to flows::openStates, onDismiss = {})
+                }
             }
 
-            // ---- the top of the map (SP2)
+            // ---- the top of the map (SP2); P1: clear of the bars and a cutout on every side
             if (pillShown) {
-                Column(Modifier.align(Alignment.TopStart).onSizeChanged { pillHeight = with(density) { it.height.toDp() } }
-                    .statusBarsPadding().padding(8.dp).fillMaxWidth(), verticalArrangement = Arrangement.spacedBy(8.dp)) {
-                    Row(verticalAlignment = Alignment.Top) {
-                        Column(Modifier.weight(1f), verticalArrangement = Arrangement.spacedBy(8.dp)) {
-                            // while a search's results show, the bar keeps its words and an X that ends them
-                            SearchBar(onClick = { flows.openSearch(SearchMode.GO_TO, typed = results?.query) }, modifier = Modifier.fillMaxWidth(),
-                                query = results?.query, onClear = flows::closeResults)
-                            // S11b: the map dragged over results: "Search this area" (the owner, 2026-11-24)
-                            results?.let { r -> flows.areaSearch?.let { a -> ChipButton(areaChip(a, r.query), night) { flows.onSearchArea() } } }
-                            ProblemNotice(set.issues, night)
-                            chip?.let { c -> ChipButton(c, night) { flows.openStates() } }
-                            // outside every installed state, zoomed in: say why the map is plain, one tap to States
-                            if (chip == null && flows.noMapHere) ChipButton(NO_MAP_HERE, night) { flows.openStates() }
-                            // item 41: a downloaded update (a tap installs it; never while guiding), then "Updated to"
-                            (appUpdate as? io.github.spysyweeb.beamline.download.AppUpdater.State.Ready)?.takeIf { !driving }?.let { r ->
-                                ChipButton(UpdateTexts.readyChip(r.update.versionName), night) { g.appUpdates.install(activity, guiding = driving) }
-                            }
-                            updatedNote?.let { n -> ChipButton(io.github.spysyweeb.beamline.feature.states.MapChip(n, "$n. Tap to close"), night) { g.appUpdates.dismissUpdatedNote() } }
+                MapTopChrome(safe, onHeight = { pillHeight = it }, Modifier.align(Alignment.TopStart),
+                    onStartBottom = { pillStartBottom = it }, onEndBottom = { pillEndBottom = it },
+                    start = {
+                        // while a search's results show, the bar keeps its words and an X that ends them
+                        SearchBar(onClick = { flows.openSearch(SearchMode.GO_TO, typed = results?.query) },
+                            modifier = Modifier.fillMaxWidth().onGloballyPositioned { searchBarBottom = with(density) { it.boundsInRoot().bottom.toDp() } },
+                            query = results?.query, onClear = flows::closeResults)
+                        // S11b: the map dragged over results: "Search this area" (the owner, 2026-11-24)
+                        results?.let { r -> flows.areaSearch?.let { a -> ChipButton(areaChip(a, r.query), night) { flows.onSearchArea() } } }
+                        ProblemNotice(set.issues, night)
+                        chip?.let { c -> ChipButton(c, night) { flows.openStates() } }
+                        // outside every installed state, zoomed in: say why the map is plain, one tap to States
+                        if (chip == null && flows.noMapHere) ChipButton(NO_MAP_HERE, night) { flows.openStates() }
+                        // item 41: a downloaded update (a tap installs it; never while guiding), then "Updated to"
+                        (appUpdate as? io.github.spysyweeb.beamline.download.AppUpdater.State.Ready)?.takeIf { !driving }?.let { r ->
+                            ChipButton(UpdateTexts.readyChip(r.update.versionName), night) { g.appUpdates.install(activity, guiding = driving) }
                         }
-                        Gap(8)
-                        Column(verticalArrangement = Arrangement.spacedBy(10.dp)) {
-                            // States is in Settings only (the owner, 2026-11-21: one button fewer on the map)
-                            RoundButton(BeamlineIcons.Settings, "Settings", night, onClick = flows::openSettings)
-                            // 0.1.34 (the owner, 2026-11-25): the map style on the map; not while guiding
-                            if (!driving) RoundButton(MapStyleIcon, "Map style", night) { styleSheetOpen = true }
-                        }
-                    }
-                }
+                        updatedNote?.let { n -> ChipButton(io.github.spysyweeb.beamline.feature.states.MapChip(n, "$n. Tap to close"), night) { g.appUpdates.dismissUpdatedNote() } }
+                    },
+                    end = {
+                        // States is in Settings only (the owner, 2026-11-21: one button fewer on the map)
+                        RoundButton(BeamlineIcons.Settings, "Settings", night, onClick = flows::openSettings)
+                        // 0.1.34 (the owner, 2026-11-25): the map style on the map; not while guiding
+                        if (!driving) RoundButton(MapStyleIcon, "Map style", night) { styleSheetOpen = true }
+                    })
             }
 
-            // ---- the bottom: credit and my-location above the place sheet, the drive overlay's
-            // sheets or the pick bar (the credit stays visible above the trip bar, item 4).
+            // ---- the bottom: credit and my-location above the place sheet, the stop results, the drive overlay's
+            // sheets or the pick bar (the credit stays visible above the trip bar, item 4); on its side beside the
+            // panel (P7); clear of the bars and a cutout at the sides (P1)
             val overlayBottom = flows.overlayInsets.bottom.dp
-            val sheetShown = sheetPlace != null && pick == null
-            val bottomPad = when {
-                pick != null -> pickBarRoom(pick)
-                sheetShown -> maxOf(sheetHeight, overlayBottom)
-                resultsShown -> maxOf(resultsHeight, overlayBottom)
-                else -> overlayBottom
-            }
-            Column(
-                // On its side the drive overlay's panel takes the start of the window: keep clear of it.
-                Modifier.align(Alignment.BottomCenter).fillMaxWidth().padding(start = flows.overlayInsets.start.dp, bottom = bottomPad)
-                    .let { if (bottomPad == 0.dp) it.navigationBarsPadding() else it },
-                verticalArrangement = Arrangement.spacedBy(8.dp),
-            ) {
-                flows.locationMessage?.let { m ->
-                    Box(Modifier.padding(horizontal = 8.dp)) {
-                        MessageCard(m, night, if (m.contains("app's settings")) "App settings" to actions.openAppSettings else null) { flows.locationMessage = null }
-                    }
-                }
-                Row(
-                    Modifier.fillMaxWidth().padding(horizontal = 8.dp).onSizeChanged { creditRowHeight = with(density) { it.height.toDp() } },
-                    verticalAlignment = Alignment.Bottom,
-                ) {
+            val pickRoom = pick?.let { pickBarRoom(it) }
+            val room = AppRules.bottomChrome(
+                sheetDp = when {
+                    stopShown -> stopHeight.value   // item 51: the credit row rides above the stop results' window
+                    sheetShown -> sheetHeight.value
+                    resultsShown -> resultsHeight.value
+                    else -> null
+                },
+                panelDp = panel?.value, overlay = flows.overlayInsets, pickDp = pickRoom?.value)
+            // P7: upright, left out while a raised window would bring it to Settings and Map style (the end column)
+            val locationShown = !driving &&
+                AppRules.locationFits(room, windowH.value, if (pillShown) pillEndBottom.value else statusBarTop.value)
+            val locationMessage = flows.locationMessage
+            // item 52 (H4-H7): a handed-over link's note with "Add a state", after a location message
+            val linkNote = flows.handoverNote
+            MapBottomChrome(
+                safe, start = room.startDp.dp, bottom = room.bottomDp.dp, onRowHeight = { creditRowHeight = it },
+                modifier = Modifier.align(Alignment.BottomCenter),
+                message = when {
+                    locationMessage != null -> messageSlot(locationMessage, night, actions) { flows.locationMessage = null }
+                    linkNote != null -> noteSlot(linkNote, night, onStates = { flows.handoverNote = null; flows.openStates() }) { flows.handoverNote = null }
+                    else -> null
+                },
+                credit = {
                     val credit = (mapStyle as? MapStyleState.Ready)?.map?.creditLine ?: ""
                     // While driving, D's map buttons (Overview, Recenter) sit at the bottom end: keep clear of them.
                     Credit(
@@ -323,19 +372,9 @@ fun AppRoot(g: AppGraph, flows: AppFlows, frameRate: FrameRateRequest, screenMax
                         onOpen = { mapDataOpen = true },
                         modifier = Modifier.weight(1f).padding(end = AppRules.creditEndPaddingDp(driving, recenterShown, density.fontScale).dp),
                     )
-                    if (!driving) {
-                        // K1/K1a: my-location holds the compass (follow -> follow turned by the compass -> follow north up)
-                        val compassFollow by g.director.compassFollow.collectAsState()
-                        LocationButton(
-                            following = camera.mode == io.github.spysyweeb.beamline.api.map.CameraMode.BROWSE_FOLLOW,
-                            compass = compassFollow,
-                            bearing = g.mapBearing,
-                            night = night,
-                            onClick = actions.myLocation,
-                        )
-                    }
-                }
-            }
+                },
+                location = if (locationShown) locationSlot(g, camera.mode == CameraMode.BROWSE_FOLLOW, night, actions) else null,
+            )
 
             // ---- the drive overlay (D): banner, sheets, trip bar; hidden (not closed) during a pick,
             // and while a screen covers the map (States from the notification or Add stop's search
@@ -346,18 +385,59 @@ fun AppRoot(g: AppGraph, flows: AppFlows, frameRate: FrameRateRequest, screenMax
                     trip, units, now, ZoneId.systemDefault(), camera, flows.stopsEditorOpen,
                     g.cards.shown(g.clock.elapsedMs()), precise,
                 ).let { d ->
+                    // P21: the step the map shows, while it is one of the selected route's
+                    // (DriveUi.planning is a :feature:drive property: no smart cast in :app, safe calls)
+                    val i = AppRules.shownStep(flows.shownStep, trip)
+                    if (i == null) d else d.planning?.let { p -> d.copy(planning = p.copy(shownStep = i)) } ?: d
+                }.let { d ->
+                    // P10, F30: a removed stop's Undo in the open stops editor's note line
+                    AppRules.withStopUndo(d, undoShown?.takeIf { it.inStopsEditor }?.text)
+                }.let { d ->
+                    // P31, F34: the arrival card's "Saved"
+                    AppRules.withDestinationSaved(d, destinationSaved)
+                }.let { d ->
                     // item 32: with Contribute to OpenStreetMap on, a tap on the speed sign reports the posted limit
                     if (online.osmAllowed) d.copy(guidance = d.guidance?.let { gu -> gu.copy(speed = gu.speed?.copy(canReport = true)) }) else d
                 }
+                // P39: the overlay holds the status bar's icons while its dark banner is at the top (the stop overlay
+                // shows the same banner); MainActivity then leaves the status bar alone after a rotation (BarIconsAfterRotation)
+                val darkTop = AppRules.driveDarkTop(drive.guidance)
+                SideEffect { flows.driveDarkTop = darkTop }
                 // D8: the speed pair stays above the credit's short line while it shows, then slides down.
                 val creditUp = AppRules.creditShown(phase, now, flows.creditUntilMs) &&
                     AppRules.shortCredit((mapStyle as? MapStyleState.Ready)?.map?.creditLine ?: "") != null
-                // audit F28: the drive screens keep their heights, scroll and "Show all steps" while a
-                // screen covers them (Add stop, Change start), and find them again after
-                driveState.SaveableStateProvider(DRIVE_STATE_KEY) {
-                    DriveOverlay(drive, onEvent = flows::onDriveEvent, onInsets = flows::onInsets, modifier = Modifier.fillMaxSize(), creditShown = creditUp)
+                if (!stopShown) {
+                    // audit F28: the drive screens keep their heights, scroll and "Show all steps" while a
+                    // screen covers them (Add stop, Change start, the stop results), and find them again after.
+                    // P7: its top stack (banner, chip, stop card) caps the browsing windows (sheetRoomDp).
+                    driveState.SaveableStateProvider(DRIVE_STATE_KEY) {
+                        DriveOverlay(drive, onEvent = flows::onDriveEvent, onInsets = flows::onInsets, modifier = Modifier.fillMaxSize(), creditShown = creditUp,
+                            onTopStack = { overlayTop = it.dp })
+                    }
+                } else {
+                    // item 51 (rule S12): over the stop results only the top (banner, GPS chip, stop card) and the speed
+                    // pair above the window; no trip bar, sheets, map buttons (Recenter: the camera comes back by
+                    // itself, K8), road label or stops editor. In PLANNING and CHOOSING it reports top-only insets.
+                    // On its side the window is in the panel (stopWindowDp 0: the overlay reports the panel's start).
+                    driveState.SaveableStateProvider(DRIVE_STOP_KEY) {
+                        DriveOverlay(DriveUi(guidance = drive.guidance?.copy(showRecenter = false)), onEvent = flows::onDriveEvent,
+                            onInsets = flows::onInsets, modifier = Modifier.fillMaxSize(), creditShown = creditUp,
+                            stopWindowDp = if (panel == null) stopHeight.value else 0f, onTopStack = { overlayTop = it.dp })
+                    }
                 }
+            } else {
+                SideEffect { flows.driveDarkTop = false }
             }
+            // P7: the room a window may take: under the top chrome over it (upright the whole top row, on its side
+            // the search pill's own column), at least its lowest height, never over the drive overlay's banner
+            val chromeOver = when {
+                !pillShown -> statusBarTop
+                panel != null -> pillStartBottom
+                else -> pillHeight
+            }
+            val sheetMax = AppRules.sheetRoomDp(windowH.value, chromeOver.value, overlayTop.value,
+                AppRules.SHEET_MIN_ROOM_DP * maxOf(1f, density.fontScale))?.dp ?: Dp.Infinity
+            val sheetAlign = if (panel != null) Alignment.BottomStart else Alignment.BottomCenter
             // ---- the place sheet, above the route sheet and the trip bar (a marker or POI tapped
             // while a trip exists offers "Add stop"); measured so the credit stays above it.
             if (sheetShown) {
@@ -371,15 +451,23 @@ fun AppRoot(g: AppGraph, flows: AppFlows, frameRate: FrameRateRequest, screenMax
                         // item 47: "Directions · 6 min" from the session's estimate for this very place
                         .let { ui -> trip.estimate?.takeIf { phase == Phase.IDLE && it.point == ui.place.point }?.let { ui.copy(driveTimeText = units.duration(it.timeS)) } ?: ui }
                 }
-                Box(Modifier.align(Alignment.BottomCenter).fillMaxWidth().onSizeChanged { sheetHeight = with(density) { it.height.toDp() } }) {
+                // P7: on its side in the start panel; the call stays at its place, so a turn keeps the window's height
+                MapSheetBox(panel, safe, sheetMax, onHeight = { sheetHeight = it }, Modifier.align(sheetAlign)) {
                     CompositionLocalProvider(LocalSheetLag provides placeLag) { PlaceSheet(sheet, onEvent = { e -> flows.onSheetEvent(e, sheet) }) }
                 }
                 // the place window above the route sheet: its Back first (the route sheet's own Back comes before the app's)
                 BackHandler { flows.onBack() }
             }
             if (resultsShown) {
-                Box(Modifier.align(Alignment.BottomCenter).fillMaxWidth().onSizeChanged { resultsHeight = with(density) { it.height.toDp() } }) {
+                MapSheetBox(panel, safe, sheetMax, onHeight = { resultsHeight = it }, Modifier.align(sheetAlign)) {
                     CompositionLocalProvider(LocalSheetLag provides resultsLag) { ResultsSheet(results!!, onEvent = flows::onResultsEvent) }
+                }
+            }
+            // item 51 (rule S12): the stop results' window ("Working out detours...", "+N min", the card with Add stop);
+            // P7: under the banner (sheetMax keeps it below the overlay's top stack), on its side in the start panel
+            if (stopShown) {
+                MapSheetBox(panel, safe, sheetMax, onHeight = { stopHeight = it }, Modifier.align(sheetAlign)) {
+                    CompositionLocalProvider(LocalSheetLag provides stopLag) { ResultsSheet(results!!, onEvent = flows::onResultsEvent) }
                 }
             }
             if (pick != null) {
@@ -455,7 +543,8 @@ fun AppRoot(g: AppGraph, flows: AppFlows, frameRate: FrameRateRequest, screenMax
                             }
                             notices?.let { LicencesScreen(it, onBack = { flows.pop(Layer.Licences) }) }
                         }
-                        Layer.DriverNotice -> FirstRunNotice(onAccept = { flows.pop(Layer.DriverNotice) })
+                        // P59: the notice read again from About: a page with Back and its title, nothing to accept
+                        Layer.DriverNotice -> DriverNoticeScreen(onBack = { flows.pop(Layer.DriverNotice) })
                         Layer.States -> StatesScreen(g.getPacks, StatesMode.MANAGE, onClose = { flows.pop(Layer.States) })
                         // Batch O1 (docs/online-design.md 4.1, 4.5): the report form and My reports
                         is Layer.Report -> {
@@ -567,15 +656,18 @@ fun AppRoot(g: AppGraph, flows: AppFlows, frameRate: FrameRateRequest, screenMax
                 )
             }
 
-            // R4: "Trip ended" with Undo, then "Continuing the trip..." (in its place while it shows: one bar at a time)
+            // W4: one bar at a time: R4's "Trip ended" with Undo, then "Continuing the trip..."; P28's Back hint;
+            // the Undo offer (P10, F30, P58; not while it shows in the open stops editor); then a plain message.
+            // P7: centred in the map beside the side panel on its side (the drive overlay's or the browsing one).
             val endBar = AppRules.endBar(flows.tripEnded, flows.continuing, trip.phase, flows.endedText)
-            if (endBar != null) {
-                Snackbar(endBar, night, Modifier.align(Alignment.BottomCenter).navigationBarsPadding().padding(bottom = overlayBottom + 88.dp),
-                    action = if (endBar != CONTINUING_TRIP) UNDO to flows::undoEnd else null)
-            } else {
-                flows.snackbar?.let { s ->
-                    Snackbar(s, night, Modifier.align(Alignment.BottomCenter).navigationBarsPadding().padding(bottom = overlayBottom + 88.dp))
-                }
+            val backHint = flows.backArmedAtMs?.let { AppRules.backHint(trip.phase) }
+            val undoBar = undoShown?.takeUnless { it.inStopsEditor && flows.stopsEditorOpen && pick == null && top == null && !stopShown }
+            val barPlace = Modifier.align(Alignment.BottomCenter).snackbarPlace(start = room.startDp.dp, bottom = overlayBottom + 88.dp)
+            when {
+                endBar != null -> Snackbar(endBar, night, barPlace, action = if (endBar != CONTINUING_TRIP) UNDO to flows::undoEnd else null)
+                backHint != null -> Snackbar(backHint, night, barPlace)
+                undoBar != null -> Snackbar(undoBar.text, night, barPlace, action = UNDO to flows::takeUndo)
+                else -> flows.snackbar?.let { s -> Snackbar(s, night, barPlace) }
             }
 
             // ---- start-up order (item 3): reveal over the map, the driver notice, "Choose your state"
@@ -605,14 +697,52 @@ fun AppRoot(g: AppGraph, flows: AppFlows, frameRate: FrameRateRequest, screenMax
                 flows.tripEnded = null
             }
         }
+        // W3: the Undo offer goes after UNDO_BAR_MS, or the longer time the phone's accessibility settings ask for
+        val accessibility = LocalAccessibilityManager.current
+        LaunchedEffect(flows.undoOffer?.seq) {
+            val seq = flows.undoOffer?.seq ?: return@LaunchedEffect
+            delay(accessibility?.calculateRecommendedTimeoutMillis(AppRules.UNDO_BAR_MS, containsText = true, containsControls = true) ?: AppRules.UNDO_BAR_MS)
+            if (flows.undoOffer?.seq == seq) flows.undoOffer = null
+        }
+        // P28: a second Back within BACK_AGAIN_MS leaves the app; then the hint goes
+        LaunchedEffect(flows.backArmedAtMs) {
+            if (flows.backArmedAtMs != null) {
+                delay(AppRules.BACK_AGAIN_MS)
+                flows.backArmedAtMs = null
+            }
+        }
         LaunchedEffect(trip.phase) {
             if (trip.phase != Phase.IDLE) { flows.tripEnded = null; flows.continuing = false }
+            // P28: a reroute between the two presses (the same hint) keeps the first Back; another phase ends it
+            if (!AppRules.backArmKept(flows.backArmedIn, trip.phase)) flows.backArmedAtMs = null
+            // P31: the arrival's saved flag belongs to that arrival
+            if (trip.phase != Phase.ARRIVED) flows.arrivalSavedId = null
+            // W3 (P58): an offer about browsing goes when a trip begins
+            if (trip.phase != Phase.IDLE && flows.undoOffer?.idleOnly == true) flows.undoOffer = null
             // audit F21: the stops editor belongs to a trip being planned or driven; arrival, a resume
             // offer or the trip's end by any path closes it (else it came back on the next trip)
             if (trip.phase == Phase.IDLE || trip.phase == Phase.ARRIVED || trip.phase == Phase.RESUME_OFFERED) flows.stopsEditorOpen = false
         }
         // audit F33: the map style sheet does not wait under a drive to come back after it
         LaunchedEffect(driving) { if (driving) styleSheetOpen = false }
+        // item 52 (H4): a link handed over by another app opens once the map can take it: after the first-run steps,
+        // the installed states scanned, and nothing of the user's open (a form, a dialog, a pick, a search to save)
+        val linkReady = HandoverRules.ready(
+            revealDone = flows.revealDone, noticeAccepted = !noticeNeeded, onlineChoiceMade = !onlineChoiceNeeded,
+            pickerShown = pickerShown, scanned = set.scanned,
+            busy = HandoverRules.busy(flows.stack.toList(), saveDialog = savedUi.dialog != null, mapPick = savedUi.mapPick != null,
+                publicNotice = flows.notePending != null || flows.editNoticeShown, saveSearch = searchUi.mode == SearchMode.SAVE),
+        )
+        LaunchedEffect(flows.pendingLink?.seq, linkReady) { if (linkReady) flows.runPendingLink() }
+        // K8: a link that opens something closes the map style sheet and the map data dialog (AppRoot's own)
+        LaunchedEffect(flows.linkClears) {
+            if (flows.linkClears > 0) {
+                styleSheetOpen = false
+                mapDataOpen = false
+            }
+        }
+        // K9: a note belongs to the moment it was said: a change between browsing, a preview, guiding and arrival ends it
+        LaunchedEffect(phaseGroup) { flows.handoverNote = null }
         // "Continuing the trip..." ends with the phase (above); a cap in case the session never leaves IDLE
         LaunchedEffect(flows.continuing) {
             if (flows.continuing) {
@@ -645,6 +775,24 @@ fun AppRoot(g: AppGraph, flows: AppFlows, frameRate: FrameRateRequest, screenMax
             g.getPacks.showOnMapDone()
         }
     }
+}
+
+/** The bottom row's location message ("Location is off ...") with its action (MapBottomChrome's message slot). */
+private fun messageSlot(m: String, night: Boolean, actions: RootActions, onDismiss: () -> Unit): @Composable () -> Unit = {
+    MessageCard(m, night, if (m.contains("app's settings")) "App settings" to actions.openAppSettings else null, onDismiss)
+}
+
+/** Item 52: the line about a handed-over link, with "Add a state" when it helps; TalkBack says it when it comes. */
+private fun noteSlot(n: HandoverNote, night: Boolean, onStates: () -> Unit, onDismiss: () -> Unit): @Composable () -> Unit = {
+    Box(Modifier.semantics { liveRegion = LiveRegionMode.Polite }) {
+        MessageCard(n.text, night, if (n.states) HandoverTexts.ADD_STATE to onStates else null, onDismiss)
+    }
+}
+
+/** K1/K1a: my-location, which holds the compass (follow -> follow turned by the compass -> follow north up); MapBottomChrome's location slot. */
+private fun locationSlot(g: AppGraph, following: Boolean, night: Boolean, actions: RootActions): @Composable () -> Unit = {
+    val compassFollow by g.director.compassFollow.collectAsState()
+    LocationButton(following = following, compass = compassFollow, bearing = g.mapBearing, night = night, onClick = actions.myLocation)
 }
 
 /** About (2.8): version, style, installed maps with their sizes, every credit. */
@@ -713,6 +861,8 @@ internal const val UNDO = "Undo"
 internal const val CONTINUING_CAP_MS = 20_000L
 /** Audit F28: the drive screens' saved state while a screen covers them. */
 private const val DRIVE_STATE_KEY = "drive"
+/** Item 51: the drive overlay drawn over the stop results (its own saved state; the main one's is kept meanwhile). */
+private const val DRIVE_STOP_KEY = "drive-stop"
 /** Audit F26: how long a place window stays before its drive time is asked. */
 internal const val ESTIMATE_SETTLE_MS = 350L
 

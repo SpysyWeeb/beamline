@@ -4,6 +4,7 @@ import io.github.spysyweeb.beamline.api.data.RoutingSet
 import io.github.spysyweeb.beamline.routing.engine.EngineException
 import io.github.spysyweeb.beamline.routing.engine.RoutingEngine
 import io.github.spysyweeb.beamline.routing.model.LatLon
+import io.github.spysyweeb.beamline.routing.model.Route
 import io.github.spysyweeb.beamline.routing.model.RouteRequest
 import io.github.spysyweeb.beamline.routing.model.Stop
 import io.github.spysyweeb.beamline.routing.planner.AddressTies
@@ -17,6 +18,7 @@ import io.github.spysyweeb.beamline.routing.planner.TileCoverage
 import io.github.spysyweeb.beamline.routing.preset.Preset
 import io.github.spysyweeb.beamline.routing.preset.PresetSet
 import io.github.spysyweeb.beamline.routing.valhalla.ValhallaRequests
+import io.github.spysyweeb.beamline.routing.valhalla.ValhallaResponses
 import java.io.File
 
 /**
@@ -102,7 +104,7 @@ class EngineRouteService(
      * trace_attributes call per intersection where a lane may end in a turn, at most
      * lane_warning.max_calls; a failed call only drops that warning).
      */
-    fun forGuidance(generation: Long, set: RoutingSet, plan: PlanResult.Ok): GuideAnswer {
+    fun forGuidance(generation: Long, set: RoutingSet, plan: PlanResult.Ok, known: RouteLights? = null): GuideAnswer {
         val osrm = osrm(generation, set, plan.chosen)
         val lanes = try {
             val e = engineFor(generation, set)
@@ -110,15 +112,20 @@ class EngineRouteService(
         } catch (x: Exception) {
             LaneWarnings.NONE
         }
-        // item 22: the traffic lights on the route (one more trace_attributes call per stretch; a failure: none);
-        // item 36: and the packs' lights at its junctions
-        val lights = try {
-            val e = engineFor(generation, set)
-            RouteLights.build(RouteGeometry(plan.route), signals) { req -> e.traceAttributes(req) }
-        } catch (x: Exception) {
-            RouteLights.NONE
-        }
+        // item 22: the traffic lights on the route, unless the steps preview asked them already (audit F40, [known])
+        val lights = known ?: lights(generation, set, plan.route)
         return GuideAnswer(osrm, lanes, lights)
+    }
+
+    /**
+     * Item 22: the traffic lights of [route] (one trace_attributes call per stretch; a failure: none);
+     * item 36: and the packs' lights at its junctions. Audit F40: also for the selected route's steps preview.
+     */
+    fun lights(generation: Long, set: RoutingSet, route: Route): RouteLights = try {
+        val e = engineFor(generation, set)
+        RouteLights.build(RouteGeometry(route), signals) { req -> e.traceAttributes(req) }
+    } catch (x: Exception) {
+        RouteLights.NONE
     }
 
     /** A plan and, when it worked, its OSRM form and lane warnings: what a re-route or a change during guidance needs. */
@@ -137,6 +144,21 @@ class EngineRouteService(
     /** Rule C6: the quickest order of [points] (the origin first, the destination kept last); null when none connects. */
     fun bestOrder(generation: Long, set: RoutingSet, points: List<LatLon>, preset: Preset): StopOrder? =
         StopOrderer(engineFor(generation, set), presets).bestOrder(points, keepLast = true, preset)
+
+    /**
+     * Item 51 (rule C8): one sources_to_targets call with the preset's costing options (a pool's first
+     * candidate, as C6; no fallback options: a place the exclusions leave unconnected is a null cell); times in
+     * seconds, null = no connection. Throws EngineException (also for an answer that cannot be read).
+     */
+    fun times(generation: Long, set: RoutingSet, sources: List<Stop>, targets: List<Stop>, preset: Preset): List<List<Double?>> {
+        val opts = if (preset.isPool) preset.candidates.first() else preset.costingOptions
+        val body = engineFor(generation, set).matrix(ValhallaRequests.matrixOf(sources, targets, opts).toString())
+        return try {
+            ValhallaResponses.parseMatrix(body).timesS
+        } catch (e: RuntimeException) {
+            throw EngineException(null, "unreadable matrix answer", e)
+        }
+    }
 }
 
 /** What guiding a chosen route needs from the engine besides the plan: the OSRM answer, the lane warnings and the traffic lights (item 22). */

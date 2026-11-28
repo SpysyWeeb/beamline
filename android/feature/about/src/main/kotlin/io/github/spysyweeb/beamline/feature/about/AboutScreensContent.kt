@@ -77,6 +77,23 @@ internal fun FirstRunNoticeContent(onAccept: () -> Unit, modifier: Modifier) {
     }
 }
 
+/** DriverNoticeScreen (AboutScreens.kt), play test P59: a page like the licences', not the first-run step. */
+@Composable
+internal fun DriverNoticeScreenContent(onBack: () -> Unit, modifier: Modifier) {
+    BackHandler(onBack = onBack)
+    Surface(modifier.fillMaxSize(), color = MaterialTheme.colorScheme.background) {
+        Column(Modifier.fillMaxSize().safeDrawingPadding()) {
+            TopBar(AboutTexts.DRIVER_NOTICE_ROW, onBack)
+            Text(
+                AboutTexts.FIRST_RUN_NOTICE,
+                style = MaterialTheme.typography.bodyLarge,
+                color = MaterialTheme.colorScheme.onBackground,
+                modifier = Modifier.verticalScroll(rememberScrollState()).padding(horizontal = 16.dp, vertical = 8.dp),
+            )
+        }
+    }
+}
+
 @Composable
 internal fun AboutScreenContent(ui: AboutUi, onEvent: (AboutEvent) -> Unit, modifier: Modifier) {
     BackHandler { onEvent(AboutEvent.Back) }

@@ -2,6 +2,7 @@ package io.github.spysyweeb.beamline.feature.drive
 
 import io.github.spysyweeb.beamline.api.map.CameraMode
 import io.github.spysyweeb.beamline.api.map.CameraState
+import io.github.spysyweeb.beamline.api.model.PlaceSource
 import io.github.spysyweeb.beamline.api.nav.GpsState
 import io.github.spysyweeb.beamline.api.nav.Guidance
 import io.github.spysyweeb.beamline.api.nav.LaneWarningView
@@ -9,6 +10,7 @@ import io.github.spysyweeb.beamline.api.nav.LiveBanner
 import io.github.spysyweeb.beamline.api.nav.ManeuverKind
 import io.github.spysyweeb.beamline.api.nav.Origin
 import io.github.spysyweeb.beamline.api.nav.Phase
+import io.github.spysyweeb.beamline.api.nav.ProblemKind
 import io.github.spysyweeb.beamline.api.nav.TripEvent
 import io.github.spysyweeb.beamline.api.nav.TripState
 import io.github.spysyweeb.beamline.units.UnitFormatter
@@ -57,6 +59,9 @@ internal object Presentation {
     fun keepTogether(name: String): String =
         if (name.length <= SHORT_NAME_CHARS) name.replace(' ', NO_BREAK_SPACE) else name
 
+    /** The arrival maneuvers (rule B7; play test P34: the notification's title keeps their plain words). */
+    private val ARRIVE_KINDS = setOf(ManeuverKind.ARRIVE, ManeuverKind.ARRIVE_LEFT, ManeuverKind.ARRIVE_RIGHT)
+
     /** Phases in which stops can be added, removed and moved (rule C1). */
     private val EDIT_PHASES = setOf(Phase.PLANNING, Phase.CHOOSING, Phase.GUIDING, Phase.REROUTING)
 
@@ -74,12 +79,12 @@ internal object Presentation {
         Phase.RESUME_OFFERED -> DriveUi(resume = resume(trip))
         Phase.PLANNING, Phase.CHOOSING -> DriveUi(
             planning = routeSheet(trip, units, nowEpochMs, zone, locationAllowed),
-            stopsEditor = if (stopsEditorOpen) stopsEditor(trip) else null,
+            stopsEditor = if (stopsEditorOpen) stopsEditor(trip, shownEvent) else null,
         )
-        Phase.GUIDING, Phase.REROUTING -> DriveUi(
-            guidance = guidance(trip, units, nowEpochMs, zone, camera, shownEvent),
-            stopsEditor = if (stopsEditorOpen) stopsEditor(trip) else null,
-        )
+        Phase.GUIDING, Phase.REROUTING -> {
+            val g = guidance(trip, units, nowEpochMs, zone, camera, shownEvent)
+            DriveUi(guidance = g, stopsEditor = if (stopsEditorOpen) stopsEditor(trip, shownEvent, g?.tripBar) else null)
+        }
         // Stops cannot change once arrived (C1): no stops editor.
         Phase.ARRIVED -> DriveUi(guidance = guidance(trip, units, nowEpochMs, zone, camera, shownEvent))
     }
@@ -88,13 +93,14 @@ internal object Presentation {
 
     fun routeSheet(trip: TripState, units: UnitFormatter, nowEpochMs: Long, zone: ZoneId, locationAllowed: Boolean): RouteSheetUi {
         val labels = trip.offeredTypes.associate { it.id to it.label }
-        // item 47: each slower card says by how much ("+1 min"), from the fastest card shown
-        val fastestS = trip.choices.filter { c -> c.typeIds.any { it in labels } }.minOfOrNull { it.timeS }
+        // item 47, P23: each slower card says by how much, in the minutes the cards show ("6 min" and
+        // "7 min": "+1 min"), from the fastest card shown
+        val fastestMin = trip.choices.filter { c -> c.typeIds.any { it in labels } }.minOfOrNull { shownMinutes(it.timeS) }
         val cards = trip.choices.mapNotNull { choice ->
             // D5: a type the presets do not offer (Eco) is never named; a route only such a type gave is not shown.
             val names = choice.typeIds.mapNotNull { labels[it] }
             if (names.isEmpty()) return@mapNotNull null
-            val slowerS = if (fastestS == null) 0.0 else choice.timeS - fastestS
+            val slowerMin = if (fastestMin == null) 0L else shownMinutes(choice.timeS) - fastestMin
             RouteCardUi(
                 choiceId = choice.id,
                 labels = names.joinToString(DriveTexts.LABEL_SEPARATOR),
@@ -108,7 +114,7 @@ internal object Presentation {
                     DriveTexts.NOTE_HIGHWAYS.takeIf { choice.hasHighways },
                 ),
                 selected = choice.id == trip.selectedChoiceId,
-                slowerText = if (slowerS >= SLOWER_MIN_S) "+" + units.duration(slowerS) else null,
+                slowerText = if (slowerMin >= 1) "+" + units.duration(slowerMin * 60.0) else null,
             )
         }
         val selected = trip.choices.firstOrNull { c -> c.id == trip.selectedChoiceId && cards.any { it.choiceId == c.id } }
@@ -126,6 +132,11 @@ internal object Presentation {
             startBlockedText = if (selected != null && !locationAllowed) DriveTexts.START_BLOCKED_NO_PRECISE_LOCATION else null,
             canChooseStart = trip.problem?.kind == io.github.spysyweeb.beamline.api.nav.ProblemKind.NO_POSITION,
             startNote = if (trip.origin is Origin.FromPlace && selected != null) DriveTexts.STARTS_FROM_HERE else null,
+            // P19, P20: "From Butler · 1 stop" under "To ..." below full height (the full height has the From row and the stops)
+            contextLine = listOfNotNull(
+                (trip.origin as? Origin.FromPlace)?.let { o -> DriveTexts.FROM + " " + fromText(o) },
+                trip.stops.dropLast(1).count { !it.reached }.takeIf { it > 0 }?.let(DriveTexts::stopsCount),
+            ).joinToString(DriveTexts.LABEL_SEPARATOR).ifEmpty { null },
             steps = selected?.steps.orEmpty().map { s ->
                 val roads = roadsText(s.kind, s.roads.map(::keepTogether))
                 StepUi(s.kind, listOfNotNull(keepTogether(s.primary), roads).joinToString(" "), if (s.afterM >= 1.0) units.distance(s.afterM) else "", s.point)
@@ -141,13 +152,20 @@ internal object Presentation {
     /** D7: busy while PLANNING and while an engine request for the current revision runs. */
     fun busy(trip: TripState): Boolean = trip.phase == Phase.PLANNING || trip.replanning
 
-    fun stopsEditor(trip: TripState): StopsEditorUi {
+    fun stopsEditor(trip: TripState, shownEvent: TripEvent? = null, bar: TripBarUi? = null): StopsEditorUi {
         val open = trip.stops.count { !it.reached }
         return StopsEditorUi(
             rows = stopRows(trip),
             // C6: "Best order" is offered when at least 3 stops are not reached.
             canOptimize = trip.phase in EDIT_PHASES && open >= 3,
             busy = busy(trip),
+            // play test P49: the editor takes the route sheet's place, so it says what the sheet would: the trip's
+            // problem ("These stops are already in the best order.", a failed change), else that Best order changed
+            // the order (EventCards' own slot for StopsReordered). The app's Undo offer goes over it (canUndo).
+            note = trip.problem?.text ?: DriveTexts.STOPS_REORDERED.takeIf { shownEvent == TripEvent.StopsReordered },
+            // while guided the editor takes the trip bar's place: its arrival and remaining time ("Arrive 8:42 PM ·
+            // 1 h 7 min"), or "No route from here" (P5), so the effect of a change can be read at once
+            arriveText = bar?.let { it.noRouteText ?: (it.arriveText + DriveTexts.LABEL_SEPARATOR + it.remainingTimeText) },
         )
     }
 
@@ -177,6 +195,8 @@ internal object Presentation {
     fun resume(trip: TripState): ResumeUi = ResumeUi(
         destinationName = trip.stops.lastOrNull()?.place?.name.orEmpty(),
         stopsLeft = trip.stops.count { !it.reached },
+        // play test P27: a simulated drive offered again after the app was killed says so (Resume drives it simulated)
+        simulated = trip.resumeSimulated,
     )
 
     // ---- guidance (D1, D2, D3, D7) ----
@@ -339,20 +359,30 @@ internal object Presentation {
         else -> null
     }
 
+    /**
+     * Play test P5: no route can be planned from the car (outside the installed maps, rule O8: the only
+     * OUTSIDE_INSTALLED_MAPS problem without Retry while re-routing; a failed stop change keeps Retry and the bar's times).
+     */
+    fun noRouteFromHere(trip: TripState): Boolean =
+        trip.phase == Phase.REROUTING && trip.problem?.kind == ProblemKind.OUTSIDE_INSTALLED_MAPS && trip.problem?.canRetry == false
+
     /** Rule D3. */
     fun tripBar(trip: TripState, g: Guidance, units: UnitFormatter, nowEpochMs: Long, zone: ZoneId): TripBarUi {
         val next = g.nextStopIndex
+        // play test P5: the old route's arrival, times and next stop are not the trip's: the bar says so instead
+        val noRoute = noRouteFromHere(trip)
         return TripBarUi(
             arriveText = DriveTexts.ARRIVE + units.clockTime(arrivalEpochMs(nowEpochMs, g.remainingS), zone),
             remainingTimeText = units.duration(g.remainingS),
             remainingDistanceText = units.distance(g.remainingM),
             // "Stop n" counts every stop of the trip, reached ones included, as the stops editor numbers them.
-            nextStopText = if (next != null && next in trip.stops.indices && next < trip.stops.lastIndex) {
+            nextStopText = if (!noRoute && next != null && next in trip.stops.indices && next < trip.stops.lastIndex) {
                 DriveTexts.nextStop(next + 1, units.distance(g.toNextStopM))
             } else {
                 null
             },
             simulated = g.simulated,
+            noRouteText = DriveTexts.NO_ROUTE_FROM_HERE.takeIf { noRoute },
         )
     }
 
@@ -380,10 +410,12 @@ internal object Presentation {
 
     /**
      * Rule D6. GUIDING: title "Exit 24 · 0.3 mi" (primary and the banner's distance), text the roads
-     * as the banner writes them, or the status text when the status is not OnRoute. REROUTING (no
-     * banner on screen, D7): title "Finding a new route...", text the failure or "To <destination>".
-     * ARRIVED: "Arrived at <destination>", text the side. Only the stops' names are used, never a
-     * subtitle or a point (PV6).
+     * as the banner writes them, or the status text when the status is not OnRoute; an arrival (play test
+     * P34) keeps its plain words and the distance as the title ("Arrive, on the right · 350 ft") and names
+     * the stop as the text (a dropped pin, MAP_PIN, has no name of its own: no text). REROUTING (no banner
+     * on screen, D7): title "Finding a new route...", or "No route from here" outside the installed maps
+     * (P5, O8), text the failure or "To <destination>". ARRIVED: "Arrived at <destination>", text the
+     * side. Only the stops' names are used, never a subtitle or a point (PV6).
      */
     fun notification(trip: TripState, units: UnitFormatter): GuidanceNotificationText? {
         val destination = trip.stops.lastOrNull()?.place?.name?.takeIf { it.isNotBlank() }
@@ -393,7 +425,8 @@ internal object Presentation {
                 text = sideText(trip.guidance?.banner?.view?.kind).orEmpty(),
             )
             Phase.REROUTING -> GuidanceNotificationText(
-                title = DriveTexts.REROUTING,
+                // play test P5: nothing is being searched outside the installed maps; the shade says what the bar says
+                title = if (noRouteFromHere(trip)) DriveTexts.NO_ROUTE_FROM_HERE else DriveTexts.REROUTING,
                 text = trip.problem?.text ?: destination?.let(DriveTexts::toDestination).orEmpty(),
             )
             Phase.GUIDING -> {
@@ -406,9 +439,14 @@ internal object Presentation {
                     )
                 } else {
                     val v = live.view
+                    // play test P34 (review): the banner names the stop now ("Arrive on the left at Erie Zoo"); an arrival
+                    // keeps its side and distance in the one-line title, the stop's name goes below
+                    val arriving = v.kind in ARRIVE_KINDS
+                    val stopName = trip.guidance?.nextStopIndex?.let { trip.stops.getOrNull(it) }?.place
+                        ?.takeIf { it.source != PlaceSource.MAP_PIN }?.name?.takeIf { it.isNotBlank() }
                     GuidanceNotificationText(
-                        title = v.primary + DriveTexts.LABEL_SEPARATOR + units.distance(live.distanceM),
-                        text = statusText ?: roadsText(v.kind, v.roads) ?: towardsText(v.towards) ?: "",
+                        title = (if (arriving) DriveTexts.arriveWords(v.kind) else v.primary) + DriveTexts.LABEL_SEPARATOR + units.distance(live.distanceM),
+                        text = statusText ?: (if (arriving) stopName else null) ?: roadsText(v.kind, v.roads) ?: towardsText(v.towards) ?: "",
                     )
                 }
             }
@@ -417,5 +455,9 @@ internal object Presentation {
     }
 }
 
-/** Item 47: a card slower than the fastest by less than this says nothing ("+1 min" from a minute on). */
-internal const val SLOWER_MIN_S = 60.0
+/**
+ * Item 47, P23: the whole minutes a duration text shows (units.json: rounded to the nearest minute,
+ * UnitTable.duration), so "+1 min" appears whenever two cards read a minute apart (raw seconds said nothing for
+ * "6 min" against "7 min", 50 s apart, and "+1 min" for "1 h 58 min" against "2 h").
+ */
+internal fun shownMinutes(s: Double): Long = if (s.isNaN() || s < 0) 0L else kotlin.math.floor(s / 60.0 + 0.5).toLong()

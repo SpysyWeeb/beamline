@@ -26,7 +26,8 @@ enum class StateStatus { INSTALLED, UPDATE_AVAILABLE, IN_PROGRESS, AVAILABLE, NO
 
 /** What the user did; the screen sends these to GetPacks. */
 sealed interface StatesEvent {
-    data class Select(val code: String) : StatesEvent
+    /** [onMap]: picked on the map (a tap or the chooser), so it is outlined, not zoomed (P25); a row sends false. */
+    data class Select(val code: String, val onMap: Boolean = false) : StatesEvent
     data class ChooseOne(val code: String) : StatesEvent
     data object CloseSheet : StatesEvent
     data class Query(val text: String) : StatesEvent
@@ -58,9 +59,12 @@ sealed interface StatesEvent {
     data object InstallFile : StatesEvent
     /** OK on a file install the installer refused. */
     data object DismissFileProblem : StatesEvent
+    /** P13: the top bar's Back arrow. */
+    data object Back : StatesEvent
 }
 
-data class Action(val label: String, val event: StatesEvent, val enabled: Boolean = true)
+/** [destructive] (P62): Remove, Delete: drawn in red, apart from the other actions. */
+data class Action(val label: String, val event: StatesEvent, val enabled: Boolean = true, val destructive: Boolean = false)
 
 /** What kind of sheet is open. */
 enum class SheetKind { STATE, UPDATE, ADD_HOUSE_NUMBERS }
@@ -127,6 +131,8 @@ data class StatesInput(
     val fileProblem: Pair<String, String>? = null,
     /** Audit F8: why the open sheet's download did not start. */
     val startProblem: String? = null,
+    /** P25: [selected] was picked on the map (outlined, not zoomed). */
+    val selectedOnMap: Boolean = false,
 )
 
 data class StateRowUi(
@@ -160,6 +166,11 @@ data class SheetUi(
     val secondary: Action? = null,
     val creditLine: String? = null,
     val privacyLine: String? = null,
+    /** P14, P25: text actions. The screen draws the others with [primary] and [secondary], and a destructive one (Remove) apart at the far end (P62). */
+    val actions: List<Action> = emptyList(),
+    /** P14/P62: a state on this phone: "House numbers: included" and its action, drawn together as on the row (not the download sheet's [houseNumbers] box). */
+    val houseNumbersLine: String? = null,
+    val houseNumbersAction: Action? = null,
 )
 
 data class JobUi(
@@ -216,6 +227,10 @@ data class StatesUi(
     val fileSheet: SheetUi?,
     /** A file install in progress: "Installing Pennsylvania", its step line, 0..1, "Keep Beamline open until the install has finished." */
     val fileProgress: JobUi? = null,
+    /** P12: "No state matches your search." when a search lists nothing; null otherwise. */
+    val noMatch: String? = null,
+    /** P25: [selected] was picked on the map: the map outlines it and does not zoom. */
+    val selectedOnMap: Boolean = false,
 )
 
 /** Pure: every text of section 1 from the state of the world (6.7). */
@@ -275,6 +290,12 @@ object StatesPresenter {
         return StateStatus.NOT_AVAILABLE
     }
 
+    /** 1.1 step 2: a state is listed for the search [query] when its name contains it or its postal code is it. */
+    fun matches(code: String, name: String, query: String): Boolean {
+        val q = query.trim()
+        return q.isEmpty() || name.contains(q, ignoreCase = true) || code.equals(q, ignoreCase = true)
+    }
+
     private fun optionalBytes(p: CatalogPack) = p.parts.filter { it.optional }.sumOf { it.bytes }
 
     private fun optionalCredit(p: CatalogPack) = p.parts.firstOrNull { it.optional }?.credit
@@ -286,7 +307,7 @@ object StatesPresenter {
             ?: input.installed.packs.firstOrNull { it.state == code }?.name ?: code
         val statuses = codes.associateWith { status(it, input) }
         val q = input.query.trim()
-        fun matches(code: String) = q.isEmpty() || name(code).contains(q, ignoreCase = true) || code.equals(q, ignoreCase = true)
+        fun matches(code: String) = matches(code, name(code), input.query)
 
         val job = input.job?.takeIf { it.phase != JobPhase.DONE || input.mode == StatesMode.FIRST_RUN }
         val listKnown = v != null
@@ -295,7 +316,8 @@ object StatesPresenter {
         val addHidden = input.catalog is CatalogState.Off && input.mode == StatesMode.MANAGE
 
         // rows
-        val onPhone = if (input.mode == StatesMode.MANAGE) input.installed.packs.sortedBy { it.name }.map { installedRow(it, input, v) } else emptyList()
+        // P12: the search lists the states on this phone too (before: Pennsylvania stayed whatever was typed)
+        val onPhone = if (input.mode == StatesMode.MANAGE) input.installed.packs.filter { matches(it.state) }.sortedBy { it.name }.map { installedRow(it, input, v) } else emptyList()
         val installedCodes = input.installed.packs.map { it.state }.toSet()
         val addCodes = codes.filter { it !in installedCodes || input.mode == StatesMode.FIRST_RUN }.filter(::matches).sortedBy { name(it) }
         fun row(code: String): StateRowUi {
@@ -303,12 +325,17 @@ object StatesPresenter {
             val entry = v?.catalog?.packs?.firstOrNull { it.state == code }
             val line = when (st) {
                 StateStatus.AVAILABLE -> entry?.let { Texts.availableLine(it.downloadBytes(input.includeAddresses), it.osmSnapshot) }
-                StateStatus.NOT_AVAILABLE -> Texts.NOT_AVAILABLE
-                StateStatus.NEEDS_NEWER_APP -> Texts.NEEDS_NEWER_LINE
+                // P63: "Not available yet" and "Needs a newer..." are the section headings; the rows do not repeat them
                 StateStatus.IN_PROGRESS -> job?.let { progressLine(it) }
                 else -> null
             }
-            return StateRowUi(code, name(code), st, line, stateDescription = line ?: name(code), packId = entry?.id, highlighted = code == input.selected,
+            // what TalkBack hears as the row's state: the line, else the heading's words (status is never told by colour alone)
+            val said = line ?: when (st) {
+                StateStatus.NOT_AVAILABLE -> Texts.NOT_AVAILABLE
+                StateStatus.NEEDS_NEWER_APP -> Texts.NEEDS_NEWER_LINE
+                else -> name(code)
+            }
+            return StateRowUi(code, name(code), st, line, stateDescription = said, packId = entry?.id, highlighted = code == input.selected,
                 progress = if (st == StateStatus.IN_PROGRESS && job != null) fraction(job) else null)
         }
         val available: List<StateRowUi>
@@ -323,6 +350,9 @@ object StatesPresenter {
             notAvailable = emptyList()
             needsNewer = emptyList()
         }
+        val anyToAdd = available.isNotEmpty() || notAvailable.isNotEmpty() || needsNewer.isNotEmpty()
+        // P12: a search that matches nothing says so (before: a blank list, or an empty "Add a state")
+        val noMatch = if (q.isNotEmpty() && onPhone.isEmpty() && !anyToAdd) Texts.NO_MATCH else null
 
         val banner = banner(input, v)
         val loading = if (input.catalog is CatalogState.Loading && v == null) Texts.LOADING else null
@@ -356,7 +386,7 @@ object StatesPresenter {
             job = job?.let { jobUi(it, input) },
             onPhoneTitle = if (input.mode == StatesMode.MANAGE && onPhone.isNotEmpty()) Texts.ON_THIS_PHONE else null,
             onPhone = onPhone,
-            addTitle = if (input.mode == StatesMode.MANAGE && !addHidden) Texts.ADD_A_STATE else null,
+            addTitle = if (input.mode == StatesMode.MANAGE && !addHidden && (q.isEmpty() || anyToAdd)) Texts.ADD_A_STATE else null,
             availableTitle = if (listKnown && available.isNotEmpty()) Texts.AVAILABLE else null,
             available = available,
             notAvailableTitle = if (notAvailable.isNotEmpty()) Texts.NOT_AVAILABLE else null,
@@ -379,6 +409,8 @@ object StatesPresenter {
             readyBanner = readyBanner,
             fileSheet = input.file?.let { fileSheet(it, input) },
             fileProgress = fileProgress(input),
+            noMatch = noMatch,
+            selectedOnMap = input.selectedOnMap,
         )
     }
 
@@ -441,7 +473,8 @@ object StatesPresenter {
         val line = when {
             job != null -> progressLine(job)
             update -> Texts.updateLine(entry!!.osmSnapshot, entry.downloadBytes(pack.addressesFile != null))
-            else -> Texts.installedLine(pack.osmSnapshot, pack.bytesOnDisk)
+            // P63: under the heading "On this phone", which the line does not repeat
+            else -> Texts.installedRowLine(pack.osmSnapshot, pack.bytesOnDisk)
         }
         // of the pack on this phone, also while an update of it is offered or runs
         val built = pack.packVersion?.let { Texts.builtLine(it) }
@@ -471,7 +504,7 @@ object StatesPresenter {
         }
         val actions = buildList {
             if (update && job == null) add(Action(Texts.UPDATE, StatesEvent.Update(pack.packId), enabled = unfinished(input) == null))
-            add(Action(Texts.REMOVE, StatesEvent.Remove(pack.packId), enabled = removeBlock == null))
+            add(Action(Texts.REMOVE, StatesEvent.Remove(pack.packId), enabled = removeBlock == null, destructive = true))
         }
         return StateRowUi(
             code = pack.state, name = pack.name, status = if (job != null) StateStatus.IN_PROGRESS else if (update) StateStatus.UPDATE_AVAILABLE else StateStatus.INSTALLED,
@@ -491,12 +524,15 @@ object StatesPresenter {
 
     private fun sheet(code: String, input: StatesInput, v: CatalogView?, status: StateStatus): SheetUi {
         val name = input.names[code] ?: input.sheetPack?.name ?: input.installed.packs.firstOrNull { it.state == code }?.name ?: code
+        val installed = input.installed.packs.firstOrNull { it.state == code }
+        // P14: a state on this phone opens with what its row shows and the row's actions (any list state, downloads off too)
+        if (installed != null && input.sheetKind == SheetKind.STATE && input.mode == StatesMode.MANAGE) return installedSheet(installed, input, v)
         val close = Action(Texts.CLOSE, StatesEvent.CloseSheet)
         val useFile = Action(Texts.USE_FILE, StatesEvent.UseFile)
         val retry = Action(Texts.TRY_AGAIN, StatesEvent.CheckAgain)
+        // downloads off: a file is the only way to add a state here, so it stays the main button
         if (input.catalog is CatalogState.Off) return SheetUi(code, name, listOf(Texts.DOWNLOADS_OFF), primary = useFile, secondary = close)
         val pack = input.sheetPack ?: v?.catalog?.packs?.firstOrNull { it.state == code }
-        val installed = input.installed.packs.firstOrNull { it.state == code }
         if (pack == null) {
             if (v == null) {
                 return when (val c = input.catalog) {
@@ -507,9 +543,11 @@ object StatesPresenter {
                 }
             }
             if (installed != null) return SheetUi(code, name, installedLines(installed), secondary = close)
-            if (status == StateStatus.NEEDS_NEWER_APP) return SheetUi(code, name, listOf(Texts.NEEDS_NEWER_SHEET), primary = useFile, secondary = close)
+            // P25: "Use a file instead" is a text action here, not the main button of a state without a download
+            if (status == StateStatus.NEEDS_NEWER_APP) return SheetUi(code, name, listOf(Texts.NEEDS_NEWER_SHEET), actions = listOf(useFile), secondary = close)
             val near = (input.neighbours[code] ?: emptyList()).filter { n -> v.catalog.packs.any { it.state == n } }.map { input.names[it] ?: it }.sorted()
-            return SheetUi(code, name, listOfNotNull(Texts.noDownload(name), near.takeIf { it.isNotEmpty() }?.let { Texts.nearby(it) }), primary = useFile, secondary = close)
+            return SheetUi(code, name, listOfNotNull(Texts.noDownload(name), near.takeIf { it.isNotEmpty() }?.let { Texts.nearby(it) }, Texts.FILE_HINT),
+                actions = listOf(useFile), secondary = close)
         }
         if (installed != null && input.sheetKind == SheetKind.STATE && !isNewer(pack, installed)) {
             return SheetUi(code, name, installedLines(installed), secondary = close)
@@ -593,6 +631,26 @@ object StatesPresenter {
         )
     }
 
+    /**
+     * P14: the window of a state on this phone: the row's lines (the first keeps "On this phone", which the
+     * row leaves to its heading, P63), "Up to date. List checked ..." when the fetched list has nothing newer,
+     * the house-number line with its action beside it, and the row's actions. Laid out as the row is (P62):
+     * Remove apart from the others. Before: the first line, the build date and Close.
+     */
+    private fun installedSheet(pack: PackInfo, input: StatesInput, v: CatalogView?): SheetUi {
+        val row = installedRow(pack, input, v)
+        val ready = input.catalog as? CatalogState.Ready
+        val upToDate = if (row.status == StateStatus.INSTALLED && ready != null && ready.view.catalog.packs.any { it.id == pack.packId })
+            Texts.upToDate(Texts.date(ready.view.checkedAtMs, input.zone)) else null
+        val lines = listOfNotNull(
+            Texts.installedLine(pack.osmSnapshot, pack.bytesOnDisk),
+            row.line.takeIf { row.status != StateStatus.INSTALLED }, // "Update available · ..." or the job's "Downloading · 43 %"
+            row.builtLine, upToDate,
+        ) + (row.note?.split("\n") ?: emptyList())
+        return SheetUi(pack.state, pack.name, lines, actions = row.actions, houseNumbersLine = row.houseNumbersLine,
+            houseNumbersAction = row.houseNumbersAction, secondary = Action(Texts.CLOSE, StatesEvent.CloseSheet))
+    }
+
     private fun fileSheet(f: FileChoice, input: StatesInput): SheetUi {
         val other = input.job?.takeIf { it.phase != JobPhase.DONE && it.phase != JobPhase.FAILED }
         return SheetUi(
@@ -610,14 +668,18 @@ object StatesPresenter {
         return when (val d = input.dialog) {
             null -> null
             Dialog.CancelJob -> input.job?.let {
-                DialogUi(Texts.stopDownloading(it.name), Texts.deletedSoFar(it.progress.doneBytes), Action(Texts.DELETE, StatesEvent.ConfirmCancel), Action(Texts.KEEP_DOWNLOADING, StatesEvent.CloseDialog))
+                DialogUi(Texts.stopDownloading(it.name), Texts.deletedSoFar(it.progress.doneBytes), Action(Texts.DELETE, StatesEvent.ConfirmCancel, destructive = true), Action(Texts.KEEP_DOWNLOADING, StatesEvent.CloseDialog))
             }
-            is Dialog.Remove -> DialogUi(Texts.removeTitle(packName(d.packId)), Texts.REMOVE_TEXT, Action(Texts.REMOVE, StatesEvent.ConfirmRemove(d.packId)), Action(Texts.KEEP, StatesEvent.CloseDialog))
+            // P62: the confirm buttons of what deletes are red; Remove says what it frees
+            is Dialog.Remove -> DialogUi(
+                Texts.removeTitle(packName(d.packId)), Texts.removeText(input.installed.packs.firstOrNull { it.packId == d.packId }?.bytesOnDisk),
+                Action(Texts.REMOVE, StatesEvent.ConfirmRemove(d.packId), destructive = true), Action(Texts.KEEP, StatesEvent.CloseDialog),
+            )
             is Dialog.RemoveHouseNumbers -> {
                 val frees = input.installed.packs.firstOrNull { it.packId == d.packId }?.let { p ->
                     (view(input.catalog)?.catalog?.packs?.firstOrNull { it.id == p.packId }?.let { optionalBytes(it) })
                 } ?: 0L
-                DialogUi(Texts.removeHouseNumbersTitle(packName(d.packId)), Texts.removeHouseNumbersText(frees), Action(Texts.REMOVE, StatesEvent.ConfirmRemoveHouseNumbers(d.packId)), Action(Texts.KEEP, StatesEvent.CloseDialog))
+                DialogUi(Texts.removeHouseNumbersTitle(packName(d.packId)), Texts.removeHouseNumbersText(frees), Action(Texts.REMOVE, StatesEvent.ConfirmRemoveHouseNumbers(d.packId), destructive = true), Action(Texts.KEEP, StatesEvent.CloseDialog))
             }
             is Dialog.Details -> DialogUi(Texts.DETAILS, d.text, Action(Texts.OK, StatesEvent.CloseDialog), null)
         }

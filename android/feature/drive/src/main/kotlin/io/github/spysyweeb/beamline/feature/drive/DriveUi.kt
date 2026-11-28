@@ -34,7 +34,7 @@ data class RouteCardUi(
     /** "Tolls", "Highways" */
     val notes: List<String>,
     val selected: Boolean,
-    /** Item 47: how much longer than the fastest card ("+1 min"); null on the fastest and within a minute of it. */
+    /** Item 47, P23: how much longer than the fastest card, in the minutes the cards show ("+1 min" for "7 min" against "6 min"); null on the fastest and on a card that shows the same minutes. */
     val slowerText: String? = null,
 )
 
@@ -56,14 +56,33 @@ data class RouteSheetUi(
     val steps: List<StepUi> = emptyList(),
     /** Audit F3: the problem is that there is no position: "Choose start" beside it at every height. */
     val canChooseStart: Boolean = false,
-    /** Audit F27: a trip from a chosen start (a swap, Change start): "Guidance starts from where you are". */
+    /** Audit F27, P19: a trip from a chosen start (a swap, Change start), shown above Start: "Guidance starts from where you are". */
     val startNote: String? = null,
+    /** P19, P20: under "To <destination>" below full height: "From Butler · 1 stop"; null for a trip from the current position with no stop before the destination. */
+    val contextLine: String? = null,
+    /** P21: the index in [steps] of the step the map shows (the app sets it after DriveEvent.ShowStep); null: none. */
+    val shownStep: Int? = null,
 )
 
 /** One step of the preview (item 47): the turn's arrow, its words, how far the road goes after it, and where it is. */
 data class StepUi(val kind: ManeuverKind, val text: String, val distanceText: String, val point: io.github.spysyweeb.beamline.api.model.GeoPoint)
 
-data class StopsEditorUi(val rows: List<StopRowUi>, val canOptimize: Boolean, val busy: Boolean)
+/**
+ * [note] (play test P49): the line under the editor's buttons: what Best order did ("Stops reordered."),
+ * the trip's problem ("These stops are already in the best order.", a failed change), or the app's Undo
+ * offer ("Stop removed", with [canUndo]); the editor takes the route sheet's place, so the sheet's own
+ * problem line is not in view. [canUndo] (play test P10, audit F30): an Undo button beside the note
+ * ([DriveEvent.UndoStopRemoval]); the app sets it. [arriveText]: while guided, the trip bar's arrival
+ * and remaining time ("Arrive 8:42 PM · 1 h 7 min") or "No route from here", under the title.
+ */
+data class StopsEditorUi(
+    val rows: List<StopRowUi>,
+    val canOptimize: Boolean,
+    val busy: Boolean,
+    val note: String? = null,
+    val canUndo: Boolean = false,
+    val arriveText: String? = null,
+)
 
 /** The chip beside the main instruction: arrow and "In 0.2 mi" (does not count down). */
 data class ThenUi(val kind: ManeuverKind, val distanceText: String)
@@ -107,8 +126,11 @@ sealed interface GuidanceStatusUi {
     /** "GPS signal lost" */
     data object GpsLost : GuidanceStatusUi
     data class StopReached(val name: String) : GuidanceStatusUi
-    /** [awayText]: "Destination 500 ft away" when the route ends more than 100 m from the place (a place tied to a street up to 300 m away). */
-    data class Arrived(val name: String, val sideText: String?, val awayText: String? = null) : GuidanceStatusUi
+    /**
+     * [awayText]: "Route ends 500 ft from the place" when the route ends more than 100 m from the place (a place tied to a street up to 300 m away).
+     * [saved] (play test P31, audit F34): the destination is one of the saved places (the app sets it): Save reads "Saved" with a check.
+     */
+    data class Arrived(val name: String, val sideText: String?, val awayText: String? = null, val saved: Boolean = false) : GuidanceStatusUi
 }
 
 data class TripBarUi(
@@ -118,6 +140,12 @@ data class TripBarUi(
     /** "Stop 2 · 4.1 mi" */
     val nextStopText: String?,
     val simulated: Boolean,
+    /**
+     * Play test P5: no route can be planned from where the car is (outside the installed maps): this line
+     * ("No route from here") in place of the arrival time and the remaining time and distance, which
+     * belong to the old route.
+     */
+    val noRouteText: String? = null,
 )
 
 /** [banner] is null in REROUTING: the status card takes its place (rule D7). */
@@ -156,7 +184,8 @@ data class GuidanceUi(
     val currentRoad: String? = null,
 )
 
-data class ResumeUi(val destinationName: String, val stopsLeft: Int)
+/** [simulated] (play test P27): the trip offered was a simulated drive ("Continue the simulated drive to …?"). */
+data class ResumeUi(val destinationName: String, val stopsLeft: Int, val simulated: Boolean = false)
 
 /** Everything the drive feature draws. */
 data class DriveUi(
@@ -171,10 +200,14 @@ sealed interface DriveEvent {
     data class Nav(val intent: NavIntent) : DriveEvent
     data object Recenter : DriveEvent
     data object ShowOverview : DriveEvent
-    /** Item 47: a step of the preview tapped; the map looks at it. */
-    data class ShowStep(val point: io.github.spysyweeb.beamline.api.model.GeoPoint) : DriveEvent
+    /** Item 47, P21: a step of the preview tapped, or Previous / Next: the map looks at it and marks it; [index]: its place in RouteSheetUi.steps. */
+    data class ShowStep(val point: io.github.spysyweeb.beamline.api.model.GeoPoint, val index: Int? = null) : DriveEvent
+    /** P21: the step shown is let go (Back at full height): its mark goes and the map shows the whole route again. */
+    data object CloseStep : DriveEvent
     data object OpenStopsEditor : DriveEvent
     data object CloseStopsEditor : DriveEvent
+    /** Play test P10, audit F30: the Undo beside the stops editor's note ("Stop removed", [StopsEditorUi.canUndo]): the stop goes back where it was. */
+    data object UndoStopRemoval : DriveEvent
     /** Item 47: the arrival card raised: the destination's own window (its details). */
     data object ShowDestination : DriveEvent
     /** Item 47: the arrival card's Save: the save dialog for the destination. */
@@ -200,7 +233,8 @@ data class GuidanceNotificationText(val title: String, val text: String)
 
 /**
  * Which one-shot card is on screen: the latest StopReached, Arrived or RerouteFailed event, for
- * [cardMs] (guidance.json arrival.stop_card_s) after it came. Times are monotonic milliseconds.
+ * [cardMs] (guidance.json arrival.stop_card_s) after it came; else a StopsReordered for its own
+ * [cardMs] (play test P49: it never replaces a card). Times are monotonic milliseconds.
  */
 class EventCards(private val cardMs: Long) {
     fun onEvent(event: TripEvent, nowMs: Long): Unit = timer(cardMs).onEvent(event, nowMs)

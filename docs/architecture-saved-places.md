@@ -100,7 +100,7 @@ there); the contract of `SearchBar` does not change.
   → SET_START) and its or the stops editor's "Add stop" (`DriveEvent.SearchForStop` → ADD_STOP)
   open search. Closing the route sheet ends planning and the pill returns. During GUIDING,
   REROUTING and ARRIVED the turn banner has the top; the stops editor's "Add stop" opens search in
-  ADD_STOP, over the guidance screen, while guidance continues, without raising the keyboard (SP4).
+  ADD_STOP, over the guidance screen, while guidance continues, with the keyboard up (P26, 0.1.40).
   During a map pick (SP16) the pill's place is taken by the pick prompt.
 
 The search screen covers the whole map (as `docs/architecture.md` has it); it shows no pill of its own, only
@@ -122,10 +122,9 @@ Three rules hold for every screen below:
   phase (`SavedListUi.pickOnly`): its rows only, with no "Edit", no "Set home" / "Set work" rows, no
   "Add a place" and no switch. (3) When Settings is opened in those phases, its "Saved places" row
   reads **"Not while guiding"** and opens nothing: the words with which installs and removals are
-  refused during a trip (`docs/architecture.md` 2.2 rule 4). (4) Search opened in ADD_STOP in those phases does not raise the
-  keyboard (`SearchUi.focusField` false): the Home and Work rows and "Saved places" are at the top
-  and one tap adds the stop; the keyboard comes up only when the user taps the field (ADD_STOP
-  search is otherwise as `docs/architecture.md` has it). SAVE mode and the map pick start only from GO_TO search,
+  refused during a trip (`docs/architecture.md` 2.2 rule 4). (4) Since 0.1.40 (P26) search opened in ADD_STOP raises the
+  keyboard in every phase; the Home and Work rows and "Saved places" are at the top, and one tap shows
+  that place's card on the map with "Add stop" (rule S12). SAVE mode and the map pick start only from GO_TO search,
   a sheet's "Save" or "Edit", or a full list, so with (1)-(3) neither can start while driving.
 - **SP5 Accessibility.** (1) The pill's accessibility label is its visible text (SP2). (2) Every
   row of the search screen and of the saved places screen is one focus stop that reads its texts in
@@ -150,13 +149,13 @@ Top to bottom in START (empty text), by mode:
 
 | Row | GO_TO | ADD_STOP, SET_START | SAVE (2.3) |
 |---|---|---|---|
-| Header line above the field | none | none | "Set home", "Set work", "Save place", "New location for Home" / "New location for Work" / "New location for {name}" |
+| Header line above the field | none | none | "Set home", "Set work", "Save place", "New location for Home" / "New location for Work" / "New location for {name}"; since 0.1.40 the title sits beside Back, with the field under it (P60) |
 | Notice (SP52, SP53) | when there is one, first, with "OK" | none | none |
 | Home | set: icon `saved_home`, "Home", the place's description, distance; empty: icon `saved_home`, "Set home" | only when set | none |
 | Work | set: icon `saved_work`, "Work", description, distance; empty: "Set work" | only when set | none |
 | "Saved places" | always; subtitle "None yet", "1 place", "{n} places" (all saved places, Home and Work counted) | only when at least one other place exists | none |
-| "Use my position" | none | none | first row, only with a fresh, precise fix (SP23) |
-| "Choose on the map" | none | none | next row, no icon |
+| "Use my position" | none | none | first row, with the my-location icon, only with a fresh, precise fix (SP23) |
+| "Choose on the map" | none | none | next row, with the pin icon (P60) |
 | Category shortcuts | as `docs/architecture.md` (S6) | as there | none |
 | Recents | as `docs/architecture.md`, minus saved places (SP30) | same | same |
 
@@ -165,7 +164,8 @@ your destination"** and a tap on it does nothing (`open(..., destination)`).
 
 - **SP10** The description of a saved place is `SavedPlace.description` (5.1): its own place name
   unless that equals its name, then its subtitle, joined with ", " ("Erie Maritime Museum, 100 East
-  Front Street, Erie"; for a saved point just its coordinates, "42.08418, -80.17321", SP16). The
+  Front Street, Erie"; for a saved point its street, "Near East 5th Street, Erie", when the app found
+  one, else just its coordinates, "42.08418, -80.17321", SP16). The
   distance text shows only when the ranking position is a GPS fix
   (`NearSource.GPS`); with the map centre or no position it is left out. A saved place no routing
   tile covers (`InstalledSet.routing?.covers(point) != true`) gets the note "Outside the installed
@@ -193,6 +193,7 @@ the recents. Then one of:
    yet"** with **"Cancel"** and **"Set home"** (off); the my-location button stays above the bar.
    Each tap on the map (or long press) moves the chosen point there: the PICKED pin is drawn at it,
    and the bar shows **"Point on the map"** (or the name of a POI label that was tapped) and the
+   street it is near once the app found it (**"Near East 5th Street, Erie"**, P18), until then the
    coordinates **"42.13646, -80.08718"** (five decimals). Below zoom 16 the bar says **"Zoom in to
    choose the exact spot."** and "Set home" stays off (SP24). **"Set home"** saves it; the bar
    closes and the search screen is back at GO_TO START with the row **"Home"** (SP25). Back or
@@ -235,8 +236,11 @@ place of "Save".
   `MapSceneMapper.scene(picked = ...)`. A tap on a POI label takes the POI's name and point
   (`Place(name, point, MAP_POI)`); any other tap, including on a saved marker, takes the point
   (`Place("Point on the map", point, MAP_PIN, subtitle = "lat, lon" with five decimals)`). A point
-  (any MAP_PIN place: a map point, a dropped pin, "Your position") is saved with its coordinates as
-  its place name and no subtitle (3.1), so its description is just "42.13646, -80.08718". Prompts:
+  (any MAP_PIN place: a map point, a dropped pin, "Your position") is saved with its street line, else
+  its coordinates, as its place name and no subtitle (3.1), so its description is "Near East 5th
+  Street, Erie" or just "42.13646, -80.08718"; the app looks up the street of each tapped point and
+  passes it to `SavedPlacesFeature.streetFound` (0.1.40, P18). A place saved before keeps its name:
+  nothing renames saved places on its own. Prompts:
   **"Tap the map at your home"**, **"Tap the map at your work"**, **"Tap the map at the place"**
   (NewPlace), **"Tap the map at the new location"** (Move). The confirm button reads **"Set
   home"**, **"Set work"**, **"Save"** (NewPlace: it opens the save dialog over the map, and Cancel
@@ -245,7 +249,7 @@ place of "Save".
 - **SP23 Use my position.** In SAVE mode START, when the search context is a GPS fix
   (`NearSource.GPS`, at most `near.fix_max_age_s` old, rule S1) with an accuracy of at most
   `saved.position_max_accuracy_m` (30 m; `SearchContext.accuracyM`), the first row is **"Use my
-  position"** (no icon, no subtitle, as "Choose on the map"). A tap picks `Place("Your position", fix,
+  position"** (the my-location icon, no subtitle; "Choose on the map" has the pin icon, P60). A tap picks `Place("Your position", fix,
   MAP_PIN, subtitle = "lat, lon")` for the target exactly as a result tap does: Home, Work and Move
   are written at once, NewPlace returns `SaveNew` (the dialog then shows "Your position" and the
   coordinates, with an empty name, SP17). Without such a fix (none, an old one, approximate location
@@ -279,7 +283,8 @@ it.
   place's own name, trimmed and cut to `name_max_chars` (40) characters as SP26 counts them, for a
   search result, a recent or a tapped POI ("Sheetz", "100 East Front Street", "Millcreek Mall").
   For a point (source MAP_PIN: "Dropped pin", "Point on the map", "Your position") the field starts
-  empty and **"Save"** is off until a name is typed. If the default name is taken or reserved, the
+  empty with the hint "Name this place"; a tap on **"Save"** with no name shows **"Type a name."**
+  (0.1.40, P57). If the default name is taken or reserved, the
   field keeps it and shows the problem (below); the user edits it.
 - Problems under the field (Save off while one shows): **"Type a name."**; **"Use at least one
   letter or number."** (the name key is empty, SP26); **"Up to 40 characters."**; **"You already
@@ -289,7 +294,8 @@ it.
   another."** (only with "Other" chosen, SP56). After a failed write: **"Could not save. The phone
   may be out of space."** (SP51). The Rename dialog (2.6) has no chips, so there the reserved names
   read **"Use Make home to make this your home."** and **"Use Make work to make this your
-  work."**
+  work."** Since 0.1.40 (F47) the body of every dialog of 2.2-2.6 scrolls and the kind chips wrap;
+  the problem line and the buttons stay at the bottom.
 
 ### 2.4 c. Going to a saved place
 
@@ -364,7 +370,7 @@ Show on the map                                   [on]
 (case)   Set work
 (star)   Mom's      20 East 5th Street, Erie         1.9 mi   Edit
 (star)   Sheetz     5800 Peach Street, Erie          4.0 mi   Edit
-Add a place
+(plus)   Add a place
 ```
 
 - Rows: Home (or "Set home"), Work (or "Set work"), then the other places by name (by the name key
@@ -389,7 +395,10 @@ Add a place
   down; "Change location" is a different word on purpose.)
 - **Remove:** **"Remove {name}?"** with **"Cancel"** / **"Remove"**; Home: **"Remove your home?"**
   / **"Remove"**; Work: **"Remove your work?"** / **"Remove"** (the word the other screens use
-  for taking things away, as for stops and states).
+  for taking things away, as for stops and states). The confirm button is red, as the menu's
+  "Remove". After it, **"{name} removed"** with **"Undo"** for `UNDO_BAR_MS` (or the longer time the
+  user's accessibility settings ask for), only while no trip is planned or driven (0.1.40, P58); a
+  refused Undo says **"{name} could not be put back."**
 - **Make home** (Make work alike): **"Make {name} your home?"**, text **"It will be called Home."**,
   preceded when a Home exists by **"Your current home ({description}) will be removed."**; buttons
   **"Cancel"** / **"Make home"**.
@@ -551,7 +560,7 @@ Add a place
 | `places[].kind` | string | `home`, `work` or `other` |
 | `places[].name` | string | non-empty after trimming. Written as `Home` for home and `Work` for work (read as such whatever it says); for other, when saved or renamed: at most `name_max_chars` (40) characters as SP26 counts them, no control characters, a non-empty name key, unique by name key and not keyed `home` or `work` (SP55) |
 | `places[].lat`, `lon` | number | WGS84 degrees, -90..90 and -180..180, rounded to 6 decimals on save (the point in memory is the rounded one, so a reload equals memory) |
-| `places[].place_name` | string | non-empty: the place's own name when saved or moved; for a point (a MAP_PIN place: a map point, a dropped pin, "Your position") its coordinates with five decimals, "42.08418, -80.17321" |
+| `places[].place_name` | string | non-empty: the place's own name when saved or moved; for a point (a MAP_PIN place: a map point, a dropped pin, "Your position") the street line the app found ("Near East 5th Street, Erie", 0.1.40), else its coordinates with five decimals, "42.08418, -80.17321". The format stays `/1`: any non-empty string was always allowed |
 | `places[].subtitle` | string | optional (none for a point) |
 | `places[].category` | string | optional: the search category id (`Place.categoryId`) when saved |
 
@@ -971,7 +980,7 @@ data class SavedPlace(
     /** What lists, sheets, stops and cards show: "Home", "Work", or the user's own name ("Mom's"). */
     val name: String,
     val point: GeoPoint,
-    /** The place's own name when saved or moved ("Erie Maritime Museum"); for a point, its coordinates ("42.08418, -80.17321"). */
+    /** The place's own name when saved or moved ("Erie Maritime Museum"); for a point, the street it is near ("Near East 5th Street, Erie") when one was found, else its coordinates ("42.08418, -80.17321"). */
     val placeName: String,
     /** The place's own subtitle then ("100 East Front Street, Erie"); null when it had none. */
     val subtitle: String? = null,
@@ -1025,6 +1034,12 @@ data class MapScene(
      * and the vehicle. Only for the route being driven, so the map stays calm.
      */
     val lights: List<GeoPoint> = emptyList(),
+    /**
+     * The route step the route sheet shows (play test P21, 0.1.40): a white disc ringed in the route's
+     * casing blue at that maneuver, above the lines, the lights and the saved markers, below the pins and
+     * the vehicle. Only while choosing (PLANNING, CHOOSING); null: none.
+     */
+    val step: GeoPoint? = null,
 )
 
 /**
@@ -1042,7 +1057,7 @@ and in `MapGesture`, the doc of `Tap` only:
 
 ```kotlin
 // EXCERPT: core/api/src/main/kotlin/io/github/spysyweeb/beamline/api/map/MapScene.kt
-    /** [pinId]: the MapPin.id, or "saved:" + SavedMarker.savedId, under the tap; [poi]: a POI label under it. */
+    /** [pinId]: the MapPin.id, "saved:" + SavedMarker.savedId, or "route:" + AlternativeLine.id, under the tap; [poi]: a POI label under it. */
     data class Tap(val point: GeoPoint, val pinId: String?, val poi: MapPoi?) : MapGesture
 ```
 
@@ -1065,9 +1080,12 @@ class MapSceneMapper(savedRules: SavedMarkerRules = SavedMarkerRules.bundled()) 
      * GUIDING and REROUTING (SP43). The arrow replaces the puck while a trip is guided.
      * [results]: the search results on the map (rule S11), RESULT pins "result:<index>"; the one at
      * the point of [picked] (the selected result, whose sheet is open) is left out: the PICKED pin
-     * stands there instead.
+     * stands there instead. Item 51: with [TripState.stopPreview]'s route (PLANNING to REROUTING) the
+     * route drawn is that route, the trip's own route ahead in grey under it (an alternative line).
+     * [step]: the route step the route sheet shows (MapScene.step), drawn in PLANNING and CHOOSING only.
+     * A chosen start (Origin.FromPlace) is the START pin "start" in PLANNING and CHOOSING (P22).
      */
-    fun scene(trip: TripState, puck: PuckState?, theme: MapTheme, picked: Place?, saved: List<SavedPlace> = emptyList(), results: List<GeoPoint> = emptyList()): MapScene =
+    fun scene(trip: TripState, puck: PuckState?, theme: MapTheme, picked: Place?, saved: List<SavedPlace> = emptyList(), results: List<GeoPoint> = emptyList(), step: GeoPoint? = null): MapScene =
         TODO("track M")
 }
 
@@ -1173,8 +1191,9 @@ class SavedPlaces(file: File, rules: SavedRules, writer: Executor, newId: () -> 
     /**
      * HOME or WORK: [place] fills that slot, replacing (deleting) the place there; [name] is ignored.
      * OTHER: a new place named [name] (required), refused by SP55 or SP56. A MAP_PIN place is kept
-     * with its coordinates as placeName and no subtitle (3.1). A [place] with source SAVED is a
-     * programming error (IllegalArgumentException with a fixed message).
+     * with its subtitle as placeName (the street line the app found for it, "Near East 5th Street,
+     * Erie", or its coordinates), its coordinates when it has none, and no subtitle (3.1). A [place]
+     * with source SAVED is a programming error (IllegalArgumentException with a fixed message).
      */
     fun save(place: Place, kind: SavedKind, name: String? = null): SaveResult = TODO("track S")
     /** OTHER places only. */
@@ -1184,6 +1203,12 @@ class SavedPlaces(file: File, rules: SavedRules, writer: Executor, newId: () -> 
     /** An OTHER place becomes HOME or WORK: the place in that slot is deleted, the name becomes "Home" or "Work". */
     fun makeKind(id: String, kind: SavedKind): SaveResult = TODO("track S")
     fun delete(id: String): SaveResult = TODO("track S")
+    /**
+     * Undo of a [delete] (0.1.40, P58): puts [place] back exactly as it was (its id, kind, name and
+     * copies). Refused: READ_ONLY; ALREADY_SAVED when its id is in the list again or its HOME or WORK
+     * slot was filled meanwhile; NAME_TAKEN and LIMIT for an OTHER place, as SP55 and SP56 say.
+     */
+    fun restore(place: SavedPlace): SaveResult = TODO("track S")
     fun setShowOnMap(show: Boolean): SaveResult = TODO("track S")
 }
 
@@ -1215,7 +1240,7 @@ caller). Its new parts, in the file's order:
 /** What a pick is for: a new trip, a stop of the current trip, the trip's start point, or a saved place (SaveTarget). */
 enum class SearchMode { GO_TO, ADD_STOP, SET_START, SAVE }
 
-/** What a pick in SAVE mode is for (docs/architecture-saved-places.md, rule SP15). */
+/** What a pick in SAVE mode is for (docs/architecture-saved-places.md, rule SP15), or [Start]: the trip's start chosen on the map (SET_START, play test P22). */
 sealed interface SaveTarget {
     data object Home : SaveTarget
     data object Work : SaveTarget
@@ -1223,6 +1248,8 @@ sealed interface SaveTarget {
     data object NewPlace : SaveTarget
     /** A new point for the saved place [savedId]; its id, kind and name stay. */
     data class Move(val savedId: String) : SaveTarget
+    /** P22: the trip's start from SET_START's "Choose on the map"; nothing is saved: the pick returns SavedOutput.Picked with mode SET_START. */
+    data object Start : SaveTarget
 }
 
 enum class NearSource { GPS, MAP_CENTER, NONE }
@@ -1282,6 +1309,10 @@ data class ResultRowUi(
     val key: String, val iconName: String, val title: String, val subtitle: String?, val distanceText: String?, val note: String?,
     /** Open, closing soon or closed now (rule S10); null when the place has no hours or they cannot be read. */
     val hours: HoursUi? = null,
+    /** Item 51 (rule S12): how much time the place adds to the trip as a stop, "+4 min" or "On the way"; null: not known, or not a stop result. */
+    val detourText: String? = null,
+    /** 0.1.40 (play test P2): the place only matched the words by name ("Erie Animal Hospital" for "hospital") in an answer led by a category or a brand; the lists put such rows after the others, under "Other matches". */
+    val otherMatch: Boolean = false,
 )
 
 /**
@@ -1305,18 +1336,56 @@ data class HoursDayUi(val day: String, val text: String, val today: Boolean)
 /**
  * The results of a search shown on the map (rule S11): [rows] and [places] in the same order,
  * nearest first, at most search_app.json on_map.max_results (20); [selected]: the index whose
- * sheet is open (its pin stands out), null while the list shows.
+ * sheet is open (its pin stands out), null while the list shows. Item 51: [stop] is set for the
+ * places offered as a new stop of the trip (rule S12): their order is the detours' and a selected
+ * row shows its card instead of a sheet. 0.1.40 (play test P6): [nearText], where the rows are
+ * ranked from when that is not the user's position ("Near Corry"), shown after the count; null:
+ * from the user's position.
  */
-data class ResultsUi(val query: String, val rows: List<ResultRowUi>, val places: List<Place>, val selected: Int? = null)
+data class ResultsUi(val query: String, val rows: List<ResultRowUi>, val places: List<Place>, val selected: Int? = null, val stop: StopResultsUi? = null, val nearText: String? = null)
 
-/** The results view (rule S11). */
+/**
+ * Item 51 (rule S12): the stop results' own state. [requestId]: the NavIntent.Detours the app sends for
+ * them, and the TripState.detours that answers it; [working]: "Working out detours..." shows and the rows
+ * wait (at most search_app.json along_route.detours_wait_ms); [note]: the line over rows that are not in
+ * detour order ("Detours took too long. Nearest first."); [typed]: the words Back types again in the Add
+ * stop search ("" after a shortcut, a type or a single place); [after]: the stop the new one goes after
+ * ("Along your route after Wegmans"), null when it joins at the car or the trip's start; [widened]: no
+ * place of the type was close to the route, the nearest are shown ("None close to your route. Nearest
+ * shown."); [preview]: the selected row's card, null while the list shows. Item 52: [instead], the place was
+ * handed over by another app during a trip (rule H7): its card has no way back to a list and also offers "Go here
+ * instead" ([ResultsEvent.GoInstead]).
+ */
+data class StopResultsUi(
+    val requestId: Long, val working: Boolean, val note: String? = null, val typed: String = "",
+    val after: String? = null, val widened: Boolean = false, val preview: StopPreviewUi? = null,
+    val instead: Boolean = false,
+)
+
+/**
+ * Item 51: the card of a stop result looked at before it is added: its [title] and [subtitle], how much
+ * the route with it adds ([addedText]: "+4 min", "On the way") and when it arrives ([arriveText]: "Arrive
+ * 4:33 PM"), where it goes ([afterText]: "Goes after Wegmans", null when it is the only stop before the
+ * destination), [busy] while that route is worked out, [problem] when there is none; "Add stop" works
+ * when [canAdd] (false only for a stop too many: any other problem is left to the re-plan).
+ */
+data class StopPreviewUi(
+    val title: String, val subtitle: String?, val addedText: String?, val arriveText: String?, val busy: Boolean,
+    val problem: String? = null, val canAdd: Boolean = true, val afterText: String? = null,
+)
+
+/** The results view (rule S11; item 51's stop results, rule S12). */
 sealed interface ResultsEvent {
-    /** A row or a result pin: that place's sheet opens (the app moves the map to it, K1). */
+    /** A row or a result pin: that place's sheet opens (the app moves the map to it, K1); a stop result's card opens. */
     data class Select(val index: Int) : ResultsEvent
-    /** The sheet of a result closed: the list shows again. */
+    /** The sheet of a result closed, or a stop result's card went back: the list shows again. */
     data object Deselect : ResultsEvent
     /** The list's close button or Back: the results and their pins are gone. */
     data object Close : ResultsEvent
+    /** Item 51: "Add stop" on a stop result's card. */
+    data object AddStop : ResultsEvent
+    /** Item 52: "Go here instead" on the card of a place handed over by another app ([StopResultsUi.instead]). */
+    data object GoInstead : ResultsEvent
 }
 
 /**
@@ -1341,24 +1410,26 @@ The new fields at the end of `SearchUi`:
 
 ```kotlin
 // EXCERPT: feature/search/src/main/kotlin/io/github/spysyweeb/beamline/feature/search/SearchUi.kt
-    /** SAVE mode: the line above the field ("Set home", "Set work", "Save place", "New location for Mom's"); null otherwise. */
+    /** SAVE mode: the line above the field ("Set home", "Set work", "Save place", "New location for Mom's"); SET_START: "Choose start" (P22); null otherwise. */
     val title: String? = null,
     /** START: the Home and Work rows (table of 2.1). */
     val slots: List<SavedRowUi> = emptyList(),
     /** START: the subtitle of the "Saved places" row ("None yet", "1 place", "4 places"); null: no row. */
     val savedPlacesText: String? = null,
-    /** START in SAVE mode: the "Choose on the map" row. */
+    /** START in SAVE mode and in SET_START (P22): the "Choose on the map" row. */
     val chooseOnMap: Boolean = false,
     /** Saved places whose name matches the typed text (SP20, SP21), shown above [results]; keys "saved:<id>"; always empty in SAVE mode. */
     val savedResults: List<ResultRowUi> = emptyList(),
     /** GO_TO START: the notice of SP52 or SP53, shown first with "OK"; null otherwise. */
     val savedNotice: String? = null,
-    /** START in SAVE mode: the "Use my position" row (a fresh fix within saved.position_max_accuracy_m, SP23). */
+    /** START in SAVE mode: the "Use my position" row (a fresh fix within saved.position_max_accuracy_m, SP23); START in SET_START: the "Your position" row, with a fresh fix (the context is GPS, P22). */
     val useMyPosition: Boolean = false,
-    /** Raise the keyboard when the screen opens; false in ADD_STOP while driving (SP4). */
+    /** Raise the keyboard when the screen opens; in every mode, also ADD_STOP while driving (P26, 0.1.40). */
     val focusField: Boolean = true,
     /** Batch O3 ("View all", item 27): the grid of every place type shows over the start rows; null: not shown. */
     val allTypes: List<PlaceTypeGroupUi>? = null,
+    /** 0.1.40 (review F4, P30): false in a GO_TO search opened during a trip (a link's words while guiding): no "Add a state", States is not reachable then. */
+    val statesOffered: Boolean = true,
 )
 ```
 
@@ -1370,9 +1441,9 @@ The new events (before `Close`):
     data class SlotTapped(val kind: SavedKind) : SearchEvent
     /** The "Saved places" row. */
     data object OpenSavedPlaces : SearchEvent
-    /** The "Choose on the map" row (SAVE mode). */
+    /** The "Choose on the map" row (SAVE mode; SET_START, P22). */
     data object ChooseOnMap : SearchEvent
-    /** The "Use my position" row (SAVE mode, SP23). */
+    /** The "Use my position" row (SAVE mode, SP23), or SET_START's "Your position" row (P22). */
     data object UseMyPosition : SearchEvent
     /** "OK" on the notice of SP52 or SP53. */
     data object DismissSavedNotice : SearchEvent
@@ -1383,23 +1454,37 @@ The outputs:
 ```kotlin
 // EXCERPT: feature/search/src/main/kotlin/io/github/spysyweeb/beamline/feature/search/SearchUi.kt
 sealed interface SearchOutput {
-    /** Never with mode SAVE: SAVE picks are saved here (Home, Work, Move) or returned as SaveNew. */
+    /** Never with mode SAVE: SAVE picks are saved here (Home, Work, Move) or returned as SaveNew; nor ADD_STOP (item 51: ShowStopResults). */
     data class Picked(val place: Place, val mode: SearchMode) : SearchOutput
     /** The app opens the States screen. */
     data object OpenStates : SearchOutput
     data object Closed : SearchOutput
     /** GO_TO: a saved place inside the installed maps was tapped; plan the trip now, no sheet (SP12, SP18). */
     data class PlanTrip(val place: Place) : SearchOutput
-    /** Show this place's sheet on the map (a saved place outside the installed maps, SP13). */
+    /** Show this place's sheet on the map (a saved place outside the installed maps, SP13; since 0.1.40, play test P44, a row of a typed list in GO_TO, whose list SearchFeature.results then holds with it selected). */
     data class ShowPlace(val place: Place) : SearchOutput
     /** Open the saved places screen; a row tap there picks for [mode] (SP27). */
     data class OpenSavedPlaces(val mode: SearchMode) : SearchOutput
     /** SAVE mode for SaveTarget.NewPlace: [place] was picked; the app opens the save dialog. */
     data class SaveNew(val place: Place) : SearchOutput
-    /** SAVE mode: "Choose on the map" for [target] (SP16); SAVE mode has ended (back at GO_TO START, or done when opened by openToSave, SP25). */
+    /** SAVE mode: "Choose on the map" for [target] (SP16); SAVE mode has ended (back at GO_TO START, or done when opened by openToSave, SP25). SET_START (P22): [target] is SaveTarget.Start and the search stays in SET_START, hidden while the pick runs. */
     data class PickOnMap(val target: SaveTarget) : SearchOutput
     /** Enter found several matches (rule S11): the search screen is done; SearchFeature.results holds them and the app fits [places]. */
     data class ShowResults(val places: List<Place>) : SearchOutput
+    /**
+     * Item 51 (ADD_STOP, rule S12): the search screen is done; SearchFeature.results holds the places offered as a
+     * stop (ResultsUi.stop). The app sends NavIntent.Detours([requestId], [places]), shows them on the map and passes
+     * TripState.detours to SearchFeature.onDetours; [selected]: the row whose card opens at once (one place picked).
+     */
+    data class ShowStopResults(val requestId: Long, val places: List<Place>, val selected: Int? = null) : SearchOutput
+    /** Item 51: a stop result selected (the app sends NavIntent.PreviewStop([place])), or its card closed ([place] null). */
+    data class PreviewStop(val place: Place?) : SearchOutput
+    /** Item 51: "Add stop" on a stop result's card: the stop results have ended; the app sends NavIntent.AddStop([place]). */
+    data class AddStop(val place: Place) : SearchOutput
+    /** Item 52: "Go here instead" on a handed-over place's card: the stop results have ended; the app plans the trip to [place] as Directions does (rule S7: while guiding "End this trip and go to ...?"). */
+    data class GoInstead(val place: Place) : SearchOutput
+    /** P22: SET_START's "Your position": the trip starts from the current position again (NavIntent.SetOrigin(Origin.CurrentPosition)). */
+    data object StartFromYourPosition : SearchOutput
 }
 ```
 
@@ -1462,6 +1547,10 @@ data class ResultRowUi(
     val key: String, val iconName: String, val title: String, val subtitle: String?, val distanceText: String?, val note: String?,
     /** Open, closing soon or closed now (rule S10); null when the place has no hours or they cannot be read. */
     val hours: HoursUi? = null,
+    /** Item 51 (rule S12): how much time the place adds to the trip as a stop, "+4 min" or "On the way"; null: not known, or not a stop result. */
+    val detourText: String? = null,
+    /** 0.1.40 (play test P2): the place only matched the words by name ("Erie Animal Hospital" for "hospital") in an answer led by a category or a brand; the lists put such rows after the others, under "Other matches". */
+    val otherMatch: Boolean = false,
 )
 
 /**
@@ -1485,18 +1574,56 @@ data class HoursDayUi(val day: String, val text: String, val today: Boolean)
 /**
  * The results of a search shown on the map (rule S11): [rows] and [places] in the same order,
  * nearest first, at most search_app.json on_map.max_results (20); [selected]: the index whose
- * sheet is open (its pin stands out), null while the list shows.
+ * sheet is open (its pin stands out), null while the list shows. Item 51: [stop] is set for the
+ * places offered as a new stop of the trip (rule S12): their order is the detours' and a selected
+ * row shows its card instead of a sheet. 0.1.40 (play test P6): [nearText], where the rows are
+ * ranked from when that is not the user's position ("Near Corry"), shown after the count; null:
+ * from the user's position.
  */
-data class ResultsUi(val query: String, val rows: List<ResultRowUi>, val places: List<Place>, val selected: Int? = null)
+data class ResultsUi(val query: String, val rows: List<ResultRowUi>, val places: List<Place>, val selected: Int? = null, val stop: StopResultsUi? = null, val nearText: String? = null)
 
-/** The results view (rule S11). */
+/**
+ * Item 51 (rule S12): the stop results' own state. [requestId]: the NavIntent.Detours the app sends for
+ * them, and the TripState.detours that answers it; [working]: "Working out detours..." shows and the rows
+ * wait (at most search_app.json along_route.detours_wait_ms); [note]: the line over rows that are not in
+ * detour order ("Detours took too long. Nearest first."); [typed]: the words Back types again in the Add
+ * stop search ("" after a shortcut, a type or a single place); [after]: the stop the new one goes after
+ * ("Along your route after Wegmans"), null when it joins at the car or the trip's start; [widened]: no
+ * place of the type was close to the route, the nearest are shown ("None close to your route. Nearest
+ * shown."); [preview]: the selected row's card, null while the list shows. Item 52: [instead], the place was
+ * handed over by another app during a trip (rule H7): its card has no way back to a list and also offers "Go here
+ * instead" ([ResultsEvent.GoInstead]).
+ */
+data class StopResultsUi(
+    val requestId: Long, val working: Boolean, val note: String? = null, val typed: String = "",
+    val after: String? = null, val widened: Boolean = false, val preview: StopPreviewUi? = null,
+    val instead: Boolean = false,
+)
+
+/**
+ * Item 51: the card of a stop result looked at before it is added: its [title] and [subtitle], how much
+ * the route with it adds ([addedText]: "+4 min", "On the way") and when it arrives ([arriveText]: "Arrive
+ * 4:33 PM"), where it goes ([afterText]: "Goes after Wegmans", null when it is the only stop before the
+ * destination), [busy] while that route is worked out, [problem] when there is none; "Add stop" works
+ * when [canAdd] (false only for a stop too many: any other problem is left to the re-plan).
+ */
+data class StopPreviewUi(
+    val title: String, val subtitle: String?, val addedText: String?, val arriveText: String?, val busy: Boolean,
+    val problem: String? = null, val canAdd: Boolean = true, val afterText: String? = null,
+)
+
+/** The results view (rule S11; item 51's stop results, rule S12). */
 sealed interface ResultsEvent {
-    /** A row or a result pin: that place's sheet opens (the app moves the map to it, K1). */
+    /** A row or a result pin: that place's sheet opens (the app moves the map to it, K1); a stop result's card opens. */
     data class Select(val index: Int) : ResultsEvent
-    /** The sheet of a result closed: the list shows again. */
+    /** The sheet of a result closed, or a stop result's card went back: the list shows again. */
     data object Deselect : ResultsEvent
     /** The list's close button or Back: the results and their pins are gone. */
     data object Close : ResultsEvent
+    /** Item 51: "Add stop" on a stop result's card. */
+    data object AddStop : ResultsEvent
+    /** Item 52: "Go here instead" on the card of a place handed over by another app ([StopResultsUi.instead]). */
+    data object GoInstead : ResultsEvent
 }
 
 /**
@@ -1525,27 +1652,37 @@ data class SearchUi(
     val shortcuts: List<ShortcutUi> = emptyList(),
     val recents: List<ResultRowUi> = emptyList(),
     val results: List<ResultRowUi> = emptyList(),
-    /** "Near your position", "Near the map center". */
+    /**
+     * "Near your position", "Near the map center", or the town nearest the map's centre when the search
+     * is ranked there ("Near Corry"); while the rows answer words that name a place ("coffee in corry"),
+     * that place ("Near Corry"); without a fresh fix, followed by " · no position yet". 0.1.40, play test P6.
+     */
     val nearText: String? = null,
     val message: String? = null,
-    /** SAVE mode: the line above the field ("Set home", "Set work", "Save place", "New location for Mom's"); null otherwise. */
+    /** 0.1.40 (play test P45): "Recent places cleared", shown with "Undo" at the bottom after "Clear" until Undo, typing, Back or UndoExpired; null: no bar. */
+    val undoText: String? = null,
+    /** 0.1.40 (play test P47): NO_RESULTS after typed words, the line under [message] ("Check the spelling, or try fewer words."); null otherwise (a chip's or a type's search). */
+    val noResultsHint: String? = null,
+    /** SAVE mode: the line above the field ("Set home", "Set work", "Save place", "New location for Mom's"); SET_START: "Choose start" (P22); null otherwise. */
     val title: String? = null,
     /** START: the Home and Work rows (table of 2.1). */
     val slots: List<SavedRowUi> = emptyList(),
     /** START: the subtitle of the "Saved places" row ("None yet", "1 place", "4 places"); null: no row. */
     val savedPlacesText: String? = null,
-    /** START in SAVE mode: the "Choose on the map" row. */
+    /** START in SAVE mode and in SET_START (P22): the "Choose on the map" row. */
     val chooseOnMap: Boolean = false,
     /** Saved places whose name matches the typed text (SP20, SP21), shown above [results]; keys "saved:<id>"; always empty in SAVE mode. */
     val savedResults: List<ResultRowUi> = emptyList(),
     /** GO_TO START: the notice of SP52 or SP53, shown first with "OK"; null otherwise. */
     val savedNotice: String? = null,
-    /** START in SAVE mode: the "Use my position" row (a fresh fix within saved.position_max_accuracy_m, SP23). */
+    /** START in SAVE mode: the "Use my position" row (a fresh fix within saved.position_max_accuracy_m, SP23); START in SET_START: the "Your position" row, with a fresh fix (the context is GPS, P22). */
     val useMyPosition: Boolean = false,
-    /** Raise the keyboard when the screen opens; false in ADD_STOP while driving (SP4). */
+    /** Raise the keyboard when the screen opens; in every mode, also ADD_STOP while driving (P26, 0.1.40). */
     val focusField: Boolean = true,
     /** Batch O3 ("View all", item 27): the grid of every place type shows over the start rows; null: not shown. */
     val allTypes: List<PlaceTypeGroupUi>? = null,
+    /** 0.1.40 (review F4, P30): false in a GO_TO search opened during a trip (a link's words while guiding): no "Add a state", States is not reachable then. */
+    val statesOffered: Boolean = true,
 )
 
 sealed interface SearchEvent {
@@ -1555,15 +1692,19 @@ sealed interface SearchEvent {
     data class RowTapped(val key: String) : SearchEvent
     data class RemoveRecent(val key: String) : SearchEvent
     data object ClearRecents : SearchEvent
+    /** 0.1.40 (play test P45): "Undo" on the bar after "Clear": the recents come back as they were. */
+    data object UndoClearRecents : SearchEvent
+    /** 0.1.40 (P45): the bar's time is up (10 s, or the phone's accessibility time; never while TalkBack explores by touch): the clear is final. */
+    data object UndoExpired : SearchEvent
     /** "Add a state" on the NO_SEARCH_DATA screen. */
     data object OpenStates : SearchEvent
     /** The Home or Work row: set, a pick (SP12-SP14); empty, SAVE mode for that slot (SP15). */
     data class SlotTapped(val kind: SavedKind) : SearchEvent
     /** The "Saved places" row. */
     data object OpenSavedPlaces : SearchEvent
-    /** The "Choose on the map" row (SAVE mode). */
+    /** The "Choose on the map" row (SAVE mode; SET_START, P22). */
     data object ChooseOnMap : SearchEvent
-    /** The "Use my position" row (SAVE mode, SP23). */
+    /** The "Use my position" row (SAVE mode, SP23), or SET_START's "Your position" row (P22). */
     data object UseMyPosition : SearchEvent
     /** "OK" on the notice of SP52 or SP53. */
     data object DismissSavedNotice : SearchEvent
@@ -1579,23 +1720,37 @@ sealed interface SearchEvent {
 }
 
 sealed interface SearchOutput {
-    /** Never with mode SAVE: SAVE picks are saved here (Home, Work, Move) or returned as SaveNew. */
+    /** Never with mode SAVE: SAVE picks are saved here (Home, Work, Move) or returned as SaveNew; nor ADD_STOP (item 51: ShowStopResults). */
     data class Picked(val place: Place, val mode: SearchMode) : SearchOutput
     /** The app opens the States screen. */
     data object OpenStates : SearchOutput
     data object Closed : SearchOutput
     /** GO_TO: a saved place inside the installed maps was tapped; plan the trip now, no sheet (SP12, SP18). */
     data class PlanTrip(val place: Place) : SearchOutput
-    /** Show this place's sheet on the map (a saved place outside the installed maps, SP13). */
+    /** Show this place's sheet on the map (a saved place outside the installed maps, SP13; since 0.1.40, play test P44, a row of a typed list in GO_TO, whose list SearchFeature.results then holds with it selected). */
     data class ShowPlace(val place: Place) : SearchOutput
     /** Open the saved places screen; a row tap there picks for [mode] (SP27). */
     data class OpenSavedPlaces(val mode: SearchMode) : SearchOutput
     /** SAVE mode for SaveTarget.NewPlace: [place] was picked; the app opens the save dialog. */
     data class SaveNew(val place: Place) : SearchOutput
-    /** SAVE mode: "Choose on the map" for [target] (SP16); SAVE mode has ended (back at GO_TO START, or done when opened by openToSave, SP25). */
+    /** SAVE mode: "Choose on the map" for [target] (SP16); SAVE mode has ended (back at GO_TO START, or done when opened by openToSave, SP25). SET_START (P22): [target] is SaveTarget.Start and the search stays in SET_START, hidden while the pick runs. */
     data class PickOnMap(val target: SaveTarget) : SearchOutput
     /** Enter found several matches (rule S11): the search screen is done; SearchFeature.results holds them and the app fits [places]. */
     data class ShowResults(val places: List<Place>) : SearchOutput
+    /**
+     * Item 51 (ADD_STOP, rule S12): the search screen is done; SearchFeature.results holds the places offered as a
+     * stop (ResultsUi.stop). The app sends NavIntent.Detours([requestId], [places]), shows them on the map and passes
+     * TripState.detours to SearchFeature.onDetours; [selected]: the row whose card opens at once (one place picked).
+     */
+    data class ShowStopResults(val requestId: Long, val places: List<Place>, val selected: Int? = null) : SearchOutput
+    /** Item 51: a stop result selected (the app sends NavIntent.PreviewStop([place])), or its card closed ([place] null). */
+    data class PreviewStop(val place: Place?) : SearchOutput
+    /** Item 51: "Add stop" on a stop result's card: the stop results have ended; the app sends NavIntent.AddStop([place]). */
+    data class AddStop(val place: Place) : SearchOutput
+    /** Item 52: "Go here instead" on a handed-over place's card: the stop results have ended; the app plans the trip to [place] as Directions does (rule S7: while guiding "End this trip and go to ...?"). */
+    data class GoInstead(val place: Place) : SearchOutput
+    /** P22: SET_START's "Your position": the trip starts from the current position again (NavIntent.SetOrigin(Origin.CurrentPosition)). */
+    data object StartFromYourPosition : SearchOutput
 }
 
 /**
@@ -1630,7 +1785,7 @@ data class PlaceSheetUi(
     val phones: List<ContactUi> = emptyList(),
     /** Every web address of OSM's `website` that a browser can open, each on its own line. */
     val websites: List<ContactUi> = emptyList(),
-    /** The postal address from the pack ("4662 West Ridge Road, Erie, PA 16506"); null when it has none. */
+    /** The postal address from the pack ("4662 West Ridge Road, Erie, PA 16506"); for a point (a dropped pin, a saved point) without one, its coordinates ("42.13646, -80.08718", 0.1.40 P17); null when it has none. */
     val address: String? = null,
     /** What the place is, in words ("Convenience store"); null when the pack does not say. */
     val category: String? = null,
@@ -1687,10 +1842,12 @@ class SearchFeature(
     val ui: StateFlow<SearchUi> get() = TODO("track S")
     /**
      * GO_TO, ADD_STOP or SET_START; SAVE goes through [openToSave]. [driving]: phase GUIDING,
-     * REROUTING or ARRIVED (no keyboard at once, SP4). [destination]: in SET_START, the trip's last
-     * stop, whose saved row reads "Already your destination" (SP14).
+     * REROUTING or ARRIVED (SP4). [destination]: in SET_START, the trip's last stop, whose saved row
+     * reads "Already your destination" (SP14). [along] (ADD_STOP, item 51, rule S12): the trip's route
+     * ahead from where a new stop joins it (StopLeg.lineAhead of :nav:session); places are looked for along it.
+     * [alongAfter]: the name of the stop a new one goes after (StopLeg.joinsAfter), null when none.
      */
-    fun open(mode: SearchMode, context: SearchContext, driving: Boolean = false, destination: Place? = null): Unit = TODO("track S")
+    fun open(mode: SearchMode, context: SearchContext, driving: Boolean = false, destination: Place? = null, along: List<GeoPoint> = emptyList(), alongAfter: String? = null): Unit = TODO("track S")
     /** SAVE mode for [target] (from the saved places screen or a sheet's Edit); after the save, on Close or on "Choose on the map", onEvent returns Closed or PickOnMap and this search is done. */
     fun openToSave(target: SaveTarget, context: SearchContext): Unit = TODO("track S")
     /** Picked places are added to the recents here, except saved places and SAVE-mode picks (SP31). */
@@ -1704,14 +1861,21 @@ class SearchFeature(
     fun placeSheet(place: Place, context: SearchContext, tripActive: Boolean, driving: Boolean = false, guiding: Boolean = driving): PlaceSheetUi = TODO("track S")
     fun close(): Unit = TODO("track S")
 
-    /** The results on the map after Enter (rule S11); null when none are shown. */
+    /** The results on the map after Enter, a chip, or a tap on a row of a typed list (rule S11; P44, 0.1.40); null when none are shown. */
     val results: StateFlow<ResultsUi?> get() = TODO("track S")
-    /** Outputs that come with an answer after [onEvent] returned: ShowResults, or Picked for a single match (S11). */
+    /** Outputs that come with an answer after [onEvent] returned: ShowResults, or Picked for a single match (S11); ShowStopResults (S12). */
     val later: SharedFlow<SearchOutput> get() = TODO("track S")
-    /** A row or pin selected (ShowPlace of that result), the sheet closed or the results closed (S11). */
+    /** A row or pin selected (ShowPlace of that result), the sheet closed or the results closed (S11); for stop results PreviewStop and AddStop (S12). */
     fun onResultsEvent(event: ResultsEvent): SearchOutput? = TODO("track S")
     /** S11: ends the results when a state one of them came from is no longer in [set] (removed while they show); true when they ended. */
     fun closeResultsGoneFrom(set: InstalledSet): Boolean = TODO("track S")
+    /**
+     * P46 (0.1.40): results the app kept while a route preview ran (as [results] gave them) shown again,
+     * their hours as of now; false, and nothing changes, while other results show or when a state one of
+     * them came from is no longer installed; false for stop results (item 51: never kept). The app calls
+     * it when Back from directions has reopened the destination's window and the route has ended.
+     */
+    fun restoreResults(results: ResultsUi): Boolean = TODO("track S")
     /** Counts up when hours, phone or website of a place arrived from its pack: a place sheet made before is made again (S10). */
     val detailsLoaded: StateFlow<Int> get() = TODO("track S")
     /** Recomputes the statuses of the results rows at the clock (the app calls it each minute, S10). */
@@ -1780,7 +1944,7 @@ sealed interface SavedDialogUi {
         val name: String?,
         /** "This replaces your home: Erie Maritime Museum, 100 East Front Street, Erie." */
         val replaceText: String?,
-        /** Why "Save" is off, or why the last save failed; null when fine. */
+        /** Why "Save" is off, or why the last save failed; null when fine (a point's empty name too, until "Save" is tapped: then "Type a name.", P57). */
         val problem: String?,
         /** "Save" or "Replace". */
         val confirmText: String,
@@ -1790,23 +1954,23 @@ sealed interface SavedDialogUi {
     /** "Rename". */
     data class Rename(val name: String, val problem: String?, val canConfirm: Boolean) : SavedDialogUi
 
-    /** "Remove Mom's?", "Remove your home?", "Make Mom's your home?" */
-    data class Confirm(val title: String, val text: String?, val confirmText: String) : SavedDialogUi
+    /** "Remove Mom's?", "Remove your home?", "Make Mom's your home?"; [destructive]: the confirm button is red, as the menu's "Remove" (P58). */
+    data class Confirm(val title: String, val text: String?, val confirmText: String, val destructive: Boolean = false) : SavedDialogUi
 }
 
 /** Choosing a point on the map (SP16, SP24). */
 data class MapPickUi(
-    /** "Tap the map at your home", "… at your work", "… at the place", "… at the new location" */
+    /** "Tap the map at your home", "… at your work", "… at the place", "… at the new location", "Tap the map where the trip starts" (P22) */
     val prompt: String,
     /** The point chosen so far (the app draws it as the PICKED pin); null before the first tap. */
     val place: Place?,
     /** "Point on the map" or the tapped POI's name; "No point chosen yet" before the first tap. */
     val title: String,
-    /** "42.13646, -80.08718"; null before the first tap. */
+    /** A point's street once the app found it ("Near East 5th Street, Erie", [SavedPlacesFeature.streetFound]); until then, and for a POI, its coordinates "42.13646, -80.08718"; null before the first tap. */
     val subtitle: String?,
     /** "Outside the installed maps" (saving is still allowed). */
     val note: String?,
-    /** "Set home", "Set work", "Save", "Use this point". */
+    /** "Set home", "Set work", "Save", "Use this point", "Use as start" (P22). */
     val confirmText: String,
     /** False before the first tap, below saved.pick_min_zoom and outside every state's map (SP24). */
     val canConfirm: Boolean,
@@ -1843,6 +2007,8 @@ sealed interface SavedEvent {
     data object PickCancel : SavedEvent
     /** "OK" on the notice of SP52 or SP53. */
     data object NoticeDismissed : SavedEvent
+    /** "Undo" on the app's bar after [SavedOutput.Removed] (P58): that saved place comes back as it was. */
+    data class UndoRemove(val savedId: String) : SavedEvent
     /** Back on the list. */
     data object Back : SavedEvent
 }
@@ -1852,7 +2018,7 @@ sealed interface SavedOutput {
     data class PlanTrip(val place: Place) : SavedOutput
     /** Show the place's sheet on the map (outside the installed maps, or the list was opened from Settings). */
     data class ShowPlace(val place: Place) : SavedOutput
-    /** List opened from ADD_STOP or SET_START search: [place] picked for [mode]. */
+    /** List opened from ADD_STOP or SET_START search: [place] picked for [mode]; also the start chosen on the map (SaveTarget.Start, mode SET_START, P22). */
     data class Picked(val place: Place, val mode: SearchMode) : SavedOutput
     /** Open search in SAVE mode for [target] ("Set home", "Set work", "Add a place", "Change location"). */
     data class SearchToSave(val target: SaveTarget) : SavedOutput
@@ -1860,6 +2026,8 @@ sealed interface SavedOutput {
     data class Saved(val place: SavedPlace) : SavedOutput
     /** The map pick ended: saved ([place]) or cancelled (null); the app shows again what the pick hid (SP25). */
     data class PickEnded(val place: SavedPlace?) : SavedOutput
+    /** A saved place was removed by its Edit menu's "Remove" (P58): the app offers "Undo" ([SavedEvent.UndoRemove]) for a few seconds. */
+    data class Removed(val place: SavedPlace) : SavedOutput
     data object Closed : SavedOutput
 }
 
@@ -1891,6 +2059,12 @@ class SavedPlacesFeature(
     fun startMapPick(target: SaveTarget): Unit = TODO("track S")
     /** A tap or long press on the map while picking; [poi]: the POI label under it; [zoom]: the camera zoom at the tap (SP24). */
     fun onMapTap(point: GeoPoint, poi: MapPoi?, zoom: Double): Unit = TODO("track S")
+    /**
+     * P18 (0.1.40): the street line the app found at [point] ("Near East 5th Street, Erie"): the map
+     * pick's point or a save dialog's point there (MAP_PIN) shows it and is saved with it as its place
+     * name. Anything else is left as it is: a place saved before, still named by its coordinates, keeps them.
+     */
+    fun streetFound(point: GeoPoint, line: String): Unit = TODO("track S")
     fun onEvent(event: SavedEvent): SavedOutput? = TODO("track S")
 }
 ```
@@ -1900,7 +2074,7 @@ Three composables added to `feature/search/src/main/kotlin/io/github/spysyweeb/b
 
 ```kotlin
 // EXCERPT: feature/search/src/main/kotlin/io/github/spysyweeb/beamline/feature/search/SearchScreens.kt
-/** The results on the map after Enter (rule S11): the list at the bottom, pulled up for more. */
+/** The results on the map after Enter (rule S11): the list at the bottom, pulled up for more; item 51's stop results (S12): "Working out detours...", "+N min", the selected one's card with "Add stop". */
 @Composable
 fun ResultsSheet(ui: ResultsUi, onEvent: (ResultsEvent) -> Unit, modifier: Modifier = Modifier): Unit = TODO("track S")
 
@@ -1924,7 +2098,8 @@ fun MapPickBar(ui: MapPickUi, onEvent: (SavedEvent) -> Unit, modifier: Modifier 
 | Opening search | `search.open(mode, context, driving = phase in GUIDING, REROUTING, ARRIVED, destination = last stop in SET_START)`; `SearchContext.accuracyM` from the fix (SP23) |
 | `SearchOutput.PlanTrip(p)`, `SavedOutput.PlanTrip(p)`, sheet "Directions" | close search and the list; SP18 by phase, with its two dialogs (permission first, as Directions today) |
 | `ShowPlace(p)` (both) | close search and the list (and Settings); open `PlaceSheet(search.placeSheet(p, context, tripActive, driving))` |
-| `SearchOutput.Picked(p, ADD_STOP / SET_START)`, `SavedOutput.Picked` | close search and the list; `AddStop(p)` / `SetOrigin(FromPlace(p))` (as today) |
+| `SearchOutput.Picked(p, SET_START)`, `SavedOutput.Picked` | close search and the list; ADD_STOP: the saved list's pick goes to `SearchFeature.showStopPlace` (its card on the map, rule S12), SET_START: `SetOrigin(FromPlace(p))` (as today) |
+| `SearchOutput.ShowStopResults`, `PreviewStop`, `AddStop` (item 51) | close search and the list; `Detours`, `PreviewStop`; `AddStop(p)` only from the card's button (S12) |
 | `SearchOutput.OpenSavedPlaces(m)` | `saved.openList(pickFor = m, context, destination)`; show `SavedPlacesScreen` above search |
 | `SavedOutput.SearchToSave(t)` | `search.openToSave(t, context)`; show search above the list or the sheet |
 | `SearchOutput.Closed` | pop one screen (back to the list or the sheet when it opened search, else to the map) |
@@ -2369,9 +2544,9 @@ point at Erie International Airport (42.08418, -80.17321); "Quokka Shop" = Millc
 | 4 | Search "millcreek mall"; tap it; "Save"; replace the name with "Quokka Shop"; "Save" | dialog "Save place" with "Other" selected and "Millcreek Mall" in the field; the sheet then reads "Saved as Quokka Shop" with "Edit" |
 | 5 | Wait 2 s; capture the log (`logcat -d --pid`); `am force-stop`; start; open search | "Home", "Work", "Saved places" / "3 places"; the recents do not list "Millcreek Mall" (SP30); typing "quo" lists "Quokka Shop" first; typing "home" lists "Home" first |
 | 6 | Clear the text; tap "Home" | no place sheet; the route sheet with the stop row "Home" and at least one card (PLANNING then CHOOSING) |
-| 7 | On the route sheet: "Add stop" → "Saved places" → "Quokka Shop" | the search screen shows "Home" and "Work" rows, no "Set" rows; back on the route sheet the stops read "Quokka Shop", "Home"; new cards |
+| 7 | On the route sheet: "Add stop" → "Saved places" → "Quokka Shop" | the search screen shows "Home" and "Work" rows, no "Set" rows; the card of "Quokka Shop" on the map; "Add stop": back on the route sheet the stops read "Quokka Shop", "Home"; new cards |
 | 8 | Close the route sheet; with `--ef lat/lon --ef zoom 13`, the camera on the museum, then on the airport, then on the mall, a screenshot each; then (42.11, -80.13) at z11, screenshot; the mall at z12, screenshot | z13: the house at the museum, the briefcase at the airport, the star at the mall, each in the middle of its screenshot; z11: house and briefcase, no star (a 411 dp wide view at z11 spans about ±5.8 km, enough for both; at z13 it spans only ±1.5 km, so one view cannot hold two of them); z12: the star |
-| 9 | Search "quo", tap "Quokka Shop" (route sheet), "Start" via "Simulate drive"; after 10 s open the stops editor → "Add stop", screenshot, Close; 20 s, screenshot, "End trip" | search opened for the stop shows "Home" and "Work" at the top with the keyboard down (SP4); the star is not drawn under the destination pin (SP43); in the tilted view a marker in view stands upright and never covers the route line |
+| 9 | Search "quo", tap "Quokka Shop" (route sheet), "Start" via "Simulate drive"; after 10 s open the stops editor → "Add stop", screenshot, Close; 20 s, screenshot, "End trip" | search opened for the stop shows "Home" and "Work" at the top with the keyboard up (P26): the keyboard shows within 1 s of the tap, without touching the field; the star is not drawn under the destination pin (SP43); in the tilted view a marker in view stands upright and never covers the route line |
 | 10 | Tap the house marker | the sheet "Home" with "Directions" and "Edit" |
 | 11 | Settings → "Saved places" → switch "Show on the map" off; back; screenshot; switch on | no markers while off; markers back when on |
 | 12 | List: "Edit" on "Quokka Shop" → "Rename" → "Quokka Mall" → "Save"; "Edit" → "Change location" → search "erie art museum" → tap; "Edit" → "Make home" → "Make home"; "Edit" on Work → "Remove work" → "Remove" | the rename shows; the change shows "Erie Art Museum, 20 East 5th Street, Erie" on the list; the make-home dialog reads "Make Quokka Mall your home?", "Your current home (Erie Maritime Museum, 100 East Front Street, Erie) will be removed.", "It will be called Home."; at the end the rows are "Home" (Erie Art Museum…), "Set work", the hint line, "Add a place" |
@@ -2413,9 +2588,9 @@ a marker tap reported with its pin id.
 - **Labels on the map markers** (the icon says Home or Work; the name shows in the sheet).
 - **Saved routes or trips**, several homes, and a "Directions from Home" shortcut beyond SET_START.
 - **Editing from a car screen**, launcher shortcuts ("Go home"), widgets and voice ("take me home").
-- **Undo** for remove and replace (confirmation dialogs instead).
-- **Reverse lookup** of an address for a map point (the round has no reverse geocoder; the point
-  shows its coordinates).
+- **Undo** for replace (a confirmation dialog; remove has an Undo bar since 0.1.40, P58).
+- **Reverse lookup of a full address** for a map point: a point shows the nearest street the packs
+  know ("Near East 5th Street, Erie", item 31 and 0.1.40 P18), its coordinates in its window's details.
 - **Hiding the app's screen from the system's recent-apps thumbnail** (`FLAG_SECURE`): it would also
   block the owner's own screenshots.
 

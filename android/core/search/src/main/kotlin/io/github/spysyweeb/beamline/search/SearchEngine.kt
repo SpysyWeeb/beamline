@@ -878,6 +878,38 @@ class SearchEngine(
     }
 
     /**
+     * 0.1.40 (play test P6): the name of the town nearest a point: the place entry of type city, town,
+     * borough or village ([AREA_PLACE_TYPES]) whose point is nearest, within [withinKm]; equal distances
+     * (to 0.1 km): the more important, then the lower id. Null without one, or for a position that is
+     * not usable. The search screen says "Near Corry" for a search around the map's centre. Kotlin only
+     * (query.py has no counterpart; the conformance answers are unchanged).
+     */
+    fun placeNear(lat: Double, lon: Double, withinKm: Double): String? {
+        val at = validPosition(lat, lon) ?: return null
+        if (!withinKm.isFinite() || withinKm <= 0.0) return null
+        val dlat = withinKm / 111.0
+        val dlon = withinKm / (111.0 * maxOf(0.2, StrictMath.cos(Math.toRadians(at.lat))))
+        val rows = db.query(
+            "SELECT e.id, e.name, e.lat, e.lon, e.importance FROM entry_rtree r JOIN entry e ON e.id = r.id " +
+                "WHERE r.maxlat >= ? AND r.minlat <= ? AND r.maxlon >= ? AND r.minlon <= ? AND e.kind = $KIND_PLACE " +
+                "AND e.type IN (${AREA_PLACE_TYPES.joinToString(",") { "'$it'" }})",
+            at.lat - dlat, at.lat + dlat, at.lon - dlon, at.lon + dlon,
+        )
+        var bestKey: DoubleArray? = null
+        var best: String? = null
+        for (r in rows) {
+            val d = Geo.haversineKm(at.lat, at.lon, num(r[2]), num(r[3]))
+            if (d > withinKm) continue
+            val key = doubleArrayOf(Py.round(d, 1), -num(r[4]), (r[0] as Long).toDouble())
+            if (bestKey == null || tupleLess(key, bestKey)) {
+                bestKey = key
+                best = r[1] as String
+            }
+        }
+        return best
+    }
+
+    /**
      * The house number on street entry [eid] nearest to [at], among the address points of the street's
      * key within ranking.json near_street.house_within_m; equal distances: the lower number as text
      * (query.py _house_near). Null without the addresses database or when none is that near.
@@ -1303,7 +1335,9 @@ class SearchEngine(
             if (results.size >= lim) break
         }
         val ms = Py.round((System.nanoTime() - t0) / 1e6, 2)
-        return SearchResponse(text, labels, results, ms, outCov, positionIgnored, p.house)
+        // P6 (0.1.40): the place the words name is the anchor the results were ranked around
+        val named = ctxPlaces.firstOrNull()?.let { NamedPlace(it.name, it.lat, it.lon) }
+        return SearchResponse(text, labels, results, ms, outCov, positionIgnored, p.house, named)
     }
 
     // ------------------------------------------------------------------ helpers
@@ -1408,6 +1442,8 @@ class SearchEngine(
         const val SIGNAL_CELLS_PER_QUERY = 400
         const val KIND_PLACE = 1
         const val KIND_STREET = 2
+        /** P6 (0.1.40): the place types a town is named from ("Near Corry"); hamlets are left out on purpose. */
+        val AREA_PLACE_TYPES = listOf("city", "town", "borough", "village")
         /** "4662 West Ridge Road, Erie, PA 16506" from OSM's addr:* tags and the pack's [state]; null without a street. */
         internal fun postalAddress(number: String?, street: String?, city: String?, postcode: String?, state: String?): String? {
             if (street == null) return null

@@ -3,6 +3,7 @@ package io.github.spysyweeb.beamline.nav
 import io.github.spysyweeb.beamline.api.nav.END_UNDO_MS
 import io.github.spysyweeb.beamline.api.nav.NavIntent
 import io.github.spysyweeb.beamline.api.nav.Phase
+import io.github.spysyweeb.beamline.api.nav.ProblemKind
 import io.github.spysyweeb.beamline.api.nav.RouteOptions
 import io.github.spysyweeb.beamline.api.nav.Simulation
 import io.github.spysyweeb.beamline.api.nav.TripEvent
@@ -83,6 +84,24 @@ class UndoEndTest {
         assertEquals(Phase.GUIDING, h.phase(), "${h.state.problem}")
         assertTrue(h.state.guidance!!.simulated)
         assertTrue(h.events.filterIsInstance<TripEvent.GuidanceStarted>().last().simulated)
+    }
+
+    /** Play test P27: an Undo that finds no position offers the trip as after a restart, and says it is simulated. */
+    @Test
+    fun `P27 a simulated drive whose Undo finds no position is offered as simulated`() = sessionTest { h ->
+        h.guideExit24(Simulation())
+        h.advance(3_000)
+        h.send(NavIntent.End)
+        h.send(NavIntent.UndoEnd)                  // no real fix: the trip was planned from a chosen place
+        h.advance(16_000)                          // past planning.wait_for_fix_s
+        assertEquals(Phase.RESUME_OFFERED, h.phase())
+        assertEquals(ProblemKind.NO_POSITION, h.state.problem!!.kind)
+        assertTrue(h.state.resumeSimulated, "offered as a simulated drive")
+        h.fixAtOrigin()
+        h.send(NavIntent.Resume)
+        h.advance(500)
+        assertEquals(Phase.GUIDING, h.phase(), "${h.state.problem}")
+        assertTrue(h.state.guidance!!.simulated, "Resume drives it simulated again")
     }
 
     /** Audit F1: a place window open at End asks for its drive time at once; that question is not "the next intent". */

@@ -27,6 +27,12 @@ data class MapScene(
      * and the vehicle. Only for the route being driven, so the map stays calm.
      */
     val lights: List<GeoPoint> = emptyList(),
+    /**
+     * The route step the route sheet shows (play test P21, 0.1.40): a white disc ringed in the route's
+     * casing blue at that maneuver, above the lines, the lights and the saved markers, below the pins and
+     * the vehicle. Only while choosing (PLANNING, CHOOSING); null: none.
+     */
+    val step: GeoPoint? = null,
 )
 
 /**
@@ -44,14 +50,26 @@ data class RouteLines(
     val chosen: List<GeoPoint>,
     /** Driven part of [chosen]; null before guidance. */
     val traveled: RouteCursor?,
-    /** The other choices (grey), only while choosing. */
+    /**
+     * The other choices, only while choosing: drawn under [chosen], duller than it (route_colors.json
+     * "alternative"). A tap on one where it runs apart from [chosen] is reported as MapGesture.Tap with
+     * pinId = "route:" + its id (play test P23). A line with [AlternativeLine.tripRoute] is drawn grey and
+     * never reported (item 51).
+     */
     val alternatives: List<AlternativeLine>,
 )
 
-data class AlternativeLine(val id: Long, val points: List<GeoPoint>)
+/**
+ * Another route choice (play test P23: a tap on it chooses it), or with [tripRoute] the trip's own route
+ * drawn under a previewed stop's route (item 51, 0.1.40): grey (route_colors.json "trip_route"), never tapped.
+ */
+data class AlternativeLine(val id: Long, val points: List<GeoPoint>, val tripRoute: Boolean = false)
 
-/** RESULT: one of the search results on the map (rule S11), under every other pin; the selected one is the PICKED pin. */
-enum class PinKind { DESTINATION, STOP, PICKED, RESULT }
+/**
+ * RESULT: one of the search results on the map (rule S11), under every other pin; the selected one is the PICKED pin.
+ * START: the trip's chosen start (Origin.FromPlace) while a route is chosen (play test P22), with the stops.
+ */
+enum class PinKind { DESTINATION, STOP, PICKED, RESULT, START }
 
 data class MapPin(val id: String, val point: GeoPoint, val kind: PinKind, val number: Int? = null, val reached: Boolean = false)
 
@@ -92,7 +110,7 @@ data class CameraState(val mode: CameraMode = CameraMode.BROWSE, val showRecente
 data class MapPoi(val name: String, val kind: String, val point: GeoPoint)
 
 sealed interface MapGesture {
-    /** [pinId]: the MapPin.id, or "saved:" + SavedMarker.savedId, under the tap; [poi]: a POI label under it. */
+    /** [pinId]: the MapPin.id, "saved:" + SavedMarker.savedId, or "route:" + AlternativeLine.id, under the tap; [poi]: a POI label under it. */
     data class Tap(val point: GeoPoint, val pinId: String?, val poi: MapPoi?) : MapGesture
     data class LongPress(val point: GeoPoint) : MapGesture
     /** Pan, zoom, rotate or tilt by the user. */

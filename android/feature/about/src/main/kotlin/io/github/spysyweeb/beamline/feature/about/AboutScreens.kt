@@ -17,6 +17,10 @@ fun SplashReveal(mapReady: Boolean, onFinished: () -> Unit, modifier: Modifier =
 @Composable
 fun FirstRunNotice(onAccept: () -> Unit, modifier: Modifier = Modifier): Unit = FirstRunNoticeContent(onAccept, modifier)
 
+/** The driver notice read again from About: the same text under a top bar with Back and its title; nothing to accept. */
+@Composable
+fun DriverNoticeScreen(onBack: () -> Unit, modifier: Modifier = Modifier): Unit = DriverNoticeScreenContent(onBack, modifier)
+
 @Composable
 fun AboutScreen(ui: AboutUi, onEvent: (AboutEvent) -> Unit, modifier: Modifier = Modifier): Unit = AboutScreenContent(ui, onEvent, modifier)
 

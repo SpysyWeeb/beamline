@@ -215,11 +215,12 @@ class SavedPlacesFeatureTest {
         val q = other("Quokka Shop", mallPlace)
         f.openEdit(q.id)
         f.onEvent(SavedEvent.MenuChosen(EditAction.DELETE))
-        assertEquals(SavedDialogUi.Confirm("Remove Quokka Shop?", null, "Remove"), ui.dialog)
+        // P58: Remove's confirm is red, as the menu's Remove
+        assertEquals(SavedDialogUi.Confirm("Remove Quokka Shop?", null, "Remove", destructive = true), ui.dialog)
         f.onEvent(SavedEvent.DialogDismiss)
         f.openEdit(h.id)
         f.onEvent(SavedEvent.MenuChosen(EditAction.DELETE))
-        assertEquals(SavedDialogUi.Confirm("Remove your home?", null, "Remove"), ui.dialog)
+        assertEquals(SavedDialogUi.Confirm("Remove your home?", null, "Remove", destructive = true), ui.dialog)
         f.onEvent(SavedEvent.DialogDismiss)
         f.openEdit(q.id)
         f.onEvent(SavedEvent.MenuChosen(EditAction.MAKE_HOME))
@@ -275,11 +276,20 @@ class SavedPlacesFeatureTest {
         assertEquals("Save", d.confirmText)
         assertTrue(d.canConfirm)
         assertNull(d.problem)
-        // a point: empty name, Save off, no problem line yet
+        // a point: empty name, no problem line yet, Save on (P57): a tap says what is needed and saves nothing
         f.openSave(Place("Dropped pin", ZOO, PlaceSource.MAP_PIN, "42.09710, -80.07578"))
         d = ui.dialog as SavedDialogUi.Save
         assertEquals("", d.name)
+        assertTrue(d.canConfirm)
+        assertNull(d.problem)
+        assertNull(f.onEvent(SavedEvent.DialogConfirm))
+        d = ui.dialog as SavedDialogUi.Save
+        assertEquals("Type a name.", d.problem)
         assertFalse(d.canConfirm)
+        assertTrue(store.places.value.isEmpty())
+        f.onEvent(SavedEvent.NameChanged("Zoo gate"))
+        d = ui.dialog as SavedDialogUi.Save
+        assertTrue(d.canConfirm)
         assertNull(d.problem)
         f.onEvent(SavedEvent.NameChanged("x"))
         f.onEvent(SavedEvent.NameChanged(""))
@@ -352,7 +362,8 @@ class SavedPlacesFeatureTest {
     @Test
     fun mapPick() {
         val prompts = mapOf(SaveTarget.Home to ("Tap the map at your home" to "Set home"), SaveTarget.Work to ("Tap the map at your work" to "Set work"),
-            SaveTarget.NewPlace to ("Tap the map at the place" to "Save"), SaveTarget.Move("s0000000000000001") to ("Tap the map at the new location" to "Use this point"))
+            SaveTarget.NewPlace to ("Tap the map at the place" to "Save"), SaveTarget.Move("s0000000000000001") to ("Tap the map at the new location" to "Use this point"),
+            SaveTarget.Start to ("Tap the map where the trip starts" to "Use as start"))
         for ((t, texts) in prompts) {
             f.startMapPick(t)
             val p = ui.mapPick!!
@@ -418,6 +429,124 @@ class SavedPlacesFeatureTest {
         val saved = f.onEvent(SavedEvent.DialogConfirm) as SavedOutput.PickEnded
         assertEquals("Zoo gate", saved.place!!.name)
         assertNull(ui.mapPick)
+    }
+
+    /** P22: Change start's "Choose on the map": the point is the trip's start; nothing is saved. */
+    @Test
+    fun startChosenOnTheMapIsPickedNotSaved() {
+        f.startMapPick(SaveTarget.Start)
+        assertNull(f.onEvent(SavedEvent.PickConfirm))                 // no point yet
+        f.onMapTap(ZOO, null, 17.0)
+        val out = f.onEvent(SavedEvent.PickConfirm) as SavedOutput.Picked
+        assertEquals(SearchMode.SET_START, out.mode)
+        assertEquals(ZOO, out.place.point)
+        assertEquals(PlaceSource.MAP_PIN, out.place.source)
+        assertNull(ui.mapPick)
+        assertTrue(store.places.value.isEmpty())
+        // a POI label is the start as it is; the pick's rules stay (zoom in for a point)
+        f.startMapPick(SaveTarget.Start)
+        f.onMapTap(MUSEUM, MapPoi("Erie Maritime Museum", "museum", MUSEUM), 12.0)
+        assertEquals(SavedOutput.Picked(Place("Erie Maritime Museum", MUSEUM, PlaceSource.MAP_POI), SearchMode.SET_START), f.onEvent(SavedEvent.PickConfirm))
+        f.startMapPick(SaveTarget.Start)
+        f.onMapTap(ZOO, null, 14.0)
+        assertNull(f.onEvent(SavedEvent.PickConfirm))
+        assertTrue(store.places.value.isEmpty())
+    }
+
+    /** P58 (0.1.40): Remove gives Removed (the app's Undo bar); Undo puts the place back once. */
+    @Test
+    fun removeOffersUndo() {
+        val q = other("Quokka Shop", mallPlace)
+        val h = home()
+        f.openList(null, gps)
+        f.openEdit(q.id)
+        f.onEvent(SavedEvent.MenuChosen(EditAction.DELETE))
+        assertEquals(SavedDialogUi.Confirm("Remove Quokka Shop?", null, "Remove", destructive = true), ui.dialog)
+        assertEquals(SavedOutput.Removed(q), f.onEvent(SavedEvent.DialogConfirm))
+        assertNull(store.byId(q.id))
+        assertNull(ui.dialog)
+        scope.runCurrent()
+        assertEquals(listOf("Home", "Set work"), list.rows.map { it.title })
+        assertNull(f.onEvent(SavedEvent.UndoRemove(q.id)))
+        assertEquals(q, store.byId(q.id))
+        scope.runCurrent()
+        assertEquals(listOf("Home", "Set work", "Quokka Shop"), list.rows.map { it.title })
+        // a second Undo, or an Undo of another id, changes nothing
+        f.onEvent(SavedEvent.UndoRemove(q.id))
+        f.onEvent(SavedEvent.UndoRemove("s00000000000000ff"))
+        assertEquals(2, store.places.value.size)
+        // Home: its Undo too; a removal that finds the place already gone gives nothing
+        f.openEdit(h.id)
+        f.onEvent(SavedEvent.MenuChosen(EditAction.DELETE))
+        assertEquals(SavedOutput.Removed(h), f.onEvent(SavedEvent.DialogConfirm))
+        f.onEvent(SavedEvent.UndoRemove(h.id))
+        assertEquals(h, store.home())
+        f.openEdit(q.id)
+        f.onEvent(SavedEvent.MenuChosen(EditAction.DELETE))
+        store.delete(q.id)
+        assertNull(f.onEvent(SavedEvent.DialogConfirm))
+    }
+
+    /** P18 (0.1.40): the map pick's point shows its street once the app found it, and is saved with it. */
+    @Test
+    fun mapPickShowsAndKeepsTheStreet() {
+        f.startMapPick(SaveTarget.Work)
+        f.onMapTap(AIRPORT, null, 17.0)
+        assertEquals("42.08418, -80.17321", ui.mapPick!!.subtitle)
+        f.streetFound(AIRPORT, "Near West 12th Street, Erie")
+        assertEquals("Near West 12th Street, Erie", ui.mapPick!!.subtitle)
+        assertEquals("Point on the map", ui.mapPick!!.title)
+        assertEquals("Near West 12th Street, Erie", ui.mapPick!!.place!!.subtitle)
+        // another point's answer, or a blank line, changes nothing
+        f.streetFound(MALL, "Near Peach Street, Erie")
+        f.streetFound(AIRPORT, " ")
+        assertEquals("Near West 12th Street, Erie", ui.mapPick!!.subtitle)
+        val ended = f.onEvent(SavedEvent.PickConfirm) as SavedOutput.PickEnded
+        assertEquals("Near West 12th Street, Erie", ended.place!!.placeName)
+        assertEquals("Near West 12th Street, Erie", ended.place!!.description)
+        f.openList(null, gps)
+        scope.runCurrent()
+        assertEquals("Near West 12th Street, Erie", list.rows.first { it.title == "Work" }.subtitle)
+        // a late answer for the first point after a second tap: the second point keeps its coordinates
+        f.startMapPick(SaveTarget.Home)
+        f.onMapTap(AIRPORT, null, 17.0)
+        f.onMapTap(ZOO, null, 17.0)
+        f.streetFound(AIRPORT, "Near West 12th Street, Erie")
+        assertEquals("42.09710, -80.07578", ui.mapPick!!.subtitle)
+        // a POI label keeps its own name and its coordinates line
+        f.onMapTap(MUSEUM, MapPoi("Erie Maritime Museum", "museum", MUSEUM), 12.0)
+        f.streetFound(MUSEUM, "Near East Front Street, Erie")
+        assertEquals("Erie Maritime Museum", ui.mapPick!!.title)
+        assertEquals("42.13646, -80.08718", ui.mapPick!!.subtitle)
+    }
+
+    /** P18: a save dialog over a point takes the street that arrives while it is open. */
+    @Test
+    fun aSaveDialogOverAPointTakesTheStreet() {
+        f.openSave(Place("Dropped pin", ZOO, PlaceSource.MAP_PIN, "42.09710, -80.07578"))
+        f.streetFound(ZOO, "Near West 38th Street, Erie")
+        assertEquals("Near West 38th Street, Erie", (ui.dialog as SavedDialogUi.Save).placeSubtitle)
+        assertEquals("Dropped pin", (ui.dialog as SavedDialogUi.Save).placeTitle)
+        f.onEvent(SavedEvent.NameChanged("Zoo gate"))
+        val saved = f.onEvent(SavedEvent.DialogConfirm) as SavedOutput.Saved
+        assertEquals("Zoo gate", saved.place.name)
+        assertEquals("Near West 38th Street, Erie", saved.place.placeName)
+        // a dialog over a named place, or over another point, is left as it is
+        f.openSave(mallPlace)
+        f.streetFound(MALL, "Near Peach Street, Erie")
+        assertEquals("5800 Peach Street, Erie", (ui.dialog as SavedDialogUi.Save).placeSubtitle)
+        f.openSave(Place("Dropped pin", AIRPORT, PlaceSource.MAP_PIN, "42.08418, -80.17321"))
+        f.streetFound(ZOO, "Near West 38th Street, Erie")
+        assertEquals("42.08418, -80.17321", (ui.dialog as SavedDialogUi.Save).placeSubtitle)
+    }
+
+    /** Plan 6.2 (0.1.40): a point saved before, still named by its coordinates, is not rewritten by a street found there. */
+    @Test
+    fun aSavedPointKeepsItsCoordinatesWhenAStreetIsFound() {
+        val w = done(store.save(pin(AIRPORT), SavedKind.WORK))
+        assertEquals("42.08418, -80.17321", w.placeName)
+        f.streetFound(w.point, "Near West 12th Street, Erie")
+        assertEquals(w, store.work())
     }
 
     @Test

@@ -51,7 +51,16 @@ internal class FakeSearcher : PackSearcher {
         during(text)
         limits.add(limit)
         nears.add(near)
-        return MultiSearchResponse(text, answers(text).take(limit), listOf("us-pa"), true, null, false, 1.0)
+        return MultiSearchResponse(text, answers(text).take(limit), listOf("us-pa"), true, null, false, 1.0, namedPlace)
+    }
+    /** P6: the place every answer's words name (null: none). */
+    var namedPlace: io.github.spysyweeb.beamline.search.NamedPlace? = null
+    /** P6: the town placeNear gives; the points asked are kept. */
+    var area: String? = null
+    val areaAsked = ArrayList<GeoPoint>()
+    override fun placeNear(set: InstalledSet, point: GeoPoint, withinKm: Double): String? {
+        areaAsked.add(point)
+        return area
     }
     val limits = ArrayList<Int>()
     val nears = ArrayList<GeoPoint?>()
@@ -170,8 +179,9 @@ class SearchFeatureTest {
         assertEquals("None yet", ui.savedPlacesText)
         assertNull(ui.savedNotice)
         assertTrue(ui.focusField)
+        // P6 (0.1.40): the map centre without a fresh fix says why the search is not around the user
         f.open(SearchMode.GO_TO, mapCentre)
-        assertEquals("Near the map center", ui.nearText)
+        assertEquals("Near the map center · no position yet", ui.nearText)
     }
 
     @Test
@@ -212,9 +222,9 @@ class SearchFeatureTest {
         saved.save(mallPlace, SavedKind.OTHER, "Quokka Shop")
         f.open(SearchMode.SET_START, gps)
         assertEquals("2 places", ui.savedPlacesText)
-        // SP4: ADD_STOP while driving does not raise the keyboard
+        // P26 (0.1.40, decisions.md): ADD_STOP while driving raises the keyboard too (SP4 (4) changed)
         f.open(SearchMode.ADD_STOP, gps, driving = true)
-        assertFalse(ui.focusField)
+        assertTrue(ui.focusField)
         assertEquals(listOf("Home"), ui.slots.map { it.title })
         f.open(SearchMode.ADD_STOP, gps, driving = false)
         assertTrue(ui.focusField)
@@ -301,13 +311,15 @@ class SearchFeatureTest {
         assertEquals(listOf("fuel", "fuel"), f.results.value!!.rows.map { it.iconName })
         assertEquals("lodging", f.results.value!!.query)
         assertEquals(SearchUi(), f.ui.value)
-        // choosing a stop: a list, as before (Enter does not apply there)
+        // choosing a stop: the stop results on the map (item 51, rule S12), waiting for the detours
         f.onResultsEvent(ResultsEvent.Close)
         f.open(SearchMode.ADD_STOP, gps)
         f.onEvent(SearchEvent.ShortcutTapped("hotels"))
         scope.runCurrent()
-        assertNull(f.results.value)
-        assertEquals("fuel", ui.results[0].iconName)
+        assertTrue(f.results.value!!.stop != null)
+        assertTrue(f.results.value!!.stop!!.working)
+        assertEquals("fuel", f.results.value!!.rows[0].iconName)
+        assertEquals(SearchUi(), f.ui.value)
     }
 
     @Test
@@ -333,6 +345,30 @@ class SearchFeatureTest {
         settle()
         assertEquals(SearchPhase.NO_SEARCH_DATA, ui.phase)
         assertEquals(listOf("Home"), ui.savedResults.map { it.title })
+    }
+
+    /** Review F4 (0.1.40, P30): a GO_TO search opened during a trip (a link's words while guiding) offers no "Add a state". */
+    @Test
+    fun aSearchDuringATripOffersNoStates() {
+        f.open(SearchMode.GO_TO, gps)
+        type("zzzq")
+        settle()
+        assertEquals(SearchPhase.NO_RESULTS, ui.phase)
+        assertTrue(ui.statesOffered)
+        f.open(SearchMode.GO_TO, gps, driving = true)
+        type("zzzq")
+        settle()
+        assertEquals(SearchPhase.NO_RESULTS, ui.phase)
+        assertFalse(ui.statesOffered)
+        assertNull(f.onEvent(SearchEvent.OpenStates))
+        // nothing searchable during a trip: the line stays, the button does not
+        fake.hasData = false
+        installed.value = InstalledSet(3, true, emptyList(), null)
+        f.open(SearchMode.GO_TO, gps, driving = true)
+        settle()
+        assertEquals(SearchPhase.NO_SEARCH_DATA, ui.phase)
+        assertFalse(ui.statesOffered)
+        assertNull(f.onEvent(SearchEvent.OpenStates))
     }
 
     /**
@@ -382,7 +418,8 @@ class SearchFeatureTest {
     @Test
     fun picksInEachModeAndRecents() {
         fake.answers = { listOf(row(12, "Millcreek Mall", MALL, "5800 Peach Street, Erie", "mall")) }
-        for (mode in listOf(SearchMode.GO_TO, SearchMode.ADD_STOP, SearchMode.SET_START)) {
+        // ADD_STOP: a row opens its stop result's card (item 51, StopResultsTest.aSinglePickInAddStopOpensItsCard)
+        for (mode in listOf(SearchMode.GO_TO, SearchMode.SET_START)) {
             f.open(mode, gps)
             type("millcreek")
             settle()
@@ -425,9 +462,11 @@ class SearchFeatureTest {
         val far = (saved.save(place("Point State Park", PITTSBURGH, id = 77), SavedKind.WORK) as SaveResult.Done).place!!
         f.open(SearchMode.GO_TO, gps)
         assertEquals(SearchOutput.ShowPlace(far.toPlace()), f.onEvent(SearchEvent.SlotTapped(SavedKind.WORK)))
-        // ADD_STOP: Picked; uncovered: ShowPlace
+        // ADD_STOP: its card on the map (item 51: nothing changes the trip until "Add stop"); uncovered: ShowPlace
         f.open(SearchMode.ADD_STOP, gps)
-        assertEquals(SearchOutput.Picked(h.toPlace(), SearchMode.ADD_STOP), f.onEvent(SearchEvent.SlotTapped(SavedKind.HOME)))
+        val stop = f.onEvent(SearchEvent.SlotTapped(SavedKind.HOME)) as SearchOutput.ShowStopResults
+        assertEquals(listOf(h.toPlace()), stop.places)
+        assertEquals(0, stop.selected)
         f.open(SearchMode.ADD_STOP, gps)
         assertTrue(f.onEvent(SearchEvent.SlotTapped(SavedKind.WORK)) is SearchOutput.ShowPlace)
         // SET_START: the destination's row reads "Already your destination" and does nothing
@@ -610,6 +649,133 @@ class SearchFeatureTest {
         assertEquals(listOf("Millcreek Mall", "Erie Maritime Museum"), ui.recents.map { it.title })
     }
 
+    // ---------------------------------------------------------------- 0.1.40: P6, P26, P45, P47, P22
+
+    /** P6 (c): a search around the map's centre names the town there; without a fresh fix it says so. */
+    @Test
+    fun aSearchAroundTheMapCentreNamesTheTown() {
+        val corry = GeoPoint(41.9203, -79.6403)
+        fake.area = "Corry"
+        f.open(SearchMode.GO_TO, SearchContext(corry, NearSource.MAP_CENTER, distanceFrom = ZOO))
+        assertEquals("Near the map center", ui.nearText)            // until the search thread has looked
+        settle()
+        assertEquals("Near Corry", ui.nearText)
+        assertEquals(listOf(corry), fake.areaAsked)
+        f.open(SearchMode.GO_TO, SearchContext(corry, NearSource.MAP_CENTER))
+        settle()
+        assertEquals("Near Corry · no position yet", ui.nearText)
+        fake.area = null
+        f.open(SearchMode.GO_TO, SearchContext(corry, NearSource.MAP_CENTER, distanceFrom = ZOO))
+        settle()
+        assertEquals("Near the map center", ui.nearText)
+        f.open(SearchMode.GO_TO, gps)
+        settle()
+        assertEquals("Near your position", ui.nearText)
+        assertEquals(3, fake.areaAsked.size)                        // GPS asks nothing
+    }
+
+    /** P26 (play test 2026-11-26; decisions.md): the Add stop search field is focused, keyboard up, while driving too. */
+    @Test
+    fun addStopFocusesTheFieldWhileDriving() {
+        f.open(SearchMode.ADD_STOP, gps, driving = true)
+        assertTrue(ui.focusField)
+        f.open(SearchMode.SET_START, gps, driving = false)
+        assertTrue(ui.focusField)
+    }
+
+    /** P45 (decisions.md: an Undo for clearing recents): "Clear" offers Undo until it is used, the time is up, a text is typed or the screen closes. */
+    @Test
+    fun clearingRecentsCanBeUndone() {
+        recents.add(museumPlace)
+        recents.add(mallPlace)
+        f.open(SearchMode.GO_TO, gps)
+        val both = listOf("Millcreek Mall", "Erie Maritime Museum")
+        assertEquals(both, ui.recents.map { it.title })
+        assertNull(ui.undoText)
+        f.onEvent(SearchEvent.ClearRecents)
+        assertEquals(emptyList<Place>(), recents.places.value)
+        assertEquals("Recent places cleared", ui.undoText)
+        f.onEvent(SearchEvent.UndoClearRecents)
+        assertEquals(both, recents.places.value.map { it.name })
+        assertEquals(both, ui.recents.map { it.title })
+        assertNull(ui.undoText)
+        // the time is up: final
+        f.onEvent(SearchEvent.ClearRecents)
+        f.onEvent(SearchEvent.UndoExpired)
+        assertNull(ui.undoText)
+        f.onEvent(SearchEvent.UndoClearRecents)
+        assertEquals(emptyList<Place>(), recents.places.value)
+        // typing makes it final
+        recents.add(museumPlace)
+        recents.add(mallPlace)
+        f.open(SearchMode.GO_TO, gps)
+        f.onEvent(SearchEvent.ClearRecents)
+        type("c")
+        assertNull(ui.undoText)
+        f.onEvent(SearchEvent.UndoClearRecents)
+        assertEquals(emptyList<Place>(), recents.places.value)
+        // closing the screen makes it final
+        recents.add(museumPlace)
+        recents.add(mallPlace)
+        f.open(SearchMode.GO_TO, gps)
+        f.onEvent(SearchEvent.ClearRecents)
+        f.close()
+        f.open(SearchMode.GO_TO, gps)
+        assertNull(ui.undoText)
+        f.onEvent(SearchEvent.UndoClearRecents)
+        assertEquals(emptyList<Place>(), recents.places.value)
+    }
+
+    /** P47: "No places found" after typed words has a spelling hint; after a chip or a type nothing was typed, so none. */
+    @Test
+    fun theSpellingHintFollowsTypedWordsOnly() {
+        f.open(SearchMode.GO_TO, gps)
+        type("xqzvv")
+        settle()
+        assertEquals(SearchPhase.NO_RESULTS, ui.phase)
+        assertEquals("No places found", ui.message)
+        assertEquals("Check the spelling, or try fewer words.", ui.noResultsHint)
+        f.open(SearchMode.GO_TO, gps)
+        f.onEvent(SearchEvent.ShortcutTapped("gas"))
+        settle()
+        assertEquals(SearchPhase.NO_RESULTS, ui.phase)
+        assertNull(ui.noResultsHint)
+        f.open(SearchMode.GO_TO, gps)
+        f.onEvent(SearchEvent.TypeTapped(PlaceTypeUi("hospital", "Hospital", "hospital", "hospital")))
+        settle()
+        assertEquals(SearchPhase.NO_RESULTS, ui.phase)
+        assertNull(ui.noResultsHint)
+        // typed after a type: the hint again
+        type("xqzv")
+        settle()
+        assertEquals("Check the spelling, or try fewer words.", ui.noResultsHint)
+    }
+
+    /** P22: Change start opens a titled picker with "Your position" (a fresh fix) and "Choose on the map". */
+    @Test
+    fun startPickerIsTitledWithYourPositionAndTheMap() {
+        f.open(SearchMode.SET_START, gps)
+        assertEquals("Choose start", ui.title)
+        assertTrue(ui.chooseOnMap)
+        assertTrue(ui.useMyPosition)
+        f.open(SearchMode.SET_START, SearchContext(null, NearSource.NONE))
+        assertTrue(ui.chooseOnMap)
+        assertFalse(ui.useMyPosition)
+        f.open(SearchMode.SET_START, gps)
+        assertEquals(SearchOutput.StartFromYourPosition, f.onEvent(SearchEvent.UseMyPosition))
+        assertEquals(SearchOutput.PickOnMap(SaveTarget.Start), f.onEvent(SearchEvent.ChooseOnMap))
+        assertEquals(SearchMode.SET_START, ui.mode)                  // the search stays (hidden while the pick runs)
+        type("erie")
+        assertFalse(ui.chooseOnMap)
+        assertFalse(ui.useMyPosition)
+        // GO_TO: no title and no such rows
+        f.open(SearchMode.GO_TO, gps)
+        assertNull(ui.title)
+        assertFalse(ui.chooseOnMap || ui.useMyPosition)
+        assertNull(f.onEvent(SearchEvent.UseMyPosition))
+        assertNull(f.onEvent(SearchEvent.ChooseOnMap))
+    }
+
     // ---------------------------------------------------------------- the place sheet (S7, SP4, SP19)
     @Test
     fun placeSheetActions() {
@@ -643,6 +809,20 @@ class SearchFeatureTest {
         }
         assertEquals(listOf(PlaceAction.OPEN_STATES), f.placeSheet(pgh, gps, tripActive = true, driving = true).actions)
         assertEquals("museum", f.placeSheet(museumPlace.copy(savedId = null, name = "x"), gps, false).iconName)
+    }
+
+    /** P17/P18 (0.1.40): a point's window lists its coordinates in the details' pin row (its line may be its street). */
+    @Test
+    fun aPointsWindowListsItsCoordinates() {
+        val pin = Place("Dropped pin", AIRPORT, PlaceSource.MAP_PIN, subtitle = "Near West 12th Street, Erie")
+        assertEquals("42.08418, -80.17321", f.placeSheet(pin, gps, tripActive = false).address)
+        assertEquals("Near West 12th Street, Erie", f.placeSheet(pin, gps, tripActive = false).subtitle)
+        val w = (saved.save(Place("Point on the map", AIRPORT, PlaceSource.MAP_PIN, subtitle = "Near West 12th Street, Erie"), SavedKind.WORK) as SaveResult.Done).place!!
+        assertEquals("42.08418, -80.17321", f.placeSheet(w.toPlace(), gps, tripActive = false).address)
+        // a place with a name of its own and no pack address has none
+        assertNull(f.placeSheet(mallPlace, gps, tripActive = false).address)
+        val h = home()
+        assertNull(f.placeSheet(h.toPlace(), gps, tripActive = false).address)
     }
 
     @Test

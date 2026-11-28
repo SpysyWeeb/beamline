@@ -69,7 +69,9 @@ class PlanningAndResumeTest {
         assertEquals(Phase.CHOOSING, h.phase(), "${h.state.problem}")
         assertEquals(Origin.FromPlace(Data.DOWNS_DRIVE), h.state.origin)
         val back = h.state.stops.single().place
-        assertEquals(SessionCore.YOUR_POSITION, back.name)
+        // play test P19: a past point with its own second line, never "Your position" (the live position's name)
+        assertEquals("Your starting point", back.name)
+        assertEquals("Where you were when you swapped", back.subtitle)
         assertEquals(PlaceSource.MAP_PIN, back.source)
         assertEquals(Data.EXIT24_ORIGIN.point.lat, back.point.lat, 1e-9)
         assertEquals(Data.EXIT24_ORIGIN.point.lon, back.point.lon, 1e-9)
@@ -247,6 +249,7 @@ class PlanningAndResumeTest {
         assertFalse(h.state.guidance!!.offRouteSuspected)
         assertTrue(h.state.guidance!!.simulated)
         assertTrue(h.rows.all { it.first.provider == "simulated" })
+        assertTrue(h.store.load()!!.simulated, "play test P27: trip.json says it is a simulated drive")
     }
 
     // ---------------------------------------------------------------------------------- R
@@ -331,6 +334,30 @@ class PlanningAndResumeTest {
         }
     }
 
+    /** Play test P27: a simulated drive restored after the app was killed says it is simulated, and Resume simulates it again. */
+    @Test
+    fun `P27 a simulated drive is offered as one and Resume drives it simulated`() = runTest {
+        val dir = Files.createTempDirectory("p27").toFile()
+        val wall = 1_763_280_000_000L
+        TripStore(File(dir, "trip.json")).save(snapshotAt(wall - 60_000L).copy(simulated = true))
+        val h = Harness(this, dir = dir, wallStartMs = wall)
+        try {
+            assertEquals(Phase.RESUME_OFFERED, h.phase())
+            assertTrue(h.state.resumeSimulated, "offered as a simulated drive")
+            h.fixAtOrigin()
+            h.send(NavIntent.Resume)
+            h.advance(500)
+            assertEquals(Phase.GUIDING, h.phase(), "${h.state.problem}")
+            assertTrue((h.events.first() as TripEvent.GuidanceStarted).simulated, "Resume drives it simulated again")
+            assertTrue(h.state.guidance!!.simulated)
+            assertFalse(h.state.resumeSimulated, "false once guidance starts")
+            assertTrue(h.store.load()!!.simulated)
+            h.assertAllRecorded()
+        } finally {
+            h.close()
+        }
+    }
+
     @Test
     fun `R3 a trip saved with Shortest resumes as Fastest - Shortest left in batch D`() = runTest {
         val dir = Files.createTempDirectory("r3-shortest").toFile()
@@ -394,5 +421,14 @@ class PlanningAndResumeTest {
         assertFalse(File(dir, "trip.json").exists())
         // the redacted toString of :core:api: no name or point of the saved place (PV2)
         assertFalse(snap.toString().contains("Home") || snap.toString().contains("42.1292"))
+        // play test P27: a simulated drive says so ("simulated": true); a real trip's file has no such key, and reads as not simulated
+        store.save(snap)
+        assertFalse(File(dir, "trip.json").readText().contains("simulated"), "a real trip's file is as before")
+        val sim = snap.copy(simulated = true)
+        store.save(sim)
+        assertEquals(sim, store.load())
+        assertTrue(File(dir, "trip.json").readText().contains("\"simulated\":true"))
+        File(dir, "trip.json").writeText(File(dir, "trip.json").readText().replace(",\"simulated\":true", ""))
+        assertEquals(false, store.load()!!.simulated, "a file without the key (an older one) is not simulated")
     }
 }

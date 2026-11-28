@@ -14,6 +14,7 @@ notices file. Android library, Compose. Owner during the feature round: track A.
 | `Splash.install(activity) { keep }` | in `onCreate`, **before** `super.onCreate` (core-splashscreen's rule). `keep` holds the system splash; keep it short: the reveal does the waiting for the map |
 | `SplashReveal(mapReady, onFinished, Modifier.fillMaxSize())` | over the map, at the top of the window, edge to edge (its centre must be the window's centre, where the system splash drew the icon). Show it once per process (rememberSaveable). While it shows, use dark system bars (`enableEdgeToEdge(SystemBarStyle.dark(TRANSPARENT), SystemBarStyle.dark(TRANSPARENT))`), or a light scrim covers the bottom of the scene |
 | `FirstRunNotice(onAccept)` | after the reveal when `AppState.firstRunNoticeAccepted < FIRST_RUN_NOTICE_VERSION`; on accept store `FIRST_RUN_NOTICE_VERSION` |
+| `DriverNoticeScreen(onBack)` | About's "Driver notice" row (`AboutEvent.OpenDriverNotice`): the notice under a top bar with Back and its title, nothing to accept (play test P59). It handles the system back key itself |
 | `AboutScreen(ui, onEvent)`, `LicencesScreen(notices, onBack)` | `loadNotices(context)` reads `assets/notices/notices.json` (call it off the main thread). Both handle the system back key themselves |
 
 The screens draw with the caller's `MaterialTheme` (`BeamlineTheme`, day or night as the map) and
@@ -29,7 +30,9 @@ scale (1 icon unit = 192/72 dp) and the same mask (`AdaptiveIconDrawable.getIcon
 Android 12+, a circle below), waits for the system splash to be handed over (`SplashHandoff`),
 then opens in 700 ms (ease-out cubic, the design's overshoot), holds the full scene until
 `mapReady` for at most 2 s, fades out in 250 ms and calls `onFinished`. With animations switched
-off in the system settings it starts on the full scene.
+off in the system settings it starts on the full scene. While it shows it takes every touch and
+stands for the whole window for screen readers ("Beamline is starting"): the controls under it
+are not offered until it has gone (play test P29).
 
 ## Resources and scripts
 
@@ -88,6 +91,7 @@ off in the system settings it starts on the full scene.
 
 ```
 sh tools/round/gradle.sh <key> :feature:about:testDebugUnitTest      # Notices.parse, timeline, scene, texts
+sh tools/round/gradle.sh <key> :feature:about:connectedDebugAndroidTest   # emulator: driver notice page, reveal for screen readers
 .venv/art/Scripts/python -m unittest discover -s android/feature/about/scripts -p "test_*.py"
 .venv/art/Scripts/python android/feature/about/scripts/render_icon.py --check
 .venv/art/Scripts/python android/feature/about/scripts/notices.py --check --policy-only

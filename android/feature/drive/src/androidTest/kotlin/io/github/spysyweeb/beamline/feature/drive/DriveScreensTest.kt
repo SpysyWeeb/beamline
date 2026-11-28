@@ -9,9 +9,20 @@ import android.os.SystemClock
 import android.view.View
 import android.view.WindowInsetsController
 import android.view.accessibility.AccessibilityNodeInfo
+import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.layout.wrapContentSize
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.setValue
+import androidx.compose.ui.Alignment
+import androidx.compose.ui.Modifier
+import androidx.compose.ui.test.getUnclippedBoundsInRoot
+import androidx.compose.ui.unit.DpRect
+import androidx.compose.ui.unit.dp
+import io.github.spysyweeb.beamline.feature.drive.Exit24.onRoad
+import io.github.spysyweeb.beamline.ui.theme.BeamlineTheme
 import androidx.compose.ui.semantics.SemanticsProperties
 import androidx.compose.ui.test.SemanticsMatcher
 import androidx.compose.ui.test.SemanticsNodeInteraction
@@ -25,6 +36,8 @@ import androidx.compose.ui.test.hasContentDescription
 import androidx.compose.ui.test.hasTestTag
 import androidx.compose.ui.test.junit4.v2.createComposeRule
 import androidx.compose.ui.test.onAllNodesWithContentDescription
+import androidx.compose.ui.test.onAllNodesWithTag
+import androidx.compose.ui.test.assertCountEquals
 import androidx.compose.ui.test.onNodeWithTag
 import androidx.compose.ui.test.onNodeWithText
 import androidx.compose.ui.test.performClick
@@ -85,6 +98,8 @@ class DriveScreensTest {
     private val simpler = choice(2, listOf("simpler"), lengthM = 5200.0, timeS = 420.0, hasTolls = true, hasHighways = false, via = listOf("US 20"))
     private val zoo = Place("Erie Zoo", GeoPoint(42.1489, -80.0869), PlaceSource.SEARCH, subtitle = "West 38th Street, Erie")
     private val noRoute = TripProblem(ProblemKind.NO_ROUTE, "No route found from here.", canRetry = true)
+    /** Play test P5: rule O8's problem far from the installed maps (no Retry: the session asks again on a covered fix). */
+    private val outside = TripProblem(ProblemKind.OUTSIDE_INSTALLED_MAPS, "You are outside the installed maps. Guidance goes on when you are back on them.", canRetry = false)
 
     private fun host(start: DriveUi) {
         ui = start
@@ -248,6 +263,81 @@ class DriveScreensTest {
             ),
             events,
         )
+    }
+
+    /**
+     * Play tests P49 and P10: the stops editor takes the route sheet's place (it was drawn over it, rows showing above
+     * it) and the camera's inset is its height; Done keeps its place when a stop is removed, when a note ("Stops
+     * reordered.", a problem) or the Undo offer comes and goes, also at font 1.3. While guided it takes the trip bar's
+     * place, says the trip's arrival, keeps Overview and the speed pair above it, and stops under the banner.
+     */
+    @Test
+    fun stopsEditorTakesTheSheetsPlace() {
+        val three = listOf(TripStop(sheetz), TripStop(zoo), TripStop(downsDrive))
+        val two = listOf(TripStop(sheetz), TripStop(downsDrive))
+        val within = 0.5f // dp: about a pixel
+        fun doneTop() = rect(DriveTags.CLOSE_STOPS).top.value
+        host(present(choosing(stops = three), stopsEditorOpen = true))
+        compose.saveShot("stops-editor-in-place-day")
+        compose.onAllNodesWithTag(DriveTags.ROUTE_SHEET).assertCountEquals(0)
+        val shot = rect(SHOT_TAG)
+        assertEquals("the camera's inset is the editor's height", (shot.bottom - rect(DriveTags.STOPS_EDITOR).top).value, insets.bottom, 1f)
+        val doneTop = doneTop()
+        // Best order changed the order: the editor says so, Done stays
+        show(present(choosing(stops = three), stopsEditorOpen = true, shownEvent = TripEvent.StopsReordered))
+        compose.onNodeWithTag(DriveTags.STOPS_NOTE).assertTextEquals(DriveTexts.STOPS_REORDERED)
+        assertEquals("with the note", doneTop, doneTop(), within)
+        // the tester's case: a stop removed (two rows, no Best order, no note)
+        show(present(choosing(stops = two), stopsEditorOpen = true))
+        assertEquals("a stop removed", doneTop, doneTop(), within)
+        // the app's Undo offer in the note line (AppRules.withStopUndo)
+        val undo = present(choosing(stops = two), stopsEditorOpen = true).let { it.copy(stopsEditor = it.stopsEditor!!.copy(note = "Stop removed", canUndo = true)) }
+        show(undo)
+        compose.saveShot("stops-editor-undo-day")
+        compose.onNodeWithTag(DriveTags.STOPS_UNDO).assertIsDisplayed()
+        assertEquals("with Undo", doneTop, doneTop(), within)
+        events.clear()
+        compose.onNodeWithTag(DriveTags.STOPS_UNDO).performClick()
+        assertEquals(listOf<DriveEvent>(DriveEvent.UndoStopRemoval), events.toList())
+        show(present(choosing(stops = two), stopsEditorOpen = true))
+        assertEquals("the offer gone", doneTop, doneTop(), within)
+        // font 1.3: a two-line note that goes does not move Done
+        val best = TripProblem(ProblemKind.NO_ROUTE, "These stops are already in the best order.", false)
+        compose.runOnUiThread { fontScale = 1.3f }
+        show(present(choosing(stops = three, problem = best), stopsEditorOpen = true))
+        compose.onNodeWithTag(DriveTags.STOPS_NOTE).assertTextEquals(best.text)
+        val bigTop = doneTop()
+        show(present(choosing(stops = three), stopsEditorOpen = true))
+        assertEquals("font 1.3, the note gone", bigTop, doneTop(), within)
+        compose.runOnUiThread { fontScale = null }
+
+        // guided (P10): in the trip bar's place, its arrival shown, the map buttons and the speed pair above it
+        val guided = withSpeed(guiding(banner = frame1, stops = three))
+        show(present(guided, stopsEditorOpen = true))
+        compose.saveShot("stops-editor-guided-in-place-day")
+        compose.onAllNodesWithTag(DriveTags.TRIP_BAR).assertCountEquals(0)
+        val bar = present(guided).guidance!!.tripBar
+        // (in the header, which the handle merges for a screen reader)
+        compose.onNodeWithTag(DriveTags.STOPS_ARRIVE, useUnmergedTree = true).assertTextEquals(bar.arriveText + DriveTexts.LABEL_SEPARATOR + bar.remainingTimeText)
+        val editorTop = rect(DriveTags.STOPS_EDITOR).top
+        assertEquals("the camera's inset is the editor's height", (shot.bottom - editorTop).value, insets.bottom, 1f)
+        val overview = compose.onNodeWithTag(DriveTags.OVERVIEW).assertIsDisplayed().getUnclippedBoundsInRoot()
+        assertTrue("Overview $overview above the editor (top $editorTop)", overview.bottom <= editorTop + px)
+        // the pair leaves itself out when it has no room under the banner; when drawn it is above the editor
+        if (compose.onAllNodes(hasTestTag(DriveTags.SPEED_PAIR)).fetchSemanticsNodes().isNotEmpty()) {
+            val pair = rect(DriveTags.SPEED_PAIR)
+            assertTrue("the speed pair $pair above the editor (top $editorTop)", pair.bottom <= editorTop + px)
+        }
+        // six stops: the editor stops under the banner, its rows scroll, Done in view
+        val six = listOf("Sheetz", "Erie Zoo", "Maritime Museum", "Presque Isle", "Waldameer", "Peach Street Diner").mapIndexed { i, name ->
+            TripStop(Place(name, GeoPoint(42.10 + i * 0.01, -80.08), PlaceSource.SEARCH, subtitle = "Erie"))
+        } + TripStop(downsDrive)
+        show(present(guiding(banner = frame1, stops = six), stopsEditorOpen = true))
+        compose.saveShot("stops-editor-guided-six-day")
+        val banner = rect(DriveTags.BANNER)
+        assertTrue("banner $banner, editor ${rect(DriveTags.STOPS_EDITOR)}", banner.bottom <= rect(DriveTags.STOPS_EDITOR).top + px)
+        compose.onNodeWithTag(DriveTags.CLOSE_STOPS).assertIsDisplayed()
+        compose.onNode(hasTestTag(DriveTags.ADD_STOP) and hasAnyAncestor(hasTestTag(DriveTags.STOPS_EDITOR))).assertIsDisplayed()
     }
 
     /**
@@ -448,8 +538,8 @@ class DriveScreensTest {
     /** Item 47: a slower card says by how much against the fastest; the fastest says nothing; an option that is on has a check. */
     @Test
     fun slowerCardsSayByHowMuch() {
-        // 370 s and 610 s: "+4 min" (the sheet's own simpler is 50 s slower: within a minute, nothing)
-        assertEquals(null, present(choosing(choices = listOf(fastestOnly, simpler), selected = 1)).planning!!.cards.first { it.choiceId == 2L }.slowerText)
+        // 370 s and 610 s: "+4 min" (P23: the sheet's own simpler reads 7 min against 6: "+1 min")
+        assertEquals("+1 min", present(choosing(choices = listOf(fastestOnly, simpler), selected = 1)).planning!!.cards.first { it.choiceId == 2L }.slowerText)
         val ui = present(choosing(choices = listOf(fastestOnly, simpler.copy(timeS = 610.0)), selected = 1))
         val fast = ui.planning!!.cards.first { it.choiceId == 1L }
         val slow = ui.planning!!.cards.first { it.choiceId == 2L }
@@ -460,6 +550,75 @@ class DriveScreensTest {
         compose.onNodeWithText(DriveTexts.LABEL_SEPARATOR + slow.slowerText!!, useUnmergedTree = true).assertIsDisplayed()
         compose.raiseSheetToFull()
         compose.onNodeWithText(slow.slowerText!!, useUnmergedTree = true).assertIsDisplayed()
+    }
+
+    private val px = 0.5.dp
+    private fun rect(tag: String): DpRect = compose.onNodeWithTag(tag).getUnclippedBoundsInRoot()
+    private fun overlaps(a: DpRect, b: DpRect) = a.left < b.right && b.left < a.right && a.top < b.bottom && b.top < a.bottom
+
+    /** A trip with a speed (rule D8's pair) at 50 mph under a 55 mph limit. */
+    private fun withSpeed(t: TripState): TripState {
+        val v = io.github.spysyweeb.beamline.api.nav.Vehicle(GeoPoint(42.05, -80.08), 0.0, true, io.github.spysyweeb.beamline.api.nav.Motion.MOVING, 50 / 2.2369362920544, 0L)
+        return t.copy(guidance = t.guidance!!.copy(vehicle = v, speedLimitKmh = 89.0))
+    }
+
+    /**
+     * Play test P32: Recenter (the overview, or the map moved by hand) is the lowest map button, level with the road
+     * label: the label is left out while Recenter shows; following, it is drawn clear of Overview.
+     */
+    @Test
+    fun theRoadLabelGivesWayToRecenter() {
+        host(present(onRoad(guiding(banner = frame3))))
+        compose.onNodeWithTag(DriveTags.CURRENT_ROAD).assertIsDisplayed()
+        assertTrue("following: the label clear of Overview", !overlaps(rect(DriveTags.CURRENT_ROAD), rect(DriveTags.OVERVIEW)))
+        show(present(onRoad(guiding(banner = frame3)), camera = CameraState(CameraMode.GUIDE_OVERVIEW, showRecenter = true)))
+        compose.saveShot("overview-recenter-day")
+        compose.onNodeWithTag(DriveTags.CURRENT_ROAD).assertDoesNotExist()
+        compose.onNodeWithTag(DriveTags.RECENTER).assertIsDisplayed()
+        compose.onNodeWithTag(DriveTags.OVERVIEW).assertIsDisplayed()
+    }
+
+    /**
+     * Item 51 (rule S12): while the stop results' window shows at the bottom (300 dp), the overlay draws only its top
+     * (the banner) and the speed pair above the window: no trip bar, map buttons, road label or stops editor; the camera
+     * is told the top only. On its side (the window in the start panel) the panel's start is kept for the camera.
+     */
+    @Test
+    fun stopResultsLeaveOnlyTheTop() {
+        var side by mutableStateOf(false)
+        val trip = onRoad(withSpeed(guiding(banner = frame1, stops = listOf(TripStop(sheetz), TripStop(zoo), TripStop(downsDrive)), nextStopIndex = 0)))
+        // the app passes only the guidance (Recenter off); an open editor is never drawn over the window either
+        ui = present(trip, camera = CameraState(CameraMode.GUIDE_FREE, showRecenter = true), stopsEditorOpen = true)
+        compose.setContent {
+            if (!side) {
+                PhoneScreen(ui, night, onEvent = { events += it }, onInsets = { insets = it }, stopWindowDp = 300f)
+            } else {
+                BeamlineTheme(night = false) {
+                    Box(Modifier.fillMaxSize()) {
+                        Box(Modifier.wrapContentSize(Alignment.TopStart, unbounded = true).size(800.dp, 360.dp)) {
+                            DriveOverlay(ui, { events += it }, { insets = it }, stopWindowDp = 0f)
+                        }
+                    }
+                }
+            }
+        }
+        compose.waitForIdle()
+        compose.saveShot("stop-results-top-day")
+        compose.onNodeWithTag(DriveTags.BANNER).assertIsDisplayed()
+        for (tag in listOf(DriveTags.TRIP_BAR, DriveTags.END, DriveTags.OVERVIEW, DriveTags.RECENTER, DriveTags.CURRENT_ROAD, DriveTags.STOPS_EDITOR, DriveTags.ROUTE_SHEET)) {
+            compose.onNodeWithTag(tag).assertDoesNotExist()
+        }
+        val shot = rect(SHOT_TAG)
+        val pair = compose.onNodeWithTag(DriveTags.SPEED_PAIR).assertIsDisplayed().getUnclippedBoundsInRoot()
+        assertTrue("the pair $pair above the window (screen $shot)", pair.bottom <= shot.bottom - 300.dp + px)
+        assertEquals(0f, insets.bottom)
+        assertTrue("top inset $insets", insets.top > 80f)
+        compose.runOnUiThread { side = true }
+        compose.waitForIdle()
+        compose.onNodeWithTag(DriveTags.BANNER).assertExists()
+        compose.onNodeWithTag(DriveTags.TRIP_BAR).assertDoesNotExist()
+        compose.onNodeWithTag(DriveTags.STOPS_EDITOR).assertDoesNotExist()
+        assertEquals(EdgeInsetsDp(start = 400f), insets)
     }
 
     /**
@@ -518,6 +677,8 @@ class DriveScreensTest {
             Triple("a11y-stops-editor", present(choosing(stops = listOf(TripStop(sheetz), TripStop(zoo), TripStop(downsDrive))), stopsEditorOpen = true), listOf(DriveTexts.STOPS, "Sheetz", "Erie Zoo", DriveTexts.MOVE_UP, DriveTexts.MOVE_DOWN, DriveTexts.REMOVE, DriveTexts.ADD_STOP, DriveTexts.BEST_ORDER, DriveTexts.DONE)),
             Triple("a11y-reroute-failed", present(guiding(banner = frame2, phase = Phase.REROUTING, problem = noRoute)), listOf("No route found from here.", DriveTexts.RETRY, "Arrive 3:33 PM")),
             Triple("a11y-arrived", present(guiding(banner = LiveBanner(Exit24.arriveView, 12.0, false), phase = Phase.ARRIVED)), listOf("Arrived", "Downs Drive", "On the right", DriveTexts.DONE)),
+            // play test P5: outside the installed maps (O8) the bar says so; no Retry, no old arrival time
+            Triple("a11y-outside", present(guiding(phase = Phase.REROUTING, problem = outside)), listOf("You are outside", "No route from here", DriveTexts.END_TRIP)),
         )
         host(DriveUi())
         for ((name, u, wanted) in cases) {
@@ -536,6 +697,9 @@ class DriveScreensTest {
             assertTrue("$name: controls without a name: ${unnamed.map { it.line() }}", unnamed.isEmpty())
             val all = nodes.joinToString("\n") { it.label }
             for (w in wanted) assertTrue("$name: '$w' not given to a screen reader:\n$all", all.contains(w))
+            if (name == "a11y-outside") {
+                for (gone in listOf(DriveTexts.RETRY, DriveTexts.ARRIVE)) assertTrue("$name: '$gone' still given:\n$all", nodes.none { it.label.contains(gone) })
+            }
             if (name == "a11y-sheet") {
                 // the chosen route says so (selected, or checked as Compose reports `selected` outside tabs), the other does not
                 fun card(prefix: String) = nodes.first { it.clickable && it.label.startsWith("<- $prefix") }

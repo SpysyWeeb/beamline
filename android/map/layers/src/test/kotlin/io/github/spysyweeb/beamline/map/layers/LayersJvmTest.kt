@@ -38,10 +38,17 @@ class LayersJvmTest {
 
     @Test
     fun `candidate B with its traveled and alternative colours and the widths`() {
-        val c = RouteColors.parse(copy.readText(Charsets.UTF_8))
+        val text = copy.readText(Charsets.UTF_8)
+        val c = RouteColors.parse(text)
         assertEquals("B", c.candidate)
-        assertEquals(ThemeLines(LinePaint("#4A8CF7", "#1F5BC4"), LinePaint("#9EBAE7", "#8AA4D0"), LinePaint("#A7AFB9", "#7E8792")), c.lines(MapTheme.DAY))
-        assertEquals(ThemeLines(LinePaint("#3A80F0", "#1C3F86"), LinePaint("#2B4B7D", "#1E2D4D"), LinePaint("#5B636D", "#2B3036")), c.lines(MapTheme.NIGHT))
+        // P23, item 51 (0.1.40): the route choices keep the owner's grey; the trip's own route under a stop preview is "trip_route", the same grey
+        assertEquals(ThemeLines(LinePaint("#4A8CF7", "#1F5BC4"), LinePaint("#9EBAE7", "#8AA4D0"), LinePaint("#A7AFB9", "#7E8792"), LinePaint("#A7AFB9", "#7E8792")), c.lines(MapTheme.DAY))
+        assertEquals(ThemeLines(LinePaint("#3A80F0", "#1C3F86"), LinePaint("#2B4B7D", "#1E2D4D"), LinePaint("#5B636D", "#2B3036"), LinePaint("#5B636D", "#2B3036")), c.lines(MapTheme.NIGHT))
+        // tripRoute is read from "trip_route", not copied from "alternative"
+        val own = text.substring(text.indexOf("\"trip_route\""))
+        val other = RouteColors.parse(text.substring(0, text.indexOf("\"trip_route\"")) + own.replaceFirst("\"#A7AFB9\"", "\"#123456\""))
+        assertEquals(LinePaint("#123456", "#7E8792"), other.day.tripRoute)
+        assertEquals(LinePaint("#A7AFB9", "#7E8792"), other.day.alternative)
         assertEquals(listOf(8.0 to 3.0, 12.0 to 5.0, 14.0 to 7.0, 16.0 to 10.0, 18.0 to 16.0, 20.0 to 26.0), c.fillWidths)
         assertEquals(listOf(8.0 to 4.5, 12.0 to 7.0, 14.0 to 9.5, 16.0 to 13.0, 18.0 to 20.0, 20.0 to 31.0), c.casingWidths)
         assertEquals(1.5, c.widthBase)
@@ -56,6 +63,7 @@ class LayersJvmTest {
             good.replace("\"#4A8CF7\"", "\"blue\""),
             good.replace("\"version\": 1", "\"version\": 2"),
             good.replace("\"type\": \"exponential\"", "\"type\": \"linear\""),
+            good.replace("\"trip_route\"", "\"trip_route_x\""),   // item 51: the trip route's colours are required
         )) {
             assertThrows<IllegalArgumentException> { RouteColors.parse(bad) }
         }
@@ -112,6 +120,17 @@ class LayersJvmTest {
     }
 
     @Test
+    fun `the tap rule - a route choice under the finger is reported last, the lowest id (P23)`() {
+        val poi = MapPoi("Erie Maritime Museum", "museum", GeoPoint(42.13646, -80.08718))
+        assertEquals("route:3" to null, SceneParts.tap(emptyList(), emptyList(), null, routes = listOf(7L, 3L)))
+        // a pin, a saved marker and a POI label (drawn above the lines) beat a route
+        assertEquals("stop:0" to null, SceneParts.tap(listOf("stop:0" to 0), emptyList(), null, listOf(3L)))
+        assertEquals("saved:s3" to null, SceneParts.tap(emptyList(), listOf("s3" to SavedKind.OTHER), null, listOf(3L)))
+        assertEquals(null to poi, SceneParts.tap(emptyList(), emptyList(), poi, listOf(3L)))
+        assertEquals("route:", SceneParts.ROUTE_PREFIX)
+    }
+
+    @Test
     fun `pin images by kind, number and reached`() {
         val p = GeoPoint(42.0, -80.0)
         assertEquals(Ids.PIN_DEST, SceneParts.pinImage(MapPin("stop:2", p, PinKind.DESTINATION)))
@@ -121,6 +140,10 @@ class LayersJvmTest {
         assertEquals("beamline-pin-stop-1-reached", SceneParts.pinImage(MapPin("stop:0", p, PinKind.STOP, number = 1, reached = true)))
         assertEquals("beamline-pin-stop-9", SceneParts.pinImage(MapPin("stop:20", p, PinKind.STOP, number = 21)))
         assertEquals("beamline-pin-stop-0", SceneParts.pinImage(MapPin("stop:0", p, PinKind.STOP, number = null)))
+        // P22: the chosen start, its own ring pin, drawn with the stops (under the destination and the picked place)
+        assertEquals(Ids.PIN_START, SceneParts.pinImage(MapPin("start", p, PinKind.START)))
+        assertEquals(0, SceneParts.pinSortKey(MapPin("start", p, PinKind.START)))
+        assertTrue(Ids.PIN_START.startsWith(Ids.PREFIX) && Ids.PIN_START != Ids.PIN_PICKED && Ids.PIN_START != Ids.PIN_DEST)
     }
 
     @Test
@@ -322,11 +345,11 @@ class LayersJvmTest {
         val first = s.update(RouteLines(1, line, null, alternatives))
         assertEquals(emptyList<GeoPoint>() to line, first.far)
         assertEquals(emptyList<GeoPoint>() to emptyList<GeoPoint>(), first.near)
-        assertEquals(listOf(line.take(10)), first.alternatives)
+        assertEquals(alternatives, first.alternatives)   // P23: the lines with their ids (and tripRoute), for the tap
         assertEquals(RouteSources.Update(null, null, null), s.update(RouteLines(1, line, null, alternatives)))
         // guiding: the first cursor sends all; then each step inside one chunk only the near pieces
         val start = s.update(route(130))
-        assertTrue(start.far != null && start.near != null && start.alternatives == emptyList<List<GeoPoint>>())
+        assertTrue(start.far != null && start.near != null && start.alternatives == emptyList<AlternativeLine>())
         for (i in 131 until 192) {
             val u = s.update(route(i))
             assertNull(u.far, "far pieces kept at $i")
@@ -349,6 +372,26 @@ class LayersJvmTest {
         // the route gone: empty pieces sent
         val gone = s.update(null)
         assertEquals(emptyList<GeoPoint>() to emptyList<GeoPoint>(), gone.far)
+    }
+
+    /**
+     * Review of 0.1.40 (item 51): while a stop's preview is drawn during guidance, the trip's own grey line
+     * (:map:scene cuts it at a 64-point chunk's start, the same line on each fix) is not sent again; a new
+     * cut (the next chunk) is.
+     */
+    @Test
+    fun `a stop preview's unchanged grey line of the trip is not sent again`() {
+        val trip = longLine(5_000)
+        val preview = trip.take(20)
+        val s = RouteSources()
+        fun grey(from: Int) = listOf(AlternativeLine(1, trip.drop(from), tripRoute = true))
+        val first = s.update(RouteLines(9, preview, null, grey(128)))
+        assertEquals(grey(128), first.alternatives)
+        // fixes inside the chunk: the same line again (also as a new, equal list): nothing sent
+        assertEquals(RouteSources.Update(null, null, null), s.update(RouteLines(9, preview, null, grey(128))))
+        assertEquals(RouteSources.Update(null, null, null), s.update(RouteLines(9, preview, null, grey(128))))
+        // the next chunk: the grey line only
+        assertEquals(RouteSources.Update(null, null, grey(192)), s.update(RouteLines(9, preview, null, grey(192))))
     }
 
     @Test
@@ -425,7 +468,7 @@ class LayersJvmTest {
         // the uncertainty bubble under every marker (G7), then the saved markers
         assertEquals(listOf(Ids.L_BUBBLE, Ids.L_BUBBLE_EDGE, Ids.L_SAVED_OVER), Ids.ON_TOP.take(3))
         // vehicle pieces in SPEC.md order, the arrow's lit lenses last
-        assertEquals(listOf(Ids.L_PUCK_CONE, Ids.L_PUCK, Ids.L_BEAM, Ids.L_GLOW, Ids.L_ARROW, Ids.L_LIT), Ids.ON_TOP.drop(5))
+        assertEquals(listOf(Ids.L_PUCK_CONE, Ids.L_PUCK, Ids.L_BEAM, Ids.L_GLOW, Ids.L_ARROW, Ids.L_LIT), Ids.ON_TOP.drop(6))
         assertNull(Ids.BELOW_LABELS.firstOrNull { it in Ids.ON_TOP })
         // route lines: alternatives, driven, ahead; in each kind every casing below every fill
         assertEquals(Ids.ROUTE_LINES, Ids.BELOW_LABELS.drop(1))
@@ -454,6 +497,20 @@ class LayersJvmTest {
         assertTrue(order.indexOf(Ids.L_LIGHTS) < order.indexOf(Ids.L_PINS))
         assertTrue(order.indexOf(Ids.L_LIGHTS) < order.indexOf(Ids.L_ARROW))
         assertTrue(Ids.L_LIGHTS.startsWith(Ids.PREFIX) && Ids.LIGHT.startsWith(Ids.PREFIX))
+    }
+
+    /**
+     * P21 (0.1.40): the route step the route sheet shows. Above the lights (the two never show together:
+     * the lights only while guided, the step only while choosing), below the pins and the vehicle.
+     */
+    @Test
+    fun `the step mark sits above the lights, below the pins`() {
+        assertTrue(Ids.SRC_STEP in Ids.SOURCES)
+        val order = Ids.ON_TOP
+        assertTrue(order.indexOf(Ids.L_LIGHTS) < order.indexOf(Ids.L_STEP))
+        assertTrue(order.indexOf(Ids.L_STEP) < order.indexOf(Ids.L_PINS))
+        assertTrue(order.indexOf(Ids.L_STEP) < order.indexOf(Ids.L_PUCK))
+        assertTrue(Ids.L_STEP.startsWith(Ids.PREFIX) && Ids.SRC_STEP.startsWith(Ids.PREFIX))
     }
 
     @Test

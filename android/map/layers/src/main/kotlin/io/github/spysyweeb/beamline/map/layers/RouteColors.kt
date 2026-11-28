@@ -12,12 +12,15 @@ import kotlinx.serialization.json.intOrNull
 /** One line look: the line and the wider line drawn under it, as `#RRGGBB`. */
 data class LinePaint(val fill: String, val casing: String)
 
-/** The colours of one theme: the chosen route, its driven part, the alternatives. */
-data class ThemeLines(val route: LinePaint, val traveled: LinePaint, val alternative: LinePaint)
+/**
+ * The colours of one theme: the chosen route, its driven part, the alternatives (the other route
+ * choices, P23), and the trip's own route drawn under a previewed stop's route (item 51, 0.1.40).
+ */
+data class ThemeLines(val route: LinePaint, val traveled: LinePaint, val alternative: LinePaint, val tripRoute: LinePaint)
 
 /**
  * assets/route_colors.json (version 1), copied into res/raw by scripts/sync_art.py: the candidate
- * named by "selected" (the owner chose B on 2026-11-15), the alternatives' grey, and the widths in
+ * named by "selected" (the owner chose B on 2026-11-15), the alternatives' and the trip route's colours, and the widths in
  * dp by zoom ([zoom, width] stops, interpolated exponentially with [widthBase]).
  */
 data class RouteColors(
@@ -46,6 +49,7 @@ data class RouteColors(
             val candidates = root["candidates"] as? JsonObject ?: throw IllegalArgumentException("route_colors.json: candidates missing")
             val chosen = candidates[selected] as? JsonObject ?: throw IllegalArgumentException("route_colors.json: the selected candidate is missing")
             val alternative = root["alternative"] as? JsonObject ?: throw IllegalArgumentException("route_colors.json: alternative missing")
+            val tripRoute = root["trip_route"] as? JsonObject ?: throw IllegalArgumentException("route_colors.json: trip_route missing")
             val widths = root["widths_dp"] as? JsonObject ?: throw IllegalArgumentException("route_colors.json: widths_dp missing")
             val interpolation = widths["interpolation"] as? JsonObject
             require((interpolation?.get("type") as? JsonPrimitive)?.content == "exponential") {
@@ -58,7 +62,8 @@ data class RouteColors(
                 val t = chosen[name] as? JsonObject ?: throw IllegalArgumentException("route_colors.json: a theme of the selected candidate is missing")
                 val traveled = t["traveled"] as? JsonObject ?: throw IllegalArgumentException("route_colors.json: traveled colours missing")
                 val alt = alternative[name] as? JsonObject ?: throw IllegalArgumentException("route_colors.json: alternative colours missing")
-                return ThemeLines(route = paint(t), traveled = paint(traveled), alternative = paint(alt))
+                val trip = tripRoute[name] as? JsonObject ?: throw IllegalArgumentException("route_colors.json: trip_route colours missing")
+                return ThemeLines(route = paint(t), traveled = paint(traveled), alternative = paint(alt), tripRoute = paint(trip))
             }
             return RouteColors(
                 candidate = selected,

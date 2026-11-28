@@ -33,7 +33,13 @@ internal object SketchPaths {
     val MERGE = listOf("M12 12V5", "M8.5 8.5 12 5l3.5 3.5", "M6 20c0-4 6-4 6-8", "M18 20c0-4-6-4-6-8")
     val MERGE_LEFT = listOf("M9 20V5", "M5.5 8.5 9 5l3.5 3.5", "M17 20c0-5-8-5-8-9")
     val MERGE_RIGHT = listOf("M15 20V5", "M11.5 8.5 15 5l3.5 3.5", "M7 20c0-5 8-5 8-9")
-    val ROUNDABOUT = listOf("M12 20v-4", "M7.5 11.5a4.5 4.5 0 1 0 9 0a4.5 4.5 0 1 0-9 0", "M15.2 8.3 18.5 5", "M14 5h4.5v4.5")
+    /**
+     * Play test P34 (the old ring with a diagonal arrow read as the male sign): the route round the island, counter-
+     * clockwise as U.S. roundabouts go, entering from below past its right side and leaving straight ahead.
+     */
+    val ROUNDABOUT = listOf("M12 21v-4.5a4 4 0 0 0 0-8V3", "M8.5 6.5 12 3l3.5 3.5")
+    /** The island under [ROUNDABOUT], drawn at [DriveIcons.DIM_ALPHA]: its other half is the road not taken. */
+    val ROUNDABOUT_ISLAND = listOf("M8 12.5a4 4 0 1 0 8 0a4 4 0 1 0-8 0")
     val ARRIVE = listOf("M12 20v-8.5", "M8.5 7.5a3.5 3.5 0 1 0 7 0a3.5 3.5 0 1 0-7 0")
     val ARRIVE_LEFT = listOf("M15 20V5", "M4.5 11a3 3 0 1 0 6 0a3 3 0 1 0-6 0")
     val ARRIVE_RIGHT = listOf("M9 20V5", "M13.5 11a3 3 0 1 0 6 0a3 3 0 1 0-6 0")
@@ -49,22 +55,30 @@ internal object SketchPaths {
     val OVERVIEW = listOf("M6 19c0-6 12-4 12-11", "M4.5 19a1.5 1.5 0 1 0 3 0a1.5 1.5 0 1 0-3 0", "M16.5 6a1.5 1.5 0 1 0 3 0a1.5 1.5 0 1 0-3 0")
     val STOPS = listOf("M9 6h11", "M9 12h11", "M9 18h11", "M4 6h.01", "M4 12h.01", "M4 18h.01")
     val WARNING = listOf("M12 3 2 20h20z", "M12 10v4", "M12 17h.01")
+    /** P21: the step view's Previous and Next. */
+    val PREVIOUS = listOf("M15 6l-6 6 6 6")
+    val NEXT = listOf("M9 6l6 6-6 6")
 }
 
 /** Vector icons from [SketchPaths]; tinted by whoever shows them (Icon tint). */
 internal object DriveIcons {
-    private fun icon(name: String, paths: List<String>, strokeWidth: Float): ImageVector =
+    /** The [dim] paths are drawn first, at [DIM_ALPHA] (an Icon's tint keeps the source alpha), then [paths] at full strength. */
+    private fun icon(name: String, paths: List<String>, strokeWidth: Float, dim: List<String> = emptyList()): ImageVector =
         ImageVector.Builder(name, 24.dp, 24.dp, 24f, 24f).apply {
-            for (d in paths) {
+            for ((d, alpha) in dim.map { it to DIM_ALPHA } + paths.map { it to 1f }) {
                 addPath(
                     pathData = addPathNodes(d),
                     stroke = SolidColor(Color.Black),
+                    strokeAlpha = alpha,
                     strokeLineWidth = strokeWidth,
                     strokeLineCap = StrokeCap.Round,
                     strokeLineJoin = StrokeJoin.Round,
                 )
             }
         }.build()
+
+    /** Play test P34: the alpha of a glyph's dim part (the roundabout's island). */
+    internal const val DIM_ALPHA = 0.4f
 
     /** Stroke of the banner's main arrow, of the chip's and the lanes' arrows, of the screen icons (sketch: 2.2 and 2.4). */
     const val MAIN_STROKE = 2.2f
@@ -91,17 +105,23 @@ internal object DriveIcons {
         ManeuverKind.FERRY -> SketchPaths.FERRY
     }
 
+    /** What a maneuver's glyph draws dim under it (P34: the roundabout's island). */
+    private fun dimPaths(kind: ManeuverKind): List<String> = when (kind) {
+        ManeuverKind.ROUNDABOUT, ManeuverKind.ROUNDABOUT_EXIT -> SketchPaths.ROUNDABOUT_ISLAND
+        else -> emptyList()
+    }
+
     private val mainCache = HashMap<ManeuverKind, ImageVector>()
     private val smallCache = HashMap<ManeuverKind, ImageVector>()
     private val laneCache = HashMap<Set<LaneArrow>, ImageVector>()
 
     /** The banner's big arrow. */
     fun maneuver(kind: ManeuverKind): ImageVector =
-        synchronized(mainCache) { mainCache.getOrPut(kind) { icon("maneuver_${kind.name.lowercase()}", maneuverPaths(kind), MAIN_STROKE) } }
+        synchronized(mainCache) { mainCache.getOrPut(kind) { icon("maneuver_${kind.name.lowercase()}", maneuverPaths(kind), MAIN_STROKE, dimPaths(kind)) } }
 
     /** The chip's arrow (thicker, as the sketch draws it at 28 dp). */
     fun maneuverSmall(kind: ManeuverKind): ImageVector =
-        synchronized(smallCache) { smallCache.getOrPut(kind) { icon("then_${kind.name.lowercase()}", maneuverPaths(kind), SMALL_STROKE) } }
+        synchronized(smallCache) { smallCache.getOrPut(kind) { icon("then_${kind.name.lowercase()}", maneuverPaths(kind), SMALL_STROKE, dimPaths(kind)) } }
 
     /** The arrows painted on one lane. */
     fun lane(arrows: Set<LaneArrow>): ImageVector =
@@ -188,6 +208,8 @@ internal object DriveIcons {
     val overview = icon("overview", SketchPaths.OVERVIEW, UI_STROKE)
     val stops = icon("stops", SketchPaths.STOPS, UI_STROKE)
     val warning = icon("warning", SketchPaths.WARNING, UI_STROKE)
+    val previous = icon("previous", SketchPaths.PREVIOUS, UI_STROKE)
+    val next = icon("next", SketchPaths.NEXT, UI_STROKE)
     /** Three dots, filled: the overflow menu. */
     val more: ImageVector = ImageVector.Builder("more", 24.dp, 24.dp, 24f, 24f).apply {
         for (y in listOf(5f, 12f, 19f)) {

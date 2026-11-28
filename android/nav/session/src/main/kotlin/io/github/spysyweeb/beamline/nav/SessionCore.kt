@@ -23,6 +23,8 @@ import io.github.spysyweeb.beamline.api.nav.RouteCursor
 import io.github.spysyweeb.beamline.api.nav.RouteOptions
 import io.github.spysyweeb.beamline.api.nav.RouteTypeInfo
 import io.github.spysyweeb.beamline.api.nav.Simulation
+import io.github.spysyweeb.beamline.api.nav.StopDetours
+import io.github.spysyweeb.beamline.api.nav.StopPreview
 import io.github.spysyweeb.beamline.api.nav.TripEvent
 import io.github.spysyweeb.beamline.api.nav.TripProblem
 import io.github.spysyweeb.beamline.api.nav.TripState
@@ -165,12 +167,22 @@ internal class SessionCore(
 
     // ------------------------------------------------------------------------------------ planning
 
-    private class Planned(val choice: RouteChoice, val route: Route, val plan: PlanResult.Ok, val legStops: List<Int>)
+    private class Planned(
+        val choice: RouteChoice, val route: Route, val plan: PlanResult.Ok, val legStops: List<Int>,
+        /** Audit F40: the route's traffic lights once asked ([askLights]); Start reuses them. Null: not asked yet. */
+        val lights: RouteLights? = null,
+    ) {
+        /** The same card with its steps in the banner's words at the lights too (F40); its id stays. */
+        fun withLights(l: RouteLights, legPlaces: List<Place>, rules: BannerRules) =
+            Planned(choice.copy(steps = Views.steps(route, rules, choice.geometry, legPlaces, lotLegsOf(plan), l)), route, plan, legStops, l)
+    }
 
     private var planned: List<Planned> = emptyList()
     private var choiceSeq = 0L
     private var planJob: Job? = null
     private var waitJob: Job? = null
+    /** Audit F40: the traffic lights of the selected route, asked once the plan is final or a card is chosen; a newer revision or the trip's end cancels it, Start waits for it. */
+    private var lightsJob: Job? = null
     private var lastGeneration: Long? = null
 
     // ------------------------------------------------------------------------------------ guidance
@@ -283,6 +295,12 @@ internal class SessionCore(
     private var closedSwap: Place? = null
     private var estimateAtMs = 0L
 
+    // item 51 (rule C8): the detours of a list of places and the route with one of them added
+    private var detourJob: Job? = null
+    /** The id of the Detours request running or published: an empty request with another id is ignored. */
+    private var detourId = 0L
+    private var previewJob: Job? = null
+
     init {
         scope.launch {
             guarded { startUp() }
@@ -312,6 +330,9 @@ internal class SessionCore(
                 planJob?.cancel()
                 waitJob?.cancel()
                 orderJob?.cancel()
+                lightsJob?.cancel()
+                detourJob?.cancel()
+                previewJob?.cancel()
             }
             withContext(NonCancellable + routingDispatcher) {
                 // on the routing thread: no batch here (batches belong to the session thread)
@@ -340,8 +361,9 @@ internal class SessionCore(
         if (age <= (rules.resumeMaxAgeS * 1000).roundToLong()) {
             // a type presets.json no longer has (Shortest left in batch D) is the default type (Fastest)
             val type = snap.routeType.takeIf { id -> presets.routeTypes.any { it.id == id } } ?: presets.default.routeType
+            // play test P27: a simulated drive is offered as one, and Resume simulates it again
             st = st.copy(phase = Phase.RESUME_OFFERED, stops = snap.stops, routeType = type, options = snap.options,
-                revision = st.revision + 1)
+                revision = st.revision + 1, resumeSimulated = snap.simulated)
         } else {
             clearTrip()
         }
@@ -356,12 +378,22 @@ internal class SessionCore(
             estimate(intent.place)
             return
         }
+        // item 51 (rule C8): nor do the detours of a list and the look at a stop: they change no trip
+        if (intent is NavIntent.Detours) {
+            detours(intent)
+            return
+        }
+        if (intent is NavIntent.PreviewStop) {
+            previewStop(intent.place)
+            return
+        }
         // R4: End can be taken back only by the very next intent
         val endedBefore = ended
         ended = null
         when (intent) {
             is NavIntent.PlanTo -> planTo(intent)
             is NavIntent.Estimate -> Unit // answered above
+            is NavIntent.Detours, is NavIntent.PreviewStop -> Unit // answered above
             is NavIntent.SetOrigin -> if (st.phase == Phase.PLANNING || st.phase == Phase.CHOOSING) {
                 st = st.copy(origin = intent.origin)
                 replanBeforeGuidance()
@@ -393,7 +425,7 @@ internal class SessionCore(
             NavIntent.End -> end()
             NavIntent.UndoEnd -> endedBefore?.let(::undoEnd)
             NavIntent.Done -> if (st.phase == Phase.ARRIVED) finishGuidance()
-            NavIntent.Resume -> if (st.phase == Phase.RESUME_OFFERED) resume(Phase.RESUME_OFFERED, null)
+            NavIntent.Resume -> if (st.phase == Phase.RESUME_OFFERED) resume(Phase.RESUME_OFFERED, resumeSimulation())
             NavIntent.DiscardResume -> if (st.phase == Phase.RESUME_OFFERED) {
                 clearTrip()
                 toIdle()
@@ -454,7 +486,7 @@ internal class SessionCore(
                     return
                 }
                 newOrigin = Origin.FromPlace(last)
-                newEnd = Place(YOUR_POSITION, GeoPoint(fix.lat, fix.lon), PlaceSource.MAP_PIN)
+                newEnd = Place(STARTING_POINT, GeoPoint(fix.lat, fix.lon), PlaceSource.MAP_PIN, subtitle = WHERE_YOU_SWAPPED)
             }
             is Origin.FromPlace -> {
                 newOrigin = if (last == swappedPosition) Origin.CurrentPosition else Origin.FromPlace(last)
@@ -481,6 +513,7 @@ internal class SessionCore(
 
     /** A trip from the current position (P1) with the route type from settings (P4) and the options from settings. */
     private fun newTrip(stops: List<TripStop>) {
+        dropStopWork()
         planJob?.cancel()
         estimateJob?.cancel() // audit F26: a waiting estimate never runs ahead of the trip's own plan
         val s = settings.settings.value
@@ -490,7 +523,7 @@ internal class SessionCore(
         planned = emptyList()
         st = st.copy(phase = Phase.PLANNING, revision = st.revision + 1, origin = Origin.CurrentPosition, stops = stops,
             routeType = type, options = RouteOptions(s.avoidHighways, s.avoidTolls), choices = emptyList(),
-            selectedChoiceId = null, guidance = null, problem = null, replanning = false)
+            selectedChoiceId = null, guidance = null, problem = null, replanning = false, resumeSimulated = false)
         schedulePlan()
     }
 
@@ -501,7 +534,8 @@ internal class SessionCore(
         }
         changeStops { stops ->
             val reached = stops.count { it.reached }
-            val at = (intent.index ?: if (stops.size > reached) stops.size - 1 else stops.size).coerceIn(reached, stops.size)
+            // C1: a null index goes before the destination (item 51: StopLeg, where the detours and the preview put it too)
+            val at = (intent.index ?: StopLeg.insertIndex(stops)).coerceIn(reached, stops.size)
             stops.toMutableList().apply { add(at, TripStop(intent.place)) }
         }
     }
@@ -537,6 +571,8 @@ internal class SessionCore(
         when (st.phase) {
             Phase.IDLE, Phase.RESUME_OFFERED -> settings.update { it.copy(routeType = typeId) }
             Phase.PLANNING, Phase.CHOOSING -> {
+                // item 51: the selected route (the line the detours are measured on) and the trip's type change
+                dropStopWork()
                 // every offered type is planned already (P2): select the card holding it (P4, C7)
                 settings.update { it.copy(routeType = typeId) }
                 val holding = st.choices.firstOrNull { typeId in it.typeIds }
@@ -578,9 +614,12 @@ internal class SessionCore(
     private fun choose(id: Long) {
         if (st.phase != Phase.CHOOSING && st.phase != Phase.PLANNING) return
         val c = st.choices.firstOrNull { it.id == id } ?: return
+        // item 51: the chosen route is the line the detours and the preview's "now" are read from
+        dropStopWork()
         val type = if (st.routeType in c.typeIds) st.routeType else c.typeIds.first()
         if (type != settings.settings.value.routeType) settings.update { it.copy(routeType = type) }
         st = st.copy(selectedChoiceId = id, routeType = type)
+        askLights()
     }
 
     private fun retry() {
@@ -591,10 +630,13 @@ internal class SessionCore(
                 rerouteAt = null
                 requestReroute(user = true)
             }
-            Phase.RESUME_OFFERED -> resume(Phase.RESUME_OFFERED, null)
+            Phase.RESUME_OFFERED -> resume(Phase.RESUME_OFFERED, resumeSimulation())
             else -> Unit
         }
     }
+
+    /** Play test P27: Resume of a simulated drive plays "Simulate drive" again (D4); a real trip is guided as one. */
+    private fun resumeSimulation(): Simulation? = if (st.resumeSimulated) Simulation() else null
 
     private fun end() {
         when (st.phase) {
@@ -642,6 +684,9 @@ internal class SessionCore(
     private fun toIdle() {
         planJob?.cancel()
         waitJob?.cancel()
+        lightsJob?.cancel()
+        detourJob?.cancel() // item 51: the fresh state below has no detours or preview
+        previewJob?.cancel()
         orderJob?.cancel()
         startJob?.cancel() // End or DiscardResume while Start or Resume waits: its hold is given back now
         planned = emptyList()
@@ -657,6 +702,189 @@ internal class SessionCore(
         emit(TripEvent.GuidanceEnded)
     }
 
+    // ================================================================================== add a stop on the map (C8)
+
+    private fun tripPhase() = st.phase == Phase.PLANNING || st.phase == Phase.CHOOSING || st.phase == Phase.GUIDING || st.phase == Phase.REROUTING
+
+    private fun guiding() = st.phase == Phase.GUIDING || st.phase == Phase.REROUTING
+
+    /** Item 51 (C8): the detours and the stop preview no longer fit the trip: their jobs stop, their answers go. */
+    private fun dropStopWork() {
+        detourJob?.cancel()
+        detourJob = null
+        previewJob?.cancel()
+        previewJob = null
+        if (st.detours != null || st.stopPreview != null) st = st.copy(detours = null, stopPreview = null)
+    }
+
+    /** The car as a re-route's origin (O4: heading and radius), or the shown point on the guided route without a fix (as C3). */
+    private fun carOrigin(): Stop? {
+        val g = guided ?: return null
+        return (lastDeciding ?: lastUsable)?.let(::carStop) ?: Stop(g.geo.pointAt(carAlong()), radiusM = rules.rerouteOriginRadiusM)
+    }
+
+    /** C8's J, where AddStop without an index joins the trip: the stop before the destination, else the car while guiding, else the trip's start. */
+    private fun joinPoint(): Stop? {
+        val unreached = st.stops.filter { !it.reached }
+        if (unreached.size >= 2) return Stop(planStop(unreached[unreached.size - 2]).point)
+        return if (guiding()) carOrigin() else originNow()
+    }
+
+    /** C8's R: the route's point 10 km past the farthest place, with its heading (its carriageway); the destination when that is nearer. */
+    private fun rejoinPoint(places: List<Place>): Stop? {
+        StopLeg.rejoin(StopLeg.lineAhead(st), places.map { it.point }, DETOUR_REJOIN_MARGIN_KM)?.let { (p, bearing) ->
+            return stopFrom(LatLon(p.lat, p.lon), bearing)
+        }
+        val d = st.stops.lastOrNull { !it.reached } ?: return null
+        return Stop(planStop(d).point)
+    }
+
+    /**
+     * Item 51 (rule C8): what each place would add to the trip as a new stop: t(J,P) + t(P,R) - t(J,R), two
+     * matrices per [DETOUR_CHUNK] places on the routing thread, published after each chunk. A newer request
+     * replaces this one; an empty one with its id drops it; [dropStopWork] (and, as a belt, the fits() check
+     * before each publish) drop it with a change of the trip. Nothing else changes (no revision, no replanning, no event, no trip.json).
+     */
+    private fun detours(intent: NavIntent.Detours) {
+        val id = intent.requestId
+        val places = intent.places
+        if (places.isEmpty()) {
+            // the app's "drop it": only for its own request (an older list's late one never drops a newer list)
+            if (id == detourId) {
+                detourJob?.cancel()
+                detourJob = null
+                if (st.detours != null) st = st.copy(detours = null)
+            }
+            return
+        }
+        detourJob?.cancel()
+        detourJob = null
+        detourId = id
+        if (!tripPhase()) {
+            if (st.detours != null) st = st.copy(detours = null)
+            return
+        }
+        val n = places.size
+        val inst = installed.value
+        val set = inst.routing
+        val j = joinPoint()
+        val r = rejoinPoint(places)
+        if (set == null || j == null || r == null) {
+            // no routing or no position: nothing can be worked out (the rows list nearest first)
+            st = st.copy(detours = StopDetours(id, List(n) { null }, null, done = true))
+            return
+        }
+        st = st.copy(detours = StopDetours(id, List(n) { null }, null, done = false))
+        val places0 = st.stops.map { it.place }
+        val guiding0 = guiding()
+        val type0 = st.routeType
+        val options0 = st.options
+        val origin0 = st.origin
+        // a belt to dropStopWork: an answer is never published in ARRIVED or IDLE, or for another trip
+        fun fits() = st.detours?.requestId == id && tripPhase() && guiding() == guiding0 && st.stops.map { it.place } == places0 &&
+            st.routeType == type0 && st.options == options0 && st.origin == origin0
+        val preset = presets.compose(st.routeType, optionIds(st.options))
+        // a matrix is an estimate: each place's own point (no door, no ties); the preview and AddStop use the planner
+        val targets = places.map { Stop(LatLon(RouteSimulator.round6(it.point.lat), RouteSimulator.round6(it.point.lon))) }
+        detourJob = scope.launch {
+            val added = MutableList<Double?>(n) { null }
+            var legS: Double? = null
+            val chunks = (0 until n).chunked(DETOUR_CHUNK)
+            for ((k, chunk) in chunks.withIndex()) {
+                val ts = chunk.map { targets[it] }
+                // two jobs on the routing thread, so a re-route or a plan queued meanwhile runs between them (risk R1)
+                val toPlaces = withContext(routingDispatcher) { runCatching { service.times(inst.generation, set, listOf(j), ts + r, preset) }.getOrNull() }
+                val back = withContext(routingDispatcher) { runCatching { service.times(inst.generation, set, ts, listOf(r), preset) }.getOrNull() }
+                batch {
+                    if (!fits()) {
+                        // its own placeholder goes with it (never left not done with no job behind it)
+                        if (st.detours?.requestId == id) st = st.copy(detours = null)
+                        return@launch
+                    }
+                    val row = toPlaces?.firstOrNull()
+                    // that leg's time now, from the same matrix (so a place on the route reads about 0)
+                    val leg = row?.getOrNull(ts.size)
+                    if (leg != null) legS = leg
+                    for ((c, i) in chunk.withIndex()) {
+                        val tj = row?.getOrNull(c)
+                        val tr = back?.getOrNull(c)?.firstOrNull()
+                        added[i] = if (tj != null && tr != null && leg != null) max(0.0, tj + tr - leg) else null
+                    }
+                    st = st.copy(detours = StopDetours(id, added.toList(), legS, done = k == chunks.lastIndex))
+                }
+            }
+        }
+    }
+
+    /**
+     * Item 51 (rule C8): the route the trip would have with [place] added where AddStop without an index puts
+     * it, planned once with the trip's type: from the car (the trip's decided ends) while guiding, before
+     * guidance as C2's first request would be. Null ends the look. The trip itself does not change.
+     */
+    private fun previewStop(place: Place?) {
+        previewJob?.cancel()
+        previewJob = null
+        if (place == null || !tripPhase()) {
+            if (st.stopPreview != null) st = st.copy(stopPreview = null)
+            return
+        }
+        val next = st.stops.toMutableList().apply { add(StopLeg.insertIndex(this), TripStop(place)) }
+        if (next.size > rules.maxStops) {
+            // only this problem means AddStop would be refused (C1)
+            st = st.copy(stopPreview = StopPreview(place, null, null, busy = false,
+                problem = TripProblem(ProblemKind.TOO_MANY_STOPS, "A trip can have up to ${rules.maxStops} stops.", false)))
+            return
+        }
+        val inst = installed.value
+        val set = inst.routing
+        if (set == null) {
+            st = st.copy(stopPreview = StopPreview(place, null, null, busy = false, problem = noRoutingProblem()))
+            return
+        }
+        st = st.copy(stopPreview = StopPreview(place, null, null, busy = true))
+        val places0 = st.stops.map { it.place }
+        val guiding0 = guiding()
+        fun fits() = st.stopPreview?.place == place && st.stops.map { it.place } == places0 && tripPhase() && guiding() == guiding0
+        // a look that no longer fits goes (never left busy with no job behind it)
+        fun dropOwn() {
+            if (st.stopPreview?.place == place) st = st.copy(stopPreview = null)
+        }
+        previewJob = scope.launch {
+            // before guidance the stops are built as runPlanning's first request: a point of interest by its door
+            if (!guiding0) learnDoors(next.map { it.place })
+            val (stops, preset) = batch {
+                if (!fits()) {
+                    dropOwn()
+                    return@launch
+                }
+                val origin = if (guiding0) carOrigin() else originNow()
+                if (origin == null) {
+                    st = st.copy(stopPreview = StopPreview(place, null, null, busy = false, problem = TripProblem(ProblemKind.NO_POSITION, NO_POSITION_TEXT, true)))
+                    return@launch
+                }
+                val unreached = next.filter { !it.reached }
+                // while guiding as C3 will send them: the decided ends of the trip's stops, the new place as the planner decides it
+                val stops = listOf(origin) + if (guiding0) unreached.map { if (it.place == place) placeStop(it) else planStop(it) } else unreached.map(::placeStop)
+                stops to presets.compose(st.routeType, optionIds(st.options))
+            }
+            val r = withContext(routingDispatcher) { service.plan(inst.generation, set, stops, preset) }
+            batch {
+                if (!fits()) {
+                    dropOwn()
+                    return@launch
+                }
+                st = st.copy(stopPreview = when (r) {
+                    is PlanResult.Ok -> {
+                        val now = if (guiding()) guidanceNow()?.remainingS else planned.firstOrNull { it.choice.id == st.selectedChoiceId }?.route?.timeS
+                        val card = Views.choice(++choiceSeq, listOf(st.routeType), r.route, r.warnings.map { it.userText }, bannerRules)
+                        StopPreview(place, card, now?.let { max(0.0, r.route.timeS - it) }, busy = false)
+                    }
+                    is PlanResult.Failed -> StopPreview(place, null, null, busy = false, problem = problemOf(r.problem))
+                })
+            }
+        }
+    }
+
     // ================================================================================== planning (P, C2, C5)
 
     private fun optionIds(o: RouteOptions): Set<String> = buildSet {
@@ -665,6 +893,7 @@ internal class SessionCore(
     }.filterTo(HashSet()) { id -> presets.options.any { it.id == id } }
 
     private fun replanBeforeGuidance() {
+        dropStopWork()
         st = st.copy(phase = Phase.PLANNING, revision = st.revision + 1, problem = null)
         schedulePlan()
     }
@@ -672,6 +901,7 @@ internal class SessionCore(
     /** C2: plans after planning.coalesce_ms without a further change; a newer revision cancels this one. */
     private fun schedulePlan() {
         planJob?.cancel()
+        lightsJob?.cancel()
         // a plan that waited for a fix ends its wait here, in this change (gps back to OFF)
         if (waitJob != null) {
             waitJob?.cancel()
@@ -795,9 +1025,9 @@ internal class SessionCore(
      * (a search-pack read of a few milliseconds each). Call before the stops of a plan are built
      * ([placeStop]); a failed read counts as no door.
      */
-    private suspend fun learnDoors() {
+    private suspend fun learnDoors(places: List<Place> = st.stops.map { it.place }) {
         val inst = installed.value
-        val todo = st.stops.map { it.place }.distinct().filter { StopTies.isPointOfInterest(it) && doors[it]?.first != inst.generation }
+        val todo = places.distinct().filter { StopTies.isPointOfInterest(it) && doors[it]?.first != inst.generation }
         if (todo.isEmpty()) return
         val found = withContext(routingDispatcher) { todo.map { p -> runCatching { doorOf(p, inst) }.getOrNull() } }
         if (doors.size > 64) doors.clear()
@@ -855,6 +1085,7 @@ internal class SessionCore(
                     val anyOk = answers.any { it.second is PlanResult.Ok }
                     st = st.copy(phase = Phase.CHOOSING, replanning = false,
                         problem = if (anyOk) null else problemOf((answers.first().second as PlanResult.Failed).problem))
+                    askLights()
                 }
             }
         }
@@ -878,7 +1109,9 @@ internal class SessionCore(
             if (existing != null && existing.choice.typeIds == types) existing
             else {
                 val id = existing?.choice?.id ?: ++choiceSeq
-                Planned(Views.choice(id, types.toList(), r.route, r.warnings.map { it.userText }, bannerRules), r.route, r, legStops)
+                // audit F40, P34: the steps preview names the stops and the lot turns at once (no engine needed)
+                Planned(Views.choice(id, types.toList(), r.route, r.warnings.map { it.userText }, bannerRules,
+                    legPlaces = legStops.map { st.stops[it].place }, lotLegs = lotLegsOf(r)), r.route, r, legStops)
             }
         }
         planned = next
@@ -895,6 +1128,28 @@ internal class SessionCore(
     }
 
     private fun sameRoute(a: Route, b: Route) = abs(a.lengthM - b.lengthM) < 1.0 && abs(a.timeS - b.timeS) < 0.5 && a.shape.size == b.shape.size
+
+    /**
+     * Audit F40: the steps preview says what the banner will ("At the light, turn left"): the traffic lights
+     * of the selected route only (one engine walk per plan, not per card), once the plan is final (CHOOSING)
+     * or a card is chosen. The card keeps its id; Start reuses the lights ([EngineRouteService.forGuidance]).
+     */
+    private fun askLights() {
+        lightsJob?.cancel()
+        if (st.phase != Phase.CHOOSING) return
+        val p = planned.firstOrNull { it.choice.id == st.selectedChoiceId }?.takeIf { it.lights == null } ?: return
+        val inst = installed.value
+        val set = inst.routing ?: return
+        val rev = st.revision
+        lightsJob = scope.launch {
+            val lights = withContext(routingDispatcher) { service.lights(inst.generation, set, p.route) }
+            batch {
+                if (rev != st.revision || st.phase != Phase.CHOOSING) return@launch
+                planned = planned.map { q -> if (q.plan === p.plan) q.withLights(lights, q.legStops.map { st.stops[it].place }, bannerRules) else q }
+                st = st.copy(choices = planned.map { it.choice })
+            }
+        }
+    }
 
     private fun problemOf(p: RoutingProblem): TripProblem = TripProblem(
         kind = when (p) {
@@ -981,6 +1236,9 @@ internal class SessionCore(
                     return@launch
                 }
                 changeStops { next }
+                // play test P49: Best order says what it did (the stops editor's "Stops reordered."); changeStops
+                // wrote the new order unless it refused it
+                if (st.stops == next) emit(TripEvent.StopsReordered)
             }
         }
     }
@@ -1010,15 +1268,20 @@ internal class SessionCore(
         }
         val rev = st.revision
         st = st.copy(replanning = true)
+        // audit F40: a walk of this card's lights already on the routing thread cannot be stopped there; Start waits
+        // for it and uses its answer instead of walking the route a second time (one walk queued or running)
+        val walk = lightsJob
         startJob?.cancel()
         startJob = scope.launch {
             // the hold until guidance holds it ([hold]); given back on every other way out: an older
             // revision, close(), a cancellation while the engine works, a failure (2.2 rule 4, P5)
             var held: AutoCloseable? = h
             try {
+                walk?.join()
+                val known = planned.firstOrNull { it.plan === p.plan }?.lights ?: p.lights
                 val osrm = withContext(routingDispatcher) {
                     try {
-                        service.forGuidance(inst.generation, set, p.plan)
+                        service.forGuidance(inst.generation, set, p.plan, known = known)
                     } catch (e: Exception) {
                         null
                     }
@@ -1046,7 +1309,8 @@ internal class SessionCore(
      */
     private fun resume(from: Phase, sim: Simulation?) {
         val rev = st.revision + 1
-        st = st.copy(revision = rev, problem = null, origin = Origin.CurrentPosition, replanning = true)
+        // play test P27: every way back to RESUME_OFFERED copies this, so a failed resume is offered as simulated again
+        st = st.copy(revision = rev, problem = null, origin = Origin.CurrentPosition, replanning = true, resumeSimulated = sim != null)
         startJob?.cancel()
         startJob = scope.launch {
             val now = originNow()
@@ -1096,8 +1360,11 @@ internal class SessionCore(
     private data class ResumePlan(val stops: List<Stop>, val unreached: List<Int>, val preset: Preset, val type: String)
 
     private fun beginGuidance(g: Guided, sim: Simulation?, resumed: Boolean) {
+        // item 51: answers worked out from the trip's start no longer fit a trip driven from the car
+        dropStopWork()
         planJob?.cancel()
         waitJob?.cancel()
+        lightsJob?.cancel()
         orderJob?.cancel()
         simulation = sim
         resetDriving()
@@ -1105,7 +1372,7 @@ internal class SessionCore(
         val now = clock.elapsedMs()
         lastSaveMs = now
         st = st.copy(phase = Phase.GUIDING, revision = st.revision + 1, choices = emptyList(), selectedChoiceId = null,
-            problem = null, replanning = false, gps = GpsState.WAITING, guidance = guidanceNow())
+            problem = null, replanning = false, gps = GpsState.WAITING, guidance = guidanceNow(), resumeSimulated = false)
         saveTrip()
         emit(TripEvent.GuidanceStarted(g.choice.id, sim != null))
         if (resumed) emit(TripEvent.RouteReplaced(g.choice.id, ReplaceReason.RESUMED))
@@ -1123,18 +1390,20 @@ internal class SessionCore(
         val geo: RouteGeometry
         val banners: List<BannerView>
         val follower: RouteFollower
+        // the legs whose stop ends in its lot (the plan's ends, the origin first)
+        val lotLegs = lotLegsOf(plan)
         try {
             geo = RouteGeometry(route)
-            // the legs whose stop ends in its lot (the plan's ends, the origin first)
-            val lotLegs = plan.ends.drop(1).mapIndexedNotNull { leg, s -> leg.takeIf { s.end == StopEnd.LOT } }.toSet()
-            banners = Views.atLights(Views.intoLots(Views.banners(route, bannerRules), geo, lotLegs), geo, answer.lights)
+            // item 22, play test P34: the lot turn, "At the light" and each arrival's stop name
+            banners = Views.decorate(Views.banners(route, bannerRules), geo, legPlaces, lotLegs, answer.lights)
             follower = followers.create(FollowerRoute(route, osrm, plan.chosen.routeIndex), rules)
         } catch (e: CancellationException) {
             throw e
         } catch (e: Exception) {
             return null
         }
-        val choice = Views.choice(++choiceSeq, listOf(st.routeType), route, plan.warnings.map { it.userText }, bannerRules)
+        // audit F40: the guided route's steps in the banner's words too
+        val choice = Views.choice(++choiceSeq, listOf(st.routeType), route, plan.warnings.map { it.userText }, bannerRules, legPlaces, lotLegs, answer.lights)
         return Guided(route, geo, banners, follower, choice, legPlaces, SpeedLimits.from(route, osrm, plan.chosen.routeIndex), answer.lanes, answer.lights)
     }
 
@@ -1525,6 +1794,7 @@ internal class SessionCore(
             changeOldSettings = null
             orderJob?.cancel()
             orderJob = null
+            dropStopWork() // item 51: no stop is added in ARRIVED
             shownU = u
             shownM = 0.0
             st = st.copy(phase = Phase.ARRIVED, stops = stops, revision = st.revision + 1, replanning = false, problem = null)
@@ -1637,7 +1907,8 @@ internal class SessionCore(
         // O8: outside the installed states no engine call, no attempt counted
         if (set == null || !set.covers(GeoPoint(originFix.lat, originFix.lon))) {
             outsideWaiting = true
-            st = st.copy(problem = TripProblem(ProblemKind.OUTSIDE_INSTALLED_MAPS, OUTSIDE_TEXT, true), replanning = false)
+            // play test P5: no Retry, it cannot help (the same fix gives the same answer): a covered fix asks again (O8)
+            st = st.copy(problem = TripProblem(ProblemKind.OUTSIDE_INSTALLED_MAPS, OUTSIDE_GUIDED_TEXT, canRetry = false), replanning = false)
             publish()
             return
         }
@@ -1680,7 +1951,7 @@ internal class SessionCore(
         if (problem != null && (problem.engineCode == 170 || problem.engineCode == 171) &&
             (problem !is RoutingProblem.OutsideInstalledMaps || problem.stopIndices.isEmpty() || 0 in problem.stopIndices)) {
             outsideWaiting = true
-            st = st.copy(replanning = false, problem = TripProblem(ProblemKind.OUTSIDE_INSTALLED_MAPS, OUTSIDE_TEXT, true))
+            st = st.copy(replanning = false, problem = TripProblem(ProblemKind.OUTSIDE_INSTALLED_MAPS, OUTSIDE_GUIDED_TEXT, canRetry = false))
             publish()
             return
         }
@@ -1716,6 +1987,7 @@ internal class SessionCore(
      */
     private fun changeDuringGuidance(stops: List<TripStop>, type: String, options: RouteOptions, reason: ReplaceReason) {
         val g = guided ?: return
+        dropStopWork() // item 51: the stops, the type or the options change
         if (changeOld == null) {
             changeOld = Triple(st.stops, st.routeType, st.options)
             changeOldSettings = settings.settings.value
@@ -1767,12 +2039,16 @@ internal class SessionCore(
         }
     }
 
-    /** C3: back to the stops, type and options the guided route was planned for; stops reached meanwhile stay reached. */
+    /**
+     * C3: back to the stops, type and options the guided route was planned for; stops reached meanwhile stay reached.
+     * Item 51: that is a change of the stops, type or options too: detours and a preview asked meanwhile go.
+     */
     private fun undoChange() {
         val old = changeOld ?: return
         val oldSettings = changeOldSettings
         changeOld = null
         changeOldSettings = null
+        dropStopWork()
         val reachedNow = st.stops.filter { it.reached }.map { it.place }
         val stops = old.first.map { s -> if (!s.reached && s.place in reachedNow) s.copy(reached = true) else s }
         val typeOrOptionsChanged = st.routeType != old.second || st.options != old.third
@@ -1808,7 +2084,7 @@ internal class SessionCore(
         if (st.stops.isEmpty()) return
         lastSaveMs = clock.elapsedMs()
         try {
-            store.save(TripSnapshot(wallClockMs(), st.stops, st.routeType, st.options))
+            store.save(TripSnapshot(wallClockMs(), st.stops, st.routeType, st.options, simulated = simulation != null))
         } catch (e: Exception) {
             tripWriteFailures++
         }
@@ -1880,12 +2156,23 @@ internal class SessionCore(
     companion object {
         /** Item 47: the same place asked again within this is not routed again. */
         const val ESTIMATE_FRESH_MS = 60_000L
+        /** Item 51 (rule C8): places per pair of matrix calls (each call its own job on the routing thread). */
+        const val DETOUR_CHUNK = 10
+        /** Item 51 (rule C8): the detour comes back to the trip's route this far past the farthest place (StopLeg.rejoin). */
+        const val DETOUR_REJOIN_MARGIN_KM = 10.0
         const val HOLD_REASON = "Not while guiding"
-        /** Item 47: the destination a swap makes of the current position. */
-        const val YOUR_POSITION = "Where you were"
+        /**
+         * Item 47, P19: the destination a swap makes of the current position, and its second line. A past
+         * point, not "Your position" (the live position's name in the From row and in Change start's
+         * picker, P22), so "Arrived at", "Continue to" (the resume card) and "Drop your trip to" read right
+         * and the two never show as the same words.
+         */
+        const val STARTING_POINT = "Your starting point"
+        const val WHERE_YOU_SWAPPED = "Where you were when you swapped"
         const val NO_POSITION_TEXT = "No GPS position yet. Choose a start point or try again."
         const val PACKS_BUSY_TEXT = "A state is being installed. Start again when it has finished."
-        const val OUTSIDE_TEXT = "You are outside the installed maps."
+        /** O8 while guided (play test P5): no Retry; the session asks again by itself on the first covered fix. */
+        const val OUTSIDE_GUIDED_TEXT = "You are outside the installed maps. Guidance goes on when you are back on them."
         const val NO_ROUTING_TEXT = "No state with routes is installed. Add a state."
         const val PACKS_CHANGED_TEXT = "The installed states changed. Planning again."
         const val NO_ORDER_TEXT = "No order of these stops connects them all."
@@ -1895,3 +2182,6 @@ internal class SessionCore(
         const val NO_SCRIPT_TEXT = "There is no simulated drive with that name."
     }
 }
+
+/** The legs whose stop ends in its lot (StopEnd.LOT; the plan's ends, the origin first): "into the parking lot" (item 22). */
+private fun lotLegsOf(plan: PlanResult.Ok): Set<Int> = plan.ends.drop(1).mapIndexedNotNull { leg, s -> leg.takeIf { s.end == StopEnd.LOT } }.toSet()

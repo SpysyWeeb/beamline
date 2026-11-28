@@ -992,6 +992,78 @@ not break across two lines in the banner; the results view shows at most the 20 
     still has to slide (`LocalSheetLag`, ui/theme), so the camera gets the height the sheet is going to
     as it starts; the settle is 60 ms (RouteSheetHeightsTest: on the old code three frames in the
     camera had 255 of 575 dp).
+50. **The play test's findings** (the owner, 2026-11-26: "Maybe we need to do another audit of sonnet
+    play testers that can look at how the app works rather than the code?"). Sonnet testers used 0.1.39
+    on three emulators through screenshots (8 missions); every finding was reproduced by a fresh tester:
+    34 yes, 22 partly, 8 no, in `docs/audits/2026-11-26-play-test.md`, grouped A (bugs that get in the
+    way), B (confusing flows), C (wording and polish). New against the code audit, among others: in
+    landscape with 3-button navigation the Settings and Map style buttons sit under the system buttons
+    (P1, F98 confirmed); the raised place window pushes the position button onto Map style (P7); the
+    arrival view shows only the destination point, without the car or roads (P4); Add stop's field is
+    not focused (P26); Rename puts the cursor before the old name (P56). The owner chooses what to fix.
+51. **Add a stop on the map, sorted by the time it adds** (the owner, 2026-11-26: "'Add a stop during a
+    trip' should show the map so the user knows where the stop is, and on the list, it should be sorted
+    by what takes the least amount of time to route to, like a '+2 min' showing how much time it adds
+    to the original route having to route to and from the original path"). Proposed: the route stays
+    drawn with the results pinned on the map and a results window below; each row says "+N min" (time
+    to the place plus from it to where the stop joins, minus that leg's time now; "On the way" under a
+    minute), nearest first among equals; places along the route ahead, not only near the car; a tapped
+    row previews the new route with its arrival time and an "Add stop" button. The detours come from
+    the routing matrix (Best order's: on the owner's phone a 1x40 took 1.0-1.9 s, experiment 09), so
+    the list waits for them briefly rather than re-sorting under the finger.
+52. **Directions handed over by another app** (the owner, 2026-11-27, with a screenshot of a restaurant
+    app's "Get Directions" chooser listing Maps, Explore, Galaxy, Lyft and OsmAnd: "we should make our
+    app work like the rest of these apps do when you click a button for directions"). Beamline appears
+    in that chooser: `geo:` links (a point, a point with a label, or `q=` an address), `google.navigation:`
+    links and the Google Maps directions links other navigation apps also accept. A point opens the
+    route preview to it; an address is looked up in the installed states (one clear match: the route
+    preview; otherwise the search with the address typed in; outside the installed states: says so).
+    Nothing starts driving on its own (Start stays one tap). During a trip the place is offered as a
+    stop (item 51's card) or as the new destination. What another app hands over stays on the phone
+    and is never logged (PV2). Was the "place handed over by another app" idea of item 6.
+    *Built in 0.1.40* (`docs/architecture.md` 3.11, rules H1-H8): Beamline is listed by the "Get Directions" and "Open
+    with" choosers of `geo:` and `google.navigation:` links (Google Maps and OpenStreetMap web links too, once the user
+    gives them to Beamline in "Open by default" on Android 12+); a point opens the route preview, named by the link's
+    label or what the packs know there; words are looked up offline (one clear match: the route preview; a state not
+    on the phone: said so; else the search with the words typed); during a trip the place opens as item 51's card with
+    "Add stop" and "Go here instead"; nothing of a link is logged or sent.
+
+53. **Ideas from StreetComplete for the OSM editor** (the owner, 2026-11-27: "Think we can use
+    https://github.com/streetcomplete/streetcomplete to improve our OSM editor?"). StreetComplete (v65.0,
+    read at commit 8066dcc) is GPL-3.0-only and most of its art CC-BY-SA, so none of its code or images
+    comes into Beamline (MIT); its ideas and OSM's tagging conventions do. Usable as they are, with their
+    notices: osm-opening-hours (MIT), osmfeatures (Apache-2.0), iD's id-tagging-schema (ISC), the Name
+    Suggestion Index (BSD-3; a separate data licence not confirmed), countrymetadata (CC0);
+    countryboundaries is LGPL-3.0. The owner chose these, as the next batch after 0.1.40:
+    a. **Conflicts per field.** Today any change on OSM after an edit sends the whole edit back for
+       review (`OutboxSender`, REVIEW). As StreetComplete does (`StringMapEntryChange.conflictsWith`): each
+       changed tag keeps its old value; the edit goes onto the newest version unless someone changed one
+       of the same tags to a different value; only then does it come back to the user.
+    b. **A posted limit says so.** The speed-limit fix (online-design.md 4.7) also writes
+       `maxspeed:type=sign`, and offers the yellow advisory sign (`maxspeed:advisory` with
+       `maxspeed:type:advisory=sign`), as StreetComplete's AddMaxSpeed does in the United States. A road
+       that already uses `source:maxspeed` keeps that key instead.
+    c. **"Still right?" in one tap.** At a place (arrived and parked, or standing near it; never while
+       guiding) its hours can be confirmed with one tap, which writes `check_date:opening_hours=<YYYY-MM-DD>`;
+       the app offers it again when the check is a year old (StreetComplete's interval for hours).
+    d. **Undo after upload** for 12 hours, from My reports: the reverse of the tag change, with the same
+       per-field conflict check (StreetComplete's RevertUpdateElementTagsAction).
+    e. **Were you there?** The app keeps the phone's recent positions (the last 10 minutes, in memory only:
+       never stored, sent or logged). An edit made when none of them was within about 80 m of the place
+       asks "Are you sure you checked this on-site?" (StreetComplete's SurveyChecker). The owner changes
+       the decision of 2026-11-21 (online-design.md 4.2): the changeset of an edit made at the place
+       carries `source=survey`; any other edit carries no source. The first time, the app says that this
+       tells everyone the user was there at that time.
+    f. **Brand and type suggestions** for "Add a missing place" and "This is now a different business":
+       osmfeatures with iD's presets and the Name Suggestion Index, trimmed to the United States (typing
+       "Sheetz" gives the gas station's type and brand tags); and the fuller list of the old business's
+       tags removed on a replacement (StreetComplete's `removePlaceRelatedTags`).
+    g. **One question on arrival.** Arrived and parked at a place that lacks something a driver cares
+       about (parking fee or access, EV charging, self-service fuel), at most one quick question with
+       large answers and "Not now"; never while guiding.
+    Not chosen or not fitting: a check for an existing note before posting one (offered, not chosen);
+    splitting a way where the limit changes (the app changes tags only); photos on notes (StreetComplete
+    runs its own photo server); GPS traces; statistics and achievements; its walking questions.
 
 ## Later (not the next round)
 

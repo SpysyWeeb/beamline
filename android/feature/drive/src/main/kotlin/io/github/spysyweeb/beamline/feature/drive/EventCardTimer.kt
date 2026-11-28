@@ -6,12 +6,16 @@ import java.util.WeakHashMap
 /**
  * The logic of [EventCards]: which one-shot card is on screen. The latest StopReached, Arrived or
  * RerouteFailed event is shown for [cardMs] after it came (`[at, at + cardMs)`, monotonic
- * milliseconds); a later one replaces it at once. GuidanceStarted and GuidanceEnded drop the card,
- * so a card of a trip that ended never shows over the next one. Thread-safe.
+ * milliseconds); a later one replaces it at once. A StopsReordered (play test P49: the stops editor's
+ * "Stops reordered.") has its own slot of [cardMs]: shown when no card is, it never replaces one.
+ * GuidanceStarted and GuidanceEnded drop both, so a card of a trip that ended never shows over the
+ * next one. Thread-safe.
  */
 class EventCardTimer(private val cardMs: Long) {
     private var event: TripEvent? = null
     private var atMs = 0L
+    /** Play test P49: when Best order last changed the order (its own slot: it never replaces a card); null: none. */
+    private var reorderedAtMs: Long? = null
 
     @Synchronized
     fun onEvent(event: TripEvent, nowMs: Long) {
@@ -20,15 +24,21 @@ class EventCardTimer(private val cardMs: Long) {
                 this.event = event
                 atMs = nowMs
             }
-            is TripEvent.GuidanceStarted, TripEvent.GuidanceEnded -> this.event = null
+            TripEvent.StopsReordered -> reorderedAtMs = nowMs
+            is TripEvent.GuidanceStarted, TripEvent.GuidanceEnded -> {
+                this.event = null
+                reorderedAtMs = null
+            }
             is TripEvent.RouteReplaced, is TripEvent.Announce -> Unit
         }
     }
 
+    /** The card shown now, else StopsReordered while its own [cardMs] lasts, else null. */
     @Synchronized
     fun shown(nowMs: Long): TripEvent? {
-        val e = event ?: return null
-        return if (nowMs - atMs < cardMs) e else null
+        event?.let { e -> if (nowMs - atMs < cardMs) return e }
+        val r = reorderedAtMs ?: return null
+        return if (nowMs - r < cardMs) TripEvent.StopsReordered else null
     }
 }
 

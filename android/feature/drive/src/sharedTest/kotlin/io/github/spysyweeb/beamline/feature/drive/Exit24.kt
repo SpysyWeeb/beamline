@@ -200,4 +200,23 @@ internal object Exit24 {
         shownEvent: TripEvent? = null,
         locationAllowed: Boolean = true,
     ): DriveUi = DrivePresenter.present(trip, units, nowEpochMs, zone, camera, stopsEditorOpen, shownEvent, locationAllowed)
+
+    /** Made-up step points for the steps preview: step i at its own place, so a ShowStep says which step it was. */
+    fun stepPoint(i: Int) = GeoPoint(42.1 + i * 0.001, -80.08)
+
+    /** RouteSheetHeightsTest's two-route sheet (Krispy Kreme), with [steps] made-up steps (P52's test of the side panel, P21, P48). */
+    fun routeSheet(selected: Long = 1, steps: Int = 0) = RouteSheetUi(
+        fromText = DriveTexts.YOUR_POSITION,
+        stops = listOf(StopRowUi(0, "Krispy Kreme", "Peach Street, Erie", reached = false, canRemove = false, canMoveUp = false, canMoveDown = false)),
+        cards = listOf(
+            RouteCardUi(1, "Fastest", "10 min", "4.1 mi", "Arrive 3:36 PM", "via Peach St", listOf("Highways"), selected = selected == 1L),
+            RouteCardUi(2, "Simpler", "11 min", "4.3 mi", "Arrive 3:37 PM", "via Greengarden Blvd", emptyList(), selected = selected == 2L),
+        ),
+        avoidHighways = false, avoidTolls = false, busy = false, problem = null, canRetry = false, warnings = emptyList(),
+        canStart = true, startBlockedText = null,
+        steps = (0 until steps).map { i -> StepUi(ManeuverKind.RIGHT, "Turn right onto Street $i", "0.$i mi", stepPoint(i)) },
+    )
+
+    /** Item 22, P32: the road being driven, as the session sets it while guiding. */
+    fun onRoad(t: TripState, name: String = "West 12th Street"): TripState = t.copy(guidance = t.guidance!!.copy(currentRoad = name))
 }

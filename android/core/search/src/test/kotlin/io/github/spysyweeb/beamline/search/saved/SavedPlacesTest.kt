@@ -467,6 +467,65 @@ class SavedPlacesTest {
         assertThrows<IllegalArgumentException> { s.move(q.id, q.toPlace()) }
     }
 
+    /** P18 (0.1.40): a point keeps the street line it carries ("Near ..."), else its coordinates; no subtitle, no category. */
+    @Test
+    fun aPointKeepsTheStreetItWasSavedWith() {
+        val s = open()
+        val street = Place("Point on the map", AIRPORT, PlaceSource.MAP_PIN, subtitle = "Near West 12th Street, Erie")
+        val w = done(s.save(street, SavedKind.WORK))
+        assertEquals("Near West 12th Street, Erie", w.placeName)
+        assertNull(w.subtitle)
+        assertNull(w.categoryId)
+        assertEquals("Near West 12th Street, Erie", w.description)
+        assertEquals(AIRPORT, w.point)
+        // a change of location onto a point with its street
+        val q = done(s.save(mall, SavedKind.OTHER, "Quokka Shop"))
+        val moved = done(s.move(q.id, street.copy(point = ZOO, subtitle = "Near West 38th Street, Erie")))
+        assertEquals("Near West 38th Street, Erie", moved.placeName)
+        assertNull(moved.subtitle)
+        // still the coordinates: a pin carrying them, a pin with no line, a blank line
+        assertEquals("42.08418, -80.17321", done(s.save(pin(AIRPORT), SavedKind.HOME)).placeName)
+        assertEquals("42.08418, -80.17321", done(s.save(Place("Point on the map", AIRPORT, PlaceSource.MAP_PIN), SavedKind.HOME)).placeName)
+        assertEquals("42.08418, -80.17321", done(s.save(Place("Point on the map", AIRPORT, PlaceSource.MAP_PIN, subtitle = "  "), SavedKind.HOME)).placeName)
+        // a named place is unchanged
+        assertEquals("Millcreek Mall", s.byId(q.id)!!.let { done(s.move(it.id, mall)).placeName })
+    }
+
+    /** P58 (0.1.40): Undo of a removal puts the place back as it was, unless its slot, its id or its name was taken meanwhile. */
+    @Test
+    fun restorePutsADeletedPlaceBack() {
+        val s = open()
+        val h = done(s.save(museum, SavedKind.HOME))
+        val q = done(s.save(mall, SavedKind.OTHER, "Quokka Shop"))
+        assertEquals(SaveResult.Done(null), s.delete(q.id))
+        assertNull(s.byId(q.id))
+        assertEquals(SaveResult.Done(q), s.restore(q))
+        assertEquals(q, s.byId(q.id))
+        assertEquals(listOf(h.id, q.id), s.places.value.map { it.id })
+        assertTrue(file.readText().contains(q.id))
+        // twice: its id is in the list again
+        assertEquals(SaveProblem.ALREADY_SAVED, refused(s.restore(q)))
+        // Home removed, a new Home saved, then the old one put back: its slot is taken
+        s.delete(h.id)
+        val h2 = done(s.save(art, SavedKind.HOME))
+        assertEquals(SaveProblem.ALREADY_SAVED, refused(s.restore(h)))
+        assertEquals(h2, s.home())
+        // an other place whose name was taken meanwhile
+        s.delete(q.id)
+        done(s.save(search("Erie Zoo", ZOO), SavedKind.OTHER, "quokka shop"))
+        assertEquals(SaveProblem.NAME_TAKEN, refused(s.restore(q)))
+        assertNull(s.byId(q.id))
+        // with Home free again, the old Home comes back
+        s.delete(h2.id)
+        assertEquals(SaveResult.Done(h), s.restore(h))
+        assertEquals(h, s.home())
+        // a read-only store
+        val d = File(dir, "newer").apply { mkdirs() }
+        File(d, "saved-places.json").writeText("""{"format":"beamline-saved-places/2","places":[]}""")
+        val ro = SavedPlaces(File(d, "saved-places.json"), rules, direct, ids())
+        assertEquals(SaveProblem.READ_ONLY, refused(ro.restore(q)))
+    }
+
     // ---------------------------------------------------------------- 10, 11
     @Test
     fun replaceHomeAndMakeHome() {

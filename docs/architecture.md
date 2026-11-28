@@ -73,7 +73,7 @@ only through the orchestrator, additive, between waves; see 5.2).
 | `:core:units` **new** | `core/units` | `P.units` | JVM | Round 0 (complete), **frozen** | The one place where distance, duration and clock texts are made, from `units.json`. |
 | `:core:settings` | `core/settings` | `P.settings` | JVM | Round 0 additions, **frozen** | Settings (with route type, avoid flags, include-addresses) and `AppStateStore` (first-run flag). |
 | `:core:location` | `core/location` | `P.location` | JVM | Round 0 addition, **frozen** | `Fix`, `PositionSource`, `Clock`, `PuckTracker`; `SharedPositionSource` (one GPS listener for the app). |
-| `:ui:theme` **new** | `ui/theme` | `P.ui.theme` | Android lib, Compose | Round 0 (moved from `:app`), **frozen** | Colours (route blue B), the Material theme, the hand-drawn screen icons; the bottom sheets' one frame and height rules (`Sheets.kt`, rule D10; batch F). |
+| `:ui:theme` **new** | `ui/theme` | `P.ui.theme` | Android lib, Compose | Round 0 (moved from `:app`), **frozen** | Colours (route blue B), the Material theme, the hand-drawn screen icons; the bottom sheets' one frame and height rules (`Sheets.kt`, rule D10; batch F); the side panel's rule (`SidePanel.kt`: `isSideLayout`, `sidePanelWidth`; play test P7). |
 | `:core:packs` | `core/packs` | `P.packs` | JVM | P | Manifest v3, readers, scanner, the archive installer, `StyleComposer`. |
 | `:core:installed` **new** | `core/installed` | `P.installed` | JVM | P | `InstalledLibrary`: implements `api.data.InstalledData`; one install/remove flow for all four parts; publishes `InstalledSet` generations; holds changes during guidance. |
 | `:routing:packs` | `routing/packs` | `P.routing.packs` | JVM | P | The merged routing tile set (`RoutingPackManager`), used by `:core:installed`. |
@@ -155,6 +155,7 @@ orchestrator): `:routing:core` (N) is compiled by P through `:routing:packs` and
 | `beamline-nav` | `AppGraph` (single-thread executor as a dispatcher) | every state change of the navigation session; the follower; timers |
 | `beamline-routing` | `AppGraph` | every Valhalla call (planner, OSRM request, stop-order matrix); the engine is never used from two threads |
 | `beamline-search` | `AppGraph` | every SQLite search call; stale answers are dropped, never cancelled (the bundled SQLite cannot interrupt a query) |
+| `Dispatchers.Default` | coroutines | the street at a point (`AppGraph.streetAt`, on `doorHub`): a dropped pin (item 31), a map pick, a save dialog's point (0.1.40 P17/P18); one lookup at a time. Saved places are never renamed by it (old points keep their coordinates) |
 | `Dispatchers.IO` | coroutines | pack install, copy, merge, scans, JSON stores (`saved-places.json` on its store's writer, `docs/architecture-saved-places.md` SP51); downloads (inside `DownloadService`). The one read of a small start-up file before the first frame (`settings.json`, `app-state.json`, the one-line `last-camera.txt`) stays on the main thread by design; their writes are on IO |
 
 ## 2. Contracts
@@ -257,7 +258,7 @@ data class SavedPlace(
     /** What lists, sheets, stops and cards show: "Home", "Work", or the user's own name ("Mom's"). */
     val name: String,
     val point: GeoPoint,
-    /** The place's own name when saved or moved ("Erie Maritime Museum"); for a point, its coordinates ("42.08418, -80.17321"). */
+    /** The place's own name when saved or moved ("Erie Maritime Museum"); for a point, the street it is near ("Near East 5th Street, Erie") when one was found, else its coordinates ("42.08418, -80.17321"). */
     val placeName: String,
     /** The place's own subtitle then ("100 East Front Street, Erie"); null when it had none. */
     val subtitle: String? = null,
@@ -530,7 +531,7 @@ class InstalledLibrary(
 | Map tiles | `:app` (I) via P's `StyleComposer.compose(style, theme, overview, packs: List<PackInfo>)` (new overload) | `PackInfo.mapFile` (`pmtiles://file://...`) | Recomposed when `generation` or theme changes; MapLibre reloads the style |
 | Routing engine | N (`:nav:session`, `EngineHolder`) through `EngineOpener` | `RoutingSet.engineConfigFile` | Opened on first use of a generation on `beamline-routing`; closed by rule 3 |
 | Search and addresses | S (`:core:search`, `SearchHub`) via `SearchService.open` | `PackInfo.searchFile`, `addressesFile` | Opened lazily per generation on `beamline-search`; warm-up read at open (decision 6.17) |
-| Front doors (item 28) | `:app` (`AppGraph.doorHub`, a second `SearchHub` without warm-up) for N's `doorOf` | `PackInfo.searchFile` (its `poi_door` table) | Opened lazily per generation on `beamline-routing`, on the first plan to a point of interest; closed by rule 3 |
+| Front doors (item 28) | `:app` (`AppGraph.doorHub`, a second `SearchHub` without warm-up) for N's `doorOf` | `PackInfo.searchFile` (its `poi_door` table) | Opened lazily per generation on `beamline-routing`, on the first plan to a point of interest; also read for the street at a point on `Dispatchers.Default` (1.2); closed by rule 3 |
 | Credits | `:app` (the map's "© OpenStreetMap" and its "Map data" list, 5.4 item 4) and A (About's "Map data") | `PackInfo.attribution` of every installed pack | Per generation |
 
 **When a pack is added or removed while files are open.** Rules P, N and S implement:
@@ -736,10 +737,37 @@ data class TripState(
     val replanning: Boolean = false,
     /** Item 47: the last [NavIntent.Estimate]'s answer (dropped when a trip ends); null before one or when none was found. */
     val estimate: DriveEstimate? = null,
+    /** Item 51: the answer to the last [NavIntent.Detours]; null before one, after an empty one for it, when the stops, the start, the route type or options or the chosen route changed, at arrival, or when the trip ended. */
+    val detours: StopDetours? = null,
+    /** Item 51: the route with the place of the last [NavIntent.PreviewStop] added; null when none is looked at. The trip itself does not change for it. */
+    val stopPreview: StopPreview? = null,
+    /**
+     * Play test P27: the trip offered in RESUME_OFFERED (or being resumed, R3/R4) is a simulated drive;
+     * Resume drives it simulated again (from the new route's start, as R4 does). Read in RESUME_OFFERED;
+     * false once guidance starts and in a new trip.
+     */
+    val resumeSimulated: Boolean = false,
 )
 
 /** A drive time to [point] from where the phone was (item 47: "Directions · 6 min"). */
 data class DriveEstimate(val point: GeoPoint, val timeS: Double, val lengthM: Double)
+
+/**
+ * Item 51 (rule C8): what each place of [NavIntent.Detours] [requestId] adds to the trip as a stop, in the
+ * request's order: [addedS] = the time from where the stop joins the trip to the place, plus from the place back
+ * to the trip (a point of its route 10 km past the farthest place, or the destination when that is nearer), less
+ * [legS] (that part of the leg's time now), never below 0; null where no connection was found or it was not
+ * worked out yet. [done]: every place has been worked out (until then the answer grows a few places at a time).
+ */
+data class StopDetours(val requestId: Long, val addedS: List<Double?>, val legS: Double?, val done: Boolean)
+
+/**
+ * Item 51 (rule C8): the route the trip would have with [place] added as [NavIntent.AddStop] without an index
+ * adds it, from the car while guiding, from the trip's start before. [route] (line, legs, time and length as a
+ * route card has them) and [addedS] (its time less the trip's remaining time now, never below 0) are null while
+ * [busy], and when [problem] says why there is none (only TOO_MANY_STOPS means AddStop would be refused).
+ */
+data class StopPreview(val place: Place, val route: RouteChoice?, val addedS: Double?, val busy: Boolean, val problem: TripProblem? = null)
 ```
 
 ```kotlin
@@ -825,19 +853,42 @@ sealed interface NavIntent {
      * [TripState.estimate]. No trip is made and nothing else changes.
      */
     data class Estimate(val place: Place) : NavIntent
+    /**
+     * Item 51 (rule C8): how much time each of [places] would add to the trip as a new stop where [AddStop]
+     * without an index puts it; PLANNING, CHOOSING, GUIDING and REROUTING only. The time from where the stop
+     * joins the trip (the stop before the destination, else the car while guiding, else the trip's start) to
+     * the place and from the place back to the trip's route past it (the destination when near), less that
+     * part of the leg's time now: Valhalla matrices on the routing thread with the trip's route type and
+     * options, a few places at a time. The answer is [TripState.detours] for [requestId]; a newer Detours
+     * replaces this one; an empty [places] with this [requestId] drops it (with another id it is ignored); a
+     * change of the stops, start, route type or options, arrival and the end of the trip drop it too. Nothing
+     * else changes.
+     */
+    data class Detours(val requestId: Long, val places: List<Place>) : NavIntent
+    /**
+     * Item 51 (rule C8): the route with [place] added as [AddStop] without an index would add it, to look at
+     * before adding ([TripState.stopPreview]); null ends the look. PLANNING, CHOOSING, GUIDING and REROUTING
+     * only; the trip itself does not change.
+     */
+    data class PreviewStop(val place: Place?) : NavIntent
     data class SetOrigin(val origin: Origin) : NavIntent
     /** Inserts at [index] of the stops; null = just before the destination (or as the destination when there is none). */
     data class AddStop(val place: Place, val index: Int? = null) : NavIntent
     data class RemoveStop(val index: Int) : NavIntent
     /** Moves a stop not reached; whatever stop ends up last is the destination (rule C1). */
     data class MoveStop(val from: Int, val to: Int) : NavIntent
-    /** Reorders the stops not yet reached for the least driving time; the destination stays last. */
+    /**
+     * Reorders the stops not yet reached for the least driving time; the destination stays last. A
+     * changed order is told by [TripEvent.StopsReordered]; an order that was the best already by the
+     * problem "These stops are already in the best order."
+     */
     data object OptimizeStopOrder : NavIntent
     /**
      * Item 47: the trip the other way round, before guidance (PLANNING, CHOOSING): the destination is
      * the start, the stops in reverse, and the start the destination. From the current position, the
-     * destination is that position as it is now ("Where you were", a point); swapped back, the trip
-     * starts from the current position again. Without a position: NO_POSITION, nothing changes.
+     * destination is that position as it is now ("Your starting point", a point with the second line
+     * "Where you were when you swapped", play test P19); swapped back, the trip starts from the current
+     * position again. Without a position: NO_POSITION, nothing changes.
      */
     data object SwapEnds : NavIntent
     data class SetRouteType(val typeId: String) : NavIntent
@@ -857,8 +908,8 @@ sealed interface NavIntent {
      * other intent, the stops not reached are re-planned from the current position with the same
      * route type and options, and guidance goes on (a simulated drive stays simulated). Audit F31:
      * the End of a route not yet started (PLANNING, CHOOSING) is taken back the same way, the route
-     * planned again as it was (its start, stops, type and options). [Estimate] does not count as
-     * an intent here. Ignored otherwise.
+     * planned again as it was (its start, stops, type and options). [Estimate], [Detours] and
+     * [PreviewStop] do not count as intents here. Ignored otherwise.
      */
     data object UndoEnd : NavIntent
     /** Leaves ARRIVED. */
@@ -883,6 +934,8 @@ sealed interface TripEvent {
     /** For later voice and chime: emitted at guidance.json announce distances; nothing listens yet. */
     data class Announce(val maneuverIndex: Int, val stage: AnnounceStage, val distanceM: Double) : TripEvent
     data object GuidanceEnded : TripEvent
+    /** Play test P49: [NavIntent.OptimizeStopOrder] changed the order of the stops (rule C6); the stops editor says "Stops reordered.". */
+    data object StopsReordered : TripEvent
 }
 
 /** The built-in drive along the route being guided: for tests, the emulator and the phone. */
@@ -1171,12 +1224,15 @@ class BeamlineNavigationSession(
  * What survives process death during a trip (trip.json; format beamline-trip/1). [savedEpochMs]
  * is the wall-clock time of the last write: the session rewrites the file every resume.refresh_s
  * while a trip is guided, so its age says how long ago the trip was last alive (rule R1).
+ * [simulated] (play test P27): the trip is a simulated drive; offered again it says so, and Resume
+ * simulates it again (TripState.resumeSimulated).
  */
 data class TripSnapshot(
     val savedEpochMs: Long,
     val stops: List<TripStop>,
     val routeType: String,
     val options: RouteOptions,
+    val simulated: Boolean = false,
 )
 
 /** trip.json in the app's no-backup folder (getNoBackupFilesDir), written atomically (temporary file, fsync, rename). */
@@ -1258,6 +1314,12 @@ data class MapScene(
      * and the vehicle. Only for the route being driven, so the map stays calm.
      */
     val lights: List<GeoPoint> = emptyList(),
+    /**
+     * The route step the route sheet shows (play test P21, 0.1.40): a white disc ringed in the route's
+     * casing blue at that maneuver, above the lines, the lights and the saved markers, below the pins and
+     * the vehicle. Only while choosing (PLANNING, CHOOSING); null: none.
+     */
+    val step: GeoPoint? = null,
 )
 
 /**
@@ -1275,14 +1337,26 @@ data class RouteLines(
     val chosen: List<GeoPoint>,
     /** Driven part of [chosen]; null before guidance. */
     val traveled: RouteCursor?,
-    /** The other choices (grey), only while choosing. */
+    /**
+     * The other choices, only while choosing: drawn under [chosen], duller than it (route_colors.json
+     * "alternative"). A tap on one where it runs apart from [chosen] is reported as MapGesture.Tap with
+     * pinId = "route:" + its id (play test P23). A line with [AlternativeLine.tripRoute] is drawn grey and
+     * never reported (item 51).
+     */
     val alternatives: List<AlternativeLine>,
 )
 
-data class AlternativeLine(val id: Long, val points: List<GeoPoint>)
+/**
+ * Another route choice (play test P23: a tap on it chooses it), or with [tripRoute] the trip's own route
+ * drawn under a previewed stop's route (item 51, 0.1.40): grey (route_colors.json "trip_route"), never tapped.
+ */
+data class AlternativeLine(val id: Long, val points: List<GeoPoint>, val tripRoute: Boolean = false)
 
-/** RESULT: one of the search results on the map (rule S11), under every other pin; the selected one is the PICKED pin. */
-enum class PinKind { DESTINATION, STOP, PICKED, RESULT }
+/**
+ * RESULT: one of the search results on the map (rule S11), under every other pin; the selected one is the PICKED pin.
+ * START: the trip's chosen start (Origin.FromPlace) while a route is chosen (play test P22), with the stops.
+ */
+enum class PinKind { DESTINATION, STOP, PICKED, RESULT, START }
 
 data class MapPin(val id: String, val point: GeoPoint, val kind: PinKind, val number: Int? = null, val reached: Boolean = false)
 
@@ -1323,7 +1397,7 @@ data class CameraState(val mode: CameraMode = CameraMode.BROWSE, val showRecente
 data class MapPoi(val name: String, val kind: String, val point: GeoPoint)
 
 sealed interface MapGesture {
-    /** [pinId]: the MapPin.id, or "saved:" + SavedMarker.savedId, under the tap; [poi]: a POI label under it. */
+    /** [pinId]: the MapPin.id, "saved:" + SavedMarker.savedId, or "route:" + AlternativeLine.id, under the tap; [poi]: a POI label under it. */
     data class Tap(val point: GeoPoint, val pinId: String?, val poi: MapPoi?) : MapGesture
     data class LongPress(val point: GeoPoint) : MapGesture
     /** Pan, zoom, rotate or tilt by the user. */
@@ -1370,9 +1444,12 @@ class MapSceneMapper(savedRules: SavedMarkerRules = SavedMarkerRules.bundled()) 
      * GUIDING and REROUTING (SP43). The arrow replaces the puck while a trip is guided.
      * [results]: the search results on the map (rule S11), RESULT pins "result:<index>"; the one at
      * the point of [picked] (the selected result, whose sheet is open) is left out: the PICKED pin
-     * stands there instead.
+     * stands there instead. Item 51: with [TripState.stopPreview]'s route (PLANNING to REROUTING) the
+     * route drawn is that route, the trip's own route ahead in grey under it (an alternative line).
+     * [step]: the route step the route sheet shows (MapScene.step), drawn in PLANNING and CHOOSING only.
+     * A chosen start (Origin.FromPlace) is the START pin "start" in PLANNING and CHOOSING (P22).
      */
-    fun scene(trip: TripState, puck: PuckState?, theme: MapTheme, picked: Place?, saved: List<SavedPlace> = emptyList(), results: List<GeoPoint> = emptyList()): MapScene =
+    fun scene(trip: TripState, puck: PuckState?, theme: MapTheme, picked: Place?, saved: List<SavedPlace> = emptyList(), results: List<GeoPoint> = emptyList(), step: GeoPoint? = null): MapScene =
         TODO("track M")
 }
 
@@ -1404,6 +1481,7 @@ data class CameraRules(
     val transitionMs: Int,                  // transition_ms
     val bearingTurnDeg: Double = 0.0,       // guide.bearing_turn_deg (optional; 0 = plain smoothing)
     val lean: LeanRules? = null,            // guide.lean (optional; absent = the camera never leans into a turn)
+    val overviewPaddingDp: Float? = null,   // overview.padding_dp (optional; absent = preview.padding_dp)
 ) {
     companion object {
         fun parse(text: String): CameraRules = TODO("track M")
@@ -1451,6 +1529,34 @@ class CameraDirector(rules: CameraRules, clock: Clock) {
     fun onShowPlace(point: GeoPoint): Unit = TODO("track M")
     /** The picked place's sheet closed or another place replaced it, or the results on the map closed: the camera stays where it is (K1, S11). */
     fun onPlaceLeft(): Unit = TODO("track M")
+    /**
+     * K1b (P8): a place tapped on the map whose sheet opened (a POI label, a saved place's marker, a
+     * dropped pin). On a browsing map that is not following, the camera stays while the place's pin is
+     * wholly in the area the insets leave free; once it is not (the sheet raised over it, the search
+     * bar over it at the tap) the camera centres it there at the map's zoom and bearing and keeps it
+     * there like a picked place, until a gesture, my-location, another place or [onPlaceLeft]. While
+     * following, or while a trip exists, nothing changes.
+     */
+    fun onPlaceTapped(point: GeoPoint): Unit = TODO("track M")
+    /**
+     * K1b: where the camera is: [middle], the point at the middle of the map view, at [zoom], turned to
+     * [bearingDeg]; sent by the map's idle callback and at each tap or long press.
+     */
+    fun onCameraAt(middle: GeoPoint, zoom: Double, bearingDeg: Double): Unit = TODO("track M")
+    /**
+     * K2a (P46): Back from directions reopens [point]'s window; sent before the session's End. The
+     * preview stays until the trip has ended, then the camera shows the place as a picked one (K1);
+     * while browsing already, as [onShowPlace]. A route closed without it follows the user (K2a, P50).
+     */
+    fun onShowPlaceAfterRoute(point: GeoPoint): Unit = TODO("track M")
+    /**
+     * Item 51 (rule K8): adding a stop on the map. While a route is chosen or guided the camera looks
+     * top-down, north up at [points] (the stop results and where they join the trip, or the way to the
+     * stop looked at) in the area the insets leave free; guiding, the vehicle is kept in the view (a new
+     * fit when it nears the edge) and guidance does not follow meanwhile. Empty [points]: adding a stop
+     * ended, back to K2 or K3. Ignored in other phases.
+     */
+    fun onStopView(points: List<GeoPoint>): Unit = TODO("track M")
     fun tick(): Unit = TODO("track M")
     /** K1a: the map's bearing when the camera stopped (browsing keeps a user's own turn). */
     fun onMapBearing(deg: Double): Unit = TODO("track M")
@@ -1529,6 +1635,9 @@ import io.github.spysyweeb.beamline.api.model.Bounds
 import io.github.spysyweeb.beamline.api.model.GeoPoint
 import io.github.spysyweeb.beamline.api.model.Place
 import io.github.spysyweeb.beamline.api.model.SavedKind
+import io.github.spysyweeb.beamline.api.nav.StopDetours
+import io.github.spysyweeb.beamline.api.nav.StopPreview
+import io.github.spysyweeb.beamline.search.MultiSearchResponse
 import io.github.spysyweeb.beamline.search.NearbyPoi
 import io.github.spysyweeb.beamline.search.PoiDetails
 import io.github.spysyweeb.beamline.search.RecentPlaces
@@ -1540,11 +1649,12 @@ import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.flow.SharedFlow
 import kotlinx.coroutines.flow.StateFlow
 import java.time.LocalDateTime
+import java.time.ZoneId
 
 /** What a pick is for: a new trip, a stop of the current trip, the trip's start point, or a saved place (SaveTarget). */
 enum class SearchMode { GO_TO, ADD_STOP, SET_START, SAVE }
 
-/** What a pick in SAVE mode is for (docs/architecture-saved-places.md, rule SP15). */
+/** What a pick in SAVE mode is for (docs/architecture-saved-places.md, rule SP15), or [Start]: the trip's start chosen on the map (SET_START, play test P22). */
 sealed interface SaveTarget {
     data object Home : SaveTarget
     data object Work : SaveTarget
@@ -1552,6 +1662,8 @@ sealed interface SaveTarget {
     data object NewPlace : SaveTarget
     /** A new point for the saved place [savedId]; its id, kind and name stay. */
     data class Move(val savedId: String) : SaveTarget
+    /** P22: the trip's start from SET_START's "Choose on the map"; nothing is saved: the pick returns SavedOutput.Picked with mode SET_START. */
+    data object Start : SaveTarget
 }
 
 enum class NearSource { GPS, MAP_CENTER, NONE }
@@ -1611,6 +1723,10 @@ data class ResultRowUi(
     val key: String, val iconName: String, val title: String, val subtitle: String?, val distanceText: String?, val note: String?,
     /** Open, closing soon or closed now (rule S10); null when the place has no hours or they cannot be read. */
     val hours: HoursUi? = null,
+    /** Item 51 (rule S12): how much time the place adds to the trip as a stop, "+4 min" or "On the way"; null: not known, or not a stop result. */
+    val detourText: String? = null,
+    /** 0.1.40 (play test P2): the place only matched the words by name ("Erie Animal Hospital" for "hospital") in an answer led by a category or a brand; the lists put such rows after the others, under "Other matches". */
+    val otherMatch: Boolean = false,
 )
 
 /**
@@ -1634,18 +1750,56 @@ data class HoursDayUi(val day: String, val text: String, val today: Boolean)
 /**
  * The results of a search shown on the map (rule S11): [rows] and [places] in the same order,
  * nearest first, at most search_app.json on_map.max_results (20); [selected]: the index whose
- * sheet is open (its pin stands out), null while the list shows.
+ * sheet is open (its pin stands out), null while the list shows. Item 51: [stop] is set for the
+ * places offered as a new stop of the trip (rule S12): their order is the detours' and a selected
+ * row shows its card instead of a sheet. 0.1.40 (play test P6): [nearText], where the rows are
+ * ranked from when that is not the user's position ("Near Corry"), shown after the count; null:
+ * from the user's position.
  */
-data class ResultsUi(val query: String, val rows: List<ResultRowUi>, val places: List<Place>, val selected: Int? = null)
+data class ResultsUi(val query: String, val rows: List<ResultRowUi>, val places: List<Place>, val selected: Int? = null, val stop: StopResultsUi? = null, val nearText: String? = null)
 
-/** The results view (rule S11). */
+/**
+ * Item 51 (rule S12): the stop results' own state. [requestId]: the NavIntent.Detours the app sends for
+ * them, and the TripState.detours that answers it; [working]: "Working out detours..." shows and the rows
+ * wait (at most search_app.json along_route.detours_wait_ms); [note]: the line over rows that are not in
+ * detour order ("Detours took too long. Nearest first."); [typed]: the words Back types again in the Add
+ * stop search ("" after a shortcut, a type or a single place); [after]: the stop the new one goes after
+ * ("Along your route after Wegmans"), null when it joins at the car or the trip's start; [widened]: no
+ * place of the type was close to the route, the nearest are shown ("None close to your route. Nearest
+ * shown."); [preview]: the selected row's card, null while the list shows. Item 52: [instead], the place was
+ * handed over by another app during a trip (rule H7): its card has no way back to a list and also offers "Go here
+ * instead" ([ResultsEvent.GoInstead]).
+ */
+data class StopResultsUi(
+    val requestId: Long, val working: Boolean, val note: String? = null, val typed: String = "",
+    val after: String? = null, val widened: Boolean = false, val preview: StopPreviewUi? = null,
+    val instead: Boolean = false,
+)
+
+/**
+ * Item 51: the card of a stop result looked at before it is added: its [title] and [subtitle], how much
+ * the route with it adds ([addedText]: "+4 min", "On the way") and when it arrives ([arriveText]: "Arrive
+ * 4:33 PM"), where it goes ([afterText]: "Goes after Wegmans", null when it is the only stop before the
+ * destination), [busy] while that route is worked out, [problem] when there is none; "Add stop" works
+ * when [canAdd] (false only for a stop too many: any other problem is left to the re-plan).
+ */
+data class StopPreviewUi(
+    val title: String, val subtitle: String?, val addedText: String?, val arriveText: String?, val busy: Boolean,
+    val problem: String? = null, val canAdd: Boolean = true, val afterText: String? = null,
+)
+
+/** The results view (rule S11; item 51's stop results, rule S12). */
 sealed interface ResultsEvent {
-    /** A row or a result pin: that place's sheet opens (the app moves the map to it, K1). */
+    /** A row or a result pin: that place's sheet opens (the app moves the map to it, K1); a stop result's card opens. */
     data class Select(val index: Int) : ResultsEvent
-    /** The sheet of a result closed: the list shows again. */
+    /** The sheet of a result closed, or a stop result's card went back: the list shows again. */
     data object Deselect : ResultsEvent
     /** The list's close button or Back: the results and their pins are gone. */
     data object Close : ResultsEvent
+    /** Item 51: "Add stop" on a stop result's card. */
+    data object AddStop : ResultsEvent
+    /** Item 52: "Go here instead" on the card of a place handed over by another app ([StopResultsUi.instead]). */
+    data object GoInstead : ResultsEvent
 }
 
 /**
@@ -1674,27 +1828,37 @@ data class SearchUi(
     val shortcuts: List<ShortcutUi> = emptyList(),
     val recents: List<ResultRowUi> = emptyList(),
     val results: List<ResultRowUi> = emptyList(),
-    /** "Near your position", "Near the map center". */
+    /**
+     * "Near your position", "Near the map center", or the town nearest the map's centre when the search
+     * is ranked there ("Near Corry"); while the rows answer words that name a place ("coffee in corry"),
+     * that place ("Near Corry"); without a fresh fix, followed by " · no position yet". 0.1.40, play test P6.
+     */
     val nearText: String? = null,
     val message: String? = null,
-    /** SAVE mode: the line above the field ("Set home", "Set work", "Save place", "New location for Mom's"); null otherwise. */
+    /** 0.1.40 (play test P45): "Recent places cleared", shown with "Undo" at the bottom after "Clear" until Undo, typing, Back or UndoExpired; null: no bar. */
+    val undoText: String? = null,
+    /** 0.1.40 (play test P47): NO_RESULTS after typed words, the line under [message] ("Check the spelling, or try fewer words."); null otherwise (a chip's or a type's search). */
+    val noResultsHint: String? = null,
+    /** SAVE mode: the line above the field ("Set home", "Set work", "Save place", "New location for Mom's"); SET_START: "Choose start" (P22); null otherwise. */
     val title: String? = null,
     /** START: the Home and Work rows (table of 2.1). */
     val slots: List<SavedRowUi> = emptyList(),
     /** START: the subtitle of the "Saved places" row ("None yet", "1 place", "4 places"); null: no row. */
     val savedPlacesText: String? = null,
-    /** START in SAVE mode: the "Choose on the map" row. */
+    /** START in SAVE mode and in SET_START (P22): the "Choose on the map" row. */
     val chooseOnMap: Boolean = false,
     /** Saved places whose name matches the typed text (SP20, SP21), shown above [results]; keys "saved:<id>"; always empty in SAVE mode. */
     val savedResults: List<ResultRowUi> = emptyList(),
     /** GO_TO START: the notice of SP52 or SP53, shown first with "OK"; null otherwise. */
     val savedNotice: String? = null,
-    /** START in SAVE mode: the "Use my position" row (a fresh fix within saved.position_max_accuracy_m, SP23). */
+    /** START in SAVE mode: the "Use my position" row (a fresh fix within saved.position_max_accuracy_m, SP23); START in SET_START: the "Your position" row, with a fresh fix (the context is GPS, P22). */
     val useMyPosition: Boolean = false,
-    /** Raise the keyboard when the screen opens; false in ADD_STOP while driving (SP4). */
+    /** Raise the keyboard when the screen opens; in every mode, also ADD_STOP while driving (P26, 0.1.40). */
     val focusField: Boolean = true,
     /** Batch O3 ("View all", item 27): the grid of every place type shows over the start rows; null: not shown. */
     val allTypes: List<PlaceTypeGroupUi>? = null,
+    /** 0.1.40 (review F4, P30): false in a GO_TO search opened during a trip (a link's words while guiding): no "Add a state", States is not reachable then. */
+    val statesOffered: Boolean = true,
 )
 
 sealed interface SearchEvent {
@@ -1704,15 +1868,19 @@ sealed interface SearchEvent {
     data class RowTapped(val key: String) : SearchEvent
     data class RemoveRecent(val key: String) : SearchEvent
     data object ClearRecents : SearchEvent
+    /** 0.1.40 (play test P45): "Undo" on the bar after "Clear": the recents come back as they were. */
+    data object UndoClearRecents : SearchEvent
+    /** 0.1.40 (P45): the bar's time is up (10 s, or the phone's accessibility time; never while TalkBack explores by touch): the clear is final. */
+    data object UndoExpired : SearchEvent
     /** "Add a state" on the NO_SEARCH_DATA screen. */
     data object OpenStates : SearchEvent
     /** The Home or Work row: set, a pick (SP12-SP14); empty, SAVE mode for that slot (SP15). */
     data class SlotTapped(val kind: SavedKind) : SearchEvent
     /** The "Saved places" row. */
     data object OpenSavedPlaces : SearchEvent
-    /** The "Choose on the map" row (SAVE mode). */
+    /** The "Choose on the map" row (SAVE mode; SET_START, P22). */
     data object ChooseOnMap : SearchEvent
-    /** The "Use my position" row (SAVE mode, SP23). */
+    /** The "Use my position" row (SAVE mode, SP23), or SET_START's "Your position" row (P22). */
     data object UseMyPosition : SearchEvent
     /** "OK" on the notice of SP52 or SP53. */
     data object DismissSavedNotice : SearchEvent
@@ -1728,23 +1896,37 @@ sealed interface SearchEvent {
 }
 
 sealed interface SearchOutput {
-    /** Never with mode SAVE: SAVE picks are saved here (Home, Work, Move) or returned as SaveNew. */
+    /** Never with mode SAVE: SAVE picks are saved here (Home, Work, Move) or returned as SaveNew; nor ADD_STOP (item 51: ShowStopResults). */
     data class Picked(val place: Place, val mode: SearchMode) : SearchOutput
     /** The app opens the States screen. */
     data object OpenStates : SearchOutput
     data object Closed : SearchOutput
     /** GO_TO: a saved place inside the installed maps was tapped; plan the trip now, no sheet (SP12, SP18). */
     data class PlanTrip(val place: Place) : SearchOutput
-    /** Show this place's sheet on the map (a saved place outside the installed maps, SP13). */
+    /** Show this place's sheet on the map (a saved place outside the installed maps, SP13; since 0.1.40, play test P44, a row of a typed list in GO_TO, whose list SearchFeature.results then holds with it selected). */
     data class ShowPlace(val place: Place) : SearchOutput
     /** Open the saved places screen; a row tap there picks for [mode] (SP27). */
     data class OpenSavedPlaces(val mode: SearchMode) : SearchOutput
     /** SAVE mode for SaveTarget.NewPlace: [place] was picked; the app opens the save dialog. */
     data class SaveNew(val place: Place) : SearchOutput
-    /** SAVE mode: "Choose on the map" for [target] (SP16); SAVE mode has ended (back at GO_TO START, or done when opened by openToSave, SP25). */
+    /** SAVE mode: "Choose on the map" for [target] (SP16); SAVE mode has ended (back at GO_TO START, or done when opened by openToSave, SP25). SET_START (P22): [target] is SaveTarget.Start and the search stays in SET_START, hidden while the pick runs. */
     data class PickOnMap(val target: SaveTarget) : SearchOutput
     /** Enter found several matches (rule S11): the search screen is done; SearchFeature.results holds them and the app fits [places]. */
     data class ShowResults(val places: List<Place>) : SearchOutput
+    /**
+     * Item 51 (ADD_STOP, rule S12): the search screen is done; SearchFeature.results holds the places offered as a
+     * stop (ResultsUi.stop). The app sends NavIntent.Detours([requestId], [places]), shows them on the map and passes
+     * TripState.detours to SearchFeature.onDetours; [selected]: the row whose card opens at once (one place picked).
+     */
+    data class ShowStopResults(val requestId: Long, val places: List<Place>, val selected: Int? = null) : SearchOutput
+    /** Item 51: a stop result selected (the app sends NavIntent.PreviewStop([place])), or its card closed ([place] null). */
+    data class PreviewStop(val place: Place?) : SearchOutput
+    /** Item 51: "Add stop" on a stop result's card: the stop results have ended; the app sends NavIntent.AddStop([place]). */
+    data class AddStop(val place: Place) : SearchOutput
+    /** Item 52: "Go here instead" on a handed-over place's card: the stop results have ended; the app plans the trip to [place] as Directions does (rule S7: while guiding "End this trip and go to ...?"). */
+    data class GoInstead(val place: Place) : SearchOutput
+    /** P22: SET_START's "Your position": the trip starts from the current position again (NavIntent.SetOrigin(Origin.CurrentPosition)). */
+    data object StartFromYourPosition : SearchOutput
 }
 
 /**
@@ -1779,7 +1961,7 @@ data class PlaceSheetUi(
     val phones: List<ContactUi> = emptyList(),
     /** Every web address of OSM's `website` that a browser can open, each on its own line. */
     val websites: List<ContactUi> = emptyList(),
-    /** The postal address from the pack ("4662 West Ridge Road, Erie, PA 16506"); null when it has none. */
+    /** The postal address from the pack ("4662 West Ridge Road, Erie, PA 16506"); for a point (a dropped pin, a saved point) without one, its coordinates ("42.13646, -80.08718", 0.1.40 P17); null when it has none. */
     val address: String? = null,
     /** What the place is, in words ("Convenience store"); null when the pack does not say. */
     val category: String? = null,
@@ -1846,10 +2028,12 @@ class SearchFeature(
     val ui: StateFlow<SearchUi> get() = impl.ui
     /**
      * GO_TO, ADD_STOP or SET_START; SAVE goes through [openToSave]. [driving]: phase GUIDING,
-     * REROUTING or ARRIVED (no keyboard at once, SP4). [destination]: in SET_START, the trip's last
-     * stop, whose saved row reads "Already your destination" (SP14).
+     * REROUTING or ARRIVED (SP4). [destination]: in SET_START, the trip's last stop, whose saved row
+     * reads "Already your destination" (SP14). [along] (ADD_STOP, item 51, rule S12): the trip's route
+     * ahead from where a new stop joins it (StopLeg.lineAhead of :nav:session); places are looked for along it.
+     * [alongAfter]: the name of the stop a new one goes after (StopLeg.joinsAfter), null when none.
      */
-    fun open(mode: SearchMode, context: SearchContext, driving: Boolean = false, destination: Place? = null): Unit = impl.open(mode, context, driving, destination)
+    fun open(mode: SearchMode, context: SearchContext, driving: Boolean = false, destination: Place? = null, along: List<GeoPoint> = emptyList(), alongAfter: String? = null): Unit = impl.open(mode, context, driving, destination, along, alongAfter)
     /** SAVE mode for [target] (from the saved places screen or a sheet's Edit); after the save, on Close or on "Choose on the map", onEvent returns Closed or PickOnMap and this search is done. */
     fun openToSave(target: SaveTarget, context: SearchContext): Unit = impl.openToSave(target, context)
     /** Picked places are added to the recents here, except saved places and SAVE-mode picks (SP31). */
@@ -1863,14 +2047,33 @@ class SearchFeature(
     fun placeSheet(place: Place, context: SearchContext, tripActive: Boolean, driving: Boolean = false, guiding: Boolean = driving): PlaceSheetUi = impl.placeSheet(place, context, tripActive, driving, guiding)
     fun close(): Unit = impl.close()
 
-    /** The results on the map after Enter (rule S11); null when none are shown. */
+    /** The results on the map after Enter, a chip, or a tap on a row of a typed list (rule S11; P44, 0.1.40); null when none are shown. */
     val results: StateFlow<ResultsUi?> get() = impl.results
-    /** Outputs that come with an answer after [onEvent] returned: ShowResults, or Picked for a single match (S11). */
+    /** Outputs that come with an answer after [onEvent] returned: ShowResults, or Picked for a single match (S11); ShowStopResults (S12). */
     val later: SharedFlow<SearchOutput> get() = impl.later
-    /** A row or pin selected (ShowPlace of that result), the sheet closed or the results closed (S11). */
+    /** A row or pin selected (ShowPlace of that result), the sheet closed or the results closed (S11); for stop results PreviewStop and AddStop (S12). */
     fun onResultsEvent(event: ResultsEvent): SearchOutput? = impl.onResultsEvent(event)
+    /**
+     * Item 51: one place picked for a stop outside the search screen (a row of the saved places list opened from ADD_STOP): its
+     * stop results, its card open. Item 52 ([instead] true): a place handed over by another app during a trip: its card also
+     * offers "Go here instead", and the stop goes after [after] (StopLeg.joinsAfter's name; null: it joins at the car or the
+     * trip's start), in place of what an earlier Add stop search left.
+     */
+    fun showStopPlace(place: Place, context: SearchContext, instead: Boolean = false, after: String? = null): SearchOutput.ShowStopResults =
+        impl.showStopPlace(place, context, instead, after)
+    /** Item 51: TripState.detours as it changes: the stop results of its request get "+N min" and their order once it is done (S12). */
+    fun onDetours(detours: StopDetours?): Unit = impl.onDetours(detours)
+    /** Item 51: TripState.stopPreview as it changes: the selected stop result's card ("+4 min", "Arrive 4:33 PM") at [nowEpochMs] in [zone]. */
+    fun onStopPreview(preview: StopPreview?, nowEpochMs: Long, zone: ZoneId): Unit = impl.onStopPreview(preview, nowEpochMs, zone)
     /** S11: ends the results when a state one of them came from is no longer in [set] (removed while they show); true when they ended. */
     fun closeResultsGoneFrom(set: InstalledSet): Boolean = impl.closeResultsGoneFrom(set)
+    /**
+     * P46 (0.1.40): results the app kept while a route preview ran (as [results] gave them) shown again,
+     * their hours as of now; false, and nothing changes, while other results show or when a state one of
+     * them came from is no longer installed; false for stop results (item 51: never kept). The app calls
+     * it when Back from directions has reopened the destination's window and the route has ended.
+     */
+    fun restoreResults(results: ResultsUi): Boolean = impl.restoreResults(results)
     /** S11b: "Search this area": the results' words again around [center], only places inside [area]; they replace the results, the camera stays. The number found (0: the results stay as they were); null when they ended or changed meanwhile, or no pack could be read. */
     suspend fun searchArea(center: GeoPoint, area: Bounds): Int? = impl.searchArea(center, area)
     /** Counts up when hours, phone or website of a place arrived from its pack: a place sheet made before is made again (S10). */
@@ -1886,6 +2089,12 @@ class SearchFeature(
         set(value) = run { impl.ownPlaces = value }
     /** Batch O3: the named POIs of the installed packs within [withinM] of [point], nearest first (on the search thread). */
     suspend fun poisNear(point: GeoPoint, withinM: Double): List<NearbyPoi> = impl.poisNear(point, withinM)
+    /**
+     * Item 52 (rule H6): [text] looked up as the search screen looks words up (rules S3-S5: the engine's merge, best score
+     * first, at most on_map.candidates rows) around [near], on the search thread; null when no installed pack has search
+     * data or a pack cannot be read. The search screen and the results are not touched; nothing is logged (PV2).
+     */
+    suspend fun lookUp(text: String, near: GeoPoint?): MultiSearchResponse? = impl.lookUp(text, near)
     /** Batch O3: the place types of the installed packs, grouped as the "View all" grid shows them. */
     suspend fun placeTypes(): List<PlaceTypeGroupUi> = impl.placeTypes()
     /** The phone's local date and time the hours are evaluated at (S10); the test extras may set another. */
@@ -1928,7 +2137,7 @@ fun SearchScreen(ui: SearchUi, onEvent: (SearchEvent) -> Unit, modifier: Modifie
 @Composable
 fun PlaceSheet(ui: PlaceSheetUi, onEvent: (PlaceSheetEvent) -> Unit, modifier: Modifier = Modifier): Unit = TODO("track S")
 
-/** The results on the map after Enter (rule S11): the list at the bottom, pulled up for more. */
+/** The results on the map after Enter (rule S11): the list at the bottom, pulled up for more; item 51's stop results (S12): "Working out detours...", "+N min", the selected one's card with "Add stop". */
 @Composable
 fun ResultsSheet(ui: ResultsUi, onEvent: (ResultsEvent) -> Unit, modifier: Modifier = Modifier): Unit = TODO("track S")
 
@@ -1953,11 +2162,12 @@ reads it too; the `saved` section is `docs/architecture-saved-places.md` 7.1):
 ```json
 {
   "format": "beamline-search-app/1",
-  "note": "How the app's search screen uses the search engine (docs/architecture.md 3.8, rules S1-S7): where results are ranked from, typing, merging the answers of neighbouring state packs, how many results Enter shows on the map and how far (rule S11: up to max_results of the candidates nearest first, none farther than within_km, 25 miles; when none is that close, the nearest nearest_when_none_within anyway; candidates is how many matches the engine is asked for before they are sorted by distance), how near a place without a search id must be to a pack POI of the same name for its hours, phone and website (rule S10, details.match_within_m), recents and the shortcut buttons; and the user's saved places (docs/architecture-saved-places.md, rules SP10-SP31, SP50-SP56): how many, how long a name, when two places are the same, how saved names match typed text, from which map zoom a tapped point may be saved and how precise a position must be for 'Use my position'. Read by android/core/search and android/feature/search (copied into android/core/search by android/scripts/copy_search_rules.py; edit this file, not the copy). Each shortcut's query is a term of packbuilder/search/categories.json; its icon is a sprite name from assets/poi_icons.json. Every number is a first guess for the phone test.",
-  "near": {"fix_max_age_s": 60},
+  "note": "How the app's search screen uses the search engine (docs/architecture.md 3.8, rules S1-S7): where results are ranked from (near.area_name_within_km: how far from the map's centre a town may be for the search screen's 'Near <town>'), typing, merging the answers of neighbouring state packs, how many results Enter shows on the map and how far (rule S11: up to max_results of the candidates nearest first, none farther than within_km, 25 miles; when none is that close, the nearest nearest_when_none_within anyway; candidates is how many matches the engine is asked for before they are sorted by distance), where places for a new stop of a trip are looked for (rule S12, along_route: around a point every sample_km along the trip's route ahead, at most ahead_km from where the stop joins; a category's or a brand's within corridor_km of the route, the max_results nearest it; when none is that close, the nearest_when_none_within nearest it anyway) and how long the list waits for the detours before it shows nearest first (detours_wait_ms), how near a place without a search id must be to a pack POI of the same name for its hours, phone and website (rule S10, details.match_within_m), recents and the shortcut buttons; and the user's saved places (docs/architecture-saved-places.md, rules SP10-SP31, SP50-SP56): how many, how long a name, when two places are the same, how saved names match typed text, from which map zoom a tapped point may be saved and how precise a position must be for 'Use my position'. Read by android/core/search and android/feature/search (copied into android/core/search by android/scripts/copy_search_rules.py; edit this file, not the copy). Each shortcut's query is a term of packbuilder/search/categories.json; its icon is a sprite name from assets/poi_icons.json. Every number is a first guess for the phone test.",
+  "near": {"fix_max_age_s": 60, "area_name_within_km": 25},
   "typing": {"debounce_ms": 120},
   "merge": {"pack_margin_km": 50, "dedupe_m": 100, "limit": 10},
   "on_map": {"max_results": 20, "within_km": 40.23, "nearest_when_none_within": 5, "candidates": 100},
+  "along_route": {"ahead_km": 60, "sample_km": 10, "corridor_km": 3, "max_results": 20, "nearest_when_none_within": 5, "detours_wait_ms": 4000},
   "details": {"match_within_m": 100},
   "recents": {"max": 30, "same_place_m": 50},
   "saved": {"max_other": 100, "name_max_chars": 40, "same_place_m": 50, "search_min_chars": 1, "search_max_rows": 3,
@@ -2013,7 +2223,7 @@ data class RouteCardUi(
     /** "Tolls", "Highways" */
     val notes: List<String>,
     val selected: Boolean,
-    /** Item 47: how much longer than the fastest card ("+1 min"); null on the fastest and within a minute of it. */
+    /** Item 47, P23: how much longer than the fastest card, in the minutes the cards show ("+1 min" for "7 min" against "6 min"); null on the fastest and on a card that shows the same minutes. */
     val slowerText: String? = null,
 )
 
@@ -2035,14 +2245,33 @@ data class RouteSheetUi(
     val steps: List<StepUi> = emptyList(),
     /** Audit F3: the problem is that there is no position: "Choose start" beside it at every height. */
     val canChooseStart: Boolean = false,
-    /** Audit F27: a trip from a chosen start (a swap, Change start): "Guidance starts from where you are". */
+    /** Audit F27, P19: a trip from a chosen start (a swap, Change start), shown above Start: "Guidance starts from where you are". */
     val startNote: String? = null,
+    /** P19, P20: under "To <destination>" below full height: "From Butler · 1 stop"; null for a trip from the current position with no stop before the destination. */
+    val contextLine: String? = null,
+    /** P21: the index in [steps] of the step the map shows (the app sets it after DriveEvent.ShowStep); null: none. */
+    val shownStep: Int? = null,
 )
 
 /** One step of the preview (item 47): the turn's arrow, its words, how far the road goes after it, and where it is. */
 data class StepUi(val kind: ManeuverKind, val text: String, val distanceText: String, val point: io.github.spysyweeb.beamline.api.model.GeoPoint)
 
-data class StopsEditorUi(val rows: List<StopRowUi>, val canOptimize: Boolean, val busy: Boolean)
+/**
+ * [note] (play test P49): the line under the editor's buttons: what Best order did ("Stops reordered."),
+ * the trip's problem ("These stops are already in the best order.", a failed change), or the app's Undo
+ * offer ("Stop removed", with [canUndo]); the editor takes the route sheet's place, so the sheet's own
+ * problem line is not in view. [canUndo] (play test P10, audit F30): an Undo button beside the note
+ * ([DriveEvent.UndoStopRemoval]); the app sets it. [arriveText]: while guided, the trip bar's arrival
+ * and remaining time ("Arrive 8:42 PM · 1 h 7 min") or "No route from here", under the title.
+ */
+data class StopsEditorUi(
+    val rows: List<StopRowUi>,
+    val canOptimize: Boolean,
+    val busy: Boolean,
+    val note: String? = null,
+    val canUndo: Boolean = false,
+    val arriveText: String? = null,
+)
 
 /** The chip beside the main instruction: arrow and "In 0.2 mi" (does not count down). */
 data class ThenUi(val kind: ManeuverKind, val distanceText: String)
@@ -2086,8 +2315,11 @@ sealed interface GuidanceStatusUi {
     /** "GPS signal lost" */
     data object GpsLost : GuidanceStatusUi
     data class StopReached(val name: String) : GuidanceStatusUi
-    /** [awayText]: "Destination 500 ft away" when the route ends more than 100 m from the place (a place tied to a street up to 300 m away). */
-    data class Arrived(val name: String, val sideText: String?, val awayText: String? = null) : GuidanceStatusUi
+    /**
+     * [awayText]: "Route ends 500 ft from the place" when the route ends more than 100 m from the place (a place tied to a street up to 300 m away).
+     * [saved] (play test P31, audit F34): the destination is one of the saved places (the app sets it): Save reads "Saved" with a check.
+     */
+    data class Arrived(val name: String, val sideText: String?, val awayText: String? = null, val saved: Boolean = false) : GuidanceStatusUi
 }
 
 data class TripBarUi(
@@ -2097,6 +2329,12 @@ data class TripBarUi(
     /** "Stop 2 · 4.1 mi" */
     val nextStopText: String?,
     val simulated: Boolean,
+    /**
+     * Play test P5: no route can be planned from where the car is (outside the installed maps): this line
+     * ("No route from here") in place of the arrival time and the remaining time and distance, which
+     * belong to the old route.
+     */
+    val noRouteText: String? = null,
 )
 
 /** [banner] is null in REROUTING: the status card takes its place (rule D7). */
@@ -2135,7 +2373,8 @@ data class GuidanceUi(
     val currentRoad: String? = null,
 )
 
-data class ResumeUi(val destinationName: String, val stopsLeft: Int)
+/** [simulated] (play test P27): the trip offered was a simulated drive ("Continue the simulated drive to …?"). */
+data class ResumeUi(val destinationName: String, val stopsLeft: Int, val simulated: Boolean = false)
 
 /** Everything the drive feature draws. */
 data class DriveUi(
@@ -2150,10 +2389,14 @@ sealed interface DriveEvent {
     data class Nav(val intent: NavIntent) : DriveEvent
     data object Recenter : DriveEvent
     data object ShowOverview : DriveEvent
-    /** Item 47: a step of the preview tapped; the map looks at it. */
-    data class ShowStep(val point: io.github.spysyweeb.beamline.api.model.GeoPoint) : DriveEvent
+    /** Item 47, P21: a step of the preview tapped, or Previous / Next: the map looks at it and marks it; [index]: its place in RouteSheetUi.steps. */
+    data class ShowStep(val point: io.github.spysyweeb.beamline.api.model.GeoPoint, val index: Int? = null) : DriveEvent
+    /** P21: the step shown is let go (Back at full height): its mark goes and the map shows the whole route again. */
+    data object CloseStep : DriveEvent
     data object OpenStopsEditor : DriveEvent
     data object CloseStopsEditor : DriveEvent
+    /** Play test P10, audit F30: the Undo beside the stops editor's note ("Stop removed", [StopsEditorUi.canUndo]): the stop goes back where it was. */
+    data object UndoStopRemoval : DriveEvent
     /** Item 47: the arrival card raised: the destination's own window (its details). */
     data object ShowDestination : DriveEvent
     /** Item 47: the arrival card's Save: the save dialog for the destination. */
@@ -2179,7 +2422,8 @@ data class GuidanceNotificationText(val title: String, val text: String)
 
 /**
  * Which one-shot card is on screen: the latest StopReached, Arrived or RerouteFailed event, for
- * [cardMs] (guidance.json arrival.stop_card_s) after it came. Times are monotonic milliseconds.
+ * [cardMs] (guidance.json arrival.stop_card_s) after it came; else a StopsReordered for its own
+ * [cardMs] (play test P49: it never replaces a card). Times are monotonic milliseconds.
  */
 class EventCards(private val cardMs: Long) {
     fun onEvent(event: TripEvent, nowMs: Long): Unit = TODO("track D")
@@ -2219,9 +2463,15 @@ import io.github.spysyweeb.beamline.api.map.EdgeInsetsDp
 /**
  * Banner at the top, sheets and the trip bar at the bottom; reports the space it covers so the camera can pad.
  * [creditShown]: the map credit's short line is showing at the bottom start (rule D8 keeps the speed pair above it).
+ * [stopWindowDp]: item 51 (rule S12), the stop results' window is this high at the bottom (0 on its side, where it
+ * is in the start panel): only the top (banner, status chip, stop card) and the speed pair above the window are
+ * drawn; no trip bar, sheets, map buttons, road label or stops editor. Null: everything, as always.
+ * [onTopStack]: where the top stack ends (the banner block, and the chip or stop card under it), in dp from the
+ * overlay's top, 0 without one; in both layouts (play test P7: on its side the app's windows share the start
+ * panel with the banner and keep under it).
  */
 @Composable
-fun DriveOverlay(ui: DriveUi, onEvent: (DriveEvent) -> Unit, onInsets: (EdgeInsetsDp) -> Unit, modifier: Modifier = Modifier, creditShown: Boolean = false): Unit =
+fun DriveOverlay(ui: DriveUi, onEvent: (DriveEvent) -> Unit, onInsets: (EdgeInsetsDp) -> Unit, modifier: Modifier = Modifier, creditShown: Boolean = false, stopWindowDp: Float? = null, onTopStack: (Float) -> Unit = {}): Unit =
     TODO("track D")
 ```
 
@@ -2295,6 +2545,10 @@ fun SplashReveal(mapReady: Boolean, onFinished: () -> Unit, modifier: Modifier =
 
 @Composable
 fun FirstRunNotice(onAccept: () -> Unit, modifier: Modifier = Modifier): Unit = TODO("track A")
+
+/** The driver notice read again from About: the same text under a top bar with Back and its title; nothing to accept. */
+@Composable
+fun DriverNoticeScreen(onBack: () -> Unit, modifier: Modifier = Modifier): Unit = TODO("track A")
 
 @Composable
 fun AboutScreen(ui: AboutUi, onEvent: (AboutEvent) -> Unit, modifier: Modifier = Modifier): Unit = TODO("track A")
@@ -2690,7 +2944,8 @@ route stays).
    to 300 m away; the arrival card then says how far the place still is (D2). The location key
    `street` is documented in 3.9.1 as not implemented, so the app ties an address itself (rule 4).
    A map point is not tied (the owner, after batch C1): a dropped pin, also once saved or in the
-   recents (`Stop.tied` false, `StopTies.isMapPoint`; route_lib `_tie` "none") gets no stop options
+   recents (`Stop.tied` false, `StopTies.isMapPoint`: its second line is its coordinates or its street
+   line "Near ..."; route_lib `_tie` "none") gets no stop options
    and the route goes to the road at the pin; `alley_factor` still applies. A point of interest that
    ends in its own lot (rule 6) gets no stop options either.
 3. Arrival side (the owner, 2026-11-18: preferred unless it adds more than about one minute; batch
@@ -2705,8 +2960,8 @@ route stays).
    more U-turns, takes at most `max_extra_s` (60 s) longer and has at most `max_extra_maneuvers` (2)
    more guidance instructions (one block at most, never a longer loop); else the first route stays (`PlanResult.Ok.arrivalSide`: NOT_ASKED,
    ASKED_KEPT, SIDE). One more engine call per plan only when a stop is reached on the left. The
-   arrival text is the engine's own (B7: "Arrive, on the right" from maneuver type 5), so it matches
-   the route kept. Batch E2 (rule 7): asked once per plan, on the decision's Fastest route to the
+   arrival's side is the engine's own (B7: "on the right" from maneuver type 5), so it matches the
+   route kept; the session adds the stop's name (play test P34). Batch E2 (rule 7): asked once per plan, on the decision's Fastest route to the
    chosen ends and only for the stops decided there; a side route kept puts its `preferred_side` and
    `street_side_cutoff` on those stops, so every route type and every re-route carries them. Alternates leave out the route kept, not the first one. When a pool (Simpler)
    picked an alternate (`ChosenRoute.routeIndex` not 0) this rule and rule 5 compare the route the
@@ -2895,7 +3150,7 @@ Valhalla's hard exclusions forbid driving *onto* an excluded road, not being on 
 | First-run notice accepted (version) | `app-state.json` | `:core:settings` | everything |
 | Recent places (30, newest first) | `recents.json` in the **no-backup folder** (`getNoBackupFilesDir`) | `:core:search` | everything but uninstall and clear data; never backed up or transferred (PV4); a broken file reads as empty |
 | Saved places: Home, Work, the others and the "Show on the map" switch (format `beamline-saved-places/1`) | `saved-places.json` in the no-backup folder | `:core:search` `SavedPlaces` (S) | everything but uninstall and clear data; never backed up or transferred (PV4); a damaged file is kept aside as `saved-places.broken-<n>.json` and the user is told (SP52); a newer format leaves the store read-only (SP53) |
-| Trip in progress: stops with reached flags, route type, options, time of the last write | `trip.json` in the no-backup folder | `:nav:session` `TripStore` | process death (rules R1-R3); never backed up or transferred (PV4) |
+| Trip in progress: stops with reached flags, route type, options, whether it is a simulated drive, time of the last write | `trip.json` in the no-backup folder | `:nav:session` `TripStore` | process death (rules R1-R3); never backed up or transferred (PV4) |
 | Where the map was left (centre and zoom, written when the map screen stops; rule K1) | `last-camera.txt` in the no-backup folder (`beamline-last-camera/1 <lat> <lon> <zoom>`) | `:app` `LastCameraStore` | everything but uninstall and clear data; never backed up or transferred, never logged; a broken file reads as none |
 | Packs, install records | `Android/data/<app id>/files/packs/` | P | everything |
 | Merged routing tiles, engine config | `Android/data/<app id>/files/routing/` | P | everything |
@@ -3092,8 +3347,9 @@ Every rule id below needs at least one JVM test in `:nav:session` (N's definitio
   and 400 ft, fit inside them), not the owner's numbers. Best lane narrowing toward the following
   turn is already in the lanes (`banner.json`, up to 0.5 mi).
 - **B6** A new route (re-route, stop change) rebuilds the banners; *U* comes from its first progress.
-- **B7** The last leg's arrival maneuver is a normal banner ("Arrive, on the right") with a
-  counting distance, no chip, no lanes.
+- **B7** The last leg's arrival maneuver is a normal banner naming its stop ("Arrive on the right at
+  Erie Zoo"; a point without a name of its own, MAP_PIN, keeps "Arrive, on the right") with a counting
+  distance, no chip, no lanes. Every leg's arrival names its stop the same way (play test P34, 0.1.40).
 - **B9** A lane that ends in a turn (batch C1, docs/next-round.md item 12). Built once per route
   (`LaneWarnings` in `:nav:session`, from the OSRM answer and the engine's `trace_attributes`): a
   spot is an intersection of an OSRM step after its first (no maneuver there), a real one (3 or more
@@ -3193,8 +3449,10 @@ Every rule id below needs at least one JVM test in `:nav:session` (N's definitio
   Retry or Reroute, or when the car rejoins the old route (O5 rule, back to GUIDING).
 - **O8** Leaving the installed states: before asking, the session checks
   `RoutingSet.covers(origin)`. Outside: no engine call; `problem` = OUTSIDE_INSTALLED_MAPS ("You are
-  outside the installed maps."), no attempts counted; asked again as soon as a deciding fix is
-  covered. An engine answer 170/171 for the origin is treated the same way.
+  outside the installed maps. Guidance goes on when you are back on them.", `canRetry` false: the
+  session asks again by itself), no attempts counted; asked again as soon as a deciding fix is
+  covered. An engine answer 170/171 for the origin is treated the same way. The trip bar and the
+  notification title say "No route from here" (D3, D6; play test P5, 0.1.40).
 - **O9** Start from elsewhere: at Start, if the first deciding fix is more than
   `start_far_from_route_m` (200 m) from the route, the session re-routes at once from the car (O4).
   A simulated start begins on the route, so this never fires in simulation.
@@ -3232,12 +3490,29 @@ Every rule id below needs at least one JVM test in `:nav:session` (N's definitio
   trip's route type and options over origin + stops not reached, brute force over the order with
   the destination kept last (`StopOrderer`), minimising time; when the options' exclusions leave a
   stop unconnected (a stop on an excluded road, 2.11), the matrix is asked again with the fallback
-  options; then as C2/C3. No connected order: unchanged, problem NO_ROUTE shown.
+  options; then as C2/C3. A changed order emits `StopsReordered` (the stops editor says "Stops
+  reordered.", play test P49, 0.1.40); an order that is the best already: unchanged, the problem "These
+  stops are already in the best order."; no connected order: unchanged, problem NO_ROUTE shown.
 - **C7** `Choose(id)` selects that card and sets the trip's `routeType`: kept when it is one of the
   card's `typeIds`, else the card's first type id; it is written to settings. Re-routes (O4),
   changes during guidance (C3, C4), `trip.json` and Resume use the trip's `routeType`. Test: choose
   the Simpler card (the Shortest card until batch D), Start, the `wrongturn` script gives a Simpler
   re-route; Resume after process death keeps Simpler.
+- **C8** Adding a stop on the map (item 51, 0.1.40). `Detours(requestId, places)` (PLANNING to
+  REROUTING): from J, where `AddStop` without an index joins the trip (the stop before the destination,
+  else the car as O4's origin while guiding, else the trip's start) and R, where the detour comes back
+  (the point of the leg's route 10 km past the farthest place, with the route's heading; the destination
+  when that is nearer: every call stays near J however long the trip), two matrices per 10 places with the
+  trip's route type and options (C6's costing, no fallback options): J to the places and R, the places to
+  R; `addedS` = t(J,P) + t(P,R) - t(J,R), at least 0, null without a connection; published after each 10
+  (`done` at the end). Each call is its own job on `beamline-routing`, so a re-route waits at most one call.
+  A newer request replaces it; an empty one with its id drops it (another id is ignored); a change of the
+  stops (not a stop reached), the start, the route type, the options or the chosen route, a re-plan,
+  arrival and the end of the trip drop it and the preview. `PreviewStop(place)`: the trip's route type
+  planned once with the place inserted as C1, from the car (O4, the trip's decided ends) while guiding, or
+  before guidance as C2's first request would be (the trip's start, every stop's own point with its door);
+  `addedS` = its time less the remaining time now; nothing of the trip changes. Neither is "the next intent"
+  of R4 nor sets `replanning`.
 
 ### 3.5 Planning (P)
 
@@ -3284,7 +3559,7 @@ Every rule id below needs at least one JVM test in `:nav:session` (N's definitio
             "lean": {"within_m": 120, "within_s": 7, "bearing_share": 0.5, "max_bearing_deg": 55, "zoom_add": 0.5,
                      "pitch_deg": 50, "min_turn_deg": 30, "look_m": 35, "hold_ms": 4000},
             "recenter_after_s": 15},
-  "overview": {"return_after_s": 10},
+  "overview": {"return_after_s": 10, "padding_dp": 72},
   "browse": {"follow_zoom": 16},
   "preview": {"padding_dp": 48},
   "arrived": {"zoom": 17},
@@ -3298,7 +3573,7 @@ Every rule id below needs at least one JVM test in `:nav:session` (N's definitio
   until a user gesture → BROWSE; a cold start with location allowed (and turned on) begins in
   BROWSE_FOLLOW too, from the last known position, and moves when the first fix comes; a place
   picked from a search result, a saved place, a recent or a sheet (`CameraDirector.onShowPlace`;
-  not a place tapped on the map, which is on screen already) → BROWSE centred on it at
+  not a place tapped on the map, which is on screen already: K1b) → BROWSE centred on it at
   `follow_zoom` in the area the insets leave free (above the place sheet: `AppRules.cameraInsets`
   adds the sheet), capped outside the states, until a gesture, the sheet closing or a place tapped
   on the map replacing it (`CameraDirector.onPlaceLeft`: the camera then stays where it is, so the
@@ -3345,8 +3620,30 @@ Every rule id below needs at least one JVM test in `:nav:session` (N's definitio
   bearing browsing has. A new phase group (a route choice, guidance, arrival, back to browsing) starts
   north up with the compass not leading. Without a compass reading the second tap keeps following
   north up. The constants are `Director`'s COMPASS_STEP_DEG and `CompassFilter`'s.
+- **K1b** A place tapped on the map (a POI label, a saved place's marker, a dropped pin;
+  `CameraDirector.onPlaceTapped`; P8 of the 0.1.39 play test, 0.1.40) is on screen already: the camera
+  does not go to it. On a browsing map that is not following, the camera stays while the place's pin
+  (28 x 38 dp, its tip at the point, 8 dp to spare) lies wholly in the area the insets leave free. Once
+  it does not (the sheet raised, or opened over a place low on the screen; at the tap, just under the
+  search bar; the camera coming to rest after a move begun before the tap), the camera centres the pin
+  there at the zoom and bearing the map has, and keeps it there at every height like a picked place,
+  until a gesture, my-location, another place, the results or the sheet closing (`onPlaceLeft`; the
+  results ending while the window stays open do not end it). Where the camera is comes from the map at
+  each rest and each tap (`onCameraAt`: the point at the view's middle, the zoom, the bearing;
+  `Director.pinInView`, Web Mercator, top-down). No room for the pin in the free area (a bottom sheet
+  on its side, a split screen): the camera stays. While following (K1, K1a) a tap changes nothing: the
+  follow keeps the user in view. While a place sheet is open and the search pill shows, the camera's
+  top inset is the search bar's bottom edge (`AppRules.cameraTopChrome`; the pill's whole block while
+  results show, S11), so a tapped or a picked place keeps clear of the bar. Nothing while a trip
+  exists.
 - **K2** PLANNING/CHOOSING → PREVIEW: top-down, north up, fit all choices' bounds plus the origin and
   stops, padded by `padding_dp` plus the overlay insets.
+- **K2a** A route closed before it started (PLANNING or CHOOSING to IDLE: Cancel, Back; P50 of the
+  0.1.39 play test, 0.1.40) → BROWSE_FOLLOW on the puck at `follow_zoom`, north up, the compass not
+  leading, as my-location gives (the preview's framing meant nothing to browsing and left the user's
+  position under the search bar); without a position the camera stays. When Back reopens the
+  destination's window (P46), the app first sends `CameraDirector.onShowPlaceAfterRoute(point)`: the
+  preview stays until the trip has ended, then the place is shown as a picked one (K1) instead.
 - **K3** GUIDING or REROUTING → GUIDE_FOLLOW: pitch `pitch_deg` (60), bearing = vehicle bearing
   (low-pass `bearing_smoothing` on the circle, its weight growing with the change up to 1 at
   `bearing_turn_deg`, so a turn is followed at the next position while the wobble of straight
@@ -3385,11 +3682,29 @@ Every rule id below needs at least one JVM test in `:nav:session` (N's definitio
   the route keep nothing of the old turn. A camera.json without `guide.lean` never leans.
 - **K4** Any user gesture in GUIDE_FOLLOW → GUIDE_FREE; `showRecenter` = true. Recenter, or
   `recenter_after_s` (15 s) without a gesture → GUIDE_FOLLOW.
-- **K5** Overview → GUIDE_OVERVIEW: top-down, north up, fit the remaining route; back to
-  GUIDE_FOLLOW after `return_after_s` (10 s) or on Recenter.
-- **K6** ARRIVED: animate to top-down, north up, centred on the destination at `arrived.zoom`;
-  after Done or leaving → BROWSE.
+- **K5** Overview → GUIDE_OVERVIEW: top-down, north up, fit the remaining route, padded by
+  `overview.padding_dp` (72 dp; `preview.padding_dp` when the file has none) plus the insets: the
+  driving arrow's picture is 136 dp square, and with 48 dp its glow touched the edge (play test P32);
+  back to GUIDE_FOLLOW after `return_after_s` (10 s) or on Recenter.
+- **K6** ARRIVED: animate to top-down, north up, the car and the destination framed together above
+  the arrival card, and above the destination's window when it is raised from the card (P4 of the
+  0.1.39 play test, 0.1.40: the route ends at the street a place is tied to, up to 300 m away, 2.11
+  "Every request" 2, and centred on the destination alone at z17 the car and the road were off the
+  screen): centred between them at the zoom that fits both, with `preview.padding_dp`, in the area the
+  insets leave free, never closer than `arrived.zoom`; a car within about 50 m of the destination
+  (`Director.POINT_SPAN_DEG`), or a view not yet measured, centres on the destination at
+  `arrived.zoom`. The frame is taken again only when the car, not stopped (M2), has moved more than
+  20 m from where it was framed (`Director.ARRIVED_REFRAME_M`): it stays still while the car parks and
+  through a parked car's GPS jumps. ARRIVED has no Recenter: a pan leaves the camera until the frame is
+  taken again. After Done or leaving → BROWSE.
 - **K7** The arrow replaces the puck from Start to the end of ARRIVED; the browsing puck otherwise.
+- **K8** Adding a stop (item 51): while the stop results or a stop's card show, in PLANNING, CHOOSING,
+  GUIDING and REROUTING, the camera fits top-down, north up the places with J, or J and the way to the stop
+  looked at (`CameraDirector.onStopView`), above the results window (in the insets also while driving;
+  beside it on its side). Guiding, the vehicle is always in the fit: the camera fits again when the vehicle
+  leaves the middle 80 % of the box, at most every 5 s; the mode is GUIDE_OVERVIEW without its K5 timer; a
+  gesture leaves the camera where the user put it (no GUIDE_FREE) for K4's `recenter_after_s`, then the fit
+  with the vehicle comes back; the end of adding a stop goes back to GUIDE_FOLLOW (K3) or the K2 fit.
 - **Saved-place markers** (rules SP40-SP46 of `docs/architecture-saved-places.md` 2.8;
   `camera.json` `saved_places`, read by `SavedMarkerRules`): Home and Work from zoom 10, the others
   from zoom 12, at 1.25 times the sprite size, upright also in the tilted view; above the labels and
@@ -3402,9 +3717,22 @@ Every rule id below needs at least one JVM test in `:nav:session` (N's definitio
 
 - **S1** Ranking position: a fix ≤ `near.fix_max_age_s` (60 s) old when there is one ("Near your
   position"), else the map centre ("Near the map center").
+  Since 0.1.40 (play test P6) the line names the place: around the map's centre (S1, S1b) the town
+  nearest it, the place entry of type city, town, borough or village within `near.area_name_within_km`
+  (25 km) in the installed pack that covers it (`SearchHub.placeNear`, asked on `beamline-search` when the
+  search opens): "Near Corry"; none that near, "Near the map center". Without a fresh fix (S1's
+  fallback) " · no position yet" follows ("Near Howard · no position yet"). While the rows answer words
+  that name a place ("coffee in corry", "walmart meadville"), that place: "Near Corry". The results
+  window on the map says the same after its count when its list is not ranked from the user's position
+  ("20 places · Near Corry", `ResultsUi.nearText`).
 - **S2** Typing: each change is queued on `beamline-search` after `typing.debounce_ms` (120); only
   the newest pending query runs; answers for an older query are dropped. Empty text shows
-  shortcuts and recents.
+  shortcuts and recents. A place looked at is a recent (S7, S11; 0.1.40 decision). "Clear" empties the
+  recents with "Recent places cleared" and "Undo" at the bottom of the screen for 10 s (longer when the
+  phone's accessibility setting asks for more time; while TalkBack explores by touch, until Undo, typing
+  or Back); Undo puts them back in their order; typing or closing makes the clear final (0.1.40, P45).
+  "No places found" after typed words adds "Check the spelling, or try fewer words."; in GO_TO it offers
+  "Add a state" (0.1.40, P47).
 - **S3** Packs asked: every pack with a usable search part whose bounds grown by
   `merge.pack_margin_km` (50 km) contain the ranking position; with none, the pack nearest to it.
 - **S4** Merge: if all asked packs have the same `searchRankingSha256`, results are merged by
@@ -3448,8 +3776,8 @@ Every rule id below needs at least one JVM test in `:nav:session` (N's definitio
   screen, saved places screen or map pick is open, also with nothing installed; on the first run it
   comes with the map, after the driver notice and "Choose your state" (5.4 item 3). Hidden during
   route choice (search is reached there from the route sheet's start row and "Add stop") and while
-  guiding (the banner has the top; the stops editor's "Add stop" opens search without the keyboard,
-  SP4). G's map chip and the pack-problem notice sit under it; the chip shows only while the pill
+  guiding (the banner has the top; the stops editor's "Add stop" opens search with the keyboard
+  up, P26). G's map chip and the pack-problem notice sit under it; the chip shows only while the pill
   does (the download's notification carries the progress meanwhile).
 - **S9** Saved places in search (SP4-SP6, SP10-SP31; every text in
   `docs/architecture-saved-places.md` section 2): Home and Work rows (or "Set home" / "Set work") and
@@ -3522,9 +3850,18 @@ Every rule id below needs at least one JVM test in `:nav:session` (N's definitio
   **Since 0.1.15 (the owner, 2026-11-21, after the walkthrough of 0.1.13):** the list and the map
   show the same places in the same order. Every search asks for `on_map.candidates` rows; an answer
   led by a category or a brand match (`SearchResult.tier`) is shown by the rule above (the nearest
-  first, within 25 miles, at most 20; so a category's list is in distance order), any other answer
-  as the engine's best `merge.limit` rows in its order (`SearchController.shaped`). Enter asks nothing
-  again: it puts the list's rows on the map. A shortcut chip and a type of the "View all" grid are a
+  first, within 25 miles, at most 20; so a category's list is in distance order), and since
+  0.1.40 (play test P2) its rows that only matched by name ("Erie Animal Hospital", the street
+  "Hospitality Place" for "hospital") come after the category's or brand's own, those within 25 miles,
+  nearest first, up to the 20, under the heading "Other matches" (`ResultRowUi.otherMatch`); any other
+  answer as the engine's best `merge.limit` rows, since 0.1.40
+  (P6) its best match first and the others nearest first (`SearchController.shaped`). When the words
+  name a place ("coffee in corry": `MultiSearchResponse.namedPlace`), "nearest" and the 25 miles are
+  measured from that place, not from the ranking position; the rows' distances stay from the user.
+  Enter asks nothing again: it puts the list's rows on the map. Since 0.1.40 (play test P44) a tap on
+  a row of that list in GO_TO while not driving, when it has two or more rows, does the same with that
+  row's sheet open (`ResultsUi.selected`): the bar keeps the words and closing the sheet goes back to
+  the list, as after a chip; one row, another mode or driving: the pick of S7 as before. A shortcut chip and a type of the "View all" grid are a
   whole question: their answer goes straight to the map as Enter's does (in GO_TO while not
   driving; elsewhere a list as before); Back from a grid type's results opens the grid again. While
   the results show, the map's search bar holds their words and an X that ends them; a tap on the
@@ -3534,6 +3871,10 @@ Every rule id below needs at least one JVM test in `:nav:session` (N's definitio
   position ranks from the map's centre instead of the fix ("Near the map center"); the rows'
   distances stay from the user (`SearchContext.distanceFrom`). The position in sight, the camera not
   yet at rest, or a search for a start, a stop or a save: S1 as before (`AppFlows.searchContextFor`).
+  Since 0.1.40 (play test P6: after opening Corry from a list, "parks" was searched around Corry) only a
+  map the user moved counts: a drag, pinch or turn (`MapGesture.CameraMovedByUser`) since the window
+  last held their position at rest. A camera the app moved (K1, a place opened; S11, results fitted)
+  keeps the fix (`AppRules.searchContextFor`, `AppFlows.mapMovedByUser`).
 - **S11b** Search this area (0.1.30; the owner, 2026-11-24: "when they drag the map to a different
   area, a button should pop up below the search bar that says "Search this area" that updates the
   pins and list with searches in that window"). While results show, a drag or zoom of the map by
@@ -3542,11 +3883,38 @@ Every rule id below needs at least one JVM test in `:nav:session` (N's definitio
   the part of the map the user sees (the window less what the app draws over it now, `cameraInsets`: the search bar, the
   list; a turned map: the box around it): the places already shown and still there first (a tester,
   2026-11-25: pins still in sight were dropped), then the nearest the centre, at most
-  on_map.max_results, listed nearest the centre first. They
+  on_map.max_results, listed nearest the centre first (for a category's or a brand's words its own
+  places first, P2; the window's line names the area, "Near Millcreek", P6). They
   replace the pins and the list (none selected, an open place sheet closes; the rows' distances stay
   from the user); the camera stays where the user put it. None there: "Nothing found in this area"
   and the results stay, until the map moves again. Other results, or none, end the offer
   (`SearchFeature.searchArea`, `AppFlows.areaSearch`).
+- **S12** Adding a stop on the map (item 51, 0.1.40; the owner: "'Add a stop during a trip' should show the
+  map so the user knows where the stop is, and on the list, it should be sorted by what takes the least
+  amount of time to route to, like a '+2 min'"). The Add stop search opens with the keyboard up (P26) and
+  "Along your route": places are looked for around a point every `along_route.sample_km` (10) along the
+  trip's route ahead from J, up to `ahead_km` (60); a category's or a brand's answer keeps those within
+  `corridor_km` (3) of the route, the `max_results` (20) nearest it, in order along it (none that close:
+  the `nearest_when_none_within` (5) nearest it, "None close to your route. Nearest shown."); a name's the
+  engine's best by score. With a stop still before the destination the new stop goes after it (C1) and the
+  screens say so ("Along your route after Wegmans", "Goes after Wegmans"). Enter, a shortcut, a type of
+  "View all" or any single pick (a row, a recent,
+  Home, Work, a saved place) closes the search and shows the stop results: the trip's route, RESULT pins, the
+  results window; "Working out detours..." until the session's C8 answer is done, at most
+  `detours_wait_ms` (4 s); then the rows once, sorted by "+N min" (whole minutes as `UnitFormatter.duration`
+  rounds; under a minute "On the way"), closed now after open within the same minute, nearest J first
+  among equals, unknown last by distance; after the wait nearest first with "Detours took too long. Nearest
+  first." A row or its pin opens its card: the route with it drawn (C8 PreviewStop), "+N min · Arrive
+  4:33 PM", **Add stop**; only that button adds the stop (C1, C3); it is disabled only for a stop too many
+  (another preview problem shows "Could not work out the route with this stop." and adding still re-plans
+  as C3). The card's "+N min" is written back to its row. Back: card, list (a one-place result: straight to
+  the search), the Add stop search with its words, the trip; the window's X (list and card) ends it. While
+  the window shows, map taps other than its pins do nothing. The drive overlay keeps only its top (banner,
+  status chip, stop card) and the speed pair above the window (`DriveOverlay(stopWindowDp)`, D8); the trip
+  bar, map buttons, road label, route sheet and stops editor come back as they were. On its side the window
+  is in the start panel. A POI tapped on the map during a trip keeps its sheet's direct "Add stop".
+  A place handed over by another app during a trip (H7) opens as one such card without a list: no back arrow, Back
+  and the X end it, and "Go here instead" under Add stop makes it the destination the S7 way.
 
 ### 3.9 Drive presentation (D)
 
@@ -3559,11 +3927,15 @@ Every rule id below needs at least one JVM test in `:nav:session` (N's definitio
   `distanceText` = `distance(s)`; `then` = `distanceIn(following.distanceM)` (the chip also shows
   the sketch's small "THEN" label, drawn by D); lanes only when `showLanes`.
 - **D2** Status priority: Arrived > StopReached (card time) > RerouteFailed > Rerouting > GpsLost >
-  WaitingForGps > GpsWeak > OnRoute. The arrival card shows the name, the side, and "Destination
-  *distance* away" when the end of the route is more than 100 m in a straight line from the
-  destination's place (2.11 "Every request" 2; `DrivePresenter.DESTINATION_AWAY_OVER_M`).
+  WaitingForGps > GpsWeak > OnRoute. The arrival card shows the name, the side, and "Route ends
+  *distance* from the place" when the end of the route is more than 100 m in a straight line from the
+  destination's place (2.11 "Every request" 2; `DrivePresenter.DESTINATION_AWAY_OVER_M`; P4 of the
+  0.1.39 play test, 0.1.40); Save is a link, "Saved" with a check once the destination is a saved place
+  (the app sets `Arrived.saved`; play test P31, audit F34); its handle's raise is "Show place details".
 - **D3** Trip bar: arrival clock = now + `remainingS`; remaining time and distance; next stop
   "Stop *n* · distance" when a stop is not the destination; "Simulated" badge when simulated.
+  Outside the installed maps (O8) the bar says "No route from here" instead of the old route's times
+  (play test P5, 0.1.40).
 - **D4** Route cards in choice order, labels joined with " · ", notes "Tolls" / "Highways" from the
   choice flags; `canStart` when a choice is selected, the phase is CHOOSING, nothing is
   `replanning`, and precise location is allowed. Without precise location `startBlockedText` =
@@ -3574,7 +3946,9 @@ Every rule id below needs at least one JVM test in `:nav:session` (N's definitio
 - **D5** The route sheet never offers a type the presets mark `offered: false` (Eco).
 - **D6** Notification: title = primary + distance ("Exit 24 · 0.3 mi"), text = roads, or the
   status text when not on route; "Arrived at …" in ARRIVED. Updated on maneuver change and at most
-  every `notification.min_interval_s` (5 s).
+  every `notification.min_interval_s` (5 s). An arrival's title keeps its plain words and the distance
+  ("Arrive, on the right · 350 ft"), the stop's name is the text (play test P34); outside the installed
+  maps (O8) the title is "No route from here" (play test P5).
 - **D7** In REROUTING the banner is not shown (`GuidanceUi.banner` = null): the status card
   "Finding a new route..." (or the failure text with Retry) takes its place until the new route's
   first progress. O6 sets GUIDING at the answer, and the session has no banner until a fix on the new
@@ -3588,7 +3962,9 @@ Every rule id below needs at least one JVM test in `:nav:session` (N's definitio
   banner's colours at the bottom of the map, level with the speed pair and the map buttons
   and between them (test tag `current-road`; a screen reader says "On Peach St"); one line, a long
   name ends in an ellipsis. The route line covers that road's own name on the map, so the label is
-  where the driver reads it.
+  where the driver reads it. The road label is left out while Recenter shows (the overview or
+  the map moved by hand; play test P32: the pill, lowest at the bottom end, covered its end); on its side
+  the label's end room counts from a navigation bar at the end, as the buttons' does.
 - **D9** Lane warning (batch C1, B9): while `Guidance.laneWarning` is set, `BannerUi.lanes` is its
   lanes and `BannerUi.laneNote` its line, drawn under the lane row in the banner's ink (semibold, at
   most two lines; test tag `lane-note`); the banner's maneuver, distance and chip stay. Gone with the
@@ -3628,7 +4004,9 @@ Every rule id below needs at least one JVM test in `:nav:session` (N's definitio
   buttons: in a window too short for it between the top stack (banner, chip, stop card) and the
   bottom block (split screen, about 390 dp tall) the pair is left out while there is no room and
   comes back when there is (batch B). GPS speed often reads a few mph below a car's speedometer, which is built to read
-  high.
+  high. While the stop results of S12 show, it sits above their window (`DriveOverlay(stopWindowDp)`)
+  and is left out by the same room rule. The overlay reports where the top stack ends (`onTopStack`);
+  the app keeps its browsing windows under it (play test P7).
 - **D10** Every bottom sheet's heights (batch F; the owner, 2026-11-18, docs/next-round.md item 15).
   The results list (S11), the route sheet and the place sheet (S7) share one frame (`:ui:theme`
   `Sheets.kt`: `SheetFrame`, `SheetState`, `SheetSteps`) and one set of rules. Each has a lowest height
@@ -3652,20 +4030,36 @@ Every rule id below needs at least one JVM test in `:nav:session` (N's definitio
   name, distance, whether it is open, and its main button and Save), a new trip's sheet (three heights
   since item 47: the arrival time, destination and a "2 routes" chip with Start; the small cards with
   Start; everything, with the steps preview, `StepsPreview`, five steps then "Show all N steps", a tap
-  on one looks at it on the map, `DriveEvent.ShowStep`, and lowers the sheet to the cards) at the middle
-  height under the map and at full height in the side panel; the height is kept across a turn of the phone, and the
-  results list's while a result's place sheet is open. The camera's insets follow the height the
+  on one marks it on the map and shows it at the middle height, which says "Step 3 of 12" with Previous
+  and Next (`DriveEvent.ShowStep` with its index, `RouteSheetUi.shownStep`, `MapScene.step`; play test
+  P21); Back goes up to the list, the step still marked; Back at full height lets it go (the whole route
+  again, `DriveEvent.CloseStep`) and steps down to the cards) at the middle
+  height under the map and at full height in the side panel; a turn of the phone from one layout to the
+  other moves the route sheet to the new layout's opening height (play test P52), otherwise its height
+  is kept while it shows, and the results list's while a result's place sheet is open. The camera's insets follow the height the
   sheet rests at (the app measures each sheet, `AppRules.cameraInsets`, `DriveOverlay.onInsets`), so
   the results (K1), the routes (K2) and a picked place (K1) are fitted to the space left, and fitted
-  again when the sheet goes back up. On its side the browsing sheets stay at the bottom across the
-  width with the same heights; the route sheet is in the side panel, can be lowered there too, and
-  the camera keeps fitting to the side of the panel (`start` = the panel's width).
+  again when the sheet goes back up. On its side (`:ui:theme` `isSideLayout`: wider than tall and at
+  least 560 dp) the browsing sheets, the place sheet and the results list, are in a panel on the start
+  side as wide as the drive overlay's (`sidePanelWidth`: half the width, 320 to 400 dp), with the same
+  heights, never over the search pill's column (though they keep room for their lowest height, which
+  grows with the font) and, while guiding, never over the banner and the chip under it, and my-location
+  stays at the bottom end beside it (play test P7: riding up with the sheet it covered Map style); the
+  snackbars centre in the map beside the panel; the route sheet is in the side panel, can be lowered
+  there too, and the camera keeps fitting to the side of the panel (`start` = the panel's width).
+  While the full height's middle part scrolls further, a fade over its last lines and a line above
+  Start say so (P52). Since 0.1.40 the steps preview's words are the banner's (At the light, into the
+  parking lot, "Arrive at <stop>"; audit F40, play test P34); the stops editor takes the route sheet's
+  or the trip bar's place (play test P49), shows the trip's arrival while guided, and stops under the
+  banner (but for its minimum height); where that cuts its rows, its empty note line gives them its
+  room and a fade over the last row says they scroll further (the 0.1.40 replay).
 
 ### 3.10 Resume after process death (R)
 
 - **R1** `trip.json` is written at Start, at every stop change or stop reached, at every type or
   option change during a trip, and every `resume.refresh_s` (30 s) while GUIDING or REROUTING;
-  `savedEpochMs` is the wall-clock time of that write. It is deleted on End, Done and
+  `savedEpochMs` is the wall-clock time of that write, and whether the trip is a simulated drive
+  (`TripSnapshot.simulated`, play test P27). It is deleted on End, Done and
   DiscardResume, and on arrival (A3).
 - **R2** On start-up, a snapshot with `wallClockMs() − savedEpochMs` ≤ `resume.max_age_s` (1800 s)
   puts the session in RESUME_OFFERED; older snapshots are deleted. So a 45-minute trip killed at
@@ -3674,10 +4068,15 @@ Every rule id below needs at least one JVM test in `:nav:session` (N's definitio
 - **R3** Resume re-plans the trip's `routeType` and options from the current position to the stops
   not reached and starts guidance (`RouteReplaced(RESUMED)` after `GuidanceStarted`). A `trip.json`
   whose type presets.json no longer has (a trip saved with Shortest before batch D) resumes with the
-  presets' default (Fastest), shown as such from start-up. The offer is
+  presets' default (Fastest), shown as such from start-up. A simulated drive is offered as one
+  ("Continue the simulated drive to …?") and Resume drives it simulated again from the new route's
+  start, as R4 does (play test P27, 0.1.40). The offer is
   only ever shown in the visible app: when the process died with the app in the background, the
   user sees "Continue to …?" the next time the app is opened (a background start of the
   foreground service is not allowed, so there is no notification action for it).
+  Back while a trip is driven, arrived or offered: the first press says "Press Back again to leave
+  Beamline." (with "Guidance keeps running." while driven), a second within 2 s leaves, also when a reroute
+  came between the two (play test P28, 0.1.40).
 - **R4** End with Undo (the owner, 2026-11-16): the trip bar's End stays one tap and ends the trip
   at once (IDLE, hold released, `trip.json` deleted, `GuidanceEnded`). The app then shows a bar
   "Trip ended" with "Undo" for `END_UNDO_MS` (10 s; it goes at once when a new trip begins).
@@ -3691,6 +4090,91 @@ Every rule id below needs at least one JVM test in `:nav:session` (N's definitio
   bar reads "Continuing the trip..." (no action) until the phase leaves IDLE (part 1's review:
   without it nothing showed for up to 15 s without a fix). Tests: `UndoEndTest` (`:nav:session`),
   `AppRulesTest` (`AppRules.endBar`).
+
+### 3.11 Directions handed over by another app (H; item 52, 0.1.40)
+
+The owner, 2026-11-27: "we should make our app work like the rest of these apps do when you click a button for
+directions." `:app`'s `handover/` package: `HandoverLink` (the parser) and `HandoverRules` (the decisions) are pure and
+JVM-tested; `AppFlows` and `MainActivity` wire them.
+
+- **H1** Which links. `MainActivity` takes VIEW (DEFAULT, BROWSABLE) of `geo:`, `google.navigation:`,
+  `http(s)://maps.google.com` (every path), `http(s)://www.google.com` and `google.com` at `/maps`, `/maps/`,
+  `/maps/dir`, `/maps/search` and under `/maps/dir/`, `/maps/search/`, `/maps/place/`, `/maps/@`, and
+  `https://www.openstreetmap.org` and `openstreetmap.org` at `/`: one intent filter per form, no `android:autoVerify`.
+  So Beamline is listed by every "Get Directions" or "Open with" chooser built from a `geo:` or `google.navigation:`
+  link; an app that always opens Google Maps (`setPackage`) shows no chooser. From Android 12 the web forms open in
+  Google Maps or the browser unless the user gives them to Beamline in the app's "Open by default" settings (Google
+  Maps, verified for Google's sites, may keep those). Short links (`maps.app.goo.gl`, `goo.gl/maps`) need the
+  network and are not taken.
+- **H2** Reading a link. `HandoverLink.parse` gives a point (with the link's label: `geo:0,0?q=lat,lon(Label)`, a
+  Google place's name), words (with the point to search near of `geo:lat,lon?q=words`), or nothing usable. Values are
+  percent-decoded with `+` as a space, malformed bytes as U+FFFD; a coordinate pair at the start of a value decides
+  (in parentheses, after a blank, quoted; a label with an unencoded `&` or `#` and no closing parenthesis is read to
+  the link's end), and its label is cut, not the pair; texts lose control and format characters (not the joiners
+  U+200C, U+200D) and repeated blanks and are cut at 200 characters; a link longer than 8192 characters is not read.
+  A coordinate is at most three digits, a point, digits, within -90..90 and -180..180; 0,0 is no point. `geo:` `z`,
+  `crs=wgs84`, `u` and the altitude are ignored (another `crs` is not read), its head is percent-decoded (and a link
+  encoded whole, `%3F` for `?`, once); `google.navigation:` `ll` is a point and `q` a point or words, `mode` and the
+  rest ignored; Google's `/maps/dir` takes `destination` (else the last path place), `/maps/search` `query`,
+  `/maps/place/<name>` the place's `!3d!4d` point else its `@` point, `/maps/@lat,lon`, `/maps?daddr` (the last
+  destination), `q`, `ll`; OpenStreetMap `mlat`/`mlon`, else `#map=z/lat/lon`. Nothing usable: "Beamline could not
+  find a place in this link."
+- **H3** Once. `MainActivity` reads a VIEW link in `onCreate` without saved state and in `onNewIntent`, removes it
+  from the intent at once and ignores a start from Recents (`FLAG_ACTIVITY_LAUNCHED_FROM_HISTORY`); a recreated
+  activity (saved state, also after process death) never uses its intent's link: the restored intent's data is
+  removed, not used; the activity is not recreated by rotation (its `configChanges`). `AppFlows` holds one pending
+  link in memory (a newer one replaces it) and opens it once; nothing of it is saved, so a process that ends before it
+  opened drops it, and an activity that finishes (`isFinishing`) drops it too, and a lookup of it still running then
+  opens nothing (`LinkTickets`).
+- **H4** When. The pending link opens once the reveal is done, the driver notice accepted, the online choice made, the
+  first-run "Choose your state" picker closed, the installed states scanned and nothing of the user's is open (a report,
+  an OSM edit, "Add a missing place", the speed limit screen, the save dialog, a map pick, the public note or edit
+  notice, a search to save a place); a link that comes while one of those is open says "The directions open when you
+  close this." It waits at most 2 minutes (10 when it came during the first-run steps), then is dropped silently. When
+  it opens something it closes the search, the saved places list, Settings, About, the licences, the driver notice
+  page, States, My reports, a question dialog, the stops editor, a shown step, the place window, the results, the map
+  style sheet and the map data dialog; a note leaves the screen as it was (the plain bar), except a note with "Add a
+  state", which shows on the map. With no state installed it says "Beamline needs an installed state to find this
+  place. Open the directions again once one is installed." with Add a state; it is not kept for a later install.
+- **H5** A point. Outside the installed routing tiles: the place window ("Outside the installed maps", Add a state),
+  or while guiding "This place is outside the installed maps.". Inside, its name: the link's label, at the point of the
+  pack's place of that name within 50 m when there is one (then a POI, which ends in its lot; a label that only begins
+  with the pack's name keeps it, with "<pack name>, <address>" as its second line so the trip still ends at its door);
+  else at the link's point (a place with a name of its own whose second line is the street line or the coordinates, so
+  the planner routes to the point untied); without a label the name of the only named place within 30 m (at the link's
+  point), else the dropped pin's street line ("Near 815 Example Street, Erie"), else its coordinates (both a point
+  without a name of its own, as a dropped pin).
+- **H6** Words. A US state named by the words' last part ("..., OH", "Columbus Ohio", "... OH 43215") that is not
+  installed is said at once, with no lookup: "This place is in Ohio, which is not on this phone." (with " Add it to go
+  there." and Add a state while no trip runs). Otherwise they are looked up offline on the search thread with the
+  search's engine and merge (S3-S5, `SearchFeature.lookUp`), near the link's point, else where search ranks from (S1)
+  ("Finding the place..."). One clear match (for words that start with "<number> <street>" before their first comma:
+  the first row that is not a town or ZIP a located address, a house point or a position along its street in the
+  typed town and state, on that street as the address parser reads it ("W 38th St" is "West 38th Street"), with no
+  other located address on that street more than 150 m away, the same number on other streets not counting; or an
+  exact name, the words before the first comma, with no namesake more than 150 m away and in the town the words
+  give; with a state named, only a row of that state's pack; never a category's or a brand's answer) opens as the
+  same place picked in search. Else words of the form "Name, 12 Some Street, ..." are looked up once more as the
+  address alone; a clear address (the same rule) is the place, named by the name. Otherwise the search (GO_TO) opens
+  with the words typed, ranked near the link's point when it gave one (its line names the town there, "Near Erie", only
+  where an installed state's search covers the point; elsewhere it has no line): its list, Back and rows work as a typed
+  search's (during a trip a row is one pick, H7).
+- **H7** By phase. IDLE, ARRIVED and RESUME_OFFERED: the route preview to the place through Directions' own rule (S7:
+  RESUME_OFFERED asks "Drop your trip to … and go to …?", ARRIVED is Done first); Start stays one tap; Back from it
+  closes it with "Directions closed" and Undo (a route planned another way, P46). PLANNING, CHOOSING, GUIDING and
+  REROUTING: item 51's stop card for the place (S12, C8), with no list behind it (no back arrow; Back and X end it) and
+  a second button "Go here instead", which is Directions' rule (S7: while guiding "End this trip and go to …?", while
+  planning the new preview, whose Back closes it with "Directions closed" and Undo); a place within 150 m of the
+  destination says "You are already on your way there." (planning: "The route shown already goes there."); a row picked
+  in the search the words opened (a saved place too) opens the card. Nothing changes the trip until the user taps.
+  Recents get the place only when the user acts on it in Beamline: when the trip to it is guided, or at the card's
+  Add stop or Go here instead; a search row when it is picked.
+- **H8** Privacy. What another app hands over stays on the phone under PV1-PV8: never logged (`AppFlows` logs only
+  fixed words and enum names; `Handover`, the pending link, the note and the decisions print no field), never sent (the
+  lookup is the offline packs), never saved except as the same place picked in search is (Recents once acted on,
+  `trip.json` once guided). The system's own start log line is the platform's. *Checked by:* `HandoverLinkTest`,
+  `HandoverRulesTest` (`:app`), `StopResultsTest` and `StopResultsScreensTest` (`:feature:search`), the emulator checks
+  of item 52 (with `check_private_logs.py logcat` over Beamline's own lines, one file per process).
 
 ## 4. Background work, permissions and the network
 
@@ -3870,6 +4354,11 @@ see 6.14, 6.34 and 6.35.)
 | **A** about, identity and the follower | `android/feature/about/` (with its `scripts/notices.py`), `android/demo/about/`, `android/nav/ferrostar/` | emulator (no data) | see A below |
 | **G** getting packs | `android/core/download/`, `android/feature/states/`, `android/demo/states/`, `packbuilder/catalog/` (with `download_rules.json`), `docs/catalog-format.md`, `android/scripts/check_network_rule.py`, `data/catalog/` | emulator AVD `beamline_g`, port 5574, no pushed data; the development server (`serve_packs.py`) on port 8765 | see G below |
 | **I** integration (after the round, alone) | `android/app/` (the States screen is G's `StatesScreen`; I writes `OfflineMapHttp` with `OfflineMapHttpTest` and `ComposedStyleOfflineTest`, and owns the Round G0 changes to the manifest and build file; I writes `res/xml/data_extraction_rules.xml`, PV4, and rewrites `:app`'s log lines as PV2 says, 5.4 item 14), `android/README.md`, `README.md` | emulator, then the phone (only I touches the phone, only as PV7 allows) | section 5.4 and the E2E test of section 8 pass on the emulator and the phone |
+
+**0.1.40, item 51 (add a stop on the map), by module:** S: `AlongRoute`, `SearchAppRules.along*`, the
+stop results in `SearchController` and `ResultsViews`; N: `StopLeg`, C8 in `SessionCore`,
+`EngineRouteService.times`, `ValhallaRequests.matrixOf`; M: `SceneBuilder` preview lines,
+`Director.onStopView`; D: `DriveOverlay(stopWindowDp)`; I: `AppFlows`, `AppRoot`, `AppGraph`, `AppRules`.
 
 **Change-by-request files** (the owner edits them only when the other side asks, in the same
 wave, so the Python and Kotlin sides move together): `packbuilder/addresses/addrlib/` (P owns; S's
@@ -4317,16 +4806,26 @@ runs only its own modules' tasks, as above, is not affected.
    current target again (`setStyle` cancels a running camera ease); shows `MapSceneMapper.scene(...)` on every trip, puck, theme or picked-place change;
    shows the credit as OpenStreetMap's attribution guidelines allow (docs/next-round.md item 8): one
    short line "© OpenStreetMap" (only while OpenStreetMap data is drawn; the overview's sources are
-   public domain), small, in the bottom start corner above the trip bar or the sheet; it fades after
+   public domain), small, in the bottom start corner above the trip bar or the sheet (on its side beside the
+   side panel); it fades after
    five seconds or at the first touch of the map and is shown again when the map appears, when the
    app comes back and at each change between browsing, a route preview, guiding and ARRIVED; during
    the whole route preview it stays; while guiding it shows only those first seconds, then nothing.
    While browsing, after it fades, a small info mark stays in the corner. A tap on the line or the
    mark opens "Map data", the full list of sources: the OpenStreetMap licence line with
    openstreetmap.org/copyright, the overview's sources and each installed state's own credit
-   (`PackInfo.attribution`); the same list is About's "Map data" (`AppRules`, `mapDataCredits`). The top of the
+   (`PackInfo.attribution`); the same list is About's "Map data" (`AppRules`, `mapDataCredits`). Upright,
+   while a raised place window or results list would bring my-location within 8 dp of Settings and Map
+   style (a split screen, a 640 dp phone with the window at its cap), it is left out until the window is
+   lowered (play test P7); a browsing window never grows over the top row. The bars at the bottom (0.1.40)
+   come one at a time, in the order: the End bar ("Trip ended" with Undo, R4), the Back hint ("Press Back
+   again to leave Beamline.", play test P28), an Undo bar ("Stop removed", "Mom's removed": play tests
+   P10, P58; in the open stops editor its own note line instead), a plain snackbar; on its side they
+   centre in the map beside the side panel; a long line wraps beside its action, 12 dp from the map's sides. The top of the
    map as rule S8 says (`docs/architecture-saved-places.md` SP1-SP3): the search pill with the
-   Settings button beside it while no trip exists (a States button stood under it until 0.1.14); today's
+   Settings button beside it while no trip exists (a States button stood under it until 0.1.14),
+   the top row and the bottom row (credit, my-location) clear of the status bar, a navigation bar on either
+   side and a display cutout, the row at least 8 dp off the bottom edge (play test P1); today's
    pack-problem notice and `getPacks.mapChip` (while it is not null; a tap opens the States screen)
    under the pill; the banner there while guiding. The chip shows only while the pill shows (SP1):
    in PLANNING, CHOOSING, GUIDING, REROUTING and ARRIVED, and while a search screen, the saved
@@ -4381,7 +4880,8 @@ runs only its own modules' tasks, as above, is not affected.
     from every library, `INTERNET` and `ACCESS_NETWORK_STATE` kept (they are `:feature:states`'s),
     the debug-only network security config of Round G0 (`docs/architecture-downloads.md` 8.2),
     `android:allowBackup="false"` and `android:dataExtractionRules` with
-    `res/xml/data_extraction_rules.xml` (`docs/architecture-saved-places.md` PV4); keep the activity's `android:configChanges` (orientation, screen size, uiMode and the rest of
+    `res/xml/data_extraction_rules.xml` (`docs/architecture-saved-places.md` PV4);
+    the five VIEW filters of rule H1 (item 52; one per form, no `autoVerify`); keep the activity's `android:configChanges` (orientation, screen size, uiMode and the rest of
     today's list) so the map survives rotation and day/night switches; `aapt2 dump badging` and
     the merged manifests (debug and release) checked.
 11. Remove `:app`'s old launcher icon files (A's win); activity theme `Theme.Beamline.Starting`.
@@ -4511,7 +5011,7 @@ runs only its own modules' tasks, as above, is not affected.
 | 6.90 | Online batch O2 (docs/online-design.md 4.1, 4.2, 4.4, 4.5; the owner's answers 2, 4, 6) | OSM sign-in by OAuth 2 with PKCE (S256) in the browser; the redirect `io.github.spysyweeb.beamline://oauth` is accepted only for the sign-in this app started (its state, once, within 15 min); the token and the user's name sealed with AES-GCM under an Android Keystore key in `no_backup/osm-account.bin`; sign-out deletes it and asks OSM to revoke it when online. Client ids in the build (the live one only in the plain release). Notes: "Post with my OSM name", checked to start with when signed in; signed out at send time the note goes anonymously. "Edit on OpenStreetMap" for a node or way of the pack's `poi.osm` (a relation opens on openstreetmap.org): name, a week editor checked with the app's hours parser (anything it cannot express read-only), phone, website, "Closed permanently" (main keys amenity, shop, craft, office, leisure, tourism, healthcare, club to `disused:`; opening_hours, phone, contact:phone, website, contact:website removed; name kept; OSM wiki Key:disused:). The place is read before the form; the summary; one changeset (comment, `created_by=Beamline <version>`, `source=survey`), the element at the version read, close. Edits go through the outbox: right after the summary the element read is uploaded (OSM's 409 brings the form back with the new values); an edit that waited is read again and, if the place changed, waits for the user (REVIEW). Sent edits stay in the outbox and show on the place sheet ("Your edit, waiting for the next map update") until an installed pack has the values. Test objects only by a test extra of test builds. | docs/experiments/30-batch-o2.md |
 | 6.89 | Online as a choice, batch O1 (owner, 2026-11-16 and 2026-11-20; docs/online-design.md) | The first-run step after the notice ("Offline only" / "Allow online features", equal, neither selected; shown once after an update too); Settings "Online features" (main switch turns every feature on, each turns off alone; "Contribute to OpenStreetMap"; "My reports"); network rule N1-N5 per service (`OsmHttp`, OSM test server in test builds, openstreetmap.org only in the plain release, refused while the switch is off); the outbox (`no_backup/osm-outbox.json`, PV1-PV8; sent when the app is open, no background service; keeps the note's number and link); "Report a problem" (a dropped pin's "Report a problem here", a place's details height; at the pressed point or the place's point, never the phone's position; anonymous; the first-send public notice; hidden while a trip is driven and while the switch is off); every note ends with "via Beamline" | "Offline only" stays a promise proved by per-app accounting; online features never leak saved places or the position (docs/online-design.md section 3); report docs/experiments/29-batch-h.md |
 | 6.78 | Lane warning (owner, 2026-11-18; batch C1) | B9, D9: OSRM intersection lanes plus trace_attributes lane counts; a spot needs evidence of the road's own lane count | Peach St at Craig St warns; an added turn lane, the exit 24 trip and a short stretch after a turn (the pocket itself) do not |
-| 6.69 | While driving (saved places) | In GUIDING, REROUTING and ARRIVED nothing about saved places is created or changed, and using one needs no typing: sheets offer no Save or Edit, the list opened for a stop is pick-only, Settings' "Saved places" reads "Not while guiding", stop search opens without the keyboard (SP4) | Saving and naming are tasks for a parked car; Home, Work and the list stay one tap away for a stop |
+| 6.69 | While driving (saved places) | In GUIDING, REROUTING and ARRIVED nothing about saved places is created or changed, and using one needs no typing: sheets offer no Save or Edit, the list opened for a stop is pick-only, Settings' "Saved places" reads "Not while guiding", stop search opens with the keyboard up since 0.1.40 (P26: the owner) | Saving and naming are tasks for a parked car; Home, Work and the list stay one tap away for a stop |
 
 ### 6.38 Questions only the owner can answer
 
@@ -4640,7 +5140,7 @@ turn that changes rows 7-10.)
 
 | # | Where | Banner | Lanes | Camera | Markers and line |
 |---|---|---|---|---|---|
-| 0 | Route sheet | none | none | PREVIEW: top-down, north up, the whole route and both pins in view | puck (blue B, white ring); route line blue B with casing; grey lines for other choices when they differ; destination pin. Cards: one card per distinct route, labels merged ("Fastest · …"); no Eco; toggles off |
+| 0 | Route sheet | none | none | PREVIEW: top-down, north up, the whole route and both pins in view | puck (blue B, white ring); route line blue B with casing; grey lines for other choices when they differ (a tap on one chooses it, P23); destination pin. Cards: one card per distinct route, labels merged ("Fastest · …"); no Eco; toggles off |
 | 1 | Start (0 m) | "Exit 24", "US 19 / Peach St", "toward Waterford", distance "2.6 mi"; chip "Then" left arrow "In 0.3 mi" | none (no lane data at the exit) | GUIDE_FOLLOW: pitch 60 (K3), heading up along I-90 east, arrow in the lower third, zoom from speed | puck replaced by the arrow on the line; lenses dark; no beam (day); trip bar "Arrive h:mm", remaining time, "3.3 mi"; "Simulated" badge |
 | 2 | 1.0 mi before the exit | "1.0 mi", chip unchanged "In 0.3 mi" | none | follow; user pans: GUIDE_FREE, Recenter shown; 15 s later back to follow | driven part behind the arrow in the traveled colour |
 | 3 | 0.5 mi before the exit (sketch frame 1) | "0.5 mi", chip "In 0.3 mi" | none | follow | as before |

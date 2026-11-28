@@ -1,8 +1,12 @@
 package io.github.spysyweeb.beamline.feature.search
 
 import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.WindowInsets
 import androidx.compose.foundation.layout.size
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.semantics.SemanticsActions
@@ -12,7 +16,9 @@ import androidx.compose.ui.test.assertIsDisplayed
 import androidx.compose.ui.test.getBoundsInRoot
 import androidx.compose.ui.test.hasTestTag
 import androidx.compose.ui.test.hasText
+import androidx.compose.ui.test.onAllNodesWithText
 import androidx.compose.ui.test.junit4.v2.createComposeRule
+import androidx.compose.ui.test.onNodeWithContentDescription
 import androidx.compose.ui.test.onNodeWithTag
 import androidx.compose.ui.test.onNodeWithText
 import androidx.compose.ui.test.performClick
@@ -26,6 +32,7 @@ import androidx.compose.ui.test.swipeUp
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.height
 import androidx.test.ext.junit.runners.AndroidJUnit4
+import androidx.test.platform.app.InstrumentationRegistry
 import io.github.spysyweeb.beamline.api.model.GeoPoint
 import io.github.spysyweeb.beamline.api.model.Place
 import io.github.spysyweeb.beamline.api.model.PlaceSource
@@ -65,6 +72,31 @@ class SheetHeightsScreensTest {
         compose.waitForIdle()
     }
     private fun rowsShown() = compose.onAllNodes(hasTestTag(RESULTS_ROWS_TAG)).fetchSemanticsNodes().isNotEmpty()
+
+    /** P2 and P6 (e), 0.1.40: "Other matches" over the name-only rows, in the window and on the search screen; the count line says where. */
+    @Test
+    fun otherMatchesHeadingAndNearLine() {
+        val five = (0 until 5).map { ResultRowUi("h$it", "hospital", "Hospital $it", "Erie", "${it + 1} mi", null, otherMatch = it >= 3) }
+        show { Box(Modifier.size(360.dp, 700.dp)) { ResultsSheetContent(ResultsUi("hospital", five, emptyList(), nearText = "Near Corry"), { events.add(it) }, Modifier.align(Alignment.BottomCenter)) } }
+        compose.onNodeWithText("5 places · Near Corry").assertIsDisplayed()
+        val heading = compose.onAllNodesWithText("Other matches").fetchSemanticsNodes()
+        assertEquals(1, heading.size)
+        assertTrue(heading[0].config.contains(SemanticsProperties.Heading))
+        val top = heading[0].boundsInRoot.top
+        val row2 = compose.onNodeWithContentDescription("Hospital 2", substring = true).fetchSemanticsNode().boundsInRoot.top
+        val row3 = compose.onNodeWithContentDescription("Hospital 3", substring = true).fetchSemanticsNode().boundsInRoot.top
+        assertTrue("heading $top between rows $row2 and $row3", top in row2..row3)
+        compose.onNodeWithContentDescription("Hospital 3", substring = true).performClick()
+        assertEquals(listOf<Any>(ResultsEvent.Select(3)), events)
+    }
+
+    /** P2 (0.1.40): the same heading in the search screen's list. */
+    @Test
+    fun otherMatchesHeadingOnTheSearchScreen() {
+        val five = (0 until 5).map { ResultRowUi("h$it", "hospital", "Hospital $it", "Erie", "${it + 1} mi", null, otherMatch = it >= 3) }
+        show { SearchScreen(SearchUi(query = "hospital", phase = SearchPhase.RESULTS, results = five), {}) }
+        assertEquals(1, compose.onAllNodesWithText("Other matches").fetchSemanticsNodes().size)
+    }
 
     @Test
     fun resultsListHeightsByHandleTapAndActions() {
@@ -120,6 +152,39 @@ class SheetHeightsScreensTest {
         compose.onNodeWithText("Sheetz 12", useUnmergedTree = true).performClick()
         compose.waitForIdle()
         assertTrue(events.toString(), events.contains(ResultsEvent.Select(12)))
+    }
+
+    /**
+     * P1 (0.1.40, T5 of landscape.md): with a navigation bar or a cutout at the sides the place window's and the results
+     * list's content keeps clear of them, while their surfaces still reach the edges.
+     */
+    @Test
+    fun placeWindowAndResultsKeepTheirContentOffTheBars() {
+        val place = Place("Erie Maritime Museum", GeoPoint(42.13646, -80.08718), PlaceSource.SEARCH, "100 East Front Street, Erie", "museum")
+        val ui = PlaceSheetUi(place, "museum", place.name, place.subtitle, "2.3 mi", null, listOf(PlaceAction.DIRECTIONS, PlaceAction.SAVE))
+        val bars = WindowInsets(left = 40.dp, right = 48.dp)
+        var list by mutableStateOf(false)
+        show {
+            Box(Modifier.size(400.dp, 600.dp)) {
+                if (list) ResultsSheetContent(results("bars"), {}, Modifier.align(Alignment.BottomCenter), insets = bars)
+                else PlaceSheetContent(ui, {}, Modifier.align(Alignment.BottomCenter), insets = bars)
+            }
+        }
+        val d = InstrumentationRegistry.getInstrumentation().targetContext.resources.displayMetrics.density
+        fun px(v: Float) = v * d
+        val sheet = compose.onNodeWithTag(PLACE_SHEET_TAG).getBoundsInRoot()
+        val left = sheet.left.value * d
+        assertTrue("the surface spans the box: $sheet", kotlin.math.abs((sheet.right - sheet.left).value - 400f) < 1f)
+        val actions = compose.onNodeWithTag(PLACE_PEEK_ACTIONS_TAG).fetchSemanticsNode().boundsInRoot
+        assertTrue("actions start at ${actions.left - left} px", actions.left - left >= px(56f) - 1f)
+        val close = compose.onNodeWithContentDescription("Close").fetchSemanticsNode().boundsInRoot
+        assertTrue("Close ends at ${close.right - left} px", close.right - left <= px(352f) + 1f)
+        compose.runOnUiThread { list = true }
+        compose.waitForIdle()
+        val rl = compose.onNodeWithTag(RESULTS_SHEET_TAG).getBoundsInRoot()
+        assertTrue("the list spans the box: $rl", kotlin.math.abs((rl.right - rl.left).value - 400f) < 1f)
+        val x = compose.onNodeWithContentDescription(Texts.CLOSE_RESULTS).fetchSemanticsNode().boundsInRoot
+        assertTrue("Close results ends at ${x.right - rl.left.value * d} px", x.right - rl.left.value * d <= px(352f) + 1f)
     }
 
     /** Item 47 (the owner, 2026-11-25): a new place opens at peek, with its name, Directions and Save. */

@@ -3,16 +3,35 @@ package io.github.spysyweeb.beamline.feature.drive
 import android.content.res.Configuration
 import android.os.SystemClock
 import androidx.activity.ComponentActivity
+import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.WindowInsets
+import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.foundation.layout.wrapContentSize
+import androidx.compose.ui.Alignment
+import androidx.compose.ui.test.hasAnyAncestor
+import androidx.compose.ui.test.hasTestTag
+import androidx.compose.runtime.CompositionLocalProvider
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.setValue
+import androidx.compose.ui.Modifier
 import androidx.compose.ui.geometry.Offset
+import androidx.compose.ui.platform.LocalConfiguration
+import androidx.compose.ui.platform.LocalDensity
+import androidx.compose.ui.platform.testTag
+import androidx.compose.ui.semantics.SemanticsProperties
 import androidx.compose.ui.test.assertIsDisplayed
+import androidx.compose.ui.test.getUnclippedBoundsInRoot
 import androidx.compose.ui.test.junit4.v2.createAndroidComposeRule
 import androidx.compose.ui.test.onNodeWithTag
 import androidx.compose.ui.test.onNodeWithText
+import androidx.compose.ui.test.performScrollTo
 import androidx.compose.ui.test.performTouchInput
 import androidx.compose.ui.test.swipe
+import androidx.compose.ui.unit.Density
+import androidx.compose.ui.unit.DpRect
+import androidx.compose.ui.unit.DpSize
 import androidx.compose.ui.unit.dp
 import androidx.test.ext.junit.runners.AndroidJUnit4
 import io.github.spysyweeb.beamline.api.map.CameraMode
@@ -21,9 +40,15 @@ import io.github.spysyweeb.beamline.api.map.EdgeInsetsDp
 import io.github.spysyweeb.beamline.api.model.GeoPoint
 import io.github.spysyweeb.beamline.api.model.Place
 import io.github.spysyweeb.beamline.api.model.PlaceSource
+import io.github.spysyweeb.beamline.api.nav.GpsState
 import io.github.spysyweeb.beamline.api.nav.LiveBanner
 import io.github.spysyweeb.beamline.api.nav.Phase
 import io.github.spysyweeb.beamline.api.nav.TripStop
+import io.github.spysyweeb.beamline.feature.drive.Exit24.onRoad
+import io.github.spysyweeb.beamline.ui.theme.BeamlineTheme
+import io.github.spysyweeb.beamline.ui.theme.SHEET_HANDLE_TAG
+import org.junit.Assert.assertFalse
+import org.junit.Assert.assertTrue
 import io.github.spysyweeb.beamline.feature.drive.Exit24.choice
 import io.github.spysyweeb.beamline.feature.drive.Exit24.choosing
 import io.github.spysyweeb.beamline.feature.drive.Exit24.downsDrive
@@ -130,6 +155,35 @@ class DriveLandscapeTest {
         assertEquals(EdgeInsetsDp(), insets)
     }
 
+    /**
+     * Play test P10 (review): the tester's emulator on its side (915 x 412 dp, laid out from the window's top start, so
+     * the panel is on screen whatever the system bars take). Guided with the stops editor open, the editor in the side
+     * panel stops under the banner (it reached over the turn), with Done, Add stop and the first stop in view.
+     */
+    @Test
+    fun tallPhone() {
+        val three = listOf(TripStop(sheetz), TripStop(zoo), TripStop(downsDrive))
+        ui = present(guiding(banner = LiveBanner(Exit24.arriveView, 100.0, false), stops = three), stopsEditorOpen = true)
+        compose.setContent {
+            BeamlineTheme(night = false) {
+                Box(Modifier.fillMaxSize()) {
+                    Box(Modifier.wrapContentSize(Alignment.TopStart, unbounded = true).size(915.dp, 412.dp)) {
+                        DriveOverlayContent(ui, {}, { insets = it }, safe = WindowInsets(top = 24.dp))
+                    }
+                }
+            }
+        }
+        compose.waitForIdle()
+        val banner = rect(DriveTags.BANNER)
+        val editor = rect(DriveTags.STOPS_EDITOR)
+        saveDeviceScreen("land412-stops-editor-guided-day")
+        assertTrue("banner $banner, editor $editor", banner.bottom <= editor.top + px)
+        compose.onNodeWithTag(DriveTags.CLOSE_STOPS).assertIsDisplayed()
+        compose.onNode(hasTestTag(DriveTags.ADD_STOP) and hasAnyAncestor(hasTestTag(DriveTags.STOPS_EDITOR))).assertIsDisplayed()
+        compose.onNodeWithTag(DriveTags.stopRow(0)).assertIsDisplayed()
+        assertEquals(EdgeInsetsDp(start = 400f), insets)
+    }
+
     /** A 16:9 phone on its side (640 x 360 dp): the narrowest panel, 320 dp. */
     @Test
     fun smallPhone() {
@@ -164,5 +218,168 @@ class DriveLandscapeTest {
         // eight lanes in the narrowest panel (320 dp)
         show(present(guiding(banner = Exit24.eightLanes)), false)
         compose.assertLanesWhole(8)
+    }
+
+    /**
+     * The 0.1.40 replay (item 51, P10): the tester's phone on its side (914 x 411 dp), guided with one stop and the
+     * destination, the stops editor open under the banner. Both stop rows are whole (the second was cut in half under
+     * the empty note line kept below Add stop); a note with Undo that comes and goes then does not move Done (the
+     * editor is as tall as the panel lets it be: the rows give the room). With three stops the rows say they scroll.
+     */
+    @Test
+    fun theStopsEditorUnderTheBannerShowsItsRowsWhole() {
+        val two = listOf(TripStop(sheetz), TripStop(downsDrive))
+        val arrive = LiveBanner(Exit24.arriveView, 100.0, false)   // a two-line banner, as the replay's turn
+        ui = present(guiding(banner = arrive, stops = two), stopsEditorOpen = true)
+        compose.setContent {
+            BeamlineTheme(night = false) {
+                Box(Modifier.fillMaxSize()) {
+                    Box(Modifier.wrapContentSize(Alignment.TopStart, unbounded = true).size(914.dp, 411.dp)) {
+                        DriveOverlayContent(ui, {}, { insets = it }, safe = WindowInsets(top = 24.dp))
+                    }
+                }
+            }
+        }
+        compose.waitForIdle()
+        saveDeviceScreen("land411-stops-editor-two-stops-day")
+        val banner = rect(DriveTags.BANNER)
+        val editor = rect(DriveTags.STOPS_EDITOR)
+        assertTrue("banner $banner, editor $editor", banner.bottom <= editor.top + px)
+        compose.assertWhollyShown(DriveTags.stopRow(0))
+        compose.assertWhollyShown(DriveTags.stopRow(1))
+        compose.onNodeWithTag(DriveTags.STOPS_MORE_BELOW).assertDoesNotExist()
+        val done = rect(DriveTags.CLOSE_STOPS)
+        compose.runOnUiThread { ui = ui.copy(stopsEditor = ui.stopsEditor!!.copy(note = "Stop removed", canUndo = true)) }
+        compose.waitForIdle()
+        compose.onNodeWithTag(DriveTags.STOPS_UNDO).assertIsDisplayed()
+        assertEquals("Done with the note", done.top.value, rect(DriveTags.CLOSE_STOPS).top.value, 0.5f)
+        compose.runOnUiThread { ui = ui.copy(stopsEditor = ui.stopsEditor!!.copy(note = null, canUndo = false)) }
+        compose.waitForIdle()
+        assertEquals("Done after the note", done.top.value, rect(DriveTags.CLOSE_STOPS).top.value, 0.5f)
+        compose.runOnUiThread { ui = present(guiding(banner = arrive, stops = listOf(TripStop(sheetz), TripStop(zoo), TripStop(downsDrive))), stopsEditorOpen = true) }
+        compose.waitForIdle()
+        saveDeviceScreen("land411-stops-editor-three-stops-day")
+        compose.assertWhollyShown(DriveTags.stopRow(0))
+        compose.onNodeWithTag(DriveTags.STOPS_MORE_BELOW).assertExists()
+    }
+
+    /**
+     * The same on the emulator of the replay: the stops editor opened upright, then the phone turned on its side (the
+     * window's height changes under the open editor): the rows are whole on its side too.
+     */
+    @Test
+    fun theStopsEditorTurnedOnItsSideShowsItsRowsWhole() {
+        var turned by mutableStateOf(false)
+        ui = present(guiding(banner = LiveBanner(Exit24.arriveView, 100.0, false), stops = listOf(TripStop(sheetz), TripStop(downsDrive))), stopsEditorOpen = true)
+        compose.setContent {
+            val config = LocalConfiguration.current
+            val shown = Configuration(config).apply {
+                screenWidthDp = if (turned) 914 else 411
+                screenHeightDp = if (turned) 411 else 914
+            }
+            CompositionLocalProvider(LocalConfiguration provides shown) {
+                BeamlineTheme(night = false) {
+                    Box(Modifier.fillMaxSize()) {
+                        Box(Modifier.wrapContentSize(Alignment.TopStart, unbounded = true).size(if (turned) DpSize(914.dp, 411.dp) else DpSize(411.dp, 914.dp))) {
+                            DriveOverlayContent(ui, {}, { insets = it }, safe = WindowInsets(top = 24.dp))
+                        }
+                    }
+                }
+            }
+        }
+        compose.waitForIdle()
+        compose.runOnUiThread { turned = true }
+        compose.waitForIdle()
+        assertEquals(EdgeInsetsDp(start = 400f), insets)
+        compose.assertWhollyShown(DriveTags.stopRow(0))
+        compose.assertWhollyShown(DriveTags.stopRow(1))
+    }
+
+    private fun state(): String = compose.onNodeWithTag(SHEET_HANDLE_TAG).fetchSemanticsNode().config[SemanticsProperties.StateDescription]
+
+    private val px = 0.5.dp
+    private fun rect(tag: String): DpRect = compose.onNodeWithTag(tag).getUnclippedBoundsInRoot()
+    private fun overlaps(a: DpRect, b: DpRect) = a.left < b.right && b.left < a.right && a.top < b.bottom && b.top < a.bottom
+
+    /**
+     * Play test P52: a route sheet opened upright (the middle height) and then turned into the side panel opens at the
+     * panel's height (full: the options and the steps), says it scrolls further, and turned back is at the middle again.
+     */
+    @Test
+    fun turningIntoTheSidePanelShowsTheWholeRouteSheet() {
+        var box by mutableStateOf(DpSize(500.dp, 360.dp))
+        ui = DriveUi(planning = Exit24.routeSheet(steps = 7))
+        compose.setContent {
+            CompositionLocalProvider(LocalDensity provides Density(LocalDensity.current.density, 1.3f)) {
+                BeamlineTheme(night = false) { Box(Modifier.size(box)) { DriveOverlayContent(ui, {}, { insets = it }) } }
+            }
+        }
+        compose.waitForIdle()
+        // narrower than 560 dp: under the map, at the middle height
+        assertEquals("Half open", state())
+        compose.runOnUiThread { box = DpSize(800.dp, 360.dp) }
+        compose.waitForIdle()
+        assertEquals("Full height", state())
+        assertEquals(EdgeInsetsDp(start = 400f), insets)
+        compose.onNodeWithTag(DriveTags.MORE_BELOW).assertExists()
+        compose.assertWhollyShown(DriveTags.START)
+        // review (0.1.40): the selected card is brought into view clear of the fade, not under it ("cut off above Start")
+        val card = rect(DriveTags.card(1))
+        val fade = rect(DriveTags.MORE_BELOW)
+        assertTrue("card $card, fade $fade", card.bottom <= fade.top + px)
+        compose.saveShotOf(DriveTags.OVERLAY, "land-sheet-turned-font130-day")
+        compose.onNodeWithTag(SHOW_ALL_STEPS_TAG).performScrollTo()
+        compose.waitForIdle()
+        compose.onNodeWithTag(DriveTags.MORE_BELOW).assertDoesNotExist()
+        compose.runOnUiThread { box = DpSize(500.dp, 360.dp) }
+        compose.waitForIdle()
+        assertEquals("Half open", state())
+    }
+
+    /**
+     * Play test P32 (and P1 inside the overlay): on its side with a navigation bar at the end, the road label's end room
+     * counts from the bar, as the map buttons' does: a long name never runs under Overview.
+     */
+    @Test
+    fun roadLabelKeepsClearOfTheButtonsBesideANavigationBar() {
+        ui = present(onRoad(guiding(banner = frame2), "General Strong Vincent Memorial Hwy"))
+        compose.setContent {
+            BeamlineTheme(night = false) {
+                Box(Modifier.size(800.dp, 360.dp).testTag("box")) {
+                    DriveOverlayContent(ui, {}, { insets = it }, safe = WindowInsets(top = 24.dp, right = 48.dp))
+                }
+            }
+        }
+        compose.waitForIdle()
+        val box = rect("box")
+        val label = rect(DriveTags.CURRENT_ROAD)
+        val overview = rect(DriveTags.OVERVIEW)
+        assertFalse("label $label overlaps Overview $overview", overlaps(label, overview))
+        assertTrue("Overview $overview, box $box", overview.right <= box.left + 752.dp + px)
+        assertTrue("label $label, box $box", label.right <= box.left + 676.dp + px)
+    }
+
+    /**
+     * Play test P7: the overlay reports where its top stack ends (the banner, and the chip under it), so the app keeps
+     * the windows it puts in the side panel under the banner; 0 with nothing at the top.
+     */
+    @Test
+    fun theTopStackIsReportedForTheWindowsInThePanel() {
+        var top = -1f
+        ui = present(guiding(banner = frame2))
+        compose.setContent {
+            BeamlineTheme(night = false) {
+                Box(Modifier.size(800.dp, 360.dp).testTag("box")) { DriveOverlayContent(ui, {}, { insets = it }, onTopStack = { top = it }) }
+            }
+        }
+        compose.waitForIdle()
+        val box = rect("box")
+        val banner = rect(DriveTags.BANNER)
+        assertEquals("the banner block ends with the banner", (banner.bottom - box.top).value, top, 1f)
+        show(present(guiding(banner = frame2, gps = GpsState.WEAK)), false)
+        val chip = rect(DriveTags.STATUS_CHIP)
+        assertTrue("top $top, chip $chip", top >= (chip.bottom - box.top).value - 1f)
+        show(DriveUi(), false)
+        assertEquals(0f, top)
     }
 }

@@ -19,7 +19,7 @@ fun SearchScreen(ui: SearchUi, onEvent: (SearchEvent) -> Unit, modifier: Modifie
 @Composable
 fun PlaceSheet(ui: PlaceSheetUi, onEvent: (PlaceSheetEvent) -> Unit, modifier: Modifier = Modifier): Unit = PlaceSheetContent(ui, onEvent, modifier)
 
-/** The results on the map after Enter (rule S11): the list at the bottom, pulled up for more. */
+/** The results on the map after Enter (rule S11): the list at the bottom, pulled up for more; item 51's stop results (S12): "Working out detours...", "+N min", the selected one's card with "Add stop". */
 @Composable
 fun ResultsSheet(ui: ResultsUi, onEvent: (ResultsEvent) -> Unit, modifier: Modifier = Modifier): Unit = ResultsSheetContent(ui, onEvent, modifier)
 

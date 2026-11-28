@@ -82,20 +82,33 @@ below are Pennsylvania's: 548 MB measured (appendix A) plus a placeholder of 31 
    - While the list loads, a line under it: "Getting the list of states…"
    - The **US map** card (at most 40 % of the screen height): all 50 states and DC, Alaska and
      Hawaii in insets at the lower left; postal codes on states wide enough to hold them; pinch and
-     double-tap zoom; a "Whole country" chip appears when zoomed in. Colours and outlines by status
+     double-tap zoom about the finger; the map stays on the country (at 1x it does not move, and a
+     one-finger drag on it scrolls the list; zoomed in, one finger pans and the card's edge stops 16 dp
+     past the country's); a "Whole country" chip appears under the map when zoomed in (in portrait in a
+     row that keeps its height, so the list does not move). Colours and outlines by status
      (6.8). A tap outside every state (the sea, Canada, Mexico) shows "Tap a state, or pick it from
      the list." under the map for 3 seconds.
-   - A search field: "Search states" (filters the list by name or postal code).
+   - A search field: "Search states" (filters the whole list, the states on this phone included, by
+     name or postal code; a Clear button empties it; when nothing matches, the line "No state matches
+     your search." shows under it; a search that hides the selected state clears the selection, and the
+     map goes back to the whole country).
    - The **list**: section "Available" (each row: name, line "579 MB download · data from Nov 14,
-     2026"), section "Not available yet" (line "Not available yet"), and if any, "Needs a newer
-     Beamline" (line "Needs a newer version of Beamline").
-   - A **bar fixed to the bottom of the screen**, outside the scrolling list, so it is always
-     visible and reached without passing the 51 rows (also first in TalkBack's order after the
-     title): two text buttons, **Use a file instead** and **Not now**.
-   Map and list are always both on the screen and always agree: a tap on a state on the map
-   selects it (the list scrolls to its row, the row is highlighted); a tap on a row selects it (the
-   map zooms to the state and outlines it). Either way the **state sheet** opens. A tap never
-   starts a download.
+     2026"), section "Not available yet" (rows without a line: the heading says it, and TalkBack reads it
+     as the row's state), and if any, "Needs a newer Beamline" (likewise, "Needs a newer version of
+     Beamline" as the row's state).
+   - A **bar fixed to the bottom of the screen**, outside the scrolling list, so it is visible
+     and reached without passing the 51 rows (also first in TalkBack's order after the
+     title): two text buttons, **Use a file instead** and **Not now**, the second under the first when
+     they do not fit side by side (a large font). It is hidden while the keyboard is up.
+   Map and list always agree: a tap on a state on the map selects it (outlined, its row highlighted;
+   the map does not zoom, since the sheet opens over it; in landscape the list scrolls the row to just
+   under the search field when it is not in view); a tap on a row selects it (the map zooms to the
+   state and outlines it). Either way the **state sheet** opens. A tap never starts a download. In
+   portrait the banners, the progress view, the map card and the search field scroll with the list
+   (the search field stays at the top once it gets there, and goes there when it is focused), so the
+   list keeps its room with the keyboard up, at a large font and during a download. In landscape the
+   title (and on the States screen its Back arrow) and the map are the left pane, and everything else
+   scrolls on the right.
 3. **A tap near small states** (DC, RI, DE, CT, NJ and others that are small on screen) opens a
    chooser first: title "Which one?", up to four rows, nearest first ("District of Columbia",
    "Maryland", "Virginia"). Picking one selects it as above.
@@ -190,15 +203,21 @@ The **States screen** (`StatesScreen(mode = MANAGE)`) replaces today's `PackMana
 opened from Settings → States, from the map's chip (1.5), from search's `OpenStates`
 (`docs/architecture.md` 2.6) and from the download notifications. Top to bottom:
 
-- Title **States**.
-- Section **On this phone**: one row per installed pack: "Pennsylvania" / "On this phone · data from
-  Nov 14, 2026 · 1.1 GB" / "Built Nov 15, 2026" (since 0.1.16: the date in the pack's `pack_version`, so a
+- A top bar as Settings has: a Back arrow (closes the screen) and the title **States**. Each visit
+  starts fresh: no search text, selection, sheet or banner from an earlier visit.
+- Section **On this phone**: one row per installed pack: "Pennsylvania" / "Data from
+  Nov 14, 2026 · 1.1 GB" (the heading says "On this phone") / "Built Nov 15, 2026" (since 0.1.16: the date in the pack's `pack_version`, so a
   rebuilt pack of the same OpenStreetMap day is told apart; absent for a pack without one; also in the
   map sheet of an installed state) / "House numbers: included" or "House numbers: not included" (from
   `PackInfo.addressesFile`; the second line is absent for a pack that has no house-number part),
-  text button **Remove**, and the house-number action below. A pack being downloaded or updated
+  the house-number action beside the house-number line, and text button **Remove** at the end of
+  the row in red. A tap on the row (or on the state on the map) opens its sheet: "On this
+  phone · data from Nov 14, 2026 · 1.1 GB", the row's other lines, "Up to date. List checked Nov 26,
+  2026." when the fetched list has nothing newer, the house-number line with its action beside it, then
+  [Update] (when there is one) and [Close] at the start and **Remove** apart at the far end, in red. A pack being downloaded or updated
   shows its progress line here ("Downloading · 43 %", "Waiting for Wi-Fi · 43 %", "Paused · 43 %",
-  "Installing…") and the progress view of 1.1 step 5 sits at the top of the screen. Packs copied in
+  "Installing…") and the progress view of 1.1 step 5 sits at the top of the list (in landscape, of the right pane) and
+  scrolls with it. Packs copied in
   other ways keep today's "copied outside the app, not checked" note.
 - Section **Add a state**: the same map card, search field and list as on the first run, without
   "Not now".
@@ -211,7 +230,7 @@ While another state is downloading, the sheet's Download button is disabled with
 state at a time. Pennsylvania is downloading."
 
 Removing: **Remove** → dialog "Remove Pennsylvania?" / "Its maps, directions and search are deleted
-from this phone. You can download it again." **[Remove]** [Keep]. During a trip
+from this phone. This frees 1.1 GB. You can download it again." **[Remove]** (red) [Keep]. During a trip
 (`InstalledSet.changesHeldBy` not null) Remove is disabled with the line "You can't remove a state
 during a trip."; while a download job for that state exists (an update or house numbers) it is
 disabled with "Pennsylvania is being updated. Cancel the update to remove it." If the installer
@@ -274,9 +293,9 @@ never be installed, or when the user cancels.
 | The phone's date or time is wrong (the server's certificate is "not yet valid" or "expired" for this clock) | List: banner "Can't check the list of states: your phone's date or time looks wrong. Check it in Settings, then try again." [Try again]. Download: **Download paused** / "Your phone's date or time looks wrong, so the download server can't be checked. Check it in Settings, then tap Continue." [Continue] [Cancel] | `CatalogProblem.CLOCK`; PAUSED(CLOCK), files kept (a certificate-date failure anywhere in the exception's cause chain; no retry loop, since retrying cannot help) |
 | This build has no catalog address | Banner: "Downloads are off in this build. Use a file instead: a state file (.tar) copied to this phone." (the file is the state's pack archive, `docs/pack-format.md`) | No network use at all |
 | The server's list is a newer format (`beamline-catalog/2` or later) | Banner: "This version of Beamline can't read the list of states. Update Beamline, or use a file." | Cached list (if any) still shown and usable |
-| One entry is newer than the app (manifest version, part encoding) | Row line "Needs a newer version of Beamline"; sheet "This download needs a newer version of Beamline." [Use a file instead] | No download offered |
+| One entry is newer than the app (manifest version, part encoding) | Listed under "Needs a newer Beamline" (no row line; TalkBack reads "Needs a newer version of Beamline" as the row's state); sheet "This download needs a newer version of Beamline." [Use a file instead] [Close] (both text buttons) | No download offered |
 | One entry is older than the app reads, or broken | Listed under "Not available yet" | No download offered (2.3 rule 3) |
-| The tapped state has no pack | Sheet: "There's no download for Rhode Island yet." and, when neighbours have one, "Nearby states you can download: Connecticut, Massachusetts." [Use a file instead] [Close] | Nothing; no "notify me" (it would need to send something about the user) |
+| The tapped state has no pack | Sheet: "There's no download for Rhode Island yet." and, when neighbours have one, "Nearby states you can download: Connecticut, Massachusetts.", then "You can also install a state file (.tar) copied to this phone." [Use a file instead] [Close] (both text buttons) | Nothing; no "notify me" (it would need to send something about the user) |
 | Not enough space, before starting | Sheet as in 1.1 step 4 ("Needs about 1.9 GB free…", [Free up space]) | Download not offered until the estimate fits |
 | Not enough space, found at CHECKING or during the download | Progress view: **Not enough space** / "Pennsylvania needs 1.9 GB free. This phone has 0.8 GB free." [Free up space] [Continue] [Cancel]; notification "Download paused" / "Not enough space. Open Beamline to see what's needed." | PAUSED(NO_SPACE); files kept; Continue checks again |
 | Mobile data only | Sheet choice of 1.1 step 4. If Wi-Fi is lost mid-download: **Waiting for Wi-Fi** / "238 MB of 579 MB. The download goes on when you're on Wi-Fi." [Use mobile data] [Cancel]; same in the notification (action Use mobile data) | WAITING(NOT_UNMETERED); goes on by itself on an unmetered network, or at once after "Use mobile data"; after 6 h of waiting, PAUSED(SYSTEM_STOPPED) with files kept and the "Download paused" notification |
@@ -2088,10 +2107,12 @@ rows at least 48 dp, one row per state with `mergeDescendants`, a unique descrip
 name), `stateDescription` from the row, section titles as `heading()`, the progress text in a
 `liveRegion = Polite`, the sheet with `paneTitle`; the map card has one description, "Map of the
 United States. The list below has every state.", and stays tappable; status never by colour alone
-(outline style and the list line say it too); texts reflow at 200 % font size. The bottom bar
-(Use a file instead, Not now) is a fixed `Row` outside the `LazyColumn`, placed right after the
-title in traversal order (`traversalIndex`), so a TalkBack user reaches it without passing the
-list.
+(outline style, the section heading and the row's TalkBack state say it too); texts reflow at 200 %
+font size. The bottom bar
+(Use a file instead, Not now) is a fixed `FlowRow` (a traversal group) outside the `LazyColumn`,
+placed right after the top bar (on the States screen: Back, then the title) in traversal order
+(`traversalIndex`), so a TalkBack user reaches it without passing the list; it is hidden while the
+keyboard is up.
 
 ### 6.8 The drawn US map and the tap
 
@@ -2150,7 +2171,11 @@ IN_PROGRESS `primaryContainer` with a 2 dp primary outline and " ↓"; NOT_AVAIL
 with a dashed 1 dp outline; UNKNOWN as AVAILABLE without labels' marks; the selected state a 3 dp
 `onSurface` outline. Postal codes at the label point when the state's box is at least 28 dp wide on
 screen. Paths are built once per asset load and scaled with the transform. Zoom 1× (fit to the
-card with 16 dp margins) to 8×; a list selection animates to the state's box at 60 % of the card.
+card with 16 dp margins) to 8×, pinch and double tap about the finger; one finger pans only when
+zoomed in (at 1× the drag is left to the list around the map); the centre is clamped so the card never
+shows more than its 16 dp margin past the map's box; a list selection animates to the state's box at
+60 % of the card (clamped the same way); a selection made on the map is outlined, not zoomed; a
+selection a search hides goes back to the whole country.
 
 **The tap** (`StateHitTest.resolve`, pure, JVM-tested): inverse-transform to map units; candidates
 = states whose box grown by 16 dp contains the point; inside = the candidate whose rings contain
@@ -2834,7 +2859,7 @@ the download server" with every byte kept, and reopening the demo after the serv
 continues it; a Pause from the notification leaves the "Download paused" notification; the debug
 StrictMode policy logs no "Untagged socket" line during a download and `adb shell dumpsys netstats
 detail` shows the demo's traffic under tag `0xb1a` (the factory of rule N1 works); screenshots of
-every view, day and night, looked at; TalkBack reaches the bottom bar right after the title and
+every view, day and night, looked at; TalkBack reaches the bottom bar right after the top bar (Back and the title) and
 reads the list rows and the progress (on an emulator image without TalkBack: `ReadingOrderTest` of
 `:feature:states`, which follows the traversal links a screen reader is given; TalkBack itself in
 I's phone run, 10.4).

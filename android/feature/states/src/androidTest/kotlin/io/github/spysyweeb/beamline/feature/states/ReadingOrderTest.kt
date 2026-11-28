@@ -20,36 +20,30 @@ import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.foundation.layout.Row
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.semantics.SemanticsProperties
 import androidx.compose.ui.semantics.heading
 import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.semantics.traversalIndex
+import androidx.compose.ui.semantics.getOrNull
+import androidx.compose.ui.test.assert
+import androidx.compose.ui.test.assertCountEquals
+import androidx.compose.ui.test.assertIsOn
+import androidx.compose.ui.test.hasClickAction
+import androidx.compose.ui.test.hasSetTextAction
+import androidx.compose.ui.test.hasText
+import androidx.compose.ui.test.isToggleable
 import androidx.compose.ui.test.junit4.v2.createComposeRule
+import androidx.compose.ui.test.performClick
 import androidx.test.ext.junit.runners.AndroidJUnit4
 import androidx.test.platform.app.InstrumentationRegistry
 import io.github.spysyweeb.beamline.api.data.InstalledSet
-import io.github.spysyweeb.beamline.api.data.PackInfo
-import io.github.spysyweeb.beamline.api.model.Bounds
-import io.github.spysyweeb.beamline.download.Catalog
-import io.github.spysyweeb.beamline.download.CatalogLicence
-import io.github.spysyweeb.beamline.download.CatalogPack
-import io.github.spysyweeb.beamline.download.CatalogPart
-import io.github.spysyweeb.beamline.download.CatalogState
-import io.github.spysyweeb.beamline.download.CatalogView
 import io.github.spysyweeb.beamline.download.DownloadJob
-import io.github.spysyweeb.beamline.download.JobKind
-import io.github.spysyweeb.beamline.download.JobPhase
-import io.github.spysyweeb.beamline.download.JobProgress
-import io.github.spysyweeb.beamline.download.NetworkState
-import io.github.spysyweeb.beamline.download.TransferFile
 import io.github.spysyweeb.beamline.feature.states.map.StateShapes
-import io.github.spysyweeb.beamline.feature.states.model.StatesInput
-import io.github.spysyweeb.beamline.feature.states.model.StatesPresenter
+import io.github.spysyweeb.beamline.feature.states.model.HouseNumbersUi
+import io.github.spysyweeb.beamline.feature.states.model.StatesEvent
 import io.github.spysyweeb.beamline.feature.states.model.StatesUi
 import io.github.spysyweeb.beamline.feature.states.model.Texts
 import io.github.spysyweeb.beamline.ui.theme.BeamlineTheme
-import io.github.spysyweeb.beamline.units.UnitFormatter
-import io.github.spysyweeb.beamline.units.UnitRules
-import io.github.spysyweeb.beamline.units.UnitSystem
 import org.junit.After
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertNull
@@ -58,7 +52,6 @@ import org.junit.Before
 import org.junit.Rule
 import org.junit.Test
 import org.junit.runner.RunWith
-import java.time.ZoneId
 
 /** Test APK only: enabled by ReadingOrderTest so that an accessibility service runs, as TalkBack would. */
 class ReadingOrderProbe : AccessibilityService() {
@@ -121,40 +114,12 @@ class ReadingOrderTest {
 
     // ------------------------------------------------------------------ inputs (the presenter's own texts)
 
-    private val shapes: StateShapes by lazy {
-        context.assets.open("states/us_states.json").use { StateShapes.parse(it.readBytes().decodeToString()) }
-    }
-    private val hex = "a".repeat(64)
-    private val now = 1_794_830_400_000L // Nov 16, 2026, 12:00 UTC
+    private val shapes: StateShapes get() = StatesTestInputs.shapes
 
-    private fun part(name: String, file: String, bytes: Long, transfer: Long) =
-        CatalogPart(name, file, false, bytes, hex, TransferFile("../us-pa-1/$file.gz", if (transfer == bytes) "identity" else "gzip", transfer, hex), "© OpenStreetMap contributors")
+    private fun ui(mode: StatesMode, job: DownloadJob? = null, installed: InstalledSet = InstalledSet(scanned = true), query: String = ""): StatesUi =
+        StatesTestInputs.ui(mode, job, installed, query)
 
-    private val pa = CatalogPack(
-        "us-pa", "PA", "Pennsylvania", 202611160419, 3, "2026-11-14", "© OpenStreetMap contributors", Bounds(-80.51985, 39.7198, -74.68956, 42.51607),
-        TransferFile("../us-pa-1/manifest.json", "identity", 1237, hex),
-        listOf(part("search", "search.sqlite", 154_705_920, 63_346_929), part("routing", "routing.tar", 634_429_440, 240_430_781), part("map", "map.pmtiles", 244_703_514, 244_703_514)),
-    )
-    private val catalog = CatalogState.Ready(
-        CatalogView(
-            Catalog(1, "2026-11-16T08:55:21Z", CatalogLicence("ODbL-1.0", "Open Database License 1.0", "https://opendatacommons.org/licenses/odbl/1-0/", "Map data © OpenStreetMap contributors, available under the Open Database License."), listOf(pa), emptyList()),
-            now, fromCache = false,
-        ),
-    )
-
-    private fun ui(mode: StatesMode, job: DownloadJob? = null, installed: InstalledSet = InstalledSet(scanned = true)): StatesUi = StatesPresenter.present(
-        StatesInput(
-            mode = mode, names = shapes.states.associate { it.code to it.name }, neighbours = shapes.states.associate { it.code to it.neighbours },
-            catalog = catalog, installed = installed, job = job, network = NetworkState(connected = true, unmetered = true),
-            units = UnitFormatter(UnitRules.bundled(), UnitSystem.IMPERIAL), nowMs = now, zone = ZoneId.of("America/New_York"),
-            freeBytes = 9_900_000_000, moves = true,
-        ),
-    )
-
-    private val downloading = DownloadJob(
-        "us-pa", 202611160419, "Pennsylvania", "PA", "2026-11-14", JobKind.INSTALL, false, false, true, JobPhase.DOWNLOADING,
-        JobProgress(238_000_000, 548_481_239, "routing", 1_900_000),
-    )
+    private val downloading get() = StatesTestInputs.downloading
 
     // ------------------------------------------------------------------ reading the order
 
@@ -185,7 +150,10 @@ class ReadingOrderTest {
      * traversalBefore names the next one (Compose sets them from its traversal order, which
      * traversalIndex and isTraversalGroup decide).
      */
-    private fun readingOrder(name: String, first: String): List<String> {
+    private fun readingOrder(name: String, first: String): List<String> = readingOrder(name, "the text '$first'") { it.text?.toString() == first }
+
+    /** The same, from the first node (depth first) that [match] accepts; [what] names it in a failure. */
+    private fun readingOrder(name: String, what: String, match: (AccessibilityNodeInfo) -> Boolean): List<String> {
         val until = SystemClock.uptimeMillis() + 10_000
         var why = "no window"
         while (SystemClock.uptimeMillis() < until) {
@@ -194,13 +162,13 @@ class ReadingOrderTest {
             runCatching { ua.waitForIdle(200, 2_000) }
             if (Build.VERSION.SDK_INT >= 34) ua.clearCache()
             val root = ua.rootInActiveWindow
-            val start = root?.let { r -> find(r) { it.text?.toString() == first } }
+            val start = root?.let { r -> find(r, match) }
             if (start == null) {
-                why = "no node with the text '$first'"
+                why = "no node with $what"
             } else if (start.traversalBefore == null) {
-                why = "'$first' has no traversal link (Compose computes them only while an accessibility service runs)"
+                why = "$what has no traversal link (Compose computes them only while an accessibility service runs)"
             } else {
-                assertNull("$name: something is read before '$first'", start.traversalAfter)
+                assertNull("$name: something is read before $what", start.traversalAfter)
                 val out = ArrayList<String>()
                 val seen = HashSet<AccessibilityNodeInfo>()
                 var n: AccessibilityNodeInfo? = start
@@ -248,24 +216,49 @@ class ReadingOrderTest {
         assertTrue("$order", order.at(Texts.PAUSE) > line && order.at(Texts.CANCEL) > line)
     }
 
+    /** P13: the top bar is read first (Back, then the title), then the bar fixed to the bottom. */
     @Test
     fun theStatesScreenReadsTheBarRightAfterTheTitle() {
-        val installed = InstalledSet(
-            scanned = true,
-            packs = listOf(
-                PackInfo(
-                    "us-pa", "Pennsylvania", "PA", "2026-11-14", Bounds(-80.5, 39.7, -74.7, 42.5), "© OpenStreetMap contributors", "/p/us-pa", "/p/us-pa/map.pmtiles",
-                    0, 14, "/p/us-pa/search.sqlite", null, false, null, null, true, true, 1_033_800_000, 202611160419,
-                ),
-            ),
-        )
-        val ui = ui(StatesMode.MANAGE, installed = installed)
+        val ui = ui(StatesMode.MANAGE, installed = StatesTestInputs.paInstalled())
         compose.setContent { BeamlineTheme(night = false) { StatesBody(ui, shapes, on = {}, onMapTap = {}) } }
-        val order = readingOrder("states", Texts.STATES_TITLE)
-        assertTrue("$order", Texts.USE_FILE in order[1])
+        val order = readingOrder("states", "a Back button") { it.isClickable && spoken(it) == Texts.BACK }
+        assertEquals("$order", Texts.BACK, order[0])
+        assertEquals("$order", Texts.STATES_TITLE, order[1])
+        assertTrue("$order", Texts.USE_FILE in order[2])
         assertTrue("$order", order.at(Texts.MAP_DESCRIPTION) > 1)
         val onPhone = order.at(Texts.ON_THIS_PHONE)
         assertTrue("the installed row is read: $order", onPhone > 1 && order.indexOfFirst { it.startsWith("Pennsylvania") } > onPhone)
+    }
+
+    /**
+     * P64 (audit F71): every node a screen reader can act on has a name, also the search field with
+     * words typed in (a placeholder is not drawn then; a label is).
+     */
+    @Test
+    fun everyTappableNodeHasAName() {
+        val ui = ui(StatesMode.MANAGE, installed = StatesTestInputs.paInstalled(), query = "Oio")
+        compose.setContent { BeamlineTheme(night = false) { StatesBody(ui, shapes, on = {}, onMapTap = {}) } }
+        compose.waitForIdle()
+        val nodes = compose.onAllNodes(hasClickAction() or isToggleable() or hasSetTextAction()).fetchSemanticsNodes()
+        assertTrue("no tappable node at all", nodes.isNotEmpty())
+        val nameless = nodes.filter { n ->
+            val text = n.config.getOrNull(SemanticsProperties.Text)?.joinToString(" ") { it.text }.orEmpty()
+            val description = n.config.getOrNull(SemanticsProperties.ContentDescription)?.joinToString(" ").orEmpty()
+            text.isBlank() && description.isBlank()
+        }
+        assertTrue("nodes without a name: ${nameless.map { it.config }}", nameless.isEmpty())
+    }
+
+    /** P64 (audit F71): the download sheet's house-number box is one stop, read with its name. */
+    @Test
+    fun theHouseNumbersBoxIsReadWithItsName() {
+        val events = ArrayList<StatesEvent>()
+        compose.setContent {
+            BeamlineTheme(night = false) { HouseNumbersRow(HouseNumbersUi(true, Texts.HOUSE_NUMBERS, "Adds 132 MB", null), on = { events += it }) }
+        }
+        compose.onAllNodes(hasClickAction()).assertCountEquals(1)
+        compose.onNode(isToggleable()).assert(hasText(Texts.HOUSE_NUMBERS)).assertIsOn().performClick()
+        compose.runOnIdle { assertEquals(listOf<StatesEvent>(StatesEvent.HouseNumbers(false)), events) }
     }
 
     /**

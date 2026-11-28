@@ -9,9 +9,9 @@ track M.
 |---|---|
 | `MapLibreController.kt` | The contract file (stubs filled): delegates to one `private val layers = Layers(context, map)`. |
 | `Layers.kt` | Sources, layers, theme colours, the vehicle marker and its glide (one display frame at a time), camera moves, taps, long presses, camera gestures. |
-| `RouteColors.kt` | Reads `route_colors.json` (the "selected" candidate, B). |
-| `SceneParts.kt` | Android-free parts: the route split at the traveled cursor, `RouteCut` and `RouteSources` (the line cut into far and near pieces, and which source a new scene changes), `routePlacement` (where the route layers go in a style, twice with the overview map), the tap rule (pins, saved markers, the POI label nearest the finger), sort keys, pin image ids, the POI layers of a composed style, `Glide` (where a gliding marker is at a given time); `Ids` (every source, layer and image id). |
-| `MarkerImages.kt` | The 11 marker pieces from `res/drawable-<density>/`, and the pins drawn on a Canvas. |
+| `RouteColors.kt` | Reads `route_colors.json` (the "selected" candidate, B; the alternatives' and the trip route's colours). |
+| `SceneParts.kt` | Android-free parts: the route split at the traveled cursor, `RouteCut` and `RouteSources` (the line cut into far and near pieces, and which source a new scene changes), `routePlacement` (where the route layers go in a style, twice with the overview map), the tap rule (pins, saved markers, the POI label nearest the finger, a route choice), sort keys, pin image ids, the POI layers of a composed style, `Glide` (where a gliding marker is at a given time); `Ids` (every source, layer and image id). |
+| `MarkerImages.kt` | The 11 marker pieces from `res/drawable-<density>/`, and the pins drawn on a Canvas (0.1.40: the start's ring pin). |
 | `res/drawable-<density>/marker_*.png`, `res/raw/route_colors.json` | Copies made by `scripts/sync_art.py` (do not edit). |
 | `scripts/sync_art.py` | Copies the marker PNGs (`data/art/markers/`, made by `build_markers.py --route-candidate B`) and `assets/route_colors.json`; `--check` exits 1 on any difference. |
 | `src/test/.../LayersJvmTest.kt` | JVM tests of the Android-free parts. |
@@ -19,8 +19,8 @@ track M.
 
 ## Use
 
-On every style (re)load call `controller.onStyleLoaded(style, theme)` (it adds the images, the seven
-GeoJSON sources and the 19 layers again, 30 in a style composed with the overview map and a state,
+On every style (re)load call `controller.onStyleLoaded(style, theme)` (it adds the images, the ten
+GeoJSON sources and the 27 layers again, 38 in a style composed with the overview map and a state,
 and redraws the last scene at once in the style's `theme`; the next `show` decides the theme again),
 and apply the camera director's current `target` again: `MapLibreMap.setStyle` cancels a camera ease
 that was running (seen on the emulator: a re-fit started just before a day/night reload never
@@ -36,7 +36,9 @@ copy, `roads_oneway@<pack>`), so above every road and bridge and below one-way a
 labels (`route_colors.json` layer_order):
 
 1. `beamline-saved-under`: the saved markers while guiding (`MapScene.savedBelowRoute`).
-2. `beamline-route-alternatives-casing`, `beamline-route-alternatives` (grey).
+2. `beamline-route-alternatives-casing`, `beamline-route-alternatives` (grey; each line carries its
+   choice id and `trip`: 0.1.40, P23, a tap on a route choice chooses it; item 51, the trip's own route
+   under a stop preview, `AlternativeLine.tripRoute`, in `route_colors.json` "trip_route", never tapped).
 3. `beamline-route-traveled-casing`, `beamline-route-traveled-near-casing`, `beamline-route-traveled`,
    `beamline-route-traveled-near` (the driven part, from the start to the traveled cursor).
 4. `beamline-route-casing`, `beamline-route-near-casing`, `beamline-route`, `beamline-route-near`
@@ -75,16 +77,25 @@ Above every style layer:
    `SceneParts.bubbleRing`) in the puck's blue at 16 % by day, 22 % by night (grey when stale), with
    a 1.5 dp edge blurred 2 dp; moves with the puck's glide; never drawn for the arrow.
 5. `beamline-saved-over`: the saved markers while browsing and choosing.
-6. `beamline-pins`: search results (batch B, S11: the destination pin's art at 80 %, under the others), stops (numbered), destination, picked place (anchored at the bottom).
+5a. `beamline-route-lights`: the traffic lights ahead while guiding (item 22, see Behaviour).
+5b. `beamline-route-step` (0.1.40, P21): the route step the route sheet shows (`MapScene.step`, only
+   while choosing), a white 7 dp disc ringed 3.5 dp in the route's casing, flat on the map. The lights
+   and the step never show together.
+6. `beamline-pins`: search results (batch B, S11: the destination pin's art at 80 %, under the others),
+   a chosen start (0.1.40, P22: the blue pin with a white ring, with the stops), stops (numbered),
+   destination, picked place (anchored at the bottom).
 7. `beamline-puck-cone`, `beamline-puck`: browsing (cone turns with the compass and lies on the map;
-   the dot stays round; stale: grey dot, no cone).
+   the dot stays round; stale: grey dot, no cone). The style's labels give way to the dot (it takes
+   its 64 dp in label placement, 0.1.40, P42), not to the cone: a label under the dot is hidden while
+   the dot is there, and so is its tap.
 8. `beamline-arrow-beam` (night map only, never stale), `beamline-arrow-glow` (stopped),
    `beamline-arrow` (or `arrow_stale`), `beamline-arrow-lit` (stopped): all turn with the course and
    lie on the road (`icon-pitch-alignment: map`), as SPEC.md says.
 
 Line widths: `widths_dp` of `route_colors.json`, exponential base 1.5 by zoom; casing and fill are
 two lines; colours per `MapScene.theme` (candidate B day/night, its `traveled` pair, the grey
-`alternative` pair; right after a style load the style's theme, until the next `show`). Saved markers: sprite `saved_home`, `saved_work`, `saved_place` (from the
+`alternative` pair, and per line the `trip_route` pair for a line with `trip` (item 51; today the same
+grey); right after a style load the style's theme, until the next `show`). Saved markers: sprite `saved_home`, `saved_work`, `saved_place` (from the
 style's sprite sheet), `icon-size` = the marker's scale, `symbol-sort-key` others 0, Work 1, Home 2,
 filter `zoom >= min_zoom`, upright (viewport alignment), overlap allowed. Only one of the two saved
 layers is visible, so no layer moves at run time; while guiding the markers are therefore below the
@@ -116,20 +127,22 @@ times their size and upright. When guiding ends the style's own values are put b
   the stops), then saved markers (the one on top: Home over Work over others,
   reported as `"saved:<id>"`), then the style's POI labels (`pois`, `pois_driving` and their copies;
   the named one nearest the finger on the screen; name from `name:en` or `name`, kind, the feature's
-  point); a box of 12 dp around the finger. Long press: `LongPress(point)`. A camera move started by
-  a user gesture: `CameraMovedByUser`.
+  point), then a route choice (0.1.40, P23: an alternative line under the finger where the chosen
+  line ahead is not, the lowest id, reported as `"route:<id>"`; the labels lie above the lines, so a
+  label wins; the trip's own route under a stop preview is never reported); a box of 12 dp around
+  the finger. Long press: `LongPress(point)`. A camera move started by a user gesture: `CameraMovedByUser`.
 
 ## Tests
 
-`sh tools/round/gradle.sh m :map:layers:testDebugUnitTest` (JVM, 18 tests): the colours copy equal
-to its source and its values, the split, the far and near pieces joining into the split, a cursor
+`sh tools/round/gradle.sh m :map:layers:testDebugUnitTest` (JVM, 25 tests): the colours copy equal
+to its source and its values (the trip route's read from "trip_route"), the split, the far and near pieces joining into the split, a cursor
 step on a 5,000-point line sending only the near pieces (`RouteSources`), the tap rule and the POI
-label nearest the finger, sort order, pin images, the glide (interpolation, a new point in the
+label nearest the finger, a route choice tapped (P23), sort order, pin images (the start's), the glide (interpolation, a new point in the
 middle of a glide, another look of the same point), the route placement and POI layers in composed
 styles (with and without the overview map, the real `day.json` composed by `StyleComposer`'s rules)
-and in the real `day.json`, the layer ids.
+and in the real `day.json`, the layer ids, the lights' and the step mark's place in the order.
 
-Device test (`MapLibreControllerDeviceTest`, 12 tests; a small offline style named the way
+Device test (`MapLibreControllerDeviceTest`, 16 tests; a small offline style named the way
 `StyleComposer` names layers, `roads_oneway@us-pa`, with a GeoJSON source and stand-in images for the
 three saved icons): the layer order around `roads_oneway@us-pa`, the saved layers' switch, a day to
 night reload with every layer back and the night colours (and the beam only at night), a style loaded
@@ -138,8 +151,9 @@ in the other theme than the last scene's, injected taps (a pin, Home over a star
 versus an app move, camera moves (centre with bearing and pitch, zoom kept, a padded box, an eased
 move), the glide of the arrow and of the puck read back from the rendered map, the route with the
 overview map (layer order, zoom ranges, and from a screenshot: the overview's label over the line at
-z7, the state's at z12), and a 5,000-point route whose cursor moves 150 steps (logs the main-thread
-time of `show()`). Run it with `am instrument` (never `connectedAndroidTest`, docs/architecture.md 5.3):
+z7, the state's at z12), a 5,000-point route whose cursor moves 150 steps (logs the main-thread
+time of `show()`), and a place label 24 dp above the puck that gives way to the dot while one 60 dp
+up under the cone stays (P42). Run it with `am instrument` (never `connectedAndroidTest`, docs/architecture.md 5.3):
 
 ```
 sh tools/round/gradle.sh m :map:layers:assembleDebugAndroidTest

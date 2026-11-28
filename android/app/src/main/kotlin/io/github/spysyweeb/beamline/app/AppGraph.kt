@@ -476,6 +476,9 @@ class AppGraph(context: Context, val dataDir: File, val locationLog: Boolean) {
     /** The place whose sheet is open (a PICKED pin), set by the screens. */
     val sheetPlace = MutableStateFlow<Place?>(null)
 
+    /** P21: the point of the route step the route sheet shows (MapScene.step), set by the screens. */
+    val stepMark = MutableStateFlow<GeoPoint?>(null)
+
     private val _mapStyle = MutableStateFlow<MapStyleState>(MapStyleState.Loading)
     val mapStyle: StateFlow<MapStyleState> = _mapStyle
 
@@ -547,11 +550,17 @@ class AppGraph(context: Context, val dataDir: File, val locationLog: Boolean) {
     init {
         scene = combine(
             combine(session.state, puck.puck, night) { t, p, n -> Triple(t, p, n) },
-            combine(sheetPlace, savedFeature.ui.map { it.mapPick?.place }.distinctUntilChanged()) { sheet, pick -> pick ?: sheet },
+            // item 51: the stop result looked at is the PICKED pin (its RESULT pin is left out)
+            combine(
+                sheetPlace,
+                savedFeature.ui.map { it.mapPick?.place }.distinctUntilChanged(),
+                search.results.map { r -> r?.takeIf { it.stop != null }?.selected?.let { r.places.getOrNull(it) } }.distinctUntilChanged(),
+            ) { sheet, pick, stop -> pick ?: sheet ?: stop },
             combine(saved.places, saved.showOnMap) { places, show -> if (show) places else emptyList() },
             search.results.map { r -> r?.places?.map { it.point } ?: emptyList() }.distinctUntilChanged(),
-        ) { (trip, p, n), picked, savedShown, results ->
-            mapper.scene(trip, p, if (n) MapTheme.NIGHT else MapTheme.DAY, picked, savedShown, results)
+            stepMark,
+        ) { (trip, p, n), picked, savedShown, results, step ->
+            mapper.scene(trip, p, if (n) MapTheme.NIGHT else MapTheme.DAY, picked, savedShown, results, step)
         }.stateIn(scope, SharingStarted.Eagerly, MapScene(MapTheme.DAY))
 
         // The style: recomposed when the installed generation or the theme changes (2.2), off the main thread.
@@ -700,6 +709,7 @@ class AppGraph(context: Context, val dataDir: File, val locationLog: Boolean) {
         is TripEvent.RerouteFailed -> "RerouteFailed ${e.problem.kind}"
         is TripEvent.Announce -> "Announce ${e.maneuverIndex} ${e.stage}"
         TripEvent.GuidanceEnded -> "GuidanceEnded"
+        TripEvent.StopsReordered -> "StopsReordered"
     }
 
     private fun statusName(s: InstallStatus): String = when (s) {

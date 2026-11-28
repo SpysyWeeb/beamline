@@ -5,8 +5,8 @@ Host app for track A's device checks of `:feature:about` (not shipped; applicati
 start-up order of docs/architecture.md 5.4 item 3 over a stand-in map: system splash,
 `SplashReveal` until "map ready", the first-run notice until accepted (kept in the demo's own
 preferences), then a menu: About (made-up but realistic content), Licences (the module's real
-notices file), the driver notice, and the icon's layers under circle, squircle and rounded masks
-with the themed (monochrome) preview. Uses `:feature:about`'s launcher icon and launch theme.
+notices file), the driver notice as About opens it, the first-run notice page, and the icon's
+layers under circle, squircle and rounded masks with the themed (monochrome) preview. Uses `:feature:about`'s launcher icon and launch theme.
 
 ```
 sh tools/round/gradle.sh <key> :demo:about:assembleDebug
@@ -14,7 +14,8 @@ sh tools/round/adb.sh <key> install -r data/gradle/<key>/build/demo/about/output
 sh tools/round/adb.sh <key> shell am start -n io.github.spysyweeb.beamline.aboutdemo/io.github.spysyweeb.beamline.about.demo.DemoActivity [extras]
 ```
 
-Extras: `--es screen about|licences|notice|icons` (open that screen, no reveal), `--ez night true|false`,
+Extras: `--es screen about|licences|notice|first-run|icons` (open that screen, no reveal; `notice`: the
+page About opens, with Back; `first-run`: the first-run page with "I understand"), `--ez night true|false`,
 `--ez reset_notice true` (forget the accepted notice), `--ei map_ready_ms N` (default 900),
 `--ei hold_ms N` (keep the system splash N ms). A start from the launcher icon is the real cold
 start.

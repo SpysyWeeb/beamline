@@ -45,7 +45,7 @@ internal object MarkerImages {
     private const val PIN_H_DP = 38f
     private const val RESULT_SCALE = 0.8f
 
-    /** Every pin image: destination, destination reached, picked, and stops 1-9 plain and reached. */
+    /** Every pin image: destination, destination reached, picked, a result, the chosen start, and stops 1-9 plain and reached. */
     fun pins(res: Resources): Map<String, Bitmap> {
         val dm = res.displayMetrics
         val out = LinkedHashMap<String, Bitmap>()
@@ -55,6 +55,8 @@ internal object MarkerImages {
         // S11 (batch B): the results reuse the destination pin's art, smaller, so the selected one
         // (the white picked pin, full size, drawn on top) stands out; no new artwork
         out[Ids.PIN_RESULT] = pin(dm.density, dm.densityDpi, PIN_BLUE, Color.WHITE, Mark.Dot, RESULT_SCALE)
+        // P22 (0.1.40): the chosen start, a white ring in the blue head (a flag would read as the finish)
+        out[Ids.PIN_START] = pin(dm.density, dm.densityDpi, PIN_BLUE, Color.WHITE, Mark.Ring)
         for (n in 0..Ids.MAX_PIN_NUMBER) {
             out[Ids.pinStop(n, reached = false)] = pin(dm.density, dm.densityDpi, PIN_BLUE, Color.WHITE, Mark.Number(n))
             out[Ids.pinStop(n, reached = true)] = pin(dm.density, dm.densityDpi, PIN_REACHED, Color.WHITE, Mark.Number(n))
@@ -108,6 +110,8 @@ internal object MarkerImages {
 
     private sealed interface Mark {
         data object Dot : Mark
+        /** P22: the start, a hollow ring where the destination has a dot. */
+        data object Ring : Mark
         data class Number(val n: Int) : Mark
     }
 
@@ -150,6 +154,14 @@ internal object MarkerImages {
         p.color = ink
         when (mark) {
             Mark.Dot -> c.drawCircle(cx, cy, r * 0.38f, p)
+            Mark.Ring -> {
+                // P22: the start, a hollow ring where the destination has a dot (a flag would read as the
+                // finish, and the flag is the place window's Report icon)
+                p.style = Paint.Style.STROKE
+                p.strokeWidth = r * 0.22f
+                c.drawCircle(cx, cy, r * 0.36f, p)
+                p.style = Paint.Style.FILL
+            }
             is Mark.Number -> {
                 p.typeface = Typeface.create(Typeface.DEFAULT, Typeface.BOLD)
                 p.textAlign = Paint.Align.CENTER

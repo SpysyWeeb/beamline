@@ -66,6 +66,26 @@ internal fun sheetRestingScroll(top: Int, viewport: Int, maxScroll: Int, lines: 
         .firstOrNull(::keepsCard)
 }
 
+/**
+ * P52 (review, 0.1.40): the selected card as [sheetRestingScroll] keeps it: with [roomBelow] (the fade over the part's
+ * last lines) under it while that fits in the part at [top], so a card brought into view clear of the fade is not
+ * moved back under it; otherwise the card alone (kept whole, as before).
+ */
+internal fun cardWithRoom(card: Span?, roomBelow: Int, top: Int, viewport: Int): Span? {
+    if (card == null) return null
+    val room = card.copy(bottom = card.bottom + roomBelow)
+    return if (room.top >= top && room.bottom <= top + viewport) room else card
+}
+
+/**
+ * Rule D10 (review, 0.1.40): the route sheet now shows a new trip, not a change of the one it showed: a trip planned
+ * while a preview shows (PLANNING to PLANNING: a map place's Directions, a link handed over by another app) has none
+ * of the stops shown [before] and no routes yet ([hasRoutes] false; a change of the stops, a swap of the ends or
+ * Change start is replanned with the old routes still shown). Stops are compared by a key of each (its words).
+ */
+internal fun newTripShown(before: List<Int>, now: List<Int>, hasRoutes: Boolean): Boolean =
+    before.isNotEmpty() && now.isNotEmpty() && !hasRoutes && now.none { it in before }
+
 /** Item 45: a lane row becomes the strip when a lane is wrong for the route and another is right (a choice to make). */
 internal fun laneChoice(lanes: List<LaneUi>): Boolean =
     lanes.any { it.mark == LaneMark.NOT_FOR_ROUTE } && lanes.any { it.mark != LaneMark.NOT_FOR_ROUTE }

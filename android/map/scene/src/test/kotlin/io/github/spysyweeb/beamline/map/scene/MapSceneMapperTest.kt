@@ -1,5 +1,7 @@
 package io.github.spysyweeb.beamline.map.scene
 
+import io.github.spysyweeb.beamline.api.map.AlternativeLine
+import io.github.spysyweeb.beamline.api.map.MapPin
 import io.github.spysyweeb.beamline.api.map.MapTheme
 import io.github.spysyweeb.beamline.api.map.PinKind
 import io.github.spysyweeb.beamline.api.map.VehicleMarker
@@ -7,8 +9,10 @@ import io.github.spysyweeb.beamline.api.model.GeoPoint
 import io.github.spysyweeb.beamline.api.model.SavedKind
 import io.github.spysyweeb.beamline.api.nav.GpsState
 import io.github.spysyweeb.beamline.api.nav.Motion
+import io.github.spysyweeb.beamline.api.nav.Origin
 import io.github.spysyweeb.beamline.api.nav.Phase
 import io.github.spysyweeb.beamline.api.nav.RouteCursor
+import io.github.spysyweeb.beamline.api.nav.StopPreview
 import io.github.spysyweeb.beamline.api.nav.TripState
 import io.github.spysyweeb.beamline.api.nav.TripStop
 import io.github.spysyweeb.beamline.location.PuckLook
@@ -76,7 +80,8 @@ class MapSceneMapperTest {
         assertEquals(1L, kept.route!!.chosenId)
         val first = MapSceneMapper(rules).scene(Fx.choosing(phase = Phase.PLANNING).copy(choices = emptyList(), selectedChoiceId = null), null, MapTheme.DAY, null)
         assertNull(first.route)
-        assertEquals(listOf(PinKind.DESTINATION), first.pins.map { it.kind })
+        // P22: Fx.choosing's origin is a chosen start: its START pin first
+        assertEquals(listOf(PinKind.START, PinKind.DESTINATION), first.pins.map { it.kind })
     }
 
     @Test
@@ -249,8 +254,8 @@ class MapSceneMapperTest {
         val trip = Fx.choosing(stops = listOf(TripStop(Fx.home.toPlace())))
         val s = MapSceneMapper(rules).scene(trip, null, MapTheme.DAY, null, listOf(Fx.home, Fx.work))
         assertEquals(listOf(Fx.work.id), s.saved.map { it.savedId })
-        // its destination pin shows it
-        assertEquals(PinKind.DESTINATION, s.pins.single().kind)
+        // its destination pin shows it (P22: after the chosen start's pin)
+        assertEquals(listOf(PinKind.START, PinKind.DESTINATION), s.pins.map { it.kind })
         // an intermediate stop, reached or not, is left out too
         val guided = Fx.guiding(
             Fx.vehicle(Fx.ROUTE[1], 1_000),
@@ -294,6 +299,106 @@ class MapSceneMapperTest {
         val s = MapSceneMapper(rules).scene(TripState(), null, MapTheme.DAY, null, listOf(Fx.star))
         val text = s.saved.toString()
         assertFalse(text.contains("42.068") || text.contains("80.098") || text.contains("Quokka"), text)
+    }
+
+    // ---- 0.1.40: the step mark (P21), the start pin (P22), a stop's preview (item 51) ----------
+
+    @Test
+    fun `the step the route sheet shows is marked while choosing only`() {
+        val m = MapSceneMapper(rules)
+        assertEquals(Fx.ROUTE[2], m.scene(Fx.choosing(), null, MapTheme.DAY, null, step = Fx.ROUTE[2]).step)
+        assertEquals(Fx.ROUTE[2], m.scene(Fx.choosing(phase = Phase.PLANNING), null, MapTheme.DAY, null, step = Fx.ROUTE[2]).step)
+        assertNull(m.scene(Fx.choosing(), null, MapTheme.DAY, null).step)
+        assertNull(m.scene(Fx.guiding(Fx.vehicle(Fx.ROUTE[1], 1_000)), null, MapTheme.DAY, null, step = Fx.ROUTE[2]).step)
+        assertNull(m.scene(TripState(), null, MapTheme.DAY, null, step = Fx.ROUTE[2]).step)
+    }
+
+    @Test
+    fun `a chosen start is a START pin while choosing only`() {
+        val m = MapSceneMapper(rules)
+        val choosing = m.scene(Fx.choosing(), null, MapTheme.DAY, null).pins
+        assertEquals(MapPin("start", Fx.ORIGIN, PinKind.START), choosing.first())
+        assertEquals(listOf("start", "stop:0"), choosing.map { it.id })
+        // under the picked place and the results' pins come first (S11), as before
+        val picked = Fx.place("Sheetz", GeoPoint(42.0310, -80.1200))
+        assertEquals(listOf("result:0", "start", "stop:0", "picked"),
+            m.scene(Fx.choosing(), null, MapTheme.DAY, picked, results = listOf(Fx.MALL, picked.point)).pins.map { it.id })
+        // starting from the position: no START pin; guided: none (guidance starts from the car)
+        assertTrue(m.scene(Fx.choosing(origin = Origin.CurrentPosition), null, MapTheme.DAY, null).pins.none { it.kind == PinKind.START })
+        assertTrue(m.scene(Fx.guiding(Fx.vehicle(Fx.ROUTE[1], 1_000)), null, MapTheme.DAY, null).pins.none { it.kind == PinKind.START })
+        assertTrue(m.scene(Fx.choosing().copy(phase = Phase.IDLE), null, MapTheme.DAY, null).pins.none { it.kind == PinKind.START })
+        // Home chosen as the start: its START pin, and no Home marker under it (one image at that point)
+        val fromHome = Fx.choosing(origin = Origin.FromPlace(Fx.home.toPlace()))
+        val s = m.scene(fromHome, null, MapTheme.DAY, null, listOf(Fx.home, Fx.work))
+        assertEquals(MapPin("start", Fx.MUSEUM, PinKind.START), s.pins.first())
+        assertEquals(listOf(Fx.work.id), s.saved.map { it.savedId })
+        // the Home marker is back once guidance starts from the car
+        val guided = m.scene(Fx.guiding(Fx.vehicle(Fx.ROUTE[1], 1_000)).copy(origin = Origin.FromPlace(Fx.home.toPlace())), null, MapTheme.DAY, null, listOf(Fx.home))
+        assertEquals(listOf(Fx.home.id), guided.saved.map { it.savedId })
+    }
+
+    @Test
+    fun `stopPreviewDrawsTheNewRouteOverTheTripsOwnInGrey`() {
+        val m = MapSceneMapper(rules)
+        val shop = Fx.place("Test Shop", GeoPoint(42.0420, -80.0700))
+        val r2 = Fx.choice(9, listOf(Fx.ROUTE[1], shop.point, Fx.DEST))
+        // guiding: the preview's route chosen, the trip's own route ahead (from its first chunk of 64 points: the whole of this short one) grey under it
+        val cursor = RouteCursor(1, GeoPoint(42.0350, -80.1120))
+        val guiding = Fx.guiding(Fx.vehicle(cursor.point, 10_000), traveled = cursor).copy(stopPreview = StopPreview(shop, r2, 60.0, busy = false))
+        val g = m.scene(guiding, null, MapTheme.DAY, null).route!!
+        assertEquals(9L, g.chosenId)
+        assertEquals(r2.geometry, g.chosen)
+        assertNull(g.traveled)
+        assertEquals(listOf(AlternativeLine(1, Fx.ROUTE, tripRoute = true)), g.alternatives)
+        // rerouting too; without a cursor the whole route
+        val rr = m.scene(Fx.guiding(Fx.vehicle(Fx.ROUTE[1], 11_000), phase = Phase.REROUTING, traveled = null)
+            .copy(stopPreview = StopPreview(shop, r2, 60.0, busy = false)), null, MapTheme.DAY, null).route!!
+        assertEquals(9L, rr.chosenId)
+        assertEquals(listOf(AlternativeLine(1, Fx.ROUTE, tripRoute = true)), rr.alternatives)
+        // choosing with two choices: the selected choice only, in grey; the other choice is not drawn meanwhile
+        val choosing = Fx.choosing(selected = 2).copy(stopPreview = StopPreview(shop, r2, 120.0, busy = false))
+        val c = m.scene(choosing, null, MapTheme.DAY, null).route!!
+        assertEquals(9L, c.chosenId)
+        assertEquals(r2.geometry, c.chosen)
+        assertEquals(listOf(AlternativeLine(2, Fx.ALT, tripRoute = true)), c.alternatives)
+        // the preview's route not there yet (busy), or a problem: as before
+        val busy = m.scene(Fx.choosing().copy(stopPreview = StopPreview(shop, null, null, busy = true)), null, MapTheme.DAY, null).route!!
+        assertEquals(1L, busy.chosenId)
+        assertEquals(listOf(AlternativeLine(2, Fx.ALT)), busy.alternatives)
+        // never on the arrival map
+        val arrived = Fx.guiding(Fx.vehicle(Fx.DEST, 20_000, motion = Motion.STOPPED, speed = 0.0), phase = Phase.ARRIVED)
+            .copy(stopPreview = StopPreview(shop, r2, 60.0, busy = false))
+        assertEquals(1L, m.scene(arrived, null, MapTheme.DAY, null).route!!.chosenId)
+    }
+
+    /**
+     * Review of 0.1.40: while a stop's preview card is open and the car drives on, the trip's own grey line
+     * changes only when the car enters another chunk of 64 points of its route, not on every fix (the map
+     * sent the whole remaining line again every second; :map:layers RouteSources keeps a source whose
+     * lines did not change).
+     */
+    @Test
+    fun `a stop preview's grey line changes only when the car enters another chunk of the route`() {
+        val m = MapSceneMapper(rules)
+        val shop = Fx.place("Test Shop", GeoPoint(42.0420, -80.0700))
+        val long = (0 until 200).map { GeoPoint(42.03, -80.20 + it * 0.001) }   // a made-up straight road east
+        val r1 = Fx.choice(1, long)
+        val r2 = Fx.choice(9, listOf(long[10], shop.point, long.last()))
+        fun at(i: Int, ms: Long): TripState {
+            val p = GeoPoint(42.03, -80.20 + i * 0.001 + 0.0004)
+            return Fx.guiding(Fx.vehicle(p, ms), traveled = RouteCursor(i, p), route = r1)
+                .copy(stopPreview = StopPreview(shop, r2, 60.0, busy = false))
+        }
+        fun grey(i: Int, ms: Long) = m.scene(at(i, ms), null, MapTheme.DAY, null).route!!.alternatives
+        val first = grey(10, 10_000)
+        assertEquals(listOf(AlternativeLine(1, long, tripRoute = true)), first)   // the first chunk: from the line's start
+        assertEquals(first, grey(11, 11_000))                                      // a fix on: the same line
+        assertEquals(first, grey(63, 12_000))                                      // the chunk's last point: still the same
+        assertEquals(listOf(AlternativeLine(1, long.drop(64), tripRoute = true)), grey(64, 13_000))   // the next chunk
+        assertTrue(grey(64, 13_000).single().points === grey(100, 14_000).single().points)   // the same list, not a copy per fix
+        assertEquals(listOf(AlternativeLine(1, long.drop(128), tripRoute = true)), grey(130, 15_000))
+        // a cursor past the line's end (never sent, but safe): the last chunk
+        assertEquals(listOf(AlternativeLine(1, long.drop(192), tripRoute = true)), grey(500, 16_000))
     }
 
     /** Item 22 (docs/next-round.md): the lights ahead are drawn while the route is driven, not on the arrival map. */

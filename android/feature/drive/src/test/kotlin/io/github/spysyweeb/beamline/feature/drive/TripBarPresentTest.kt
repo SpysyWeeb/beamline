@@ -1,5 +1,8 @@
 package io.github.spysyweeb.beamline.feature.drive
 
+import io.github.spysyweeb.beamline.api.nav.Phase
+import io.github.spysyweeb.beamline.api.nav.ProblemKind
+import io.github.spysyweeb.beamline.api.nav.TripProblem
 import io.github.spysyweeb.beamline.api.nav.TripStop
 import io.github.spysyweeb.beamline.feature.drive.Exit24.downsDrive
 import io.github.spysyweeb.beamline.feature.drive.Exit24.guiding
@@ -77,6 +80,28 @@ class TripBarPresentTest {
         val three = listOf(TripStop(sheetz, reached = true), TripStop(sheetz.copy(name = "Erie Zoo")), TripStop(downsDrive))
         assertEquals("Stop 2 · 4.1 mi", present(guiding(stops = three, nextStopIndex = 1, toNextStopM = 6600.0)).guidance!!.tripBar.nextStopText)
         assertEquals("Stop 2 · 6.6 km", present(guiding(stops = three, nextStopIndex = 1, toNextStopM = 6600.0), units = Exit24.km).guidance!!.tripBar.nextStopText)
+    }
+
+    /**
+     * Play test P5: far from the installed maps (rule O8: OUTSIDE_INSTALLED_MAPS without Retry, while re-routing) the
+     * old route's arrival, times and next stop are not the trip's: the bar says "No route from here" instead.
+     */
+    @Test
+    fun `P5 outside the installed maps the bar says there is no route from here`() {
+        val stops = listOf(TripStop(sheetz), TripStop(downsDrive))
+        val outside = TripProblem(ProblemKind.OUTSIDE_INSTALLED_MAPS, "You are outside the installed maps. Guidance goes on when you are back on them.", false)
+        val bar = present(guiding(phase = Phase.REROUTING, problem = outside, stops = stops, nextStopIndex = 0)).guidance!!.tripBar
+        assertEquals("No route from here", bar.noRouteText)
+        assertNull(bar.nextStopText)
+        // a failed stop change outside the maps keeps Retry (C3), and the bar keeps its times and next stop
+        val change = present(guiding(phase = Phase.REROUTING, problem = outside.copy(canRetry = true), stops = stops, nextStopIndex = 0)).guidance!!.tripBar
+        assertNull(change.noRouteText)
+        assertEquals("Stop 1 · 1.2 mi", change.nextStopText)
+        // an ordinary failed re-route, and plain guidance: the bar as it was
+        val noRoute = TripProblem(ProblemKind.NO_ROUTE, "No route found from here.", canRetry = true)
+        assertNull(present(guiding(phase = Phase.REROUTING, problem = noRoute)).guidance!!.tripBar.noRouteText)
+        assertNull(present(guiding()).guidance!!.tripBar.noRouteText)
+        assertNull(present(guiding(problem = outside)).guidance!!.tripBar.noRouteText, "only while re-routing")
     }
 
     @Test

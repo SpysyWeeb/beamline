@@ -2,7 +2,7 @@
  "_doc": [
   "Route line colours and widths. The app reads this file and draws the route at run time (line layers above roads, below labels).",
   "The owner chose candidate B ('Clear') on 2026-11-15: 'selected' names it and the app draws it. A and C are kept for reference. Renders: assets/sheet/index.html and data/art/route/*.png.",
-  "Each theme: fill (the line) and casing (a wider line drawn under it). traveled: the part already driven, the candidate mixed 55 % toward the map's land colour (day #E2DFDA, night #1F1F1F). alternative: alternative routes, grey.",
+  "Each theme: fill (the line) and casing (a wider line drawn under it). traveled: the part already driven, the candidate mixed 55 % toward the map's land colour (day #E2DFDA, night #1F1F1F). alternative: the other route choices while choosing, grey; a tap on one chooses it (0.1.40, play test P23). trip_route: the trip's own route drawn under a previewed stop's route (item 51, 0.1.40), the same grey. The traveled part and the alternatives never show together (no route choices while guided); the traveled part and trip_route neither (a stop preview's own route has no driven part).",
   "Widths in dp per map zoom, to be interpolated exponentially with base 1.5 (MapLibre: [\"interpolate\", [\"exponential\", 1.5], [\"zoom\"], z1, w1, ...]). The casing is drawn as its own wider line, not as a line-gap.",
   "Colours as #RRGGBB, opaque. Line cap and join round."
  ],
@@ -72,6 +72,16 @@
   }
  },
  "alternative": {
+  "day": {
+   "fill": "#A7AFB9",
+   "casing": "#7E8792"
+  },
+  "night": {
+   "fill": "#5B636D",
+   "casing": "#2B3036"
+  }
+ },
+ "trip_route": {
   "day": {
    "fill": "#A7AFB9",
    "casing": "#7E8792"

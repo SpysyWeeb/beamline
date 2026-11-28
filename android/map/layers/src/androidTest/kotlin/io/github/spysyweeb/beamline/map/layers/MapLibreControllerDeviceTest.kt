@@ -10,6 +10,7 @@ import android.view.MotionEvent
 import androidx.test.core.app.ActivityScenario
 import androidx.test.ext.junit.runners.AndroidJUnit4
 import androidx.test.platform.app.InstrumentationRegistry
+import io.github.spysyweeb.beamline.api.map.AlternativeLine
 import io.github.spysyweeb.beamline.api.map.CameraTarget
 import io.github.spysyweeb.beamline.api.map.EdgeInsetsDp
 import io.github.spysyweeb.beamline.api.map.MapGesture
@@ -98,10 +99,12 @@ class MapLibreControllerDeviceTest {
 
     // ---- helpers ------------------------------------------------------------------------------
 
-    private fun loadStyle(theme: MapTheme, overview: Boolean = false) {
+    private fun loadStyle(theme: MapTheme, overview: Boolean = false, towns: List<GeoPoint> = emptyList()) {
         val done = CountDownLatch(1)
         onMain {
-            map.setStyle(Style.Builder().fromJson(styleJson(theme, overview))) { style ->
+            // P42: the town labels' image is in the style from the start, so a label does not wait for a late image
+            val builder = Style.Builder().fromJson(styleJson(theme, overview, towns)).let { if (towns.isNotEmpty()) it.withImage(TOWN_ICON, townIcon()) else it }
+            map.setStyle(builder) { style ->
                 for (name in listOf("saved_home", "saved_work", "saved_place")) style.addImage(name, standIn(name))
                 controller.onStyleLoaded(style, theme)
                 done.countDown()
@@ -118,6 +121,15 @@ class MapLibreControllerDeviceTest {
             else -> Color.rgb(0xC4, 0x5B, 0x1F)
         }
         return Bitmap.createBitmap(64, 64, Bitmap.Config.ARGB_8888).apply { eraseColor(colour) }
+    }
+
+    /** P42: the town label's stand-in, a 16 dp square on any AVD (MapLibre sizes an image by its bitmap's density). */
+    private fun townIcon(): Bitmap {
+        val px = dp(16f).toInt()
+        return Bitmap.createBitmap(px, px, Bitmap.Config.ARGB_8888).apply {
+            eraseColor(Color.rgb(0x5D, 0x40, 0x37))
+            density = activity.resources.displayMetrics.densityDpi
+        }
     }
 
     /** The style's layers, without MapLibre's own (its annotations layer "org.maplibre.annotations.points", unused by the app). */
@@ -137,6 +149,17 @@ class MapLibreControllerDeviceTest {
         while (true) {
             val found = onMain { map.queryRenderedFeatures(box, *layers) }
             if (found.isNotEmpty() || SystemClock.uptimeMillis() > end) return found
+            Thread.sleep(100)
+        }
+    }
+
+    /** True once no feature of [layer] is rendered within 12 dp of [at], polled for up to [timeoutMs]. */
+    private fun awaitNoneNear(at: PointF, layer: String, timeoutMs: Long): Boolean {
+        val box = RectF(at.x - dp(12f), at.y - dp(12f), at.x + dp(12f), at.y + dp(12f))
+        val end = SystemClock.uptimeMillis() + timeoutMs
+        while (true) {
+            if (onMain { map.queryRenderedFeatures(box, layer) }.isEmpty()) return true
+            if (SystemClock.uptimeMillis() > end) return false
             Thread.sleep(100)
         }
     }
@@ -459,6 +482,64 @@ class MapLibreControllerDeviceTest {
         assertTrue(empty != null && empty.pinId == null && empty.poi == null)
     }
 
+    /**
+     * 0.1.40, P23: a tap on another route choice where it runs apart from the chosen line reports
+     * "route:<its id>"; where the two share the road it is the chosen route's (nothing); item 51: the
+     * trip's own route drawn under a stop preview (tripRoute) is never reported. The alternative keeps
+     * its grey with the per-line colour.
+     */
+    @Test
+    fun aTapOnAnotherRouteChoiceReportsItsIdNeverTheTripsOwnRoute() {
+        moveTo(CENTRE, 15.0)
+        val west = GeoPoint(42.1310, -80.0885)
+        val east = GeoPoint(42.1310, -80.0815)
+        val chosen = listOf(west, east)
+        val other = listOf(west, ALT_MID, east)
+        show(MapScene(MapTheme.DAY, route = RouteLines(1, chosen, null, listOf(AlternativeLine(2, other)))))
+        assertTrue(renderedNear(screen(ALT_MID), Ids.L_ALT).isNotEmpty())
+        val grey = Color.parseColor("#A7AFB9")
+        val seen = awaitPixel(screen(ALT_MID), grey)
+        assertTrue("the other choice in its grey: saw ${hex(seen)}", near(seen, grey))
+
+        var n = gestures.size
+        touch(screen(ALT_MID))
+        assertEquals("route:2", nextGesture<MapGesture.Tap>(n)?.pinId)
+
+        // where both lines run (their shared start): the chosen route's, so nothing
+        n = gestures.size
+        touch(screen(GeoPoint(west.lat, west.lon + 0.0002)))
+        val shared = nextGesture<MapGesture.Tap>(n)
+        assertTrue("a tap on the shared road reports no route: ${shared?.pinId}", shared != null && shared.pinId == null)
+
+        // item 51: a stop's preview route chosen, the trip's own route grey under it: never a choice
+        val preview = listOf(west, GeoPoint(42.1290, -80.0850), east)
+        show(MapScene(MapTheme.DAY, route = RouteLines(9, preview, null, listOf(AlternativeLine(1, other, tripRoute = true)))))
+        assertTrue(renderedNear(screen(ALT_MID), Ids.L_ALT).isNotEmpty())
+        val trip = awaitPixel(screen(ALT_MID), grey)
+        assertTrue("the trip's own route in trip_route's grey: saw ${hex(trip)}", near(trip, grey))
+        n = gestures.size
+        touch(screen(ALT_MID))
+        val own = nextGesture<MapGesture.Tap>(n)
+        assertTrue("the trip's own route is no choice: ${own?.pinId}", own != null && own.pinId == null)
+    }
+
+    /** 0.1.40: the route step the route sheet shows (P21), a white disc; the chosen start's pin (P22), its own image. */
+    @Test
+    fun theStepMarkAndTheStartPinAreDrawn() {
+        moveTo(CENTRE, 15.0)
+        assertTrue("the start pin's image", onMain { map.style!!.getImage(Ids.PIN_START) != null })
+        show(MapScene(MapTheme.DAY, pins = listOf(MapPin("start", PIN, PinKind.START)), step = EMPTY))
+        val step = renderedNear(screen(EMPTY), Ids.L_STEP)
+        assertTrue("the step mark is drawn", step.isNotEmpty())
+        val white = awaitPixel(screen(EMPTY), Color.WHITE)
+        assertTrue("the step mark is white in the middle: saw ${hex(white)}", near(white, Color.WHITE))
+        val start = renderedNear(PointF(screen(PIN).x, screen(PIN).y - dp(19f)), Ids.L_PINS)
+        assertEquals(Ids.PIN_START, start.single().getStringProperty("image"))
+        // no step: none drawn
+        show(MapScene(MapTheme.DAY, pins = listOf(MapPin("start", PIN, PinKind.START))))
+        assertTrue("the step mark is gone", awaitNoneNear(screen(EMPTY), Ids.L_STEP, timeoutMs = 3_000))
+    }
+
     @Test
     fun longPressAndUserPanAreReported() {
         var n = gestures.size
@@ -552,6 +633,34 @@ class MapLibreControllerDeviceTest {
         assertTrue("never in between: $seen", seen.none { it > a.lon + 1e-5 && it < b.lon - 1e-5 })
     }
 
+    /**
+     * P42: a place label just above the browsing dot (24 dp north, where the tester saw 'Erie') gives
+     * way to the dot: the dot is always drawn, the label is hidden while the dot is on it and comes
+     * back once the puck is gone. A label 60 dp north, under the cone's beam and inside its 176 dp
+     * canvas but clear of the dot's box, stays: only the dot clears labels. The labels are placed by
+     * screen offset from the dot (MapLibre's world is 512 dp at z0).
+     */
+    @Test
+    fun aPlaceLabelAtThePuckGivesWayToTheDot() {
+        val c = screen(CENTRE)
+        fun north(dpUp: Float): GeoPoint =
+            onMain { map.projection.fromScreenLocation(PointF(c.x, c.y - dp(dpUp))) }.let { GeoPoint(it.latitude, it.longitude) }
+        val near = north(24f)
+        val far = north(60f)
+        loadStyle(MapTheme.DAY, towns = listOf(near, far))
+        assertEquals("the near label 24 dp north of the dot", dp(24f), c.y - screen(near).y, dp(1f))
+        assertEquals("the far label 60 dp north of the dot", dp(60f), c.y - screen(far).y, dp(1f))
+        assertTrue("the near label alone", renderedNear(screen(near), TOWN_LAYER).isNotEmpty())
+        assertTrue("the far label alone", renderedNear(screen(far), TOWN_LAYER).isNotEmpty())
+        show(MapScene(MapTheme.DAY, marker = VehicleMarker.Puck(CENTRE, coneDeg = 0.0, stale = false)))
+        assertTrue("the dot is drawn", renderedNear(c, Ids.L_PUCK).isNotEmpty())
+        assertTrue("the far label is under the cone", renderedNear(screen(far), Ids.L_PUCK_CONE).isNotEmpty())
+        assertTrue("the near label gives way to the dot", awaitNoneNear(screen(near), TOWN_LAYER, timeoutMs = 3_000))
+        assertTrue("the cone does not clear labels", renderedNear(screen(far), TOWN_LAYER, timeoutMs = 0).isNotEmpty())
+        show(MapScene(MapTheme.DAY))
+        assertTrue("the label is back without the puck", renderedNear(screen(near), TOWN_LAYER).isNotEmpty())
+    }
+
     // ---- the scene ---------------------------------------------------------------------------
 
     private fun savedMarkers() = listOf(
@@ -573,15 +682,17 @@ class MapLibreControllerDeviceTest {
     }
 
     companion object {
-        /** Downtown Erie (a public point); at z15 0.0043 degrees of longitude and 0.0064 of latitude are about 100 and 200 dp. */
+        /** Downtown Erie (a public point); at z15 0.0043 degrees of longitude and 0.0064 of latitude are about 200 and 400 dp. */
         val CENTRE = GeoPoint(42.1292, -80.0851)
         val PIN = GeoPoint(42.1356, -80.0894)
         val SAVED = GeoPoint(42.1356, -80.0808)
         val POI = GeoPoint(42.1228, -80.0894)
 
-        /** A second POI label 0.0003 degrees (7 dp at z15) east of [POI]: both under a finger on either. */
+        /** A second POI label 0.0003 degrees (about 14 dp at z15) east of [POI]: both under a finger on either. */
         val POI2 = GeoPoint(42.1228, -80.0891)
         val EMPTY = GeoPoint(42.1228, -80.0808)
+        /** P23: the tip of another route choice's V north of the chosen line (about 160 dp from it at z15). */
+        val ALT_MID = GeoPoint(42.1335, -80.0850)
         val CURSOR = GeoPoint(42.1272, -80.0851)
         val ROUTE_DRIVEN = GeoPoint(42.1272, -80.0881)
         val ROUTE_AHEAD = GeoPoint(42.1272, -80.0821)
@@ -594,6 +705,10 @@ class MapLibreControllerDeviceTest {
         const val HOME_ID = "s0000000000000b01"
         const val STAR_ID = "s0000000000000b03"
 
+        /** P42: the stand-in place labels (an icon: the test style has no glyphs). */
+        const val TOWN_LAYER = "places_locality@us-pa"
+        const val TOWN_ICON = "test-town"
+
         /** The overview's place label (a circle here) and the states' POI label, both drawn on the route line at [CENTRE]. */
         val PLACE_COLOUR = Color.parseColor("#C2185B")
         val POI_COLOUR = Color.parseColor("#C26A00")
@@ -604,7 +719,7 @@ class MapLibreControllerDeviceTest {
          * z8 (as StyleComposer composes the overview with a state, map-compose.json), and a label of
          * each on the point [CENTRE].
          */
-        fun styleJson(theme: MapTheme, overview: Boolean = false): String {
+        fun styleJson(theme: MapTheme, overview: Boolean = false, towns: List<GeoPoint> = emptyList()): String {
             val bg = if (theme == MapTheme.NIGHT) "#202124" else "#EDEAE4"
             val road = if (theme == MapTheme.NIGHT) "#3C4043" else "#FFFFFF"
             fun pt(p: GeoPoint, props: String) =
@@ -618,7 +733,10 @@ class MapLibreControllerDeviceTest {
                 pt(NAME, """{"k":"name"}"""),
                 if (overview) pt(CENTRE, """{"k":"place","name":"Test Town"}""") else null,
                 if (overview) pt(CENTRE, """{"k":"poi","name":"Test Grill","kind":"restaurant"}""") else null,
-            ).joinToString(",")
+            ).plus(towns.map { pt(it, """{"k":"town"}""") }).joinToString(",")
+            // P42: a place-label layer of icons (no glyphs here), as the style's places_locality; none: the style as before
+            val townLayer = if (towns.isEmpty()) "" else
+                """,{"id": "$TOWN_LAYER", "type": "symbol", "source": "base", "filter": ["==", ["get", "k"], "town"], "layout": {"icon-image": "$TOWN_ICON"}}"""
             val minZ = if (overview) """"minzoom": 8, """ else ""
             val overviewLayers = if (!overview) "" else """
                   {"id": "roads@overview", "type": "line", "source": "base", "maxzoom": 10, "filter": ["==", ["get", "k"], "road"], "paint": {"line-color": "$road", "line-width": 6}},
@@ -634,7 +752,7 @@ class MapLibreControllerDeviceTest {
                   {"id": "roads_shields@us-pa", "type": "circle", "source": "base", $minZ"filter": ["==", ["get", "k"], "shield"], "paint": {"circle-radius": 8, "circle-color": "#6A1B9A"}},
                   {"id": "roads_labels_major@us-pa", "type": "circle", "source": "base", $minZ"filter": ["==", ["get", "k"], "name"], "paint": {"circle-radius": 8, "circle-color": "#00897B"}},
                   {"id": "pois@us-pa", "type": "circle", "source": "base", $minZ"filter": ["==", ["get", "k"], "poi"], "paint": {"circle-radius": 10, "circle-color": "#C26A00"}},
-                  {"id": "pois_driving@us-pa", "type": "circle", "source": "base", $minZ"filter": ["==", ["get", "k"], "fuel"], "paint": {"circle-radius": 10, "circle-color": "#1E8E3E"}}
+                  {"id": "pois_driving@us-pa", "type": "circle", "source": "base", $minZ"filter": ["==", ["get", "k"], "fuel"], "paint": {"circle-radius": 10, "circle-color": "#1E8E3E"}}$townLayer
                  ]}
             """.trimIndent()
         }
