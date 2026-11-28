@@ -165,9 +165,33 @@ class HandoverRulesTest {
 
     private fun resp(vararg rows: PackResult) = MultiSearchResponse("q", rows.toList(), listOf("us-pa"), true, null, false, 1.0)
 
-    private fun address(id: Long, acc: AddressInfo.Accuracy, locality: Boolean? = true, mismatch: Boolean = false, lat: Double = 42.1290, street: String = "Example Street") =
-        row(id, "1600 $street", "address", lat = lat, sub = "Erie, PA 16501", kind = SearchResult.Kind.ADDRESS, cat = "address",
+    private fun address(id: Long, acc: AddressInfo.Accuracy, locality: Boolean? = true, mismatch: Boolean = false, lat: Double = 42.1290, street: String = "Example Street",
+                        tier: String = "address") =
+        row(id, "1600 $street", tier, lat = lat, sub = "Erie, PA 16501", kind = SearchResult.Kind.ADDRESS, cat = "address",
             address = AddressInfo("1600", street, acc, localityMatch = locality, stateMismatch = mismatch))
+
+    /**
+     * Item 55 (review 2): an answer along the street the search shows ("along_street", no town typed or the typed town not
+     * matched) is not the words' address: a link "1600 Example Street" with no town opens the search list, not a route to
+     * whichever road of the name is nearest; with the typed town matched it is clear as any located address.
+     */
+    @Test
+    fun anAnswerAlongTheStreetIsClearOnlyInTheTypedTown() {
+        for (locality in listOf(null, false)) {
+            val along = resp(address(1, AddressInfo.Accuracy.INTERPOLATED, locality = locality, tier = "along_street"))
+            assertNull(HandoverRules.clearMatch("1600 Example Street", along), "$locality")
+            assertNull(HandoverRules.clearAddress("1600 Example Street", along), "$locality")
+            assertEquals(TextAct.Search, decide("1600 Example Street", along), "$locality")
+            val point = resp(address(1, AddressInfo.Accuracy.POINT, locality = locality, tier = "along_street"))
+            assertNull(HandoverRules.clearAddress("1600 Example Street, Erie", point), "$locality")
+        }
+        val inTown = resp(address(1, AddressInfo.Accuracy.INTERPOLATED, locality = true, tier = "along_street"))
+        assertSame(inTown.results[0], HandoverRules.clearMatch("1600 Example Street, Erie", inTown))
+        assertSame(inTown.results[0], HandoverRules.clearAddress("1600 Example Street, Erie", inTown))
+        // the lookup's own answer with no town typed (not along a street): as before
+        val noTown = resp(address(1, AddressInfo.Accuracy.INTERPOLATED, locality = null))
+        assertSame(noTown.results[0], HandoverRules.clearMatch("1600 Example Street", noTown))
+    }
 
     @Test
     fun anExactNameAloneIsClear() {

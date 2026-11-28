@@ -15,6 +15,7 @@ import io.github.spysyweeb.beamline.search.MultiSearchResponse
 import io.github.spysyweeb.beamline.search.NearbyPoi
 import io.github.spysyweeb.beamline.search.PackResult
 import io.github.spysyweeb.beamline.search.SearchResult
+import io.github.spysyweeb.beamline.search.address.AddressIndex
 import io.github.spysyweeb.beamline.search.foldText
 import java.util.Locale
 
@@ -209,8 +210,15 @@ object HandoverRules {
     /** H6 (a): words that start with a house number; group 1 is the rest (the street, and with no comma what follows it). */
     private val HOUSE_STREET = Regex("""^\d+[A-Za-z]?(?:-\d+[A-Za-z]?)?\s+(\S.*)$""")
 
+    /**
+     * A located address (a house point or a position along its street, in the typed town and state). Item 55: an answer
+     * along the street the search shows where it is ranked ([AddressIndex.MATCH_ALONG]) is that place's estimate, not the
+     * address the words give: located only when a typed town matched it (with no town, "451 Some Road" could be any of
+     * the state's roads of the name, and the link's words open the search list instead).
+     */
     private fun located(res: SearchResult): Boolean {
         val a = res.address ?: return false
+        if (res.tier == AddressIndex.MATCH_ALONG && a.localityMatch != true) return false
         return (a.accuracy == AddressInfo.Accuracy.POINT || a.accuracy == AddressInfo.Accuracy.INTERPOLATED) && a.localityMatch != false && !a.stateMismatch
     }
 

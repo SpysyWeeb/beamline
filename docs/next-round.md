@@ -1136,6 +1136,49 @@ not break across two lines in the banner; the results view shows at most the 20 
     number up along that street by place, not by name: address points and census ranges whose edges lie
     along the street shown (any spelling, any ZIP), nearest to where the search is ranked; the row then
     says "Estimated" with the number. No town needed, and the answer stays where the user is looking.
+    *Built in 0.1.42* (rule S4, `SearchService`, `AddressIndex.alongStreet`): with no town or ZIP typed, a
+    house number is looked up along the street row nearest to where the search is ranked (the place the words
+    name, else the position; with neither, the first street row); when the engine located the house on that
+    street, nothing more. Its own answers first, else those of the road's next pieces (rows of the same name
+    whose line starts or ends within 40 m of its line). Census or OSM ranges covering the number count, whatever
+    their spelling or ZIP, when their point lies within 25 m of the line on an edge running within 30 degrees of
+    it (a crossing street's range at the corner does not count, nor an edge of no length); address points within
+    200 m of the line count only on the street's own name (its join key, OSM's other names; never the search
+    pack's derived keys, which drop a direction: "main street" for "South Main Street") or its join key's core
+    with no part contradicting it ("12 N Main St" is never "12 South Main Street"), or a spelling one letter off
+    (cores of 7 letters or more) proven by its own range along the line ("120 Example Hill Ln" is never "120
+    Example Mill Lane"); a derived key or a route number's highway alternative ("twp 8" for "sr 8") gives ranges
+    only. The closest name wins, then a point, then the nearest to the line, then the nearest to where the search
+    is ranked. The answer goes first as "Exact address" or "Estimated address", titled with the number and OSM's
+    name when it is under the street's own name, else with the data's name ("120 E Main St" for "Main Street",
+    "9161 Breiningsville Rd"), the town and ZIP the data files it under below; not when the engine located a house
+    within 200 m of it or of its street's line, or on its own row (no house twice: a road crossing a municipal
+    line, the house just past it; a rural house 300 m back from the road; but each piece of a road crossing a
+    county line keeps its own number). A road of the
+    name elsewhere never answers, not even one the list shows; another state named: nothing. With a town or ZIP of
+    the pack's state typed: a house the engine located in or near that place is the answer (the town's lookup is not
+    run); else, when the lookup locates no house there (only the street, nothing, or a guess elsewhere: the owner's
+    case c, the range filed under the next town's ZIP), the same along the street rows in that place (at most 3,
+    nearest first; the answer of the nearest row with one, which only a row joined to it or in its municipality may
+    beat: never a road of the name in another of the town's municipalities for a closer name): in a municipality the place is or whose mail it takes (a borough that is the postal town of the
+    township around it reaches the township's stretch of the road, though its own piece need not join it), or within 5 km of the place the words name (12 km for a postal town or a ZIP). A match of the typed town
+    (the street's municipality served by it, or the answer filed under it) goes first in place of the guess; else
+    the answer comes after the engine's rows. A typed town that locates the house: as before, unless the engine
+    located that house; another state typed: as before. A link's
+    words (H6, item 52) take such an answer as their address only when a typed town matched it (else the search
+    list opens, as before).
+    Checked on the PA pack with public roads far from the owner's: Lycoming County, OSM "Wolf Run Road" (alternative
+    name "Wolfe Run Road"), census "Wolfe Run Rd" in ZIP 17771, no address point: "451 wolf run road" with no town
+    gives "451 Wolf Run Road, Trout Run, PA 17771, Estimated address" (screenshot on the emulator, 0.1.42 debug);
+    Lehigh County, OSM "Breinigsville Road" (no other name), census "Breiningsville Rd": "9161 breinigsville road"
+    gives "9161 Breiningsville Rd", estimated (JVM test). Cost added on the PC's JVM against the PA files, first
+    query / the identical query again (its answers kept in memory: a cache hit, as when the same query runs
+    again): 280 house-number queries over the state without a town, p50 1.8 / 0.3 ms, p90 3.8 / 0.7 ms, p99 8.6
+    / 1.5 ms; Philadelphia's 40 longest streets (Roosevelt Boulevard, the expressways) with a number outside every
+    range, p50 6.9 / 0.8 ms, p90 16.7 / 2.3 ms, p99 37 / 3.2 ms (the first query reads the city's 11,000 streets
+    once), with a number from the street's id 4.8 / 0.4, 9.6 / 0.9, 18 / 1.0 ms; the 280 with the street's
+    municipality typed, the whole address step 6.7 ms at the median against 1.3 ms before (the tail, about 110 ms
+    at p90, is the typed-town lookup's own, as before; it is not run when the engine located the house there).
 
 ## Later (not the next round)
 

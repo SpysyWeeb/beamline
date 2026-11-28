@@ -37,7 +37,9 @@ data class AddressInfo(
      *  STREET: the number was not found, the position is the street (or its nearest numbered point). */
     val accuracy: Accuracy,
     /** False when the typed town or ZIP did not match (the result is a guess elsewhere in the
-     *  state); null when no town or ZIP was typed. */
+     *  state); null when no town or ZIP was typed. For an answer along the street the search shows
+     *  (item 55, tier "along_street"): null with no town typed; with one, true when the street's
+     *  municipality is the typed place or the answer is filed under it, else false (near it). */
     val localityMatch: Boolean? = null,
     /** True when the typed state is not the pack's state. */
     val stateMismatch: Boolean = false,
@@ -138,6 +140,28 @@ data class NearStreet(
     val house: String? = null,
 ) {
     override fun toString(): String = "NearStreet"
+}
+
+/**
+ * Item 55 (docs/next-round.md; [SearchEngine.streetShape]): a street entry as the house-number lookup along it needs it:
+ * its [name], its [box] (minlat, maxlat, minlon, maxlon, as entry_rtree), its [lines] (as [StreetLines]: lat, lon pairs
+ * in whole 1e-5 degrees), its house-number join key ([addrKey], street.addr_key: the addresses track's street_key of its
+ * name; null in a pack built without it), the keys of its other names as the search pack keyed them ([altKeys]:
+ * "us 422", "pa 56"), the search pack's derived keys
+ * ([derivedKeys], its "~" keys without the "~": "route 56" for a ref, "main street" for "South Main Street": a name
+ * with a part left out, so never the street's own) and the name of its [municipality] ("Example Township").
+ * [toString] prints none of them (PV2).
+ */
+class StreetShape(
+    val name: String,
+    val box: DoubleArray,
+    val lines: List<IntArray>,
+    val addrKey: String?,
+    val altKeys: List<String>,
+    val municipality: String?,
+    val derivedKeys: List<String> = emptyList(),
+) {
+    override fun toString(): String = "StreetShape"
 }
 
 /** Batch O3 ("View all", docs/next-round.md item 27): one category of the pack and the [query] a tap types. */

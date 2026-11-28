@@ -952,6 +952,31 @@ class SearchEngine(
         return doubleArrayOf(num(r[0]), num(r[1]), num(r[2]), num(r[3]))
     }
 
+    /**
+     * Item 55 (docs/next-round.md): what [SearchService] needs to look a typed house number up along street entry
+     * [eid] by place: its box, its lines, its house-number join key and its other names' keys, and the name of its
+     * municipality. Null for an entry that is not a street of this pack, or one without a line (a pack built before
+     * the street_line table). Kotlin only: [search]'s answers (and the conformance reference) are not changed by it.
+     */
+    fun streetShape(eid: Long): StreetShape? {
+        if (!hasStreetLines || eid <= 0) return null
+        val r = db.first(
+            "SELECT e.alt_keys, m.name, ${if (hasAddrKey) "s.addr_key" else "NULL"}, e.name FROM entry e JOIN street s ON s.entry_id = e.id " +
+                "LEFT JOIN entry m ON m.id = e.muni_id WHERE e.id = ? AND e.kind = $KIND_STREET", eid,
+        ) ?: return null
+        val lines = streetLines(eid)
+        if (lines.isEmpty()) return null
+        val box = db.first("SELECT minlat, maxlat, minlon, maxlon FROM entry_rtree WHERE id = ?", eid) ?: return null
+        val keys = (r[0] as String?)?.split('|')?.map { it.trim() }?.filter { it.isNotEmpty() }.orEmpty()
+        val alt = keys.filter { !it.startsWith("~") }
+        val derived = keys.filter { it.startsWith("~") }.map { it.removePrefix("~").trim() }.filter { it.isNotEmpty() }
+        return StreetShape(
+            name = r[3] as String, box = doubleArrayOf(num(box[0]), num(box[1]), num(box[2]), num(box[3])), lines = lines,
+            addrKey = (r[2] as String?)?.ifEmpty { null }, altKeys = alt.distinct(), municipality = (r[1] as String?)?.ifEmpty { null },
+            derivedKeys = derived.distinct(),
+        )
+    }
+
     private fun contextOf(ids: List<Long>): HashMap<Long, LinkedHashMap<Long, Double>> {
         val out = HashMap<Long, LinkedHashMap<Long, Double>>()
         var i = 0

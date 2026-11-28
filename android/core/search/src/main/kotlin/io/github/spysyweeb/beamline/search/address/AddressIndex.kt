@@ -2,6 +2,7 @@ package io.github.spysyweeb.beamline.search.address
 
 import io.github.spysyweeb.beamline.search.Py
 import io.github.spysyweeb.beamline.search.RuleFiles
+import io.github.spysyweeb.beamline.search.StreetShape
 import io.github.spysyweeb.beamline.search.db.SqlDb
 import java.math.BigInteger
 import java.nio.ByteBuffer
@@ -40,6 +41,10 @@ data class AddressHit(
     val edgeId: Long? = null,
     val side: String? = null,
     val hnGap: Long? = null,
+    /** Item 55 ([AddressIndex.alongStreet]): how the answer's street is named next to the street shown (NAME_OWN first). */
+    val alongName: Int? = null,
+    /** Item 55: metres from the answer (a point; a range's point before its side offset) to the street shown's line. */
+    val alongLineM: Double? = null,
 )
 
 /**
@@ -75,6 +80,41 @@ class AddressIndex(
     val keyFingerprint: String?
     /** Shared by threads (the connection itself is serialised in [SqlDb]). */
     private val placeZipsCache = java.util.concurrent.ConcurrentHashMap<String, Set<String>>()
+
+    /**
+     * Item 55 ([alongStreet]): the localities of each municipality key, read once (some files have no index on
+     * localities.muni_key, and the table is small: 12,843 rows in PA).
+     */
+    /** Item 55: the streets of one municipality: ids, keys, cores and representative points (lat_e6, lon_e6; Long.MIN_VALUE for none). */
+    private class MuniStreets(val ids: LongArray, val keys: Array<String>, val cores: Array<String>, val lat: LongArray, val lon: LongArray)
+
+    /** Item 55: [MuniStreets] of the last [MUNI_CACHE] municipalities (keys) asked for. */
+    private val muniStreetCache = object : LinkedHashMap<String, MuniStreets>(16, 0.75f, true) {
+        override fun removeEldestEntry(eldest: MutableMap.MutableEntry<String, MuniStreets>?): Boolean = size > MUNI_CACHE
+    }
+
+    private fun muniStreets(muniKey: String): MuniStreets? {
+        synchronized(muniStreetCache) { muniStreetCache[muniKey] }?.let { return it }
+        val locs = muniLocalities[muniKey] ?: return null
+        val rows = ArrayList<Array<Any?>>()
+        for (chunk in locs.asList().chunked(CHUNK)) {
+            rows += db.query("SELECT id, street_key, street_core, lat_e6, lon_e6 FROM streets WHERE locality_id IN (${marks(chunk.size)})", chunk)
+        }
+        val m = MuniStreets(
+            LongArray(rows.size) { rows[it][0] as Long }, Array(rows.size) { rows[it][1] as String }, Array(rows.size) { rows[it][2] as String },
+            LongArray(rows.size) { rows[it][3] as Long? ?: Long.MIN_VALUE }, LongArray(rows.size) { rows[it][4] as Long? ?: Long.MIN_VALUE },
+        )
+        synchronized(muniStreetCache) { muniStreetCache[muniKey] = m }
+        return m
+    }
+
+    private val muniLocalities: Map<String, LongArray> by lazy {
+        val m = HashMap<String, ArrayList<Long>>()
+        for (r in db.query("SELECT id, muni_key FROM localities WHERE muni_key IS NOT NULL AND muni_key != ''")) {
+            m.getOrPut(r[1] as String) { ArrayList() }.add(r[0] as Long)
+        }
+        m.mapValues { it.value.toLongArray() }
+    }
 
     private val locW = cfg["locality_score"]!!.jsonObject
     private val matchW = cfg["match_score"]!!.jsonObject
@@ -324,12 +364,273 @@ class AddressIndex(
         }
     }
 
+    // ------------------------------------------------------------------ item 55: along a street the search shows
+    /**
+     * Item 55 (docs/next-round.md; NOT part of the Python reference, which has no such lookup): house number [hn] along
+     * a street the search engine shows ([shape]: its box, its line, its keys and its municipality), found by place and
+     * not by that street's own name, so no town or ZIP is needed and a street of the name elsewhere never answers.
+     *
+     * The streets of this file looked at have their representative point in the street's box grown by [ALONG_MARGIN_DEG]
+     * (north-south; east-west the same distance), each with how its name relates to the street's ([AddressHit.alongName],
+     * closest first): [NAME_OWN] one of the street's own keys (its join key, its other names' keys, never the search
+     * pack's derived ones); [NAME_CORE] the join key's core with no part contradicting the join key ([compatible]: not
+     * "main ave" for "main st", not "n main st" for "s main st"); [NAME_DERIVED] a derived key ("main st" for "South Main
+     * Street", "rte 8" for a ref) or a highway alternative of a key ("twp 8" for "sr 8"); [NAME_SPELLING] a core of
+     * [ALONG_SPELLING_MIN_CHARS] letters or more one edit from the join key's core, no part contradicting ("example
+     * flynn" for "example flinn"); [NAME_OTHER] any other name. First the street's keys, its derived keys and their
+     * highway alternatives, in any ZIP;
+     * then, unless that found an address point, the streets of the localities of the street's municipality (whatever
+     * their ZIP; read once per municipality and kept): of another name only those whose representative point lies within
+     * [ALONG_OTHER_WITHIN_M] of the line (the same road under another name). Of them:
+     *  - a range (census or OSM) covering the number counts when the point it gives before the side offset lies within
+     *    [ALONG_RANGE_WITHIN_M] of the street's line and the edge runs there within [ALONG_MAX_ANGLE_DEG] of the line,
+     *    either way (a crossing street's range that starts at the corner does not count, nor an edge of no length); its
+     *    position is the lookup's own ([interpolate], offset to its side), so it is the same house as typed with the
+     *    range's town;
+     *  - an address point with the number (then its base number, as [resolve]) counts within [ALONG_POINT_WITHIN_M] of the
+     *    line (a house set back from the road), and only on a street of [NAME_OWN] or [NAME_CORE], or of [NAME_SPELLING]
+     *    when one of that same street's ranges was found along the line in this lookup (the proof that the other spelling
+     *    is this road): "120 Example Hill Ln" 120 m off "Example Mill Lane" is never its house, nor a crossing "Township
+     *    Road 8" house a state route 8's.
+     * Returns them all with [AddressHit.alongName] and [AddressHit.alongLineM]: accuracy "point" or "interpolated", match
+     * [MATCH_ALONG], localityMatch null; the caller ranks them. Empty for a number that is not one or is too large, or a
+     * shape with no line.
+     */
+    fun alongStreet(hn: String, shape: StreetShape): List<AddressHit> {
+        val parsedHn = normalizer.houseNumber(hn) ?: return emptyList()
+        if (parsedHn.int > maxHouseNumber || shape.lines.isEmpty() || shape.box.size != 4) return emptyList()
+        val hnn = parsedHn.text
+        val hni = parsedHn.int.toLong()
+        val primary = shape.addrKey ?: normalizer.streetKey(shape.name)
+        val own = LinkedHashSet<String>()
+        for (k in listOf(primary) + shape.altKeys.map { normalizer.streetKey(it) }) if (k.isNotEmpty()) own.add(k)
+        val derived = LinkedHashSet<String>()
+        for (k in shape.derivedKeys.map { normalizer.streetKey(it) }) if (k.isNotEmpty()) derived.add(k)
+        for (k in own + derived) derived.addAll(normalizer.highwayAlternatives(k))
+        derived.removeAll(own)
+        val core = normalizer.streetCore(primary)
+        val b = shape.box
+        val cosLat = StrictMath.cos(Math.toRadians((b[0] + b[1]) / 2))
+        val dLon = ALONG_MARGIN_DEG / cosLat
+        val area = listOf(e6(b[0] - ALONG_MARGIN_DEG), e6(b[1] + ALONG_MARGIN_DEG), e6(b[2] - dLon), e6(b[3] + dLon))
+        // 1. the street's keys and their highway alternatives, in any ZIP (one index lookup)
+        val byKey = LinkedHashMap<Long, Pair<Street, Int>>()
+        val keys = own + derived
+        if (keys.isNotEmpty()) {
+            for (s in streets("s.street_key IN (${marks(keys.size)}) AND s.lat_e6 BETWEEN ? AND ? AND s.lon_e6 BETWEEN ? AND ?", keys.toList() + area)) {
+                byKey[s.id] = s to (if (s.key in own) NAME_OWN else NAME_DERIVED)
+            }
+        }
+        val first = probeAlong(byKey, shape, hnn, hni, ranges = true)
+        if (first.any { it.accuracy == "point" }) return first
+        // 2. the streets of its municipality in the area, any name and ZIP: points of a near name; ranges (when the
+        // keys found none) of any name, another name only near the line (its box grown by ALONG_OTHER_WITHIN_M first)
+        val inMuni = shape.municipality?.let { normalizer.placeKey(it) }?.ifEmpty { null }?.let { muniStreets(it) } ?: return first
+        val ranges = first.isEmpty()
+        val dLat300 = ALONG_OTHER_WITHIN_M / M_PER_DEG
+        val near = listOf(e6(b[0] - dLat300), e6(b[1] + dLat300), e6(b[2] - dLat300 / cosLat), e6(b[3] + dLat300 / cosLat))
+        val classOf = LinkedHashMap<Long, Int>()
+        val cells by lazy { AlongStreet.Cells(shape.lines, ALONG_OTHER_WITHIN_M) }
+        for (j in inMuni.ids.indices) {
+            val la = inMuni.lat[j]
+            val lo = inMuni.lon[j]
+            val id = inMuni.ids[j]
+            if (la !in area[0]..area[1] || lo !in area[2]..area[3] || id in byKey) continue
+            val cls = nameClass(inMuni.keys[j], inMuni.cores[j], own, primary, core)
+            if (cls == NAME_OTHER) {
+                if (!ranges || la !in near[0]..near[1] || lo !in near[2]..near[3] || !cells.mayHold(la / 1e6, lo / 1e6)) continue
+                if ((AlongStreet.nearest(shape.lines, la / 1e6, lo / 1e6)?.get(0) ?: Double.MAX_VALUE) > ALONG_OTHER_WITHIN_M) continue
+            } else if (!ranges && cls != NAME_CORE) {
+                continue   // a near spelling's point needs its own range along the line, looked for only with the ranges
+            }
+            classOf[id] = cls
+        }
+        if (classOf.isEmpty()) return first
+        val rows = LinkedHashMap<Long, Pair<Street, Int>>()
+        for (chunk in classOf.keys.toList().chunked(CHUNK)) {
+            for (s in streets("s.id IN (${marks(chunk.size)})", chunk)) rows[s.id] = s to classOf.getValue(s.id)
+        }
+        return first + probeAlong(rows, shape, hnn, hni, ranges)
+    }
+
+    /**
+     * How a street of the file named [key] (core [core]) relates to a street of own keys [own] and join key [primary]
+     * (core [primaryCore]) ([alongStreet]).
+     */
+    private fun nameClass(key: String, core: String, own: Set<String>, primary: String, primaryCore: String): Int {
+        if (key in own) return NAME_OWN
+        if (core == primaryCore) return if (compatible(primary, key)) NAME_CORE else NAME_OTHER
+        if (core.length >= ALONG_SPELLING_MIN_CHARS && primaryCore.length >= ALONG_SPELLING_MIN_CHARS &&
+            AddressNormalizer.osaDistance(core, primaryCore, 1) <= 1 && compatible(primary, key)) return NAME_SPELLING
+        return NAME_OTHER
+    }
+
+    /** Item 55: whether the typed place [placeKey] is a postal town (the places table's kind "postal"). */
+    fun isPostalPlace(placeKey: String?): Boolean =
+        placeKey != null && postalCache.getOrPut(placeKey) {
+            db.first("SELECT 1 FROM places WHERE place_key = ? AND kind = 'postal' LIMIT 1", placeKey) != null
+        }
+
+    private val postalCache = java.util.concurrent.ConcurrentHashMap<String, Boolean>()
+
+    /**
+     * [alongStreet]'s answers among [streets] (id to (street, name class)): with [ranges], the ranges covering the number
+     * along the line; then the points with it, of the classes that may give one.
+     */
+    private fun probeAlong(streets: Map<Long, Pair<Street, Int>>, shape: StreetShape, hnn: String, hni: Long, ranges: Boolean): List<AddressHit> {
+        if (streets.isEmpty()) return emptyList()
+        fun hit(id: Long, lat: Double, lon: Double, acc: String, src: String, hnOut: String, lineM: Double): AddressHit {
+            val (row, cls) = streets.getValue(id)
+            return AddressHit(
+                lat = lat, lon = lon, accuracy = acc, source = src, houseNumber = hnOut, street = row.street, streetKey = row.key,
+                zip = row.zip, city = row.city, municipality = row.municipality, countyFips = row.countyFips, match = MATCH_ALONG,
+                score = Py.round(accW.d(acc) + (srcW[src]?.jsonPrimitive?.double ?: 0.0), 2), localityMatch = null,
+                alongName = cls, alongLineM = Py.round(lineM, 1),
+            )
+        }
+        val found = ArrayList<AddressHit>()
+        val proved = HashSet<Long>()
+        if (ranges && "ranges" in tables) {
+            for (ids in streets.keys.chunked(CHUNK)) {
+                for (r in db.query("SELECT street_id, edge_id, side, hn_from, hn_to, parity, source FROM ranges " +
+                    "WHERE street_id IN (${marks(ids.size)}) AND hn_lo <= ? AND hn_hi >= ?", ids + hni + hni)) {
+                    val par = r[5] as String?
+                    if (par == "O" && hni % 2 == 0L || par == "E" && hni % 2 == 1L) continue
+                    val edge = r[1] as Long
+                    val blob = db.first("SELECT geom FROM edges WHERE id = ?", edge)?.get(0) as? ByteArray ?: continue
+                    val geom = decodeLine(blob)
+                    if (geom.isEmpty()) continue
+                    val a = r[3] as Long
+                    val z = r[4] as Long
+                    val frac = if (a == z) 0.5 else (hni - a).toDouble() / (z - a).toDouble()
+                    val on = AlongStreet.pointOn(geom, frac)
+                    val near = AlongStreet.nearest(shape.lines, on[0], on[1]) ?: continue
+                    if (near[0] > ALONG_RANGE_WITHIN_M) continue
+                    if (!AlongStreet.parallel(on[2], on[3], near[1], near[2], ALONG_MAX_ANGLE_DEG)) continue
+                    val side = r[2] as String?
+                    val (lon, lat) = interpolate(geom, frac, side, offsetM)
+                    val id = r[0] as Long
+                    proved.add(id)
+                    found += hit(id, lat, lon, "interpolated", r[6] as String, hnn, near[0]).copy(edgeId = edge, side = side)
+                }
+            }
+        }
+        val pointIds = streets.filter { (id, v) -> v.second == NAME_OWN || v.second == NAME_CORE || (v.second == NAME_SPELLING && id in proved) }.keys.toList()
+        if ("addresses" in tables && pointIds.isNotEmpty()) {
+            val points = ArrayList<AddressHit>()
+            val tries = listOf(hnn) + (if (hni.toString() != hnn) listOf(hni.toString()) else emptyList())
+            for (want in tries) {
+                for (ids in pointIds.chunked(CHUNK)) {
+                    for (r in db.query("SELECT street_id, hn, unit, lat_e6, lon_e6, source, id FROM addresses " +
+                        "WHERE street_id IN (${marks(ids.size)}) AND hn = ?", ids + want)) {
+                        val lat = (r[3] as Long) / 1e6
+                        val lon = (r[4] as Long) / 1e6
+                        val near = AlongStreet.nearest(shape.lines, lat, lon) ?: continue
+                        if (near[0] > ALONG_POINT_WITHIN_M) continue
+                        points += hit(r[0] as Long, lat, lon, "point", r[5] as String, r[1] as String, near[0])
+                            .copy(unit = r[2] as String?, addressId = r[6] as Long, baseNumberOf = if (want != hnn) hnn else null)
+                    }
+                }
+                if (points.isNotEmpty()) break
+            }
+            return points + found
+        }
+        return found
+    }
+
+    /** Item 55: the place key of the town typed in [p] (as [resolve] reads it), or null. */
+    fun typedPlaceKey(p: ParsedAddress): String? =
+        (p.cityKey?.ifEmpty { null } ?: if (!p.city.isNullOrEmpty()) normalizer.placeKey(p.city) else null)?.ifEmpty { null }
+
+    /** Item 55: the place key of a municipality as the search pack names it ("Example Township": "example"), or null. */
+    fun municipalityKey(name: String?): String? = name?.let { normalizer.placeKey(it) }?.ifEmpty { null }
+
+    /**
+     * Item 55: the municipalities (place keys) of the typed place [placeKey] or ZIP [zip]: itself, and those of the
+     * localities whose postal town it is or that have its ZIPs (a borough's postal town serves the township around it:
+     * the file's localities pair each ZIP and postal town with the municipalities its mail goes to). Empty for neither.
+     */
+    fun servedMunicipalities(placeKey: String?, zip: String?): Set<String> {
+        val z = zip?.ifEmpty { null }
+        if (placeKey == null && z == null) return emptySet()
+        return servedCache.getOrPut("$placeKey|$z") {
+            val conds = ArrayList<String>()
+            val args = ArrayList<Any?>()
+            if (placeKey != null) {
+                conds += "city_key = ?"; args += placeKey
+                conds += "muni_key = ?"; args += placeKey
+                val zs = placeZips(placeKey).sorted()
+                if (zs.isNotEmpty()) {
+                    conds += "zip IN (${marks(zs.size)})"; args.addAll(zs)
+                }
+            }
+            if (z != null) {
+                conds += "zip = ?"; args += z
+            }
+            val out = LinkedHashSet<String>()
+            if (placeKey != null) out += placeKey
+            for (r in db.query("SELECT DISTINCT muni_key FROM localities WHERE muni_key IS NOT NULL AND (" + conds.joinToString(" OR ") + ")", args)) {
+                out += r[0] as String
+            }
+            out
+        }
+    }
+
+    private val servedCache = java.util.concurrent.ConcurrentHashMap<String, Set<String>>()
+
+    /** Item 55: whether answer [h] is filed under the town or ZIP typed in [p] (its ZIP, postal town or municipality). */
+    fun filedIn(h: AddressHit, p: ParsedAddress): Boolean {
+        val z = p.zip?.ifEmpty { null }
+        if (z != null && h.zip == z) return true
+        val ck = typedPlaceKey(p) ?: return false
+        return (h.city != null && normalizer.placeKey(h.city) == ck) || (h.municipality != null && normalizer.placeKey(h.municipality) == ck) ||
+            (h.zip != null && h.zip in placeZips(ck))
+    }
+
     fun geocode(text: String, limit: Int? = null): List<AddressHit> = resolve(parse(text), limit)
 
     fun parse(text: String): ParsedAddress = parser.parse(text, knownPlaces)
 
     companion object {
         private const val R_EARTH = 6_371_008.8
+
+        /**
+         * Item 55 ([alongStreet]): how far around the street's box a street of the file may have its representative
+         * point (degrees of latitude, about 1.1 km), how near the street's line a range's point (25 m; census edges
+         * lie within 6 m of OSM's line for 95 % of the same-named streets measured on the PA pack, 98 % within 20 m)
+         * and an address point (200 m: 98 % of the same-named streets' points measured there lie within it) must be,
+         * at what angle a range's edge may cross the line (30 degrees; 99 % of them within it), the shortest core a
+         * near spelling (one edit) is tried for, and how near the line the representative point of a street of another
+         * name must be.
+         */
+        const val ALONG_MARGIN_DEG = 0.01
+        const val ALONG_RANGE_WITHIN_M = 25.0
+        const val ALONG_POINT_WITHIN_M = 200.0
+        const val ALONG_MAX_ANGLE_DEG = 30.0
+        const val ALONG_SPELLING_MIN_CHARS = 7
+        const val ALONG_OTHER_WITHIN_M = 300.0
+
+        /** Item 55: [AddressHit.alongName], closest first (see [alongStreet]). */
+        const val NAME_OWN = 0
+        const val NAME_CORE = 1
+        const val NAME_DERIVED = 2
+        const val NAME_SPELLING = 3
+        const val NAME_OTHER = 4
+
+        /** Item 55: [AddressHit.match] (and so the result's tier) of an answer along the street shown. */
+        const val MATCH_ALONG = "along_street"
+
+        private const val M_PER_DEG = 111_320.0
+
+        /** Municipalities whose streets [alongStreet] keeps in memory (a city of 11,000 streets: about 1 MB, an estimate). */
+        private const val MUNI_CACHE = 32
+
+        /** Street ids per IN (...) of [alongStreet]. */
+        private const val CHUNK = 500
+
+        private fun marks(n: Int) = List(n) { "?" }.joinToString(",")
+
+        private fun e6(deg: Double): Long = Math.round(deg * 1e6)
 
         private fun JsonObject.d(k: String) = this[k]!!.jsonPrimitive.double
 

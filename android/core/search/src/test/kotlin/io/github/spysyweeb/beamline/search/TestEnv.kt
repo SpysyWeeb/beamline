@@ -33,6 +33,20 @@ object TestEnv {
         return searchDb
     }
 
+    /**
+     * A PA search database with the streets' lines (street_line, packs built since 2026-11-22): the configured one when
+     * it has them, else the local build data/r3-packs/pa-search.sqlite (the round's data/search copy predates them).
+     */
+    fun requireSearchDbWithLines(): String {
+        fun hasLines(p: String) = p.isNotEmpty() && File(p).isFile && io.github.spysyweeb.beamline.search.db.SqlDb.openReadOnly(p).use {
+            it.first("SELECT 1 FROM sqlite_master WHERE type = 'table' AND name = 'street_line'") != null
+        }
+        if (hasLines(searchDb)) return searchDb
+        val local = File(repoRoot, "data/r3-packs/pa-search.sqlite").path
+        need(hasLines(local), "no PA search database with street_line (beamline.searchDb or data/r3-packs/pa-search.sqlite)")
+        return local
+    }
+
     fun requireAddressesDb(): String {
         need(addressesDb.isNotEmpty() && File(addressesDb).isFile, "beamline.addressesDb not set in android/local.properties")
         return addressesDb

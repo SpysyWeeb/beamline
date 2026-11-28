@@ -3790,7 +3790,37 @@ Every rule id below needs at least one JVM test in `:nav:session` (N's definitio
   engine's scale (exact and first: the best engine score + `house_located`; estimated and first: the
   best + 0.0001; a guess, last: the lowest - 0.0001), so the merge by score keeps an exact address
   of one pack above an estimated one of another ("247 Main Street, Conneaut" near Erie: Ohio's
-  exact house before Pennsylvania's estimated "247 Main St, Conneautville").
+  exact house before Pennsylvania's estimated "247 Main St, Conneautville"). With a town or ZIP typed
+  the lookup goes by the typed street's name in that town (`SearchService`). With none, since 0.1.42
+  (docs/next-round.md item 55), a house number is looked up along the street the list shows where the search
+  is ranked: the street row nearest to the place the words name (its line), else to the position, else the
+  first; when the engine located the house on that street, nothing more. Its own answers first, else those of
+  the road's next pieces (rows of the same name whose line starts or ends within 40 m of its line).
+  `AddressIndex.alongStreet` finds, whatever the spelling or ZIP: census or OSM ranges covering the number whose
+  point lies within 25 m of the line on an edge running within 30 degrees of it (never an edge of no length);
+  address points within 200 m of the line, only on a street of the street's own name (its join key and OSM's
+  other names, never the search pack's derived "~" keys such as "main street" for "South Main Street") or its
+  join key's core with no part contradicting it ("main ave" is not "main st", "n main st" not "s main st"), or
+  of a spelling one letter off (cores of 7 letters or more) proven by its own range along the line; a derived
+  key or a highway alternative of a route number ("twp 8" for "sr 8") gives ranges only. The closest name wins
+  (the street's own range before another direction's point), then a point, then the nearest to the line, then
+  the nearest to where the search is ranked. The answer goes first, exact or estimated, titled with the street
+  row's name when it is under the street's own name, else with the data's ("12 N Main St"), the town and ZIP
+  the data files it under below; not when the engine located a house within 200 m of it or of its street's
+  line, or on its own row (the list has that house already). A road of that name elsewhere never answers, not even one the list shows; another state
+  named: nothing. With a town or ZIP of the pack's state typed: a house the engine located in or near that
+  place is the answer (nothing more; the town's lookup is not run). Else, when the lookup locates no house
+  there (only the street, nothing, or a guess elsewhere: a census range filed under the next town's ZIP), the
+  same along the street rows in that place (at most 3, nearest the place first; the answer of the nearest row
+  with one, which only a row joined to it or in its municipality may beat): in a municipality
+  the place is or whose mail it takes (the address file's localities pair each ZIP and postal town with the
+  municipalities they serve: a borough that is the postal town of the township around it reaches the
+  township's stretch of the road), or within 5 km of the place the words name (12 km for a postal town or a
+  ZIP); else the lookup's answer as before. localityMatch is true when the street's municipality is one the
+  place serves or the answer is filed under it, and the answer goes first in place of the guess; else false,
+  after the engine's rows. A typed town that locates the house: as before, unless the engine located that
+  house; another state typed: as before. A link's words (H6) take an answer along a street as their
+  address only when a typed town matched it.
 - **S5** The input is cut to `ranking.json` `max_query_chars` (256) by the engine itself, in Kotlin
   and in `query.py` alike. Type labels made from OSM tag values are spelled the US way
   (`ranking.json` `us_spellings`: "Neighborhood", "Sports center", "Theater"), and so is the leading
@@ -5003,7 +5033,7 @@ runs only its own modules' tasks, as above, is not affected.
 | 6.15 | Two engine calls per guided route (09 #8) | Accepted (OSRM form asked only at Start and re-route, not for every choice). Since 2026-11-17 no follower reads the OSRM answer (`FollowerRoute.osrmJson`); the call is kept for now and can go with a change of the 2.4 port | 20-130 ms on the emulator; no serializer to maintain |
 | 6.16 | Background guidance | Foreground service of type location (section 4); no background-location permission | Guidance must survive screen-off; "while in use" suffices |
 | 6.17 | First-query latency (10 #4) | `SearchHub` reads the hot tables once at open on the search thread | Cheap; measured on the phone at integration |
-| 6.18 | Addresses without a town (10 #3), brand ranking (10 #1) | Unchanged | The owner tunes them on the road |
+| 6.18 | Addresses without a town (10 #3), brand ranking (10 #1) | Brand ranking unchanged. Addresses without a town, or whose typed town locates no house: since 0.1.42 looked up along the street shown where the search is ranked, by place (S4, docs/next-round.md item 55; a link's words take such an answer only in a matched typed town) | The owner tunes them on the road; the owner's report of 2026-11-28 ("Street only" for a house number on a rural state route) |
 | 6.19 | Address typo speed (10 #5) | Indexes on `localities(city_key)`, `localities(muni_key)` in the address builder | Data-only change, likely 0.3-0.7 s off the tail (*estimate*) |
 | 6.20 | Search result icons | Cut from the style's sprite sheet by `poi_icons.json` | One icon set for map and list, no second export |
 | 6.21 | Marker exports (06 #5) | PNGs in candidate B committed in `:map:layers`, puck and cone in blue B, arrow in the sketch's blue family; stale puck without cone (SPEC) | Approved art; no build-time tool chain in the app build |
