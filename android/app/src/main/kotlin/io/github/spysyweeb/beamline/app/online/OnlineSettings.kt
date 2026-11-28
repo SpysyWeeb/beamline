@@ -32,6 +32,8 @@ data class OnlineSettings(
     val checkMapUpdates: Boolean = false,
     /** Item 41: once a day, ask the app's GitHub releases for a newer Beamline (AppUpdates); a file without the key takes [online]. */
     val checkAppUpdates: Boolean = false,
+    /** 0.1.41 (53e): the notice of what source=survey tells everyone was shown and the user chose Upload. */
+    val surveyNoticeSeen: Boolean = false,
 ) {
     /** OsmHttp may send (rule N4): the main switch and the feature's own. */
     val osmAllowed: Boolean get() = online && contributeOsm
@@ -80,7 +82,8 @@ class OnlineSettingsStore(private val file: File) {
         OnlineSettings(bool(CHOICE_MADE), bool(ONLINE), bool(CONTRIBUTE_OSM), bool(NOTE_NOTICE_SEEN), bool(EDIT_NOTICE_SEEN),
             // item 40: a file from before the switch takes the main switch's value (on for who chose online)
             if (obj?.containsKey(CHECK_MAP_UPDATES) == true) bool(CHECK_MAP_UPDATES) else bool(ONLINE),
-            if (obj?.containsKey(CHECK_APP_UPDATES) == true) bool(CHECK_APP_UPDATES) else bool(ONLINE))
+            if (obj?.containsKey(CHECK_APP_UPDATES) == true) bool(CHECK_APP_UPDATES) else bool(ONLINE),
+            bool(SURVEY_NOTICE_SEEN))
     } catch (_: Exception) {
         OnlineSettings()
     }
@@ -91,7 +94,7 @@ class OnlineSettingsStore(private val file: File) {
                 CHOICE_MADE to JsonPrimitive(s.choiceMade), ONLINE to JsonPrimitive(s.online),
                 CONTRIBUTE_OSM to JsonPrimitive(s.contributeOsm), NOTE_NOTICE_SEEN to JsonPrimitive(s.noteNoticeSeen),
                 EDIT_NOTICE_SEEN to JsonPrimitive(s.editNoticeSeen), CHECK_MAP_UPDATES to JsonPrimitive(s.checkMapUpdates),
-                CHECK_APP_UPDATES to JsonPrimitive(s.checkAppUpdates),
+                CHECK_APP_UPDATES to JsonPrimitive(s.checkAppUpdates), SURVEY_NOTICE_SEEN to JsonPrimitive(s.surveyNoticeSeen),
             ),
         ).toString()
         file.parentFile?.mkdirs()
@@ -115,5 +118,6 @@ class OnlineSettingsStore(private val file: File) {
         const val EDIT_NOTICE_SEEN = "edit_notice_seen"
         const val CHECK_MAP_UPDATES = "check_map_updates"
         const val CHECK_APP_UPDATES = "check_app_updates"
+        const val SURVEY_NOTICE_SEEN = "survey_notice_seen"
     }
 }

@@ -142,6 +142,11 @@ object DriveTags {
     const val STOPS_ARRIVE = "stops-arrive"
     /** Play test P31, audit F34: the arrival card's "Saved" (in place of "Save this place"). */
     const val DESTINATION_SAVED = "destination-saved"
+    /** 0.1.41 (docs/online-design.md 4.8): the arrival card's one question (its tonal panel) and its three answers. */
+    const val ARRIVAL_QUESTION = "arrival-question"
+    const val ARRIVAL_YES = "arrival-yes"
+    const val ARRIVAL_EDIT = "arrival-edit"
+    const val ARRIVAL_NOT_NOW = "arrival-not-now"
     /** Play test P5: the trip bar's "No route from here". */
     const val NO_ROUTE = "no-route"
 }
@@ -184,6 +189,7 @@ internal val CURRENT_ROAD_END_ROOM: Dp = 76.dp
  * [stopWindowDp] (item 51, rule S12): the stop results' window is this high at the bottom (0 on its side,
  * where it is in the start panel): only the top block, the chip or stop card and the speed pair above the
  * window are drawn, and the insets are the top block's height (upright) or the panel's width (on its side).
+ * On its side the banner then leaves out its lane row ([bannerShown], item 54b: the list under it keeps room).
  * [onTopStack] (play test P7): where the top stack ends, in whole dp from the overlay's top, in both layouts.
  * [safe]: the system bars and a display cutout, which the content keeps clear of (a parameter for the tests).
  */
@@ -292,7 +298,8 @@ internal fun DriveOverlayContent(
             if (guidance != null && !arrived) {
                 val banner = guidance.banner
                 if (banner != null) {
-                    Column(topBox) { TurnBanner(banner, palette = palette) }
+                    // item 54b (play test of 0.1.41): on its side over a stop window or the Add stop panel, no lane row
+                    Column(topBox) { TurnBanner(bannerShown(banner, side, stopWindow), palette = palette) }
                 } else if (status is GuidanceStatusUi.Rerouting || status is GuidanceStatusUi.RerouteFailed) {
                     Column(topBox) { StatusCard(status, onEvent) }
                 }

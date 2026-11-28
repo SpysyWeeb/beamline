@@ -304,9 +304,10 @@ sealed interface SearchOutput {
  * CALL and WEBSITE (rule S10) last, never while driving: the app opens the dialer or the browser.
  * REPORT is never in [PlaceSheetUi.actions]: the sheet offers it by [PlaceSheetUi.canReport]
  * (docs/online-design.md 4.1, batch O1); EDIT_OSM neither, by [PlaceSheetUi.canEditOsm] (4.2, batch O2);
- * ADD_PLACE neither, by [PlaceSheetUi.canAddPlace] (4.3, batch O3).
+ * ADD_PLACE neither, by [PlaceSheetUi.canAddPlace] (4.3, batch O3); CONFIRM_HOURS and EDIT_HOURS neither, by
+ * [PlaceSheetUi.canCheckHours] (4.8, 0.1.41).
  */
-enum class PlaceAction { DIRECTIONS, ADD_STOP, OPEN_STATES, SAVE, EDIT, CALL, WEBSITE, REPORT, EDIT_OSM, ADD_PLACE }
+enum class PlaceAction { DIRECTIONS, ADD_STOP, OPEN_STATES, SAVE, EDIT, CALL, WEBSITE, REPORT, EDIT_OSM, ADD_PLACE, CONFIRM_HOURS, EDIT_HOURS }
 
 data class PlaceSheetUi(
     val place: Place,
@@ -366,6 +367,14 @@ data class PlaceSheetUi(
     val canAddPlace: Boolean = false,
     /** Item 47: the drive time on Directions ("6 min": "Directions · 6 min"); the app sets it from the session's estimate, null shows plain "Directions". */
     val driveTimeText: String? = null,
+    /**
+     * 0.1.41 (docs/online-design.md 4.8, item 53c): "Hours still right?" under the week at the details height, with
+     * "Yes" (Act(CONFIRM_HOURS): the hours confirmed in one tap) and "Edit hours" (Act(EDIT_HOURS): the edit form at
+     * its hours). The app sets it while the user stands at the place and may confirm its hours; false: not offered.
+     */
+    val canCheckHours: Boolean = false,
+    /** 0.1.41: the user confirmed these hours today: "Hours confirmed" with a check where the question was (the app sets it). */
+    val hoursChecked: Boolean = false,
 )
 
 /**

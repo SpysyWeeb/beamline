@@ -795,7 +795,7 @@ sends) with its own hosts, request and switch, as the table says and its KDoc sp
 - **N3 — what.** `OsmHttp`: only the requests the OSM API defines for what the batches built (the
   table above: a note's text and point in a form body; the sign-in's code, verifier, client id and
   redirect address; an edit's element with its changed tags and a changeset with `comment`,
-  `created_by=Beamline <version>`, `source=survey`; batch O3: the box of the map request, which is
+  `created_by=Beamline <version>` and, for an edit made at the place only (0.1.41), `source=survey`; batch O3: the box of the map request, which is
   the pressed point grown by about 60 m, and a new node with its tags at the pressed point); headers `User-Agent: Beamline/<version>`,
   `Accept`, `Accept-Encoding: identity`, with an account `Authorization: Bearer <token>`, and the
   transport headers; nothing else of docs/online-design.md section 3: never the phone's position, a

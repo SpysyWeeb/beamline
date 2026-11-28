@@ -34,14 +34,22 @@ import androidx.compose.material3.TextButton
 import androidx.compose.material3.TimeInput
 import androidx.compose.material3.TimePicker
 import androidx.compose.material3.rememberTimePickerState
+import androidx.compose.foundation.relocation.BringIntoViewRequester
+import androidx.compose.foundation.relocation.bringIntoViewRequester
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.rememberUpdatedState
 import androidx.compose.runtime.setValue
+import androidx.compose.runtime.withFrameNanos
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.focus.FocusRequester
+import androidx.compose.ui.focus.focusRequester
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.platform.LocalSoftwareKeyboardController
 import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.semantics.Role
 import androidx.compose.ui.semantics.contentDescription
@@ -119,9 +127,39 @@ private fun FieldProblem(text: String?) {
 /**
  * The one form's fields (batch O3, item 24): the type (when [withType]), the name, the hours editor,
  * phone and website, each with "Changed" and Undo; phone and website checked as typed.
+ * 0.1.41 (docs/online-design.md 4.8, AP9): opened at a field ([focus]): the hours' heading brought into view, or the
+ * phone or website field focused with the keyboard up; [onFocused] once that is done (the form does it once).
  */
 @Composable
-fun FormFieldsView(f: FormFields, withType: Boolean, nameLabel: String, marks: Boolean = true, onPickType: () -> Unit) {
+fun FormFieldsView(
+    f: FormFields, withType: Boolean, nameLabel: String, marks: Boolean = true,
+    focus: EditFocus? = null, onFocused: () -> Unit = {}, onPickType: () -> Unit,
+) {
+    val hoursAt = remember { BringIntoViewRequester() }
+    val phoneAt = remember { BringIntoViewRequester() }
+    val websiteAt = remember { BringIntoViewRequester() }
+    val phoneFocus = remember { FocusRequester() }
+    val websiteFocus = remember { FocusRequester() }
+    val keyboard = LocalSoftwareKeyboardController.current
+    val focused by rememberUpdatedState(onFocused)
+    LaunchedEffect(focus) {
+        if (focus == null) return@LaunchedEffect
+        withFrameNanos { }   // laid out: the fields can be focused and brought into view
+        when (focus) {
+            EditFocus.HOURS -> hoursAt.bringIntoView()
+            EditFocus.PHONE -> {
+                phoneFocus.requestFocus()
+                keyboard?.show()
+                phoneAt.bringIntoView()
+            }
+            EditFocus.WEBSITE -> {
+                websiteFocus.requestFocus()
+                keyboard?.show()
+                websiteAt.bringIntoView()
+            }
+        }
+        focused()
+    }
     if (withType) {
         Text(OnlineTexts.TYPE, style = MaterialTheme.typography.titleSmall, modifier = Modifier.padding(top = 4.dp).semantics { heading() })
         val t = f.type
@@ -138,10 +176,11 @@ fun FormFieldsView(f: FormFields, withType: Boolean, nameLabel: String, marks: B
     }
     OutlinedTextField(f.name, { f.name = it }, label = { Text(nameLabel) }, singleLine = true, modifier = Modifier.fillMaxWidth().testTag("edit-name"))
     ChangedMark(marks && f.nameChanged && !f.fresh, OnlineTexts.NAME) { f.undoName() }
-    HoursEditor(f, marks)
+    HoursEditor(f, marks, heading = Modifier.bringIntoViewRequester(hoursAt))
     OutlinedTextField(
         f.phone, { f.phone = it }, label = { Text(OnlineTexts.PHONE) }, singleLine = true, isError = f.phoneProblem != null,
-        keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Phone), modifier = Modifier.fillMaxWidth().testTag("edit-phone"),
+        keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Phone),
+        modifier = Modifier.fillMaxWidth().bringIntoViewRequester(phoneAt).focusRequester(phoneFocus).testTag("edit-phone"),
     )
     FieldProblem(f.phoneProblem)
     // item 38: what the number will be written as, when that is not what was typed
@@ -152,7 +191,8 @@ fun FormFieldsView(f: FormFields, withType: Boolean, nameLabel: String, marks: B
     ChangedMark(marks && f.phoneChanged && !f.fresh, OnlineTexts.PHONE) { f.undoPhone() }
     OutlinedTextField(
         f.website, { f.website = it }, label = { Text(OnlineTexts.WEBSITE) }, singleLine = true, isError = f.websiteProblem != null,
-        keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Uri), modifier = Modifier.fillMaxWidth().testTag("edit-website"),
+        keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Uri),
+        modifier = Modifier.fillMaxWidth().bringIntoViewRequester(websiteAt).focusRequester(websiteFocus).testTag("edit-website"),
     )
     FieldProblem(f.websiteProblem)
     ChangedMark(marks && f.websiteChanged && !f.fresh, OnlineTexts.WEBSITE) { f.undoWebsite() }
@@ -168,8 +208,10 @@ private data class PickFor(val group: Int, val range: Int, val opens: Boolean)
  * the days left closed, the public holidays line, and the fold-out "As OpenStreetMap stores it".
  */
 @Composable
-fun HoursEditor(f: FormFields, marks: Boolean = true) {
-    HoursBlock(OnlineTexts.HOURS, f.hours, { f.hours = it }, f.hoursReadOnly, marks && f.hoursChanged && !f.fresh, { f.undoHours() }, tag = "")
+fun HoursEditor(f: FormFields, marks: Boolean = true, heading: Modifier = Modifier) {
+    // 0.1.41 (AP9): [heading] on the first set's title (the form opened at the hours brings it into view), tag `edit-hours`
+    HoursBlock(OnlineTexts.HOURS, f.hours, { f.hours = it }, f.hoursReadOnly, marks && f.hoursChanged && !f.fresh, { f.undoHours() }, tag = "",
+        titleModifier = heading.testTag("edit-hours"))
     // item 33: a second set of hours (the office, the drive-through, the kitchen)
     val more = f.more
     if (more == null) {
@@ -195,7 +237,10 @@ fun HoursEditor(f: FormFields, marks: Boolean = true) {
  * show ([readOnly]); [tag] ends the test tags of a second set ("-2").
  */
 @Composable
-private fun HoursBlock(title: String, d: HoursDraft, onChange: (HoursDraft) -> Unit, readOnly: String?, changed: Boolean, onUndo: () -> Unit, tag: String) {
+private fun HoursBlock(
+    title: String, d: HoursDraft, onChange: (HoursDraft) -> Unit, readOnly: String?, changed: Boolean, onUndo: () -> Unit, tag: String,
+    titleModifier: Modifier = Modifier,
+) {
     val ctx = LocalContext.current
     val h24 = remember { DateFormat.is24HourFormat(ctx) }
     var picking by remember { mutableStateOf<PickFor?>(null) }
@@ -207,7 +252,7 @@ private fun HoursBlock(title: String, d: HoursDraft, onChange: (HoursDraft) -> U
         pasteNote = null
         onChange(it)
     }
-    Text(title, style = MaterialTheme.typography.titleSmall, modifier = Modifier.padding(top = 8.dp).semantics { heading() })
+    Text(title, style = MaterialTheme.typography.titleSmall, modifier = titleModifier.padding(top = 8.dp).semantics { heading() })
     ChangedMark(changed, title, onUndo)
     if (readOnly != null) {
         Text(readOnly, style = MaterialTheme.typography.bodyLarge, modifier = Modifier.testTag("edit-hours-readonly$tag"))

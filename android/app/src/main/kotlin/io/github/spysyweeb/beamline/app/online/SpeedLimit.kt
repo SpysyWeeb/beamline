@@ -186,8 +186,17 @@ class SpeedSession(
         private set
     var status by mutableStateOf<Int?>(null)
         private set
+    /** 0.1.41 (OP-4): the fix went and OpenStreetMap already had the limit: nothing was uploaded. */
+    var already by mutableStateOf(false)
+        private set
 
     private val id: String = itemId ?: java.util.UUID.randomUUID().toString()
+
+    /** 0.1.41 (53e, OP-6): the outbox item looked at again (a limit picked while driving), as it is now; null for a new fix. */
+    val stored: OutboxItem? get() = itemId?.let { outbox.byId(it) }
+
+    /** 0.1.41 (53e, OP-6): the change the summary's Upload would put in the outbox. */
+    val pendingChanges: Map<String, String?> get() = mph?.takeIf { road != null }?.let { mapOf(SpeedLimits.KEY to SpeedLimits.tag(it)) } ?: emptyMap()
 
     /** Reads the road at the point from OSM ([conflict]: the road changed on OSM while the fix waited). */
     fun load(conflict: Boolean = false) {
@@ -242,8 +251,8 @@ class SpeedSession(
     /** Something was chosen (the discard question on leaving). */
     val dirty: Boolean get() = (phase == SpeedPhase.PICK && mph != null && itemId == null) || phase == SpeedPhase.SUMMARY
 
-    /** "Upload": into the outbox (replacing the item looked at again) and sent at once when it can be. */
-    fun upload() {
+    /** "Upload": into the outbox (replacing the item looked at again) and sent at once when it can be. 0.1.41: [atPlace] (53e) is kept with it. */
+    fun upload(atPlace: Boolean = false) {
         if (phase != SpeedPhase.SUMMARY) return   // only the summary's Upload, once
         val r = road ?: return
         val m = mph ?: return
@@ -256,8 +265,10 @@ class SpeedSession(
                     mapOf(SpeedLimits.KEY to SpeedLimits.tag(m)), SpeedLimits.comment(r.name, m), road = true,
                 ),
                 speedMph = m,
+                atPlace = atPlace,
             ),
         )
+        already = false
         phase = SpeedPhase.UPLOADING
         scope.launch {
             sender.sendWaiting(id, null)
@@ -265,6 +276,7 @@ class SpeedSession(
             when (item?.state) {
                 OutboxState.SENT -> {
                     link = item.link
+                    already = item.edit?.changeset == null
                     phase = SpeedPhase.DONE
                 }
                 OutboxState.REVIEW -> load(conflict = true)

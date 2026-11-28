@@ -36,7 +36,9 @@ import kotlinx.coroutines.flow.asStateFlow
  * Adding a stop on the map (K8, item 51): while [stopView] holds points, PREVIEW and the guide modes
  * fit them top-down, north up (guiding: with the vehicle, re-fitted at most every STOP_REFIT_MS when it
  * leaves the middle of the view); a gesture leaves the camera until the next points, Recenter or
- * recenter_after_s; K4/K5's return to the follow waits until adding a stop ends.
+ * recenter_after_s; K4/K5's return to the follow waits until adding a stop ends. Since 0.1.41 (item
+ * 54b) the points may come with their own padding (the Add stop search's typing view), and without
+ * room for the fit the camera stays.
  *
  * Timers (K4, K5) are checked in [tick] against [clock]. All calls come from one thread (the main
  * thread in the app); the flows may be read from any thread.
@@ -101,6 +103,8 @@ internal class Director(private val rules: CameraRules, private val clock: Clock
 
     /** K8 (item 51): the points the stop view fits (the stop results and where they join, or the way to one); null: none. */
     private var stopView: List<GeoPoint>? = null
+    /** K8 (item 54b): the padding the stop view asked for on each side (the Add stop search's typing view); null: preview.padding_dp. */
+    private var stopPadding: Float? = null
     /** K8: the box the stop view was last fitted to, and when (the guided re-fit's reference). */
     private var stopFitBox: Bounds? = null
     private var stopFitAtMs = 0L
@@ -113,6 +117,8 @@ internal class Director(private val rules: CameraRules, private val clock: Clock
     private var seenMiddle: GeoPoint? = null
     private var seenZoom = 0.0
     private var seenBearing = 0.0
+    /** Item 54a: the following a tapped place ended (K1b), which the next my-location gives back as it was; null: none. */
+    private var followBeforeTap: FollowKind? = null
 
     /** What PREVIEW fits; a change re-fits even after the user moved the map (new routes to show). */
     private var previewKey: Any? = null
@@ -141,6 +147,9 @@ internal class Director(private val rules: CameraRules, private val clock: Clock
 
     /** [side]: +1 for a right turn, -1 for a left one. */
     private class Hold(val bearingDeg: Double, val side: Double, val untilMs: Long)
+
+    /** Item 54a: which following a tap ended. */
+    private enum class FollowKind { NORTH_UP, COMPASS }
 
     // Browse follow (K1)
     private var puckAtMs: Long? = null
@@ -244,6 +253,7 @@ internal class Director(private val rules: CameraRules, private val clock: Clock
                 results = null
                 tapped = null
                 tappedShown = false
+                followBeforeTap = null   // item 54a: moved by hand, the one-press return ends (K1a as today)
                 // K1a: a map no longer centred on the user does not turn with the compass
                 _compassFollow.value = false
                 browseNorth = false
@@ -272,6 +282,29 @@ internal class Director(private val rules: CameraRules, private val clock: Clock
                 results = null
                 tapped = null
                 tappedShown = false
+                // item 54a: a tapped place ended following: one press gives it back as it was (no north-up-first
+                // step: the compass turned the map, not the user's hand)
+                val before = followBeforeTap
+                followBeforeTap = null
+                if (mode == CameraMode.BROWSE && before != null) {
+                    val heading = puck?.coneDeg
+                    browseNorth = false
+                    if (before == FollowKind.COMPASS && heading != null) {
+                        browseBearing = heading.toDouble()
+                        compassFilter.reset()
+                        _compassFollow.value = true
+                    } else {
+                        _compassFollow.value = false
+                        browseBearing = 0.0
+                    }
+                    followFirst = true
+                    // the move to the user runs first: compass readings (publish(0)) and follow updates wait for
+                    // it; no fix yet: following waits for the first one, as a first press does
+                    turnUntilMs = if (puck != null) clock.elapsedMs() + rules.transitionMs else 0L
+                    setMode(CameraMode.BROWSE_FOLLOW)
+                    publish(rules.transitionMs, ease = true)
+                    return
+                }
                 // K1a (the owner, 2026-11-24): a map turned by hand and not following turns north up
                 // first, where it is; the next tap goes to the user
                 if (mode == CameraMode.BROWSE && !browseNorth && kotlin.math.abs(signedDiff(0.0, mapBearing)) >= NORTH_TOLERANCE_DEG) {
@@ -358,6 +391,7 @@ internal class Director(private val rules: CameraRules, private val clock: Clock
         _compassFollow.value = false
         browseNorth = false
         turnUntilMs = 0L
+        followBeforeTap = null   // item 54a: turned by hand, the one-press return ends
     }
 
     private fun browsing() = mode == CameraMode.BROWSE || mode == CameraMode.BROWSE_FOLLOW
@@ -375,6 +409,7 @@ internal class Director(private val rules: CameraRules, private val clock: Clock
                 results = null
                 tapped = null
                 tappedShown = false
+                followBeforeTap = null   // item 54a: a picked place ends the one-press return
                 place = point
                 setMode(CameraMode.BROWSE)
             }
@@ -404,12 +439,23 @@ internal class Director(private val rules: CameraRules, private val clock: Clock
 
     /**
      * K1b (P8): a place tapped on the map whose sheet opened (a POI label, a saved place's marker, a
-     * dropped pin). On a browsing map that is not following, the camera stays while the place's pin is
+     * dropped pin). Item 54a (0.1.41, the owner: "the tapped place wins"): while browsing follows the
+     * user, the tap ends following where the map is, as a drag does (its bearing and zoom kept, the
+     * compass no longer leading; no move of its own), and [followBeforeTap] keeps which following it was
+     * for the next [onMyLocation]. On the browsing map the camera then stays while the place's pin is
      * wholly in the area the insets leave free and centres it there, at the map's zoom and bearing,
      * once it is not ([onViewport], [onCameraAt]); from then on it is kept there like a picked place.
-     * Following keeps the user in view (K1); a trip keeps its camera: nothing then.
+     * A trip keeps its camera: nothing then.
      */
     fun onPlaceTapped(point: GeoPoint) {
+        if (mode == CameraMode.BROWSE_FOLLOW) {
+            // item 54a (P8; the owner, 2026-11-27: "the tapped place wins"): following ends where the map is, its
+            // bearing and zoom kept, as a drag; the next my-location gives it back as it was
+            followBeforeTap = if (_compassFollow.value) FollowKind.COMPASS else FollowKind.NORTH_UP
+            _compassFollow.value = false
+            turnUntilMs = 0L
+            setMode(CameraMode.BROWSE)
+        }
         if (mode != CameraMode.BROWSE) return
         browseReset = null
         place = null
@@ -463,20 +509,25 @@ internal class Director(private val rules: CameraRules, private val clock: Clock
 
     /**
      * K8 (item 51): adding a stop on the map. While a route is chosen (PREVIEW) or guided the camera
-     * looks top-down, north up at [points] in the area the insets leave free; guiding, the vehicle is in
-     * the view too (GUIDE_OVERVIEW; a new fit when it leaves the middle of the view, at most every
-     * STOP_REFIT_MS). New points fit at once, also after a gesture. Empty [points]: adding a stop ended,
-     * back to K2 (the preview's fit) or K3 (the follow). Other phases: nothing.
+     * looks top-down, north up at [points] in the area the insets leave free, [paddingDp] on each side
+     * (null: preview.padding_dp; item 54b's typing view, the route ahead the Add stop search looks along,
+     * passes its own); guiding, the vehicle is in the view too (GUIDE_OVERVIEW; a new fit when it leaves
+     * the middle of the view, at most every STOP_REFIT_MS). New points fit at once, also after a gesture.
+     * No room for the fit in that area ([stopRoom]): the camera stays until [onViewport] gives room.
+     * Empty [points]: adding a stop ended, back to K2 (the preview's fit) or K3 (the follow). Other
+     * phases: nothing.
      */
-    fun onStopView(points: List<GeoPoint>) {
+    fun onStopView(points: List<GeoPoint>, paddingDp: Float? = null) {
         val kind = kindOf(trip.phase)
         if (kind != Kind.PREVIEW && kind != Kind.GUIDE) {
             stopView = null
+            stopPadding = null
             return
         }
         if (points.isEmpty()) {
             if (stopView == null) return
             stopView = null
+            stopPadding = null
             stopFitBox = null
             userMoved = false
             lookAt = null
@@ -485,6 +536,7 @@ internal class Director(private val rules: CameraRules, private val clock: Clock
             return
         }
         stopView = points
+        stopPadding = paddingDp
         userMoved = false
         lookAt = null
         if (kind == Kind.GUIDE) setMode(CameraMode.GUIDE_OVERVIEW)   // top-down, north up
@@ -503,6 +555,7 @@ internal class Director(private val rules: CameraRules, private val clock: Clock
         place = null
         tapped = null
         tappedShown = false
+        followBeforeTap = null   // item 54a: the results end the one-press return
         results = points
         resultsMinZoom = minZoom
         setMode(CameraMode.BROWSE)
@@ -568,9 +621,11 @@ internal class Director(private val rules: CameraRules, private val clock: Clock
         results = null
         tapped = null
         tappedShown = false
+        followBeforeTap = null   // item 54a: a new phase group ends the one-press return
         arrivedCar = null
         // K8: a change of phase group ends adding a stop (ARRIVED, IDLE)
         stopView = null
+        stopPadding = null
         stopFitBox = null
         when (kind) {
             Kind.BROWSE -> {
@@ -691,11 +746,25 @@ internal class Director(private val rules: CameraRules, private val clock: Clock
         return Bounds.around(pts + listOfNotNull(car))
     }
 
-    /** K8: the stop view fitted (preview.padding_dp plus the insets: the results window is in the insets); remembers the box and the time. */
-    private fun stopFitTarget(animateMs: Int): CameraTarget? = stopBox()?.let { b ->
-        stopFitBox = b
-        stopFitAtMs = clock.elapsedMs()
-        fitTarget(b, animateMs)
+    /**
+     * K8: the stop view fitted ([stopPadding], else preview.padding_dp, plus the insets: the results window
+     * or the Add stop panel is in the insets); remembers the box and the time. No room ([stopRoom]): null, the
+     * camera stays ([onViewport] publishes again once the insets give room back).
+     */
+    private fun stopFitTarget(animateMs: Int): CameraTarget? {
+        if (!stopRoom()) return null
+        return stopBox()?.let { b ->
+            stopFitBox = b
+            stopFitAtMs = clock.elapsedMs()
+            fitTarget(b, animateMs, stopPadding ?: rules.previewPaddingDp)
+        }
+    }
+
+    /** K8 (item 54b): the area the insets leave free, less the stop view's padding on each side, has some width and height. */
+    private fun stopRoom(): Boolean {
+        if (widthDp <= 0f || heightDp <= 0f) return true   // not measured yet: the map fits by itself
+        val p = stopPadding ?: rules.previewPaddingDp
+        return widthDp - insets.start - insets.end - 2 * p > 0f && heightDp - insets.top - insets.bottom - 2 * p > 0f
     }
 
     /** K8: [p] is outside the middle 80 % of the last stop fit (its box shrunk by 10 % of its span on each side). */

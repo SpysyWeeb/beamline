@@ -64,8 +64,43 @@ data class EditData(
     val typeCode: String? = null,
     /** Item 32: the edit is of a road (its speed limit), not of a place: the own-changes layer shows nothing for it. */
     val road: Boolean = false,
+    /** 0.1.41 (53a): the node's own point as the form (or the pack) had it; null: a way, or none known (no move check). Public OSM data, never the phone's. */
+    val nodeLat: Double? = null,
+    val nodeLon: Double? = null,
+    /**
+     * 0.1.41 (53d): what the upload really changed, set once it went: per key, the value just before ([sentBefore], null:
+     * none) and after ([sentAfter], null: removed). Empty maps: OSM already had every value, nothing was uploaded.
+     */
+    val sentBefore: Map<String, String?>? = null,
+    val sentAfter: Map<String, String?>? = null,
+    /** 0.1.41 (53d): this item undoes the sent item [undoOf] ([base]: the values the edit wrote; [changes]: the ones before). */
+    val undoOf: String? = null,
+    /** 0.1.41 (53d): an undo of this item went (the own-changes layer and Undo leave it out). */
+    val undone: Boolean = false,
+    /** 0.1.41 (53d), on an undo: the keys left as someone changed them since. */
+    val kept: List<String> = emptyList(),
+    /** 0.1.41 (53c): a confirmation of this key's value ("opening_hours"): it writes check_date:<key> only. */
+    val confirm: String? = null,
+    /**
+     * 0.1.41 (53a, plan OP-2): for a closing or a different business, the place's kind tags when the edit was made
+     * ([EditPlans.kindOf]); on an undo of one, the kind the edit left. It goes only while the place is still of that kind.
+     */
+    val kind: Map<String, String>? = null,
+    /**
+     * The fixer's review: an upload about to go (kept just before its PUT, while the item still waits): when a later pass
+     * finds the element last changed in [Going.changeset], OSM applied it though its reply was lost, and it counts as sent.
+     */
+    val going: Going? = null,
 ) {
     override fun toString(): String = "EditData(${changes.size} changes)"
+}
+
+/**
+ * The fixer's review: an upload of an edit or an undo on its way: the changeset it goes in, per key the value before it
+ * and the one it writes, and (an undo) the keys left as changed since. [toString] prints none of it (PV2).
+ */
+data class Going(val changeset: Long, val before: Map<String, String?>, val after: Map<String, String?>, val kept: List<String> = emptyList()) {
+    override fun toString(): String = "Going(${after.size} changes)"
 }
 
 /**
@@ -118,6 +153,13 @@ data class OutboxItem(
      * confirms it; the confirmed fix carries its [edit] of the road.
      */
     val speedMph: Int? = null,
+    /**
+     * 0.1.41 (53e, docs/online-design.md 4.5): the edit was made at the place: one of the phone's positions of the 10
+     * minutes before Upload was within about 80 m of it ([RecentPositions]), the form was opened from a question at the
+     * place, or an item made there went again with its values ([UploadChecks.atPlace]). Its changeset then carries
+     * source=survey. Only this yes or no is kept, never a position.
+     */
+    val atPlace: Boolean = false,
 ) {
     val isEdit: Boolean get() = edit != null
     val isAdd: Boolean get() = add != null
@@ -189,12 +231,54 @@ class OutboxStore(private val file: File) {
     internal fun markRefused(id: String, status: Int) =
         write(_items.value.map { if (it.id == id) it.copy(state = OutboxState.REFUSED, status = status) else it })
 
+    /** 53d: [before] and [after] are what the upload really changed, per key (kept for Undo). */
     @Synchronized
-    internal fun markEditSent(id: String, changeset: Long, newVersion: Int?, link: String, nowMs: Long = System.currentTimeMillis()) = write(
+    internal fun markEditSent(
+        id: String, changeset: Long, newVersion: Int?, link: String,
+        before: Map<String, String?>, after: Map<String, String?>, nowMs: Long = System.currentTimeMillis(),
+    ) = write(
         _items.value.map {
-            if (it.id == id && it.edit != null) it.copy(state = OutboxState.SENT, link = link, status = null, sentMs = nowMs, edit = it.edit.copy(changeset = changeset, newVersion = newVersion)) else it
+            if (it.id == id && it.edit != null) it.copy(state = OutboxState.SENT, link = link, status = null, sentMs = nowMs,
+                edit = it.edit.copy(changeset = changeset, newVersion = newVersion, sentBefore = before, sentAfter = after, going = null)) else it
         },
     )
+
+    /** The fixer's review: just before a PUT, what goes and in which changeset (the item still waits; see [EditData.going]). */
+    @Synchronized
+    internal fun markGoing(id: String, going: Going) = write(
+        _items.value.map { if (it.id == id && it.edit != null) it.copy(edit = it.edit.copy(going = going)) else it },
+    )
+
+    /** 53a: sent: OSM already has every value of the edit; nothing was uploaded ([link]: the place on OSM). */
+    @Synchronized
+    internal fun markEditAlready(id: String, link: String, nowMs: Long = System.currentTimeMillis()) = write(
+        _items.value.map {
+            if (it.id == id && it.edit != null) it.copy(state = OutboxState.SENT, link = link, status = null, sentMs = nowMs,
+                edit = it.edit.copy(changeset = null, sentBefore = emptyMap(), sentAfter = emptyMap(), going = null)) else it
+        },
+    )
+
+    /**
+     * 53d: the undo [id] is done: [changeset] null when nothing was uploaded ([status] 410: the place was deleted).
+     * When it uploaded, the item it undoes is marked [EditData.undone] in the same write.
+     */
+    @Synchronized
+    internal fun markUndoDone(
+        id: String, changeset: Long?, newVersion: Int?, link: String?, kept: List<String>, status: Int?,
+        before: Map<String, String?>, after: Map<String, String?>, nowMs: Long = System.currentTimeMillis(),
+    ) {
+        val of = byId(id)?.edit?.undoOf
+        write(
+            _items.value.map {
+                when {
+                    it.id == id && it.edit != null -> it.copy(state = OutboxState.SENT, link = link, status = status, sentMs = nowMs,
+                        edit = it.edit.copy(changeset = changeset, newVersion = newVersion, kept = kept, sentBefore = before, sentAfter = after, going = null))
+                    changeset != null && of != null && it.id == of && it.edit != null -> it.copy(edit = it.edit.copy(undone = true))
+                    else -> it
+                }
+            },
+        )
+    }
 
     @Synchronized
     internal fun markReview(id: String, status: Int?) =
@@ -241,6 +325,7 @@ class OutboxStore(private val file: File) {
             id, lat, lon, text, s("place"), l("created_ms") ?: 0L, state, l("note_id"), s("link"),
             (o["status"] as? JsonPrimitive)?.intOrNull, (o["with_name"] as? JsonPrimitive)?.booleanOrNull ?: false, edit, add, l("sent_ms"),
             (o["speed_mph"] as? JsonPrimitive)?.intOrNull,
+            (o["at_place"] as? JsonPrimitive)?.booleanOrNull ?: false,
         )
     }
 
@@ -249,12 +334,28 @@ class OutboxStore(private val file: File) {
         val osm = str(o["osm"]) ?: return null
         val base = (o["base"] as? JsonObject)?.mapNotNull { (k, v) -> str(v)?.let { k to it } }?.toMap() ?: return null
         val changes = (o["changes"] as? JsonObject)?.map { (k, v) -> k to str(v) }?.toMap() ?: return null
+        val nodeAt = (o["node_at"] as? JsonArray)?.mapNotNull { (it as? JsonPrimitive)?.doubleOrNull }?.takeIf { it.size == 2 }
         return EditData(
             osm, (o["base_version"] as? JsonPrimitive)?.intOrNull, base, changes, str(o["comment"]) ?: "",
             (o["changeset"] as? JsonPrimitive)?.longOrNull, (o["new_version"] as? JsonPrimitive)?.intOrNull,
             (o["in_pack"] as? JsonPrimitive)?.booleanOrNull ?: false,
             (o["replace_with"] as? JsonObject)?.mapNotNull { (k, v) -> str(v)?.let { k to it } }?.toMap(),
             str(o["pack_osm"]), str(o["icon"]), str(o["type"]), (o["road"] as? JsonPrimitive)?.booleanOrNull ?: false,
+            // 0.1.41: each of these is optional (absent in a 0.1.40 file: the defaults)
+            nodeLat = nodeAt?.get(0), nodeLon = nodeAt?.get(1),
+            sentBefore = (o["sent_before"] as? JsonObject)?.map { (k, v) -> k to str(v) }?.toMap(),
+            sentAfter = (o["sent_after"] as? JsonObject)?.map { (k, v) -> k to str(v) }?.toMap(),
+            undoOf = str(o["undo_of"]),
+            undone = (o["undone"] as? JsonPrimitive)?.booleanOrNull ?: false,
+            kept = (o["kept"] as? JsonArray)?.mapNotNull { str(it) } ?: emptyList(),
+            confirm = str(o["confirm"]),
+            kind = (o["kind"] as? JsonObject)?.mapNotNull { (k, v) -> str(v)?.let { k to it } }?.toMap(),
+            going = (o["going"] as? JsonObject)?.let { g ->
+                val cs = (g["changeset"] as? JsonPrimitive)?.longOrNull
+                val before = (g["before"] as? JsonObject)?.map { (k, v) -> k to str(v) }?.toMap()
+                val after = (g["after"] as? JsonObject)?.map { (k, v) -> k to str(v) }?.toMap()
+                if (cs != null && before != null && after != null) Going(cs, before, after, (g["kept"] as? JsonArray)?.mapNotNull { str(it) } ?: emptyList()) else null
+            },
         )
     }
 
@@ -287,6 +388,7 @@ class OutboxStore(private val file: File) {
                         if (i.withName) put("with_name", JsonPrimitive(true))
                         i.sentMs?.let { put("sent_ms", JsonPrimitive(it)) }
                         i.speedMph?.let { put("speed_mph", JsonPrimitive(it)) }
+                        if (i.atPlace) put("at_place", JsonPrimitive(true))
                         i.add?.let { a ->
                             put(
                                 "add",
@@ -320,6 +422,28 @@ class OutboxStore(private val file: File) {
                                         e.icon?.let { put("icon", JsonPrimitive(it)) }
                                         e.typeCode?.let { put("type", JsonPrimitive(it)) }
                                         if (e.road) put("road", JsonPrimitive(true))
+                                        // 0.1.41: each only when set
+                                        if (e.nodeLat != null && e.nodeLon != null) put("node_at", JsonArray(listOf(JsonPrimitive(e.nodeLat), JsonPrimitive(e.nodeLon))))
+                                        e.sentBefore?.let { m -> put("sent_before", JsonObject(m.mapValues { JsonPrimitive(it.value) })) }
+                                        e.sentAfter?.let { m -> put("sent_after", JsonObject(m.mapValues { JsonPrimitive(it.value) })) }
+                                        e.undoOf?.let { put("undo_of", JsonPrimitive(it)) }
+                                        if (e.undone) put("undone", JsonPrimitive(true))
+                                        if (e.kept.isNotEmpty()) put("kept", JsonArray(e.kept.map { JsonPrimitive(it) }))
+                                        e.confirm?.let { put("confirm", JsonPrimitive(it)) }
+                                        e.kind?.let { m -> put("kind", JsonObject(m.mapValues { JsonPrimitive(it.value) })) }
+                                        e.going?.let { g ->
+                                            put(
+                                                "going",
+                                                JsonObject(
+                                                    buildMap {
+                                                        put("changeset", JsonPrimitive(g.changeset))
+                                                        put("before", JsonObject(g.before.mapValues { JsonPrimitive(it.value) }))
+                                                        put("after", JsonObject(g.after.mapValues { JsonPrimitive(it.value) }))
+                                                        if (g.kept.isNotEmpty()) put("kept", JsonArray(g.kept.map { JsonPrimitive(it) }))
+                                                    },
+                                                ),
+                                            )
+                                        }
                                     },
                                 ),
                             )
@@ -359,10 +483,12 @@ data class SendResult(val sent: Int, val refused: Int, val left: Int, val offlin
  *
  * Batch O2: a note marked "Post with my OSM name" goes with the account's token when signed in
  * ([account]), else anonymously (less is sent, never more). An edit needs the account: signed out it
- * waits. Before an edit goes the place is read again; if it changed since the edit was made the edit
- * waits for the user ([OutboxState.REVIEW]) instead of overwriting; else one changeset (comment,
- * `created_by=Beamline <version>`), the element with the version read, close.
- * OSM's 409 (changed in between) also gives REVIEW.
+ * waits. Before an edit goes the place is read again and the edit checked tag by tag (0.1.41, 53a,
+ * [EditPlans]): it goes onto the newest version unless one of its own tags now holds a third value, the
+ * node was moved far or the place deleted (then it waits for the user, [OutboxState.REVIEW]); what OSM
+ * already has is not uploaded again. One changeset (comment, `created_by=Beamline <version>`, and
+ * `source=survey` for an edit made at the place, 53e), the element, close; OSM's 409 is read again once.
+ * An undo (53d) goes by [Undo.plan].
  */
 class OutboxSender(
     private val store: OutboxStore,
@@ -406,7 +532,10 @@ class OutboxSender(
                         store.markSent(now.id, noteId, server.noteLink(noteId))
                         sent++
                     } else {
-                        when (withContext(io) { sendEdit(now, now.edit, acc!!.token, if (knownFor == now.id) known else null) }) {
+                        // 0.1.41 (53d): an undo has its own plan
+                        val done = if (now.edit.undoOf != null) withContext(io) { sendUndo(now, now.edit, acc!!.token) }
+                            else withContext(io) { sendEdit(now, now.edit, acc!!.token, if (knownFor == now.id) known else null) }
+                        when (done) {
                             true -> sent++
                             false -> review++
                         }
@@ -445,7 +574,7 @@ class OutboxSender(
             store.markReview(item.id, null)
             return false
         }
-        val changeset = http.openChangeset(token, PlaceEdits.changesetTags(a.comment, http.version))
+        val changeset = http.openChangeset(token, PlaceEdits.changesetTags(a.comment, http.version, item.atPlace))
         try {
             val node = http.createNode(token, changeset, item.lat, item.lon, a.tags)
             store.markAddSent(item.id, node, changeset, server.elementLink(OsmRef(OsmType.NODE, node)))
@@ -459,37 +588,132 @@ class OutboxSender(
         }
     }
 
-    /** True: sent (or OSM already had it); false: waits for the user (REVIEW). Blocking. */
+    /**
+     * 0.1.41 (53a): an edit, checked tag by tag on the place as OSM has it now ([EditPlans.plan]): uploaded onto the
+     * newest version, or nothing when OSM already has every value, or back to the user (REVIEW: a third value, a node
+     * moved far, or 410: deleted). A 409 (changed between the read and the upload) is read again and planned again once.
+     * The changeset is opened only when something goes, with the comment of [EditPlans.sendComment] and source=survey
+     * for an edit made at the place. True: done (sent, or OSM already had it); false: waits for the user. Blocking.
+     * The fixer's review: just before the PUT the item keeps its changeset ([EditData.going]), so a pass after a lost
+     * reply that finds the element last changed in it marks it sent (with its Undo), not "Already on OpenStreetMap".
+     */
     private fun sendEdit(item: OutboxItem, e: EditData, token: String, known: OsmElement?): Boolean {
         val ref = OsmRef.parse(e.osm) ?: throw OsmError(400)
-        val fresh = known?.takeIf { it.ref == ref && it.version == e.baseVersion }
-        val current = fresh ?: http.element(ref)
-        // a replacement made offline from the pack's values: it still applies while the old business's name is there
-        val meanwhile = if (e.replaceWith != null && e.baseVersion == null) e.base["name"]?.let { current.tags["name"] != it } ?: false
-            else PlaceEdits.changedMeanwhile(current, e.baseVersion, e.base, e.changes)
-        if (fresh == null && meanwhile) {
-            store.markReview(item.id, null)
-            return false
-        }
-        // Batch O3 (item 25): a new business in an old place: the swap made again on the place as it is now
-        val changes = e.replaceWith?.let { BusinessTags.replace(current.tags, it) } ?: e.changes
-        val changeset = http.openChangeset(token, PlaceEdits.changesetTags(e.comment, http.version))
-        try {
-            val v = http.putElement(token, current.copy(tags = PlaceEdits.apply(current.tags, changes)), changeset)
-            store.markEditSent(item.id, changeset, v, server.changesetLink(changeset))
+        var current = known?.takeIf { e.going == null && it.ref == ref && it.version == e.baseVersion } ?: readOrGone(ref) ?: return gone(item)
+        // the fixer's review: an upload of an earlier pass that OSM applied though its reply was lost: it went
+        e.going?.takeIf { it.changeset == current.changeset }?.let { g ->
+            store.markEditSent(item.id, g.changeset, current.version, server.changesetLink(g.changeset), before = g.before, after = g.after)
             return true
-        } catch (x: OsmError) {
-            if (x.status == 409) {
-                store.markReview(item.id, 409)
-                return false
+        }
+        var changeset: Long? = null
+        try {
+            for (attempt in 1..2) {
+                val up = when (val p = EditPlans.plan(e, current)) {
+                    is EditPlan.Review -> {
+                        store.markReview(item.id, null)
+                        return false
+                    }
+                    EditPlan.Already -> {
+                        store.markEditAlready(item.id, server.elementLink(ref))
+                        return true
+                    }
+                    is EditPlan.Upload -> p.changes
+                }
+                val cs = changeset ?: http.openChangeset(token, PlaceEdits.changesetTags(EditPlans.sendComment(item, current), http.version, item.atPlace))
+                    .also { changeset = it }
+                val before = up.keys.associateWith { current.tags[it] }
+                // kept first: a reply lost after OSM applied it is told by the element's changeset on a later pass
+                store.markGoing(item.id, Going(cs, before, up))
+                try {
+                    val v = http.putElement(token, current.copy(tags = PlaceEdits.apply(current.tags, up)), cs)
+                    store.markEditSent(item.id, cs, v, server.changesetLink(cs), before = before, after = up)
+                    return true
+                } catch (x: OsmError) {
+                    if (x.status == 410) return gone(item)
+                    if (x.status != 409) throw x
+                    if (attempt == 2) {
+                        store.markReview(item.id, 409)
+                        return false
+                    }
+                    // changed between the read and the upload: read again and plan again on the newest version (53a)
+                    current = readOrGone(ref) ?: return gone(item)
+                }
             }
-            throw x
+            error("not reached")
         } finally {
-            try {
-                http.closeChangeset(token, changeset)
-            } catch (_: Exception) {
-                // OSM closes an idle changeset by itself after an hour
+            changeset?.let { cs ->
+                try {
+                    http.closeChangeset(token, cs)
+                } catch (_: Exception) {
+                    // OSM closes an idle changeset by itself after an hour
+                }
             }
         }
+    }
+
+    /**
+     * 0.1.41 (53d): the undo [item] of a sent edit, checked at send time ([Undo.plan]): what still holds the edit's
+     * value goes back, a tag someone changed since stays. No source (an undo restores, it reports nothing seen). Always
+     * true (it is done, whatever it found; its row says what came of it); a second 409 in one pass is thrown on (final:
+     * REFUSED(409)). Blocking.
+     */
+    private fun sendUndo(item: OutboxItem, u: EditData, token: String): Boolean {
+        val ref = OsmRef.parse(u.osm) ?: throw OsmError(400)
+        var current = readOrGone(ref) ?: return undoGone(item)
+        // the fixer's review: an undo of an earlier pass that OSM applied though its reply was lost: it went
+        u.going?.takeIf { it.changeset == current.changeset }?.let { g ->
+            store.markUndoDone(item.id, g.changeset, current.version, server.changesetLink(g.changeset), g.kept, null, g.before, g.after)
+            return true
+        }
+        var changeset: Long? = null
+        try {
+            for (attempt in 1..2) {
+                val p = Undo.plan(u, current.tags)
+                if (p.back.isEmpty()) {
+                    store.markUndoDone(item.id, null, null, null, p.kept, null, emptyMap(), emptyMap())
+                    return true
+                }
+                val cs = changeset ?: http.openChangeset(token, PlaceEdits.changesetTags(EditPlans.sendComment(item, current), http.version))
+                    .also { changeset = it }
+                val before = p.back.keys.associateWith { current.tags[it] }
+                store.markGoing(item.id, Going(cs, before, p.back, p.kept))
+                try {
+                    val v = http.putElement(token, current.copy(tags = PlaceEdits.apply(current.tags, p.back)), cs)
+                    store.markUndoDone(item.id, cs, v, server.changesetLink(cs), p.kept, null, before = before, after = p.back)
+                    return true
+                } catch (x: OsmError) {
+                    if (x.status != 409 || attempt == 2) throw x
+                    current = readOrGone(ref) ?: return undoGone(item)
+                }
+            }
+            error("not reached")
+        } finally {
+            changeset?.let { cs ->
+                try {
+                    http.closeChangeset(token, cs)
+                } catch (_: Exception) {
+                    // OSM closes an idle changeset by itself after an hour
+                }
+            }
+        }
+    }
+
+    /** The element, or null when OSM says it was deleted (410). 404 and every other error go on as before. */
+    private fun readOrGone(ref: OsmRef): OsmElement? = try {
+        http.element(ref)
+    } catch (x: OsmError) {
+        if (x.status == 410) null else throw x
+    }
+
+    /** 53a: the place was deleted: the edit waits for the user ([OutboxItem.status] 410). */
+    private fun gone(item: OutboxItem): Boolean {
+        store.markReview(item.id, 410)
+        return false
+    }
+
+    /** 53d: the place of an undo was deleted: nothing went ([OutboxItem.status] 410). */
+    private fun undoGone(item: OutboxItem): Boolean {
+        store.markUndoDone(item.id, null, null, null, emptyList(), 410, emptyMap(), emptyMap())
+        return true
     }
 }

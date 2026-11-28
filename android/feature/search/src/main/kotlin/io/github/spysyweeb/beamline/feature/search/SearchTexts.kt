@@ -101,6 +101,11 @@ internal object Texts {
     const val ADD_PLACE = "Add a missing place"
     const val VIEW_ALL = "View all"
     const val ALL_TYPES = "All place types"
+    // 0.1.41 (docs/online-design.md 4.8, item 53c): at the place, the window's details height under the week
+    const val HOURS_STILL_RIGHT = "Hours still right?"
+    const val HOURS_YES = "Yes"
+    const val HOURS_EDIT = "Edit hours"
+    const val HOURS_CONFIRMED = "Hours confirmed"
 
     /** The plain heading of a category group of packbuilder/search/categories.json ("food": "Food and drink"). */
     fun typeGroup(group: String?): String = when (group) {

@@ -112,6 +112,46 @@ class DriveLandscapeTest {
 
     private val frame2Ui get() = present(guiding(banner = frame2, remainingM = 121.92 + 356.0 + 391.0, remainingS = 70.0), camera = CameraState(CameraMode.GUIDE_FREE, showRecenter = true))
 
+    /**
+     * Item 54b (the play test of 0.1.41): on its side, under the stop results' window or the Add stop search's panel in
+     * the start panel (stopWindowDp 0), the banner leaves out its lane row, so the list under it has room for a few
+     * rows (with it only one fitted); the banner stays. Without the window, and upright with one, the lanes are drawn.
+     */
+    @Test
+    fun underAStopWindowTheBannerLeavesOutItsLanes() {
+        var window by mutableStateOf<Float?>(null)
+        var size by mutableStateOf(DpSize(800.dp, 360.dp))
+        var topStack = 0f
+        compose.setContent {
+            BeamlineTheme(night = false) {
+                Box(Modifier.fillMaxSize()) {
+                    Box(Modifier.wrapContentSize(Alignment.TopStart, unbounded = true).size(size)) {
+                        DriveOverlay(frame2Ui, {}, { insets = it }, stopWindowDp = window, onTopStack = { topStack = it })
+                    }
+                }
+            }
+        }
+        compose.waitForIdle()
+        compose.onNodeWithTag(DriveTags.LANES).assertIsDisplayed()
+        val withLanes = topStack
+        compose.runOnUiThread { window = 0f }
+        compose.waitForIdle()
+        compose.saveShotOf(DriveTags.OVERLAY, "land-stop-window-no-lanes")
+        compose.onNodeWithTag(DriveTags.BANNER).assertIsDisplayed()
+        compose.onNodeWithTag(DriveTags.LANES).assertDoesNotExist()
+        assertTrue("the top stack ($topStack dp) ends higher than with the lanes ($withLanes dp)", topStack < withLanes - 40f)
+        compose.runOnUiThread { window = null }
+        compose.waitForIdle()
+        compose.onNodeWithTag(DriveTags.LANES).assertIsDisplayed()
+        // upright (360 x 640 dp) the window is at the bottom and the banner keeps its lanes
+        compose.runOnUiThread {
+            size = DpSize(360.dp, 640.dp)
+            window = 300f
+        }
+        compose.waitForIdle()
+        compose.onNodeWithTag(DriveTags.LANES).assertIsDisplayed()
+    }
+
     /** A 20:9 phone on its side (800 x 360 dp): a 400 dp panel. */
     @Test
     fun widePhone() {

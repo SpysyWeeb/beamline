@@ -16,6 +16,7 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.asAndroidBitmap
 import androidx.compose.ui.platform.LocalConfiguration
 import androidx.compose.ui.platform.LocalDensity
+import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.semantics.SemanticsActions
 import androidx.compose.ui.semantics.SemanticsProperties
 import androidx.compose.ui.test.SemanticsNodeInteraction
@@ -23,16 +24,19 @@ import androidx.compose.ui.test.assertIsDisplayed
 import androidx.compose.ui.test.assertWidthIsAtLeast
 import androidx.compose.ui.test.captureToImage
 import androidx.compose.ui.test.getBoundsInRoot
+import androidx.compose.ui.test.hasAnyAncestor
 import androidx.compose.ui.test.hasClickAction
 import androidx.compose.ui.test.hasSetTextAction
 import androidx.compose.ui.test.hasTestTag
 import androidx.compose.ui.test.hasText
 import androidx.compose.ui.test.junit4.v2.createComposeRule
+import androidx.compose.ui.test.onAllNodesWithText
 import androidx.compose.ui.test.onNodeWithContentDescription
 import androidx.compose.ui.test.onNodeWithTag
 import androidx.compose.ui.test.onNodeWithText
 import androidx.compose.ui.test.performClick
 import androidx.compose.ui.test.performScrollTo
+import androidx.compose.ui.text.TextLayoutResult
 import androidx.compose.ui.text.TextRange
 import androidx.compose.ui.unit.Density
 import androidx.compose.ui.unit.Dp
@@ -84,6 +88,8 @@ class PlaceWindowScreensTest {
 
     private var content by mutableStateOf<@Composable () -> Unit>({})
     private var fontScale by mutableStateOf<Float?>(null)
+    /** 0.1.41: the night palette for the day and night screenshots (every other test runs by day). */
+    private var night by mutableStateOf(false)
     /** P60: the window height the screen reads (LocalConfiguration.screenHeightDp); null: the device's own. */
     private var screenHeight by mutableStateOf<Int?>(null)
 
@@ -95,7 +101,7 @@ class PlaceWindowScreensTest {
             val config = LocalConfiguration.current
             val shown = screenHeight?.let { h -> Configuration(config).apply { screenHeightDp = h } } ?: config
             CompositionLocalProvider(LocalDensity provides Density(d.density, fontScale ?: d.fontScale), LocalConfiguration provides shown) {
-                BeamlineTheme(night = false) { content() }
+                BeamlineTheme(night = night) { content() }
             }
         }
     }
@@ -352,5 +358,132 @@ class PlaceWindowScreensTest {
         title = bounds(compose.onNodeWithText("Set home"))
         val short = bounds(compose.onNode(hasSetTextAction()))
         assertTrue("back $back title $title field $short", overlapVertically(back, title) && overlapVertically(title, short) && short.left >= title.right - 1f)
+    }
+
+    // ---------------------------------------------------------------- 0.1.41, item 53c
+    private val week = listOf("Mon", "Tue", "Wed", "Thu", "Fri", "Sat", "Sun").map { d ->
+        HoursDayUi(d, if (d == "Sun") "Closed" else if (d == "Sat") "9 AM–1 PM" else "8 AM–6 PM", d == "Fri")
+    }
+    private val cafe = Place("Made Up Cafe", GeoPoint(42.12795, -80.08596), PlaceSource.MAP_POI, "123 Made Up Street, Erie, PA 16501", "cafe")
+    private fun cafeUi() = PlaceSheetUi(
+        cafe, "cafe", cafe.name, cafe.subtitle, "450 ft", null, listOf(PlaceAction.DIRECTIONS, PlaceAction.SAVE),
+        hours = HoursUi(OpenState.OPEN, HoursTexts.OPEN, "until 6 PM", week), category = "Cafe", canCheckHours = true,
+    )
+
+    /** Raises the window to its details height (from wherever it is). */
+    private fun toDetails() {
+        repeat(2) { if (state() != "Full height") handle().action("Raise the sheet") }
+        assertEquals("Full height", state())
+    }
+
+    /** A pill of the "Hours still right?" line ([text] inside it, the merged button node). */
+    private fun hoursPill(text: String) = compose.onNode(hasText(text) and hasClickAction() and hasAnyAncestor(hasTestTag("place-hours-check")))
+
+    /** Why [text]'s own text node is cut at its end (a pill never wraps its words), or null when it lays out whole. */
+    private fun cut(text: String): String? {
+        val node = compose.onNode(hasText(text) and hasAnyAncestor(hasTestTag("place-hours-check")), useUnmergedTree = true).fetchSemanticsNode()
+        val out = ArrayList<TextLayoutResult>()
+        node.config[SemanticsActions.GetTextLayoutResult].action?.invoke(out)
+        val r = out.singleOrNull() ?: return "${out.size} layouts"
+        // the words' own extent on their one line against the box they got (a softWrap = false text lays out wider than its box)
+        val words = r.getLineRight(0) - r.getLineLeft(0)
+        return if (r.lineCount == 1 && words <= r.size.width + 0.5f) null
+        else "${r.lineCount} lines, the words $words px in ${r.size} (paragraph ${r.multiParagraph.width} px), node ${node.boundsInRoot}"
+    }
+
+    /** The shown content by day and by night ([SearchScreensTest.save]: the test APK's screens/ folder). */
+    private fun shot(name: String) {
+        for (n in listOf(false, true)) {
+            compose.runOnUiThread { night = n }
+            compose.waitForIdle()
+            Thread.sleep(150)
+            SearchScreensTest.save(compose, "$name-${if (n) "night" else "day"}")
+        }
+        compose.runOnUiThread { night = false }
+        compose.waitForIdle()
+    }
+
+    /**
+     * 53c (docs/online-design.md 4.8, AP10): at the details height, under the week, "Hours still right?" with "Yes"
+     * (Act(CONFIRM_HOURS)) and "Edit hours" (Act(EDIT_HOURS)); not at peek or the middle height (they show no week).
+     * Confirmed today: "Hours confirmed" with a check where the question was. At 1.3x in a 300 dp window both pills
+     * are whole (the second goes under the first). A saved place's window has its "Edit" (the saved place) and "Edit
+     * hours" (OpenStreetMap's hours), each sending its own action. Screenshots by day and night.
+     */
+    @Test
+    fun hoursCheckAtTheDetailsHeight() {
+        val events = ArrayList<PlaceSheetEvent>()
+        var ui by mutableStateOf(cafeUi())
+        show {
+            Box(Modifier.size(411.dp, 800.dp).background(if (night) Color(0xFF1C242C) else Color(0xFFE7E5DF)).testTag(SearchScreensTest.TAG)) {
+                PlaceSheetContent(ui, { events.add(it) }, Modifier.align(Alignment.BottomCenter))
+            }
+        }
+        assertEquals("Lowered", state())
+        compose.onNodeWithTag("place-hours-check", useUnmergedTree = true).assertDoesNotExist()
+        handle().action("Raise the sheet")
+        assertEquals("Half open", state())
+        compose.onNodeWithTag("place-hours-check", useUnmergedTree = true).assertDoesNotExist()
+        compose.onNodeWithText("Hours still right?", useUnmergedTree = true).assertDoesNotExist()
+        toDetails()
+        // under the week, inside the hours row
+        compose.onNodeWithTag("place-hours-check").performScrollTo().assertIsDisplayed()
+        compose.onNode(hasText("Hours still right?") and hasAnyAncestor(hasTestTag("place-hours-check")), useUnmergedTree = true).assertIsDisplayed()
+        val weekBounds = bounds(compose.onNodeWithTag("hours-week", useUnmergedTree = true))
+        val check = bounds(compose.onNodeWithTag("place-hours-check", useUnmergedTree = true))
+        assertTrue("the line $check under the week $weekBounds", check.top >= weekBounds.bottom - 1f && check.left >= weekBounds.left - 1f)
+        hoursPill("Yes").assertIsDisplayed()
+        hoursPill("Edit hours").assertIsDisplayed()
+        shot("place-hours-check")
+        hoursPill("Yes").performClick()
+        hoursPill("Edit hours").performClick()
+        assertEquals(listOf<PlaceSheetEvent>(PlaceSheetEvent.Act(PlaceAction.CONFIRM_HOURS), PlaceSheetEvent.Act(PlaceAction.EDIT_HOURS)), events)
+        // confirmed today: said so, no question (the same place keeps its height)
+        compose.runOnUiThread { ui = cafeUi().copy(canCheckHours = false, hoursChecked = true) }
+        compose.waitForIdle()
+        assertEquals("Full height", state())
+        compose.onNodeWithTag("place-hours-confirmed").performScrollTo().assertIsDisplayed()
+        compose.onNodeWithText("Hours confirmed", useUnmergedTree = true).assertIsDisplayed()
+        compose.onNodeWithTag("place-hours-check", useUnmergedTree = true).assertDoesNotExist()
+        assertEquals(0, compose.onAllNodesWithText("Yes").fetchSemanticsNodes().size)
+        shot("place-hours-confirmed")
+        // not offered: neither
+        compose.runOnUiThread { ui = cafeUi().copy(canCheckHours = false) }
+        compose.waitForIdle()
+        compose.onNodeWithTag("place-hours-check", useUnmergedTree = true).assertDoesNotExist()
+        compose.onNodeWithTag("place-hours-confirmed", useUnmergedTree = true).assertDoesNotExist()
+
+        // 1.3x in a 300 dp window: both pills whole, inside the window
+        show(fs = 1.3f) {
+            Box(Modifier.size(300.dp, 700.dp).background(if (night) Color(0xFF1C242C) else Color(0xFFE7E5DF)).testTag(SearchScreensTest.TAG)) {
+                PlaceSheetContent(cafeUi(), { events.add(it) }, Modifier.align(Alignment.BottomCenter))
+            }
+        }
+        toDetails()
+        val sheet = bounds(compose.onNodeWithTag(PLACE_SHEET_TAG))
+        for (t in listOf("Yes", "Edit hours")) {
+            hoursPill(t).performScrollTo().assertIsDisplayed()
+            val b = bounds(hoursPill(t))
+            assertTrue("$t at $b, the window $sheet", b.left >= sheet.left && b.right <= sheet.right - px(16.dp) + 1f)
+            assertEquals("$t is cut", null, cut(t))
+        }
+        shot("place-hours-check-300dp-1.3x")
+
+        // a saved place: its "Edit" and "Edit hours", each its own action
+        events.clear()
+        val saved = cafe.copy(savedId = "s0000000000000001")
+        show {
+            Box(Modifier.size(411.dp, 800.dp).background(if (night) Color(0xFF1C242C) else Color(0xFFE7E5DF)).testTag(SearchScreensTest.TAG)) {
+                PlaceSheetContent(cafeUi().copy(place = saved, actions = listOf(PlaceAction.DIRECTIONS, PlaceAction.EDIT), savedId = saved.savedId),
+                    { events.add(it) }, Modifier.align(Alignment.BottomCenter))
+            }
+        }
+        toDetails()
+        val edit = compose.onNode(hasText("Edit") and hasClickAction())
+        edit.performScrollTo().assertIsDisplayed()
+        hoursPill("Edit hours").performScrollTo().assertIsDisplayed()
+        edit.performClick()
+        hoursPill("Edit hours").performClick()
+        assertEquals(listOf<PlaceSheetEvent>(PlaceSheetEvent.Act(PlaceAction.EDIT), PlaceSheetEvent.Act(PlaceAction.EDIT_HOURS)), events)
     }
 }

@@ -5,6 +5,23 @@ import androidx.compose.foundation.verticalScroll
 import androidx.compose.foundation.layout.heightIn
 import androidx.compose.runtime.LaunchedEffect
 import io.github.spysyweeb.beamline.ui.theme.rememberSheetState
+import io.github.spysyweeb.beamline.ui.theme.LocalSheetLag
+import io.github.spysyweeb.beamline.ui.theme.SHEET_STEP
+import androidx.compose.foundation.gestures.Orientation
+import androidx.compose.foundation.gestures.ScrollableDefaults
+import androidx.compose.foundation.gestures.animateScrollBy
+import androidx.compose.foundation.gestures.draggable
+import androidx.compose.foundation.gestures.rememberDraggableState
+import androidx.compose.foundation.gestures.stopScroll
+import androidx.compose.foundation.layout.offset
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.rememberCoroutineScope
+import androidx.compose.ui.draw.drawWithContent
+import androidx.compose.ui.graphics.drawscope.clipRect
+import androidx.compose.ui.platform.LocalDensity
+import androidx.compose.ui.semantics.scrollBy
+import androidx.compose.ui.unit.IntOffset
+import kotlinx.coroutines.launch
 import io.github.spysyweeb.beamline.ui.theme.SheetSteps
 import io.github.spysyweeb.beamline.ui.theme.SheetHeight
 import io.github.spysyweeb.beamline.ui.theme.SheetFrame
@@ -24,7 +41,9 @@ import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.Button
 import androidx.compose.material3.CircularProgressIndicator
+import androidx.compose.material3.FilledTonalButton
 import androidx.compose.material3.FilledTonalIconButton
+import androidx.compose.material3.OutlinedButton
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButtonDefaults
 import androidx.compose.material3.MaterialTheme
@@ -142,6 +161,9 @@ internal fun StopReachedCard(status: GuidanceStatusUi.StopReached, modifier: Mod
  * link under Done; a drag up (or a tap on its handle) opens the place's own window, its details.
  * Play test P31, audit F34: once the place is saved ([GuidanceStatusUi.Arrived.saved]) the link reads
  * "Saved" with a check and cannot save twice; a screen reader hears the handle's raise as "Show place details".
+ * 0.1.41 (docs/online-design.md 4.8): the app's one question ([GuidanceStatusUi.Arrived.question]) under the
+ * place's lines. The lines and the question scroll; Done and Save are pinned at the card's foot, so Done stays in
+ * view on its side and with large text and stays where it was when the question comes (also while the card grows).
  */
 @Composable
 internal fun ArrivedCard(status: GuidanceStatusUi.Arrived, onEvent: (DriveEvent) -> Unit, modifier: Modifier = Modifier) {
@@ -152,35 +174,116 @@ internal fun ArrivedCard(status: GuidanceStatusUi.Arrived, onEvent: (DriveEvent)
             height.set(SheetHeight.LOW)
         }
     }
+    // The sheet frame raises the card first on every drag up, a screen reader's scroll too (both come as user input),
+    // and the card's raise opens the details: so the scrolling part moves itself. A drag scrolls the part first; a drag
+    // that could not scroll it (at its end, or nothing to scroll) moves the card as before (item 47).
+    val scroll = rememberScrollState()
+    val scope = rememberCoroutineScope()
+    val fling = ScrollableDefaults.flingBehavior()
+    val stepPx = with(LocalDensity.current) { SHEET_STEP.toPx() }
+    val scrolled = remember { BooleanArray(1) } // this drag has scrolled the part
+    val drag = rememberDraggableState { dy ->
+        if (scroll.dispatchRawDelta(-dy) != 0f) scrolled[0] = true
+        if (!scrolled[0]) height.drag(dy, stepPx)
+    }
+    // the card's remaining slide to its new height (LocalSheetLag, positive while it grows)
+    val lag = LocalSheetLag.current
     SheetFrame(
         height, DriveTexts.ARRIVED, MaterialTheme.colorScheme.onSurfaceVariant, modifier.fillMaxWidth().testTag(DriveTags.ARRIVED_CARD),
         raiseLabel = DriveTexts.SHOW_DETAILS,
     ) {
-        // audit F34: a long name, landscape or large text scrolls it, never cutting Done off
-        Column(Modifier.fillMaxWidth().verticalScroll(rememberScrollState()).padding(start = 20.dp, end = 20.dp, bottom = 12.dp).semantics { liveRegion = LiveRegionMode.Polite }) {
-            Text(DriveTexts.ARRIVED, style = MaterialTheme.typography.labelLarge, color = MaterialTheme.colorScheme.primary)
-            Text(status.name, style = MaterialTheme.typography.headlineSmall, fontWeight = FontWeight.SemiBold, maxLines = 2, overflow = TextOverflow.Ellipsis)
-            status.sideText?.let { Text(it, style = MaterialTheme.typography.bodyLarge, color = MaterialTheme.colorScheme.onSurfaceVariant) }
-            status.awayText?.let { Text(it, style = MaterialTheme.typography.bodyLarge, color = MaterialTheme.colorScheme.onSurfaceVariant, modifier = Modifier.testTag(DriveTags.DESTINATION_AWAY)) }
-            Spacer(Modifier.size(16.dp))
-            Button(onClick = { onEvent(DriveEvent.Nav(NavIntent.Done)) }, modifier = Modifier.fillMaxWidth().heightIn(min = 52.dp).testTag(DriveTags.DONE)) {
-                Text(DriveTexts.DONE)
+        Column(
+            Modifier
+                .weight(1f, fill = false)
+                .fillMaxWidth()
+                // while the card slides (the question came or went) everything under the handle keeps to the card's
+                // bottom edge, so Done and Save stay still; nothing is drawn over the handle meanwhile
+                .drawWithContent { clipRect(top = 0f, bottom = size.height + 100_000f) { this@drawWithContent.drawContent() } }
+                .offset { IntOffset(0, -(lag?.intValue ?: 0)) }
+                .semantics { liveRegion = LiveRegionMode.Polite },
+        ) {
+            // audit F34, AP-3: a long name, landscape, large text or a long question scroll here, never cutting Done off
+            Column(
+                Modifier
+                    .weight(1f, fill = false)
+                    .fillMaxWidth()
+                    .draggable(
+                        drag, Orientation.Vertical,
+                        onDragStarted = {
+                            scrolled[0] = false
+                            scroll.stopScroll()
+                        },
+                        onDragStopped = { velocity ->
+                            if (!height.endDrag() && scrolled[0]) scroll.scroll { with(fling) { performFling(-velocity) } }
+                            scrolled[0] = false
+                        },
+                    )
+                    .verticalScroll(scroll, enabled = false)
+                    .semantics {
+                        scrollBy { _, dy ->
+                            scope.launch { scroll.animateScrollBy(dy) }
+                            true
+                        }
+                    }
+                    .padding(start = 20.dp, end = 20.dp),
+            ) {
+                Text(DriveTexts.ARRIVED, style = MaterialTheme.typography.labelLarge, color = MaterialTheme.colorScheme.primary)
+                Text(status.name, style = MaterialTheme.typography.headlineSmall, fontWeight = FontWeight.SemiBold, maxLines = 2, overflow = TextOverflow.Ellipsis)
+                status.sideText?.let { Text(it, style = MaterialTheme.typography.bodyLarge, color = MaterialTheme.colorScheme.onSurfaceVariant) }
+                status.awayText?.let { Text(it, style = MaterialTheme.typography.bodyLarge, color = MaterialTheme.colorScheme.onSurfaceVariant, modifier = Modifier.testTag(DriveTags.DESTINATION_AWAY)) }
+                status.question?.let { ArrivalQuestion(it, onEvent) }
             }
-            if (status.saved) {
-                // play test P31, audit F34: saved once, said so; no second save (the column is a polite live region)
-                Row(
-                    Modifier.align(Alignment.CenterHorizontally).heightIn(min = 48.dp)
-                        .semantics(mergeDescendants = true) {}.testTag(DriveTags.DESTINATION_SAVED),
-                    verticalAlignment = Alignment.CenterVertically,
-                ) {
-                    Icon(BeamlineIcons.Check, contentDescription = null, tint = MaterialTheme.colorScheme.primary, modifier = Modifier.size(18.dp))
-                    Spacer(Modifier.width(6.dp))
-                    Text(DriveTexts.SAVED, style = MaterialTheme.typography.labelLarge, color = MaterialTheme.colorScheme.primary)
+            Column(Modifier.fillMaxWidth().padding(start = 20.dp, end = 20.dp, top = 16.dp, bottom = 12.dp)) {
+                Button(onClick = { onEvent(DriveEvent.Nav(NavIntent.Done)) }, modifier = Modifier.fillMaxWidth().heightIn(min = 52.dp).testTag(DriveTags.DONE)) {
+                    Text(DriveTexts.DONE)
                 }
-            } else {
-                TextButton(onClick = { onEvent(DriveEvent.SaveDestination) }, modifier = Modifier.align(Alignment.CenterHorizontally).heightIn(min = 48.dp).testTag(DriveTags.SAVE_DESTINATION)) {
-                    Text(DriveTexts.SAVE_PLACE)
+                if (status.saved) {
+                    // play test P31, audit F34: saved once, said so; no second save (the column is a polite live region)
+                    Row(
+                        Modifier.align(Alignment.CenterHorizontally).heightIn(min = 48.dp)
+                            .semantics(mergeDescendants = true) {}.testTag(DriveTags.DESTINATION_SAVED),
+                        verticalAlignment = Alignment.CenterVertically,
+                    ) {
+                        Icon(BeamlineIcons.Check, contentDescription = null, tint = MaterialTheme.colorScheme.primary, modifier = Modifier.size(18.dp))
+                        Spacer(Modifier.width(6.dp))
+                        Text(DriveTexts.SAVED, style = MaterialTheme.typography.labelLarge, color = MaterialTheme.colorScheme.primary)
+                    }
+                } else {
+                    TextButton(onClick = { onEvent(DriveEvent.SaveDestination) }, modifier = Modifier.align(Alignment.CenterHorizontally).heightIn(min = 48.dp).testTag(DriveTags.SAVE_DESTINATION)) {
+                        Text(DriveTexts.SAVE_PLACE)
+                    }
                 }
+            }
+        }
+    }
+}
+
+/**
+ * 0.1.41 (docs/online-design.md 4.8): the arrival's one question on a tonal panel: the question, the lines under it
+ * (the hours it asks about; never capped, the question is its own summary), then Yes (when there is one), the edit
+ * button and Not now, each 48 dp high, wrapping to a second row when they do not fit. Read by the card's polite live
+ * region.
+ */
+@Composable
+private fun ArrivalQuestion(q: ArrivalQuestionUi, onEvent: (DriveEvent) -> Unit) {
+    Surface(
+        shape = RoundedCornerShape(12.dp), color = MaterialTheme.colorScheme.surfaceVariant,
+        modifier = Modifier.fillMaxWidth().padding(top = 12.dp).testTag(DriveTags.ARRIVAL_QUESTION),
+    ) {
+        Column(Modifier.padding(start = 16.dp, end = 8.dp, top = 12.dp, bottom = 4.dp)) {
+            Text(q.title, style = MaterialTheme.typography.titleMedium, modifier = Modifier.padding(end = 8.dp))
+            q.lines.forEach { Text(it, style = MaterialTheme.typography.bodyLarge, color = MaterialTheme.colorScheme.onSurfaceVariant) }
+            FlowRow(horizontalArrangement = Arrangement.spacedBy(8.dp), modifier = Modifier.padding(top = 8.dp)) {
+                val yes = q.yes
+                val edit = { onEvent(DriveEvent.AnswerArrival(ArrivalAnswer.EDIT)) }
+                if (yes != null) {
+                    FilledTonalButton(onClick = { onEvent(DriveEvent.AnswerArrival(ArrivalAnswer.YES)) }, modifier = Modifier.heightIn(min = 48.dp).testTag(DriveTags.ARRIVAL_YES)) { Text(yes) }
+                    OutlinedButton(onClick = edit, modifier = Modifier.heightIn(min = 48.dp).testTag(DriveTags.ARRIVAL_EDIT)) { Text(q.edit) }
+                } else {
+                    // nothing to confirm: the edit button is the answer
+                    FilledTonalButton(onClick = edit, modifier = Modifier.heightIn(min = 48.dp).testTag(DriveTags.ARRIVAL_EDIT)) { Text(q.edit) }
+                }
+                TextButton(onClick = { onEvent(DriveEvent.AnswerArrival(ArrivalAnswer.NOT_NOW)) }, modifier = Modifier.heightIn(min = 48.dp).testTag(DriveTags.ARRIVAL_NOT_NOW)) { Text(q.notNow) }
             }
         }
     }

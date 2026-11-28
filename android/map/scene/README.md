@@ -86,7 +86,11 @@ One `MapSceneMapper()` and one `CameraDirector(CameraRules.bundled(), clock)` pe
   (`pinInView`, Web Mercator from the last `onCameraAt`); once it is not, it is centred there at the
   map's zoom (top padding + the pin's height) and kept there at every inset until a gesture,
   my-location, another place, the results or `onPlaceLeft`; no room for the pin: the camera stays.
-  Following or a trip: nothing. K2a (P50): a route closed before it started (PREVIEW to BROWSE) follows
+  A trip: nothing. Since 0.1.41 (item 54a) a tap while following ends it where the map is
+  (`followBeforeTap`: its bearing and zoom kept, the compass no longer leading) and the next
+  `onMyLocation` gives it back as it was (north up, or turned by the compass), in one press; a
+  gesture, a two-finger turn, a picked place, the results or a new phase group end that return,
+  `onPlaceLeft` does not. K2a (P50): a route closed before it started (PREVIEW to BROWSE) follows
   the puck (BROWSE_FOLLOW, north up, `follow_zoom`) when there is one; with `onShowPlaceAfterRoute`
   sent before (P46) it shows that place as a picked one instead, once. K6 (P4): ARRIVED frames the car
   and the destination together (the overview's padding, room for the arrow at the frame's edge; at most
@@ -98,7 +102,11 @@ One `MapSceneMapper()` and one `CameraDirector(CameraRules.bundled(), clock)` pe
   GUIDE_OVERVIEW with the vehicle in the box, re-fitted when the vehicle leaves the middle 80 %, at most
   every 5 s, `STOP_REFIT_MS`); a gesture leaves the camera until new points, Recenter or
   `recenter_after_s`; no K4/K5 return meanwhile; empty points: back to K2 or GUIDE_FOLLOW; a change of
-  phase group ends it.
+  phase group ends it. Item 54b (0.1.41): the app also sends the route ahead while the Add stop search
+  is typed in over the map, as `onStopView(points, paddingDp)` with its own padding (the app's 16 dp
+  typing view; null: `preview.padding_dp`, as the stop results), kept with the view; no room for the
+  fit (the free area less that padding on each side): the camera stays (`stopRoom`) until the insets
+  give room again.
 - **Guide pitch and heading (next run part 1).** `pitch_deg` 60 (was 50: MapLibre applied 50, but
   with its narrow field of view and the banner over the top quarter the view read as nearly
   top-down; docs/architecture.md 3.7 K3). The bearing filter's weight grows with the change, from
@@ -115,7 +123,9 @@ One `MapSceneMapper()` and one `CameraDirector(CameraRules.bundled(), clock)` pe
 `withZoomCap`, the picked place and its sheet closing, the turn and a sharp corner; K7 is the mapper's;
 K5's overview padding), `CameraRulesTest` (parse, refusals, bundled values, the
 copy equal to its source; 6 tests), `CameraViewsTest` (0.1.40: K6 arrival frame, K2a after a closed
-route, K1b tapped place, `pinInView`; 9 tests), `StopViewCameraTest` (0.1.40: K8; 4 tests),
+route, K1b tapped place, `pinInView`; 0.1.41: a tap while following and the one-press return; 12
+tests), `StopViewCameraTest` (0.1.40: K8; 0.1.41: the room guard and the typing view's padding; 6
+tests), `StopViewPaddingContractTest` (0.1.41's wave 0: the padding's default),
 `ResultsCameraTest`, `SheetHeightsCameraTest`, `CompassTest`, `LeanTest`.
 
 No log call and no `$` in a message anywhere in `src/main` (rule PV2 item 2).

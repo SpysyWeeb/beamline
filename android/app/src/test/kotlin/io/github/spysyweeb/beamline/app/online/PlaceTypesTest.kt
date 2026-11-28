@@ -251,6 +251,28 @@ class PlaceTypesTest {
         assertEquals(0, OwnChanges.of(listOf(added.copy(state = OutboxState.WAITING)), listOf(pa), icons).size)
     }
 
+    /** OP test 15 (0.1.41, 53c and 53d): an undo, an undone edit and a confirmation of hours show nothing as the user's own. */
+    @Test
+    fun anUndoAnUndoneEditAndAConfirmationShowNothing() {
+        val icons = { code: String -> "icon-$code" }
+        val renamed = sentEdit("e", mapOf("name" to "Subway Downtown"))
+        assertEquals(1, OwnChanges.of(listOf(renamed), listOf(pa), icons).size)
+        // undone: the pack's value is right again
+        val undone = renamed.copy(edit = renamed.edit!!.copy(undone = true))
+        assertEquals(0, OwnChanges.of(listOf(undone), listOf(pa), icons).size)
+        // the undo itself, its values the reverse of the edit's
+        val undo = sentEdit("u", mapOf("name" to "Subway")).let { it.copy(edit = it.edit!!.copy(base = mapOf("name" to "Subway Downtown"), undoOf = "e")) }
+        assertEquals(0, OwnChanges.of(listOf(undo), listOf(pa), icons).size)
+        // a confirmation: the hours as they were, a check date: nothing the map shows
+        val confirm = sentEdit("c", mapOf("opening_hours" to "Mo-Su 06:00-23:00", "check_date:opening_hours" to "2026-11-28"))
+            .let { it.copy(edit = it.edit!!.copy(confirm = "opening_hours")) }
+        assertEquals(0, OwnChanges.of(listOf(confirm), listOf(pa), icons).size)
+        assertEquals(0, OwnChanges.of(listOf(undone, undo, confirm), listOf(pa), icons).size)
+        // an edit OSM already had (nothing uploaded) still shows the user's value until a pack has it
+        val already = renamed.copy(edit = renamed.edit!!.copy(changeset = null, sentBefore = emptyMap(), sentAfter = emptyMap()))
+        assertEquals("Subway Downtown", OwnChanges.of(listOf(already), listOf(pa), icons).single().ui.name)
+    }
+
     @Test
     fun theOverlayStepsAsideForAPackMadeAfterIt() {
         val sent = java.time.LocalDate.of(2026, 11, 20).atStartOfDay(java.time.ZoneOffset.UTC).toInstant().toEpochMilli() + 3_600_000

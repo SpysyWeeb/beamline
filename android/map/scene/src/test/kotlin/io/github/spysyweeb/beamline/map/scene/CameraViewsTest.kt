@@ -15,7 +15,10 @@ import org.junit.jupiter.api.Assertions.assertNull
 import org.junit.jupiter.api.Assertions.assertTrue
 import org.junit.jupiter.api.Test
 
-/** The 0.1.40 views: arrival (K6, P4), a route closed (K2a, P50, P46) and a tapped place above its sheet (K1b, P8). */
+/**
+ * The 0.1.40 views: arrival (K6, P4), a route closed (K2a, P50, P46) and a tapped place above its sheet (K1b, P8);
+ * 0.1.41 (item 54a): a tapped place ends following, and one my-location press gives it back as it was.
+ */
 class CameraViewsTest {
     private val clock = VirtualClock()
     private val cam = CameraDirector(CameraRules.bundled(), clock)
@@ -171,7 +174,7 @@ class CameraViewsTest {
     }
 
     @Test
-    fun `P8 a tapped place under the search bar is centred at once, or once a glide ends, following and trips are left alone`() {
+    fun `P8 a tapped place under the search bar is centred at once, or once a glide ends, and a trip is left alone`() {
         cam.onViewport(411f, 891f, peek)
         cam.onCameraAt(mid, 16.0, 0.0)
         val nearTop = GeoPoint(mid.lat + 0.0032, mid.lon)   // about 400 dp above the middle: its head under the bar
@@ -190,17 +193,7 @@ class CameraViewsTest {
         cam.onCameraAt(GeoPoint(mid.lat - 0.003, mid.lon), 16.0, 0.0)   // came to rest about 377 dp further south
         assertEquals(mid, target!!.center)           // the pin's head went under the bar: centred
         assertEquals(peek.copy(top = 118f), target!!.padding)
-        // following, turned by the compass: a tap changes nothing (the follow keeps the user in view)
-        cam.onPuck(Fx.puck(mid))
-        cam.onMyLocation()                           // follow, north up
-        cam.onMyLocation()                           // follow turned by the compass (Fx.puck's cone)
-        assertEquals(CameraMode.BROWSE_FOLLOW, mode)
-        assertTrue(cam.compassFollow.value)
-        val follow = target
-        cam.onPlaceTapped(nearTop)
-        assertEquals(CameraMode.BROWSE_FOLLOW, mode)
-        assertTrue(cam.compassFollow.value)
-        assertTrue(follow === target)
+        // (0.1.40's "following: a tap changes nothing" is gone by design, item 54a: the 54a tests below)
         // a trip: nothing changes
         cam.onTrip(Fx.choosing())
         val fit = target
@@ -226,6 +219,116 @@ class CameraViewsTest {
         // centred, then no room again: the camera stays rather than ask for a padding taller than the view
         cam.onViewport(891f, 411f, EdgeInsetsDp(top = 80f, bottom = 360f))
         assertNull(target)
+    }
+
+    // ---- K1b while following (item 54a, 0.1.41: the owner, "the tapped place wins") ----
+
+    /** A made-up shop about 126 dp north of the middle at z16: in clear view at peek, under the sheet at full. */
+    private val shop = GeoPoint(mid.lat + 0.001, mid.lon)
+
+    @Test
+    fun `54a a place tapped while following ends the follow where the map is, and is centred once the sheet rises over it`() {
+        cam.onViewport(411f, 891f, peek)
+        cam.onPuck(Fx.puck(mid, cone = null))
+        cam.onMyLocation()                           // following north up
+        assertEquals(CameraMode.BROWSE_FOLLOW, mode)
+        cam.onCameraAt(mid, 16.0, 0.0)               // the map reports its camera at the tap
+        cam.onPlaceTapped(shop)
+        assertEquals(CameraMode.BROWSE, mode)        // today: BROWSE_FOLLOW, the follow kept
+        assertNull(target)                           // in clear view: the tap itself moves nothing
+        cam.onPuck(Fx.puck(GeoPoint(mid.lat - 0.002, mid.lon), cone = null))   // the user moves on: the map stays
+        assertNull(target)                           // today: the follow moves to the new position
+        cam.onViewport(411f, 891f, full)             // the sheet raised over it: centred above the sheet
+        assertEquals(CameraTarget(center = shop, zoom = null, bearingDeg = 0.0, pitchDeg = 0.0,
+            padding = full.copy(top = 118f), animateMs = 800), target)
+        cam.onViewport(411f, 891f, peek)             // lowered: kept in view
+        assertEquals(shop, target!!.center)
+        cam.onPlaceLeft()                            // the window closed: the map stays where it is, not following
+        assertEquals(CameraMode.BROWSE, mode)
+        assertNull(target)
+    }
+
+    @Test
+    fun `54a my-location after the tap gives the follow back as it was, in one press`() {
+        cam.onViewport(411f, 891f, peek)
+        cam.onCameraAt(mid, 16.0, 0.0)
+        cam.onPuck(Fx.puck(mid))                     // the phone gives a heading (30)
+        cam.onMyLocation()                           // following north up
+        cam.onMyLocation()                           // following turned by the compass
+        assertTrue(cam.compassFollow.value)
+        cam.onPlaceTapped(shop)
+        assertEquals(CameraMode.BROWSE, mode)        // today: still following, turned by the compass
+        assertFalse(cam.compassFollow.value)
+        cam.onMapBearing(30.0)                       // the map stays turned as the compass left it
+        cam.onMyLocation()                           // one press (today: following north up, no compass)
+        assertEquals(CameraMode.BROWSE_FOLLOW, mode)
+        assertTrue(cam.compassFollow.value)
+        assertEquals(CameraTarget(center = mid, zoom = 16.0, bearingDeg = 30.0, pitchDeg = 0.0, padding = peek, animateMs = 800, ease = true), target)
+        // the press after that steps on as K1a (north up); a tap then ends it and one press gives it back north up
+        cam.onMyLocation()
+        assertFalse(cam.compassFollow.value)
+        cam.onMapBearing(0.0)
+        cam.onPlaceTapped(shop)
+        assertEquals(CameraMode.BROWSE, mode)
+        cam.onMyLocation()
+        assertEquals(CameraMode.BROWSE_FOLLOW, mode)
+        assertFalse(cam.compassFollow.value)
+        assertEquals(mid, target!!.center)
+        assertEquals(0.0, target!!.bearingDeg)
+        // kept across another tapped place and the window closing
+        cam.onMyLocation()                           // turned by the compass
+        cam.onPlaceTapped(shop)
+        cam.onPlaceTapped(mid)
+        cam.onPlaceLeft()
+        cam.onMapBearing(30.0)
+        cam.onMyLocation()
+        assertEquals(CameraMode.BROWSE_FOLLOW, mode)
+        assertTrue(cam.compassFollow.value)
+        // ended by a pan (guard: passes today too): K1a as today, a turned map turns north up first, where it is
+        cam.onPlaceTapped(shop)
+        cam.onGesture(MapGesture.CameraMovedByUser)
+        cam.onMapBearing(30.0)
+        cam.onMyLocation()
+        assertEquals(CameraMode.BROWSE, mode)
+        assertNull(target!!.center)
+        assertEquals(0.0, target!!.bearingDeg)
+        // ended by a two-finger turn, a picked place, the results: the same north-up-first step
+        val ends = listOf<() -> Unit>({ cam.onUserRotate() }, { cam.onShowPlace(Fx.MALL) }, { cam.onShowResults(listOf(Fx.MALL, Fx.DEST), 8.0) })
+        for (end in ends) {
+            cam.onMyLocation()                       // following north up
+            cam.onMyLocation()                       // turned by the compass
+            assertTrue(cam.compassFollow.value)
+            cam.onPlaceTapped(shop)
+            end()
+            cam.onMapBearing(30.0)
+            cam.onMyLocation()
+            assertEquals(CameraMode.BROWSE, mode)
+            assertNull(target!!.center)
+            assertEquals(0.0, target!!.bearingDeg)
+            cam.onMapBearing(0.0)
+        }
+        // ended by a new phase group: after a trip, a press follows north up (K1a), not turned by the compass
+        cam.onMyLocation()
+        cam.onMyLocation()
+        cam.onPlaceTapped(shop)
+        cam.onTrip(Fx.guiding(Fx.vehicle(Fx.ROUTE[1], 10_000)))
+        cam.onTrip(TripState())
+        assertEquals(CameraMode.BROWSE, mode)        // the one move back after guidance
+        cam.onMyLocation()
+        assertEquals(CameraMode.BROWSE_FOLLOW, mode)
+        assertFalse(cam.compassFollow.value)
+        // no fix yet at the press: following waits for the first one, as a first press does
+        val d = CameraDirector(CameraRules.bundled(), clock)
+        d.onViewport(411f, 891f, peek)
+        d.onMyLocation()
+        d.onPlaceTapped(shop)
+        assertEquals(CameraMode.BROWSE, d.state.value.mode)
+        d.onMyLocation()
+        assertEquals(CameraMode.BROWSE_FOLLOW, d.state.value.mode)
+        assertNull(d.target.value)
+        clock.advanceS(0.3)
+        d.onPuck(Fx.puck(mid, cone = null))
+        assertEquals(mid, d.target.value!!.center)
     }
 
     @Test

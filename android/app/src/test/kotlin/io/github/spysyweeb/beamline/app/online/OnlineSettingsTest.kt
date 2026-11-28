@@ -63,6 +63,22 @@ class OnlineSettingsTest {
         assertTrue(OnlineSettingsStore(f).state.value.appUpdatesAllowed, "a file from before item 41 takes the main switch")
     }
 
+    /** OP test 21 (0.1.41, 53e): the source=survey notice is remembered, and a file without the key reads as not seen. */
+    @Test
+    fun theSurveyNoticeIsRememberedAndDefaultsToNotSeen(@TempDir dir: File) {
+        val f = File(dir, OnlineSettingsStore.FILE_NAME)
+        f.writeText("""{"choice_made":true,"online":true,"contribute_osm":true,"edit_notice_seen":true}""")
+        val old = OnlineSettingsStore(f).state.value
+        assertTrue(old.editNoticeSeen)
+        assertFalse(old.surveyNoticeSeen, "a file of 0.1.40: not seen")
+        val store = OnlineSettingsStore(f)
+        store.update { it.copy(surveyNoticeSeen = true) }
+        assertTrue(f.readText().contains("\"survey_notice_seen\":true"))
+        assertTrue(OnlineSettingsStore(f).state.value.surveyNoticeSeen)
+        assertTrue(OnlineSettingsStore(f).state.value.editNoticeSeen, "the others kept")
+        assertFalse(OnlineSettings().surveyNoticeSeen)
+    }
+
     @Test
     fun theStoreKeepsTheSwitchesAndReadsABrokenFileAsTheDefaults(@TempDir dir: File) {
         val f = File(dir, OnlineSettingsStore.FILE_NAME)

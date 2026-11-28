@@ -18,7 +18,10 @@ import androidx.compose.animation.core.FastOutSlowInEasing
 import androidx.compose.animation.ContentTransform
 import androidx.compose.animation.AnimatedContent
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
-import io.github.spysyweeb.beamline.app.online.EditNoticeDialog
+import io.github.spysyweeb.beamline.app.online.PlaceQuestions
+import io.github.spysyweeb.beamline.app.online.Undo
+import io.github.spysyweeb.beamline.app.online.UndoDialog
+import io.github.spysyweeb.beamline.app.online.UploadAskDialog
 import io.github.spysyweeb.beamline.api.model.PlaceSource
 import io.github.spysyweeb.beamline.app.online.AddPlaceScreen
 import io.github.spysyweeb.beamline.app.online.EditPlaceScreen
@@ -40,6 +43,7 @@ import androidx.compose.foundation.layout.WindowInsets
 import androidx.compose.foundation.layout.asPaddingValues
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.ime
 import androidx.compose.foundation.layout.navigationBars
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.statusBars
@@ -57,6 +61,7 @@ import androidx.compose.runtime.getValue
 import androidx.compose.runtime.produceState
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.rememberUpdatedState
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -184,6 +189,7 @@ fun AppRoot(g: AppGraph, flows: AppFlows, frameRate: FrameRateRequest, screenMax
 
         val phase = trip.phase
         val driving = phase == Phase.GUIDING || phase == Phase.REROUTING || phase == Phase.ARRIVED
+        val guiding = phase == Phase.GUIDING || phase == Phase.REROUTING
         val tripActive = phase == Phase.PLANNING || phase == Phase.CHOOSING || phase == Phase.GUIDING || phase == Phase.REROUTING
         val pick = savedUi.mapPick
         val top = flows.stack.lastOrNull()
@@ -192,6 +198,8 @@ fun AppRoot(g: AppGraph, flows: AppFlows, frameRate: FrameRateRequest, screenMax
         // Batch O1 (docs/online-design.md section 2): the online choice right after the notice, once (also after an update)
         val onlineChoiceNeeded = !noticeNeeded && !online.choiceMade
         val pickerShown = flows.revealDone && !noticeNeeded && !onlineChoiceNeeded && showPicker && !flows.firstRunClosed
+        // item 54b (rule S12): the Add stop search as a panel over the trip's map ("View all" and Saved places still over the screen)
+        val addStopShown = AppRules.addStopOverMap(top, searchUi.allTypes != null) && pick == null && !noticeNeeded
         // S8 / SP1: the pill (and G's chip with it) while no trip exists and no search, list or pick is open.
         val pillShown = (phase == Phase.IDLE || phase == Phase.RESUME_OFFERED) && !searchOpen && pick == null
         // P10, F30 (W3): the Undo offer standing, while it can still do something for the trip as it is
@@ -242,11 +250,21 @@ fun AppRoot(g: AppGraph, flows: AppFlows, frameRate: FrameRateRequest, screenMax
         val windowW = with(density) { windowPx.width.toDp() }
         val windowH = with(density) { windowPx.height.toDp() }
         val panel: Dp? = if (isSideLayout(windowW, windowH)) sidePanelWidth(windowW) else null
-        val sheetShown = sheetPlace != null && pick == null
+        // item 54b (rule S12): the Add stop search's panel over the trip's map, on the keyboard; the keyboard's inset is
+        // read only while the panel shows (plan AF-5: else each frame of any keyboard would recompose the root)
+        val keyboardDp = if (addStopShown) WindowInsets.ime.getBottom(density) / density.density else 0f
+        val panelPlace = if (!addStopShown) null else AppRules.addStopPanelPlace(windowH.value, keyboardDp, overlayTop.value,
+            statusBarTop.value, side = panel != null, AppRules.ADD_STOP_PANEL_MIN_DP * maxOf(1f, density.fontScale))
+        // from the window's bottom to the panel's top (the keyboard included): the camera's inset and the overlay's window
+        val panelReach = panelPlace?.let { it.heightDp + keyboardDp }
+        // a place window open under the Add stop search is not drawn meanwhile
+        val sheetShown = sheetPlace != null && pick == null && !addStopShown
         val sheetInPanel = panel != null && (sheetShown || resultsShown || stopShown)
         // What the camera pads by: the overlay, the status bar's band, and the credit row above a sheet (K2).
         // P4: ARRIVED counts the destination's window (guideCamera: guiding and re-routing only leave it out).
-        val cameraInsets = AppRules.cameraInsets(flows.overlayInsets, statusBarTop.value, creditRowHeight.value + 8f, AppRules.guideCamera(phase),
+        // item 54b (plan AF-2): while the Add stop panel shows the credit row is left out (it rides above the panel, in the
+        // strip the typing view pads by ADD_STOP_VIEW_PADDING_DP)
+        val cameraInsets = AppRules.cameraInsets(flows.overlayInsets, statusBarTop.value, if (addStopShown) 0f else creditRowHeight.value + 8f, AppRules.guideCamera(phase),
             placeSheet = when {
                 sheetShown -> kotlin.math.round(sheetHeight.value + placeLag.intValue / density.density)
                 resultsShown -> kotlin.math.round(resultsHeight.value + resultsLag.intValue / density.density)
@@ -261,7 +279,13 @@ fun AppRoot(g: AppGraph, flows: AppFlows, frameRate: FrameRateRequest, screenMax
             safeRight = safe.getRight(density, LayoutDirection.Ltr) / density.density,
             // item 51: the stop results' window, also while driving (the camera is top-down then); on its side it
             // is in the panel, which the stop overlay's start inset keeps clear
-            stopSheet = if (stopShown && panel == null) kotlin.math.round(stopHeight.value + stopLag.intValue / density.density) else 0f)
+            stopSheet = when {
+                stopShown && panel == null -> kotlin.math.round(stopHeight.value + stopLag.intValue / density.density)
+                panelReach != null && panel == null -> panelReach   // item 54b: the panel and the keyboard under it, upright
+                else -> 0f
+            },
+            // item 54b: on its side the panel is in the start panel (the overlay's start inset); the keyboard covers the map's foot
+            keyboard = if (panelReach != null && panel != null) keyboardDp else 0f)
         // item 47: the insets settle for INSETS_SETTLE_MS before the camera takes them; since 0.1.39 the
         // sheets report the height they are going to at once (LocalSheetLag), so this only merges the
         // first frames of a change
@@ -342,13 +366,17 @@ fun AppRoot(g: AppGraph, flows: AppFlows, frameRate: FrameRateRequest, screenMax
             val room = AppRules.bottomChrome(
                 sheetDp = when {
                     stopShown -> stopHeight.value   // item 51: the credit row rides above the stop results' window
+                    panelReach != null -> panelReach   // item 54b: and above the Add stop panel
                     sheetShown -> sheetHeight.value
                     resultsShown -> resultsHeight.value
                     else -> null
                 },
-                panelDp = panel?.value, overlay = flows.overlayInsets, pickDp = pickRoom?.value)
+                panelDp = panel?.value, overlay = flows.overlayInsets, pickDp = pickRoom?.value,
+                // item 54b: on its side the keyboard covers the map's foot beside the panel: the row stays above it
+                keyboardDp = keyboardDp)
             // P7: upright, left out while a raised window would bring it to Settings and Map style (the end column)
-            val locationShown = !driving &&
+            // item 54b: not over the Add stop panel's map (the camera frames the route by itself, K8)
+            val locationShown = !driving && !addStopShown &&
                 AppRules.locationFits(room, windowH.value, if (pillShown) pillEndBottom.value else statusBarTop.value)
             val locationMessage = flows.locationMessage
             // item 52 (H4-H7): a handed-over link's note with "Add a state", after a location message
@@ -380,7 +408,9 @@ fun AppRoot(g: AppGraph, flows: AppFlows, frameRate: FrameRateRequest, screenMax
             // and while a screen covers the map (States from the notification or Add stop's search
             // while guiding): the overlay keeps light status-bar icons for its dark banner, which
             // on a light screen would be white on white; leaving, it sets them back from the map.
-            if (pick == null && top == null) {
+            // Item 54b (rule S12): over the Add stop panel's map the overlay shows only its top and the speed pair, as over the
+            // stop results (D8).
+            if (pick == null && (top == null || addStopShown)) {
                 val drive = DrivePresenter.present(
                     trip, units, now, ZoneId.systemDefault(), camera, flows.stopsEditorOpen,
                     g.cards.shown(g.clock.elapsedMs()), precise,
@@ -396,6 +426,9 @@ fun AppRoot(g: AppGraph, flows: AppFlows, frameRate: FrameRateRequest, screenMax
                     // P31, F34: the arrival card's "Saved"
                     AppRules.withDestinationSaved(d, destinationSaved)
                 }.let { d ->
+                    // 0.1.41 (docs/online-design.md 4.8): the arrival card's one question
+                    AppRules.withArrivalQuestion(d, flows.arrivalShown?.let(PlaceQuestions::arrivalUi))
+                }.let { d ->
                     // item 32: with Contribute to OpenStreetMap on, a tap on the speed sign reports the posted limit
                     if (online.osmAllowed) d.copy(guidance = d.guidance?.let { gu -> gu.copy(speed = gu.speed?.copy(canReport = true)) }) else d
                 }
@@ -406,7 +439,7 @@ fun AppRoot(g: AppGraph, flows: AppFlows, frameRate: FrameRateRequest, screenMax
                 // D8: the speed pair stays above the credit's short line while it shows, then slides down.
                 val creditUp = AppRules.creditShown(phase, now, flows.creditUntilMs) &&
                     AppRules.shortCredit((mapStyle as? MapStyleState.Ready)?.map?.creditLine ?: "") != null
-                if (!stopShown) {
+                if (!stopShown && !addStopShown) {
                     // audit F28: the drive screens keep their heights, scroll and "Show all steps" while a
                     // screen covers them (Add stop, Change start, the stop results), and find them again after.
                     // P7: its top stack (banner, chip, stop card) caps the browsing windows (sheetRoomDp).
@@ -419,10 +452,12 @@ fun AppRoot(g: AppGraph, flows: AppFlows, frameRate: FrameRateRequest, screenMax
                     // pair above the window; no trip bar, sheets, map buttons (Recenter: the camera comes back by
                     // itself, K8), road label or stops editor. In PLANNING and CHOOSING it reports top-only insets.
                     // On its side the window is in the panel (stopWindowDp 0: the overlay reports the panel's start).
+                    // Item 54b: the same over the Add stop panel (upright its reach, the keyboard included); on its side the
+                    // overlay ends on the keyboard, so the speed pair stays above it (plan AF-1).
                     driveState.SaveableStateProvider(DRIVE_STOP_KEY) {
                         DriveOverlay(DriveUi(guidance = drive.guidance?.copy(showRecenter = false)), onEvent = flows::onDriveEvent,
-                            onInsets = flows::onInsets, modifier = Modifier.fillMaxSize(), creditShown = creditUp,
-                            stopWindowDp = if (panel == null) stopHeight.value else 0f, onTopStack = { overlayTop = it.dp })
+                            onInsets = flows::onInsets, modifier = stopOverlayModifier(addStopShown && panel != null, keyboardDp), creditShown = creditUp,
+                            stopWindowDp = if (panel == null) (panelReach ?: stopHeight.value) else 0f, onTopStack = { overlayTop = it.dp })
                     }
                 }
             } else {
@@ -442,7 +477,7 @@ fun AppRoot(g: AppGraph, flows: AppFlows, frameRate: FrameRateRequest, screenMax
             // while a trip exists offers "Add stop"); measured so the credit stays above it.
             if (sheetShown) {
                 // SP19: rebuilt whenever the saved places change (savedPlaces is read here).
-                val sheet = remember(sheetPlace, savedPlaces, phase, set.generation, detailsLoaded, minute, online, outboxItems, ownChanges, trip.estimate, units) {
+                val base = remember(sheetPlace, savedPlaces, phase, set.generation, detailsLoaded, minute, online, outboxItems, ownChanges, trip.estimate, units) {
                     g.search.placeSheet(sheetPlace!!, flows.searchContext(), tripActive, driving, guiding = phase == Phase.GUIDING || phase == Phase.REROUTING)
                         // Batch O1: "Report a problem" while the switch is on and no trip is being driven (section 2)
                         .let { if (online.osmAllowed && !driving) it.copy(canReport = true, canAddPlace = it.place.source == PlaceSource.MAP_PIN) else it }
@@ -450,6 +485,21 @@ fun AppRoot(g: AppGraph, flows: AppFlows, frameRate: FrameRateRequest, screenMax
                         .let { ui -> ui.copy(osm = g.osmFor(ui.osm)).let { if (it.osm != null && online.osmAllowed && !driving) it.copy(canEditOsm = true) else it } }
                         // item 47: "Directions · 6 min" from the session's estimate for this very place
                         .let { ui -> trip.estimate?.takeIf { phase == Phase.IDLE && it.point == ui.place.point }?.let { ui.copy(driveTimeText = units.duration(it.timeS)) } ?: ui }
+                }
+                // 0.1.41 (docs/online-design.md 4.8, AP2): the window's place (the pack entry's own point, else the window's),
+                // "standing near it now" by 53e's memory, looked at every 2 s while the window is open
+                val sheetPoint = PlaceQuestions.pointOf(base)
+                val atSheetPlace by produceState(false, sheetPoint, online.osmAllowed) {
+                    value = false
+                    while (online.osmAllowed) {
+                        value = g.onSite.near(sheetPoint.lat, sheetPoint.lon, sinceMs = PlaceQuestions.AT_PLACE_NOW_MS)
+                        delay(PlaceQuestions.AT_PLACE_POLL_MS)
+                    }
+                }
+                // AP10: "Hours still right?" while the user stands at the place, signed in, no trip driven (ARRIVED: the card asks)
+                val sheet = remember(base, account, atSheetPlace, outboxItems, minute) {
+                    PlaceQuestions.withHoursCheck(base, allowed = online.osmAllowed && account != null && !driving, atPlace = atSheetPlace,
+                        items = outboxItems, nowMs = System.currentTimeMillis(), zone = ZoneId.systemDefault())
                 }
                 // P7: on its side in the start panel; the call stays at its place, so a turn keeps the window's height
                 MapSheetBox(panel, safe, sheetMax, onHeight = { sheetHeight = it }, Modifier.align(sheetAlign)) {
@@ -470,6 +520,12 @@ fun AppRoot(g: AppGraph, flows: AppFlows, frameRate: FrameRateRequest, screenMax
                     CompositionLocalProvider(LocalSheetLag provides stopLag) { ResultsSheet(results!!, onEvent = flows::onResultsEvent) }
                 }
             }
+            // item 54b (rule S12): the Add stop search over the trip's map, on the keyboard; on its side in the start panel
+            panelPlace?.let { pp ->
+                AddStopPanelBox(panel, safe, pp.heightDp.dp, Modifier.align(sheetAlign)) {
+                    SearchScreen(searchUi, onEvent = flows::onSearchEvent)
+                }
+            }
             if (pick != null) {
                 MapPickBar(pick, onEvent = flows::onSavedEvent, modifier = Modifier.fillMaxSize())
             }
@@ -484,9 +540,11 @@ fun AppRoot(g: AppGraph, flows: AppFlows, frameRate: FrameRateRequest, screenMax
             // item 47: the screens slide in from the side and back out over the map (the one below
             // moves a little, as Android's own screens do); the search bar grows into the search screen
             // and back. An outgoing screen keeps drawing its own layer until it has left.
-            val shown = top.takeIf { pick == null && !noticeNeeded }
+            // item 54b: the Add stop panel is drawn above, not as a screen; what opens over it comes in at once (plan AF-4)
+            val shown = top.takeIf { pick == null && !noticeNeeded && !addStopShown }
+            val overPanel = AppRules.opensOverPanel(flows.stack.toList(), searchUi.allTypes != null)
             AnimatedContent(
-                targetState = shown?.let { ScreenStep(it, flows.stack.size) },
+                targetState = shown?.let { ScreenStep(it, flows.stack.size, overPanel) },
                 contentKey = { it?.layer },
                 transitionSpec = { screenTransition(initialState, targetState) },
                 modifier = Modifier.fillMaxSize(),
@@ -570,6 +628,11 @@ fun AppRoot(g: AppGraph, flows: AppFlows, frameRate: FrameRateRequest, screenMax
                         }
                         Layer.Reports -> ReportsScreen(
                             items = outboxItems, sending = outboxSending, canSend = online.osmAllowed, signedIn = account != null,
+                            // 0.1.41 (53d): Undo on a sent edit for 12 hours, while the switch is on and no trip is guided
+                            undoable = remember(outboxItems, now / 60_000, online.osmAllowed, guiding) {
+                                if (online.osmAllowed && !guiding) outboxItems.filter { Undo.offered(it, outboxItems, now) }.mapTo(HashSet()) { it.id } else emptySet()
+                            },
+                            onUndo = flows::askUndo,
                             onOpen = {
                                 if (it.isSpeed) flows.openSpeedItem(it) else if (it.isAdd) flows.openAddItem(it) else if (it.isEdit) flows.openEditItem(it)
                                 else flows.push(Layer.Report(null, it.id))
@@ -629,7 +692,9 @@ fun AppRoot(g: AppGraph, flows: AppFlows, frameRate: FrameRateRequest, screenMax
             // ---- dialogs
             savedUi.dialog?.let { SavedDialog(it, onEvent = flows::onSavedEvent) }
             flows.notePending?.let { NoteNoticeDialog(withName = it.withName, onAnswer = flows::answerNoteNotice) }
-            if (flows.editNoticeShown) EditNoticeDialog(onAnswer = flows::answerEditNotice)
+            // 0.1.41, 53e (docs/online-design.md 4.2): the asks before an edit goes; 53d: the Undo's summary and Upload
+            flows.uploadAsk?.let { UploadAskDialog(it, flows.uploadAskSurvey, flows::answerUpload) }
+            flows.undoAsk?.let { UndoDialog(Undo.lines(it), flows::answerUndo) }
             if (flows.speedPicking) SpeedPickDialog(onPick = flows::pickSpeedWhileDriving, onDismiss = { flows.speedPicking = false })
             if (flows.signInFor != null) SignInNeededDialog(
                 onSignIn = { flows.answerSignIn(signIn = true, note = false) },
@@ -662,7 +727,12 @@ fun AppRoot(g: AppGraph, flows: AppFlows, frameRate: FrameRateRequest, screenMax
             val endBar = AppRules.endBar(flows.tripEnded, flows.continuing, trip.phase, flows.endedText)
             val backHint = flows.backArmedAtMs?.let { AppRules.backHint(trip.phase) }
             val undoBar = undoShown?.takeUnless { it.inStopsEditor && flows.stopsEditorOpen && pick == null && top == null && !stopShown }
-            val barPlace = Modifier.align(Alignment.BottomCenter).snackbarPlace(start = room.startDp.dp, bottom = overlayBottom + 88.dp)
+            // item 54b: while the Add stop panel shows, above it and the keyboard (upright the panel's reach, on its side the
+            // keyboard beside the panel): the stop overlay reports no bottom, so the bar went behind the keyboard
+            val addStopReach = panelReach?.let { if (panel == null) it else keyboardDp }
+            val navBarDp = if (addStopReach == null) 0f else WindowInsets.navigationBars.getBottom(density) / density.density
+            val barPlace = Modifier.align(Alignment.BottomCenter).snackbarPlace(start = room.startDp.dp,
+                bottom = AppRules.barBottomDp(overlayBottom.value, addStopReach, navBarDp).dp)
             when {
                 endBar != null -> Snackbar(endBar, night, barPlace, action = if (endBar != CONTINUING_TRIP) UNDO to flows::undoEnd else null)
                 backHint != null -> Snackbar(backHint, night, barPlace)
@@ -731,7 +801,7 @@ fun AppRoot(g: AppGraph, flows: AppFlows, frameRate: FrameRateRequest, screenMax
             revealDone = flows.revealDone, noticeAccepted = !noticeNeeded, onlineChoiceMade = !onlineChoiceNeeded,
             pickerShown = pickerShown, scanned = set.scanned,
             busy = HandoverRules.busy(flows.stack.toList(), saveDialog = savedUi.dialog != null, mapPick = savedUi.mapPick != null,
-                publicNotice = flows.notePending != null || flows.editNoticeShown, saveSearch = searchUi.mode == SearchMode.SAVE),
+                publicNotice = flows.notePending != null || flows.uploadAsk != null || flows.undoAsk != null, saveSearch = searchUi.mode == SearchMode.SAVE),
         )
         LaunchedEffect(flows.pendingLink?.seq, linkReady) { if (linkReady) flows.runPendingLink() }
         // K8: a link that opens something closes the map style sheet and the map data dialog (AppRoot's own)
@@ -765,6 +835,32 @@ fun AppRoot(g: AppGraph, flows: AppFlows, frameRate: FrameRateRequest, screenMax
         // snackbar would come and go unseen.
         val lifecycleState by LocalLifecycleOwner.current.lifecycle.currentStateFlow.collectAsState()
         val visible = lifecycleState.isAtLeast(Lifecycle.State.STARTED)
+
+        // 0.1.41 (docs/online-design.md 4.8, AP3-AP6): while ARRIVED, once a second: the destination's details, parked, at
+        // the place, the one question. The pack's details of the destination are read as its window does (a pin or an
+        // address has none: no question).
+        val arrived = trip.phase == Phase.ARRIVED
+        val destination = trip.stops.lastOrNull()?.place
+        val destSheet = remember(arrived, destination, detailsLoaded, ownChanges, minute, set.generation) {
+            if (!arrived || destination == null) null
+            else g.search.placeSheet(destination, flows.searchContext(), tripActive = false, driving = true, guiding = false)
+                .let { it.copy(osm = g.osmFor(it.osm)) }
+        }
+        val destSheetNow by rememberUpdatedState(destSheet)
+        // plan AP-1: the card is on screen (resumed; no pick, screen, stop results, Add stop panel or place window over it:
+        // the card raised opens the destination's window, drawn over the card)
+        val arrivalOnScreen by rememberUpdatedState(AppRules.arrivalDisplayed(resumed = lifecycleState.isAtLeast(Lifecycle.State.RESUMED),
+            picking = pick != null, layerOnTop = top != null, stopShown = stopShown, addStopShown = addStopShown, sheetShown = sheetShown))
+        LaunchedEffect(arrived) {
+            if (!arrived) {
+                flows.arrivalEnded()
+                return@LaunchedEffect
+            }
+            while (true) {
+                flows.arrivalTick(destSheetNow, g.clock.elapsedMs(), System.currentTimeMillis(), arrivalOnScreen)
+                delay(PlaceQuestions.ARRIVAL_TICK_MS)
+            }
+        }
         val mapShown = visible && flows.revealDone && !noticeNeeded && !onlineChoiceNeeded && !pickerShown && flows.mapReady
         LaunchedEffect(showOnMap, mapShown) {
             val p = showOnMap ?: return@LaunchedEffect
@@ -869,8 +965,11 @@ internal const val ESTIMATE_SETTLE_MS = 350L
 /** Item 47: how long the screen's insets must stay the same before the camera refits to them. */
 private const val INSETS_SETTLE_MS = 60L
 
-/** Item 47: the screen over the map and how deep the stack is (deeper: opened over another; shallower: closed). */
-private data class ScreenStep(val layer: Layer, val depth: Int)
+/**
+ * Item 47: the screen over the map and how deep the stack is (deeper: opened over another; shallower: closed). Item 54b
+ * (plan AF-4): [overPanel], the screen opens over the Add stop panel (AppRules.opensOverPanel): it comes in at once.
+ */
+private data class ScreenStep(val layer: Layer, val depth: Int, val overPanel: Boolean = false)
 
 /** Item 47: how long a screen takes to slide in or out. */
 internal const val SCREEN_SLIDE_MS = 280
@@ -886,6 +985,8 @@ private fun screenTransition(from: ScreenStep?, to: ScreenStep?): ContentTransfo
     val searchFromMap = from == null && to?.layer is Layer.Search
     val searchToMap = to == null && from?.layer is Layer.Search
     return when {
+        // item 54b (plan AF-4): "View all" or Saved places over the Add stop panel, which goes at once: no slide over a bare map
+        from == null && to?.overPanel == true -> ContentTransform(fadeIn(tween(0)), fadeOut(tween(0)), sizeTransform = null)
         searchFromMap -> ContentTransform(fadeIn(tween(SCREEN_SLIDE_MS / 2)) + expandVertically(grow, expandFrom = Alignment.Top), fadeOut(tween(0)),
             sizeTransform = null)
         searchToMap -> ContentTransform(fadeIn(tween(0)), fadeOut(tween(SCREEN_SLIDE_MS)) + shrinkVertically(grow, shrinkTowards = Alignment.Top),

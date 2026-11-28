@@ -54,7 +54,9 @@ import io.github.spysyweeb.beamline.search.SearchHub
 import io.github.spysyweeb.beamline.search.saved.SavedPlaces
 import io.github.spysyweeb.beamline.search.saved.SavedRules
 import io.github.spysyweeb.beamline.settings.AppState
+import io.github.spysyweeb.beamline.app.online.AskedStore
 import io.github.spysyweeb.beamline.app.online.KeystoreKey
+import io.github.spysyweeb.beamline.app.online.OnSite
 import io.github.spysyweeb.beamline.app.online.NearbyPlace
 import io.github.spysyweeb.beamline.app.online.OwnChange
 import io.github.spysyweeb.beamline.app.online.OwnChanges
@@ -107,6 +109,7 @@ import kotlinx.serialization.json.JsonObject
 import kotlinx.serialization.json.jsonPrimitive
 import kotlinx.serialization.json.longOrNull
 import java.io.File
+import java.time.LocalDate
 import java.util.concurrent.Executors
 
 /** The overview map bundled in the APK and the record sync_assets.py wrote next to it. */
@@ -262,6 +265,43 @@ class AppGraph(context: Context, val dataDir: File, val locationLog: Boolean) {
     val outboxSender = OutboxSender(outbox, osm, osmServer, osmAllowed, Dispatchers.IO) { accounts.account.value }
     /** True while a sign-in's token and name are being fetched. */
     val signingIn = MutableStateFlow(false)
+
+    /**
+     * 0.1.41, 53e (docs/online-design.md 4.5 "Were you there?"): the phone's positions of the last 10 minutes, in memory
+     * only (never a file, a backup or a log; never sent), behind its one door: the screens get only yes or no about a
+     * place's point (the fixer's review, F10). Fed from the app's one GPS listener ([sharedPositions], so it learns
+     * only while the puck or a trip collects fixes; a simulated drive's positions never reach it), only while OSM
+     * contributions are allowed; a fix leaves at 10 minutes also with the app in the background (F8); emptied when
+     * they go off.
+     */
+    val onSite = OnSite(clock)
+
+    /**
+     * 0.1.41 (docs/online-design.md 4.8, AP6; plan AP-6): the places where the user answered the arrival question, 90
+     * days, beside the outbox (PV1-PV8); a question only shown is remembered in memory. Deleted when Contribute or online
+     * features go off.
+     */
+    val arrivalAsked = AskedStore(File(dataDir, AskedStore.FILE_NAME))
+
+    /** AP-6: the arrival question answered at [osm] [today]: written on the store thread. */
+    fun markAnswered(osm: String, today: LocalDate) {
+        scope.launch(storeDispatcher) { arrivalAsked.markAnswered(osm, today) }
+    }
+
+    init {
+        // 53e and AP-6: one collector for the switch: the position memory starts empty each time, and is fed (and
+        // aged, F8) only while allowed; the arrival record is deleted (on the store thread) when it goes off
+        scope.launch {
+            online.state.map { it.osmAllowed }.distinctUntilChanged().collectLatest { allowed ->
+                onSite.clear()
+                if (!allowed) {
+                    withContext(storeDispatcher) { arrivalAsked.clear() }
+                    return@collectLatest
+                }
+                onSite.keep(sharedPositions.latest)
+            }
+        }
+    }
     /**
      * Test builds only (BuildConfig.TEST_EXTRAS, `--es osm_map`): pack OSM ids shown as objects made
      * on the OSM test server, where the pack's own ids do not exist (docs/online-design.md 4.6).

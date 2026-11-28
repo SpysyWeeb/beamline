@@ -101,7 +101,7 @@ class CameraDirector(rules: CameraRules, clock: Clock) {
     fun onTrip(trip: TripState): Unit = director.onTrip(trip)
     fun onPuck(puck: PuckState?): Unit = director.onPuck(puck)
     fun onGesture(gesture: MapGesture): Unit = director.onGesture(gesture)
-    /** K1/K1a: my-location: not following -> following north up -> following turned by the phone's compass -> following north up. */
+    /** K1/K1a: my-location: not following -> following north up -> following turned by the phone's compass -> following north up; after a tapped place ended following (K1b), that following as it was. */
     fun onMyLocation(): Unit = director.onMyLocation()
     fun onRecenter(): Unit = director.onRecenter()
     fun onOverview(): Unit = director.onOverview()
@@ -116,12 +116,13 @@ class CameraDirector(rules: CameraRules, clock: Clock) {
     /** The picked place's sheet closed or another place replaced it, or the results on the map closed: the camera stays where it is (K1, S11). */
     fun onPlaceLeft(): Unit = director.onPlaceLeft()
     /**
-     * K1b (P8): a place tapped on the map whose sheet opened (a POI label, a saved place's marker, a
-     * dropped pin). On a browsing map that is not following, the camera stays while the place's pin is
-     * wholly in the area the insets leave free; once it is not (the sheet raised over it, the search
-     * bar over it at the tap) the camera centres it there at the map's zoom and bearing and keeps it
-     * there like a picked place, until a gesture, my-location, another place or [onPlaceLeft]. While
-     * following, or while a trip exists, nothing changes.
+     * K1b (P8, item 54a): a place tapped on the map whose sheet opened (a POI label, a saved place's marker, a
+     * dropped pin). While browsing it wins over following: following ends where the map is (its bearing and
+     * zoom kept, the compass no longer leading) and the next [onMyLocation] gives that following back. The
+     * camera stays while the place's pin is wholly in the area the insets leave free; once it is not (the sheet
+     * raised over it, the search bar over it at the tap, a glide ending) the camera centres it there at the
+     * map's zoom and bearing and keeps it there like a picked place, until a gesture, my-location, another
+     * place or [onPlaceLeft]. While a trip exists, nothing changes.
      */
     fun onPlaceTapped(point: GeoPoint): Unit = director.onPlaceTapped(point)
     /**
@@ -137,12 +138,14 @@ class CameraDirector(rules: CameraRules, clock: Clock) {
     fun onShowPlaceAfterRoute(point: GeoPoint): Unit = director.onShowPlaceAfterRoute(point)
     /**
      * Item 51 (rule K8): adding a stop on the map. While a route is chosen or guided the camera looks
-     * top-down, north up at [points] (the stop results and where they join the trip, or the way to the
-     * stop looked at) in the area the insets leave free; guiding, the vehicle is kept in the view (a new
-     * fit when it nears the edge) and guidance does not follow meanwhile. Empty [points]: adding a stop
-     * ended, back to K2 or K3. Ignored in other phases.
+     * top-down, north up at [points] (the stop results and where they join the trip, the way to the
+     * stop looked at, or, item 54b, the route ahead the Add stop search looks along while it is typed in)
+     * in the area the insets leave free, [paddingDp] on each side (null: preview.padding_dp; item 54b's
+     * typing view passes a smaller one); guiding, the vehicle is kept in the view (a new fit when it nears
+     * the edge) and guidance does not follow meanwhile. No room in that area for the fit: the camera stays.
+     * Empty [points]: adding a stop ended, back to K2 or K3. Ignored in other phases.
      */
-    fun onStopView(points: List<GeoPoint>): Unit = director.onStopView(points)
+    fun onStopView(points: List<GeoPoint>, paddingDp: Float? = null): Unit = director.onStopView(points, paddingDp)
     fun tick(): Unit = director.tick()
     /** K1a: the map's bearing when the camera stopped (browsing keeps a user's own turn). */
     fun onMapBearing(deg: Double): Unit = director.onMapBearing(deg)

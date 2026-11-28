@@ -211,6 +211,54 @@ class SpeedLimitTest {
         assertNotNull(item.edit)
     }
 
+    /** Plan OP-4: the limit OSM already has by the time it goes: nothing uploaded, and the screen says so. */
+    @Test
+    fun aLimitOsmAlreadyHasSaysSo(@TempDir dir: File) = runBlocking {
+        val store = OutboxStore(File(dir, "o.json"))
+        val s = SpeedSession(40.00003, -77.0007, null, null, null, http, store, sender(store), this, Dispatchers.IO)
+        s.load()
+        s.settle(SpeedPhase.LOADING)
+        s.pick(45)
+        s.summary()
+        assertEquals(mapOf<String, String?>("maxspeed" to "45 mph"), s.pendingChanges)
+        // someone set the same limit between the summary and Upload
+        wayVersion = 5
+        wayTags = """"highway":"secondary","name":"Main Street","maxspeed":"45 mph""""
+        s.upload()
+        s.settle(SpeedPhase.UPLOADING)
+        assertEquals(SpeedPhase.DONE, s.phase)
+        assertTrue(s.already)
+        assertEquals("https://web.test/way/500", s.link)
+        assertTrue(seen.none { it.method == "PUT" }, "no changeset, no upload")
+        assertEquals(OnlineTexts.ALREADY_THERE, OnlineTexts.state(store.items.value.single(), sending = false))
+    }
+
+    /** OP test 19 for a speed limit: one picked at the road says source=survey. */
+    @Test
+    fun aLimitFixedAtTheRoadSaysSurvey(@TempDir dir: File) = runBlocking {
+        val store = OutboxStore(File(dir, "o.json"))
+        val s = SpeedSession(40.00003, -77.0007, null, null, null, http, store, sender(store), this, Dispatchers.IO)
+        s.load()
+        s.settle(SpeedPhase.LOADING)
+        s.pick(45)
+        s.summary()
+        s.upload(atPlace = true)
+        s.settle(SpeedPhase.UPLOADING)
+        assertEquals(SpeedPhase.DONE, s.phase)
+        assertFalse(s.already)
+        assertTrue("<tag k=\"source\" v=\"survey\"/>" in seen.single { it.path == "/api/0.6/changeset/create" }.body)
+        assertTrue(store.items.value.single().atPlace)
+        // a limit picked while driving (kept with at_place, AppFlows) looked at again with the same limit stays "made at the place"
+        val pick = OutboxItem("p1", 40.00003, -77.0007, OnlineTexts.speedPicked(45), "Main Street", 1L, OutboxState.REVIEW, speedMph = 45, atPlace = true)
+        store.add(pick)
+        val again = SpeedSession(pick.lat, pick.lon, pick.placeName, pick.speedMph, pick.id, http, store, sender(store), this, Dispatchers.IO)
+        again.load()
+        again.settle(SpeedPhase.LOADING)
+        assertTrue(UploadChecks.atPlace(false, false, again.stored, again.pendingChanges))
+        again.pick(50)
+        assertFalse(UploadChecks.atPlace(false, false, again.stored, again.pendingChanges), "another limit than the one picked there: asked again")
+    }
+
     @Test
     fun noRoadNoConnectionAndARoadChangedMeanwhile(@TempDir dir: File) = runBlocking {
         val store = OutboxStore(File(dir, "o.json"))

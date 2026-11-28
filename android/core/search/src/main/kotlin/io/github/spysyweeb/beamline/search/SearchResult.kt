@@ -90,6 +90,13 @@ data class PoiDetails(
     val category: String? = null,
     /** Batch O2 (docs/online-design.md 4.2): the OSM object the POI was made from (`poi.osm`, "n25479855"), or null. */
     val osm: String? = null,
+    /** 0.1.41: the POI's name in the pack (its OSM name), for a public changeset comment (docs/online-design.md 4.8, AP12); null when none. */
+    val name: String? = null,
+    /** 0.1.41: the pack's type of the entry, a category code ("fast_food") or a raw tag ("shop=florist"), for the kinds asked about (4.8, AP4); null when none. */
+    val type: String? = null,
+    /** 0.1.41: the entry's own point in the pack (a node POI: the node's point when the pack was built), for 53a's move check and 4.8's "at the place". */
+    val lat: Double? = null,
+    val lon: Double? = null,
 ) {
     /** Hours, phone or website: what the POIs of one name near a point must agree on (S10). */
     val hasContact: Boolean get() = openingHours != null || phone != null || website != null

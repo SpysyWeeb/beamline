@@ -1043,6 +1043,8 @@ not break across two lines in the banner; the results view shows at most the 20 
        review (`OutboxSender`, REVIEW). As StreetComplete does (`StringMapEntryChange.conflictsWith`): each
        changed tag keeps its old value; the edit goes onto the newest version unless someone changed one
        of the same tags to a different value; only then does it come back to the user.
+       *Built in 0.1.41:* `EditPlans` checks each tag at send time (a third value, a node moved more than 50 m or a
+       deleted place sends it back); a 409 is read again once; what OSM already has is not uploaded again.
     b. *(Dropped by the owner, 2026-11-28.)* **A posted limit says so.** The speed-limit fix (online-design.md 4.7) also writes
        `maxspeed:type=sign`, and offers the yellow advisory sign (`maxspeed:advisory` with
        `maxspeed:type:advisory=sign`), as StreetComplete's AddMaxSpeed does in the United States. A road
@@ -1050,14 +1052,27 @@ not break across two lines in the banner; the results view shows at most the 20 
     c. **"Still right?" in one tap.** At a place (arrived and parked, or standing near it; never while
        guiding) its hours can be confirmed with one tap, which writes `check_date:opening_hours=<YYYY-MM-DD>`;
        the app offers it again when the check is a year old (StreetComplete's interval for hours).
+       *Built in 0.1.41 (the pipeline):* `HoursCheck` writes `check_date:opening_hours` only, while OSM still has the
+       hours seen; asked again after 365 days of the user's own last check (`HoursCheck.due`). The question
+       (`docs/online-design.md` 4.8, rules AP1-AP12): at a place's details height, while the phone stood within 80 m
+       in the last 2 minutes, signed in and with Contribute on, never while a trip is driven: "Hours still right?"
+       under the week, "Yes" (one tap: `check_date:opening_hours` of the day, no summary, Undo in My reports for 12
+       hours) and "Edit hours" (the edit form at its hours); after Yes "Hours confirmed" for the day. Offered again a
+       year after the user's own confirmation or hours edit (My reports' items; removing the row forgets it). The
+       arrival card asks it too (g).
     d. **Undo after upload** for 12 hours, from My reports: the reverse of the tag change, with the same
        per-field conflict check (StreetComplete's RevertUpdateElementTagsAction).
+       *Built in 0.1.41:* "Undo" on a sent edit in My reports for 12 hours; the reverse goes through the outbox, a tag
+       changed since is left alone, and the row says when nothing could be undone.
     e. **Were you there?** The app keeps the phone's recent positions (the last 10 minutes, in memory only:
        never stored, sent or logged). An edit made when none of them was within about 80 m of the place
        asks "Are you sure you checked this on-site?" (StreetComplete's SurveyChecker). The owner changes
        the decision of 2026-11-21 (online-design.md 4.2): the changeset of an edit made at the place
        carries `source=survey`; any other edit carries no source. The first time, the app says that this
        tells everyone the user was there at that time.
+       *Built in 0.1.41:* the last 10 minutes of positions in memory only; "Are you sure you checked this on-site?"
+       beyond 80 m; `source=survey` for an edit made at the place, with a first-time notice ("Your edit says you were
+       here"); an edit opened from a question at the place counts as made there.
     f. *(Dropped by the owner, 2026-11-28.)* **Brand and type suggestions** for "Add a missing place" and "This is now a different business":
        osmfeatures with iD's presets and the Name Suggestion Index, trimmed to the United States (typing
        "Sheetz" gives the gas station's type and brand tags); and the fuller list of the old business's
@@ -1067,6 +1082,14 @@ not break across two lines in the banner; the results view shows at most the 20 
        ("This place has no hours on the map. Add them?") that opens the edit form at that field, with
        "Not now"; never while guiding. (First outline: parking fee or access, EV charging, self-service
        fuel.)
+       *Built in 0.1.41* (`docs/online-design.md` 4.8): arrived (ARRIVED, not simulated) and parked (stopped 15 s;
+       moving 3 s hides it) at the destination, at the place, signed in: one question in the arrival card above Done:
+       no hours, "This place has no hours on the map. Add them?"; hours not confirmed by the user for a year, "Hours
+       still right?" with the week (Yes / Edit hours / Not now); no phone or website, "This place has no phone number
+       on the map. Add it?" (the website, or both, alike). The edit button opens the form at that field (the phone and
+       website with the keyboard up). Only businesses (not churches, hospitals, schools, parks, stations, ...),
+       nothing while the user's edit of the place waits, a place answered at most once in 90 days
+       (`no_backup/arrival-asked.json`, answers only).
     Not chosen or not fitting: a check for an existing note before posting one (offered, not chosen);
     splitting a way where the limit changes (the app changes tags only); photos on notes (StreetComplete
     runs its own photo server); GPS traces; statistics and achievements; its walking questions.
@@ -1077,10 +1100,22 @@ not break across two lines in the banner; the results view shows at most the 20 
        map today keeps the follow (rule K1b), so at the sheet's full height the place can slide off the
        top. The owner: the tapped place wins. The tap ends following and keeps the place in view above
        the sheet; the location button brings following back.
+       *Built in 0.1.41* (rules K1a, K1b): a tap on a place while following ends the following where the map is
+       (turned as it was, the compass no longer leading), and the place is kept in view above its window at every
+       height as on a map that was not following; one press of the location button gives the following back as it
+       was (north up, or turned by the compass); closing the window leaves the map where it is.
     b. **The map while typing in Add a stop** (item 51). The Add stop search opens full screen with the
        keyboard up, and the route map with the pins comes only with a chip, Enter or a row; the typing
        suggestions show distances, and "+N min" comes after Enter. Two testers expected the map while
        typing. The owner: next batch, the trip's route map stays in view above the field while typing.
+       *Built in 0.1.41* (rules S12, K8): the Add stop search is a panel over the trip's map: upright on the
+       keyboard, half the room under the banner, the map above it; on its side in the start panel, the map beside
+       it (while guiding with the keyboard up it covers the banner, as the search page did). The map frames the route
+       ahead the search looks along, top-down and north up, the car kept in view; no pins while typing (Enter, a chip
+       or a row puts them on the map with "+N min", as before); the speed pair stays above the keyboard. "View all"
+       and Saved places still open over the whole screen; an arrival or the end of the trip closes the search.
+       The play test of 0.1.41: on its side with the keyboard down the banner and its lane row left room for one
+       row; there the banner now leaves out its lane row while the panel or the stop results' window is under it.
     c. **The stop preview keeps its close view** (rule K8): it frames the leg into the stop, not the
        whole new route (the owner, as built).
     Seen in the replay, not decided: the result pins all look the same and bunch where most places are;

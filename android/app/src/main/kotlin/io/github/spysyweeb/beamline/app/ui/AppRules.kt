@@ -12,6 +12,7 @@ import io.github.spysyweeb.beamline.api.nav.Phase
 import io.github.spysyweeb.beamline.api.nav.StopPreview
 import io.github.spysyweeb.beamline.api.nav.TripState
 import io.github.spysyweeb.beamline.feature.about.FIRST_RUN_NOTICE_VERSION
+import io.github.spysyweeb.beamline.feature.drive.ArrivalQuestionUi
 import io.github.spysyweeb.beamline.feature.drive.DriveUi
 import io.github.spysyweeb.beamline.feature.drive.GuidanceStatusUi
 import io.github.spysyweeb.beamline.feature.drive.GuidanceUi
@@ -20,6 +21,8 @@ import io.github.spysyweeb.beamline.feature.search.ResultsUi
 import io.github.spysyweeb.beamline.feature.search.SearchContext
 import io.github.spysyweeb.beamline.feature.search.SearchMode
 import io.github.spysyweeb.beamline.nav.StopLeg
+import io.github.spysyweeb.beamline.search.AlongRoute
+import io.github.spysyweeb.beamline.search.Geo
 import io.github.spysyweeb.beamline.settings.AppState
 import kotlin.math.abs
 import kotlin.math.max
@@ -30,6 +33,25 @@ data class ShownStep(val choiceId: Long, val index: Int, val point: GeoPoint)
 
 /** Item 51: the stop results of [requestId] ended; [all]: no newer stop results took their place (AppRules.stopResultsEnded). */
 data class StopEnd(val requestId: Long, val all: Boolean)
+
+/**
+ * Item 51 (rule K8), item 54b: what the camera looks at while a stop is added on the map ([points]) and the padding of
+ * its fit on each side ([paddingDp]; null: preview.padding_dp, 48 dp). AppRules.stopView.
+ */
+data class StopView(val points: List<GeoPoint>, val paddingDp: Float?)
+
+/** Item 54b (plan AF-6): what the one stop-view collector tells the camera next (AppRules.stopViewCall). */
+sealed interface StopViewCall {
+    /** A view to fit (a new one, or the next of a typing -> results -> typing run: never an end between them). */
+    data class Show(val view: StopView) : StopViewCall
+    /** Adding a stop ended: back to K2 or K3, then (AF-3) the route step shown before (P21) again; [reshow] null: none. */
+    data class End(val reshow: GeoPoint?) : StopViewCall
+    /** Nothing to do. */
+    data object None : StopViewCall
+}
+
+/** Item 54b: the Add stop panel's top edge (dp from the window's top) and height (down to the keyboard or the window's bottom). */
+data class AddStopPanelPlace(val topDp: Float, val heightDp: Float)
 
 /** Small decisions of the app shell, kept free of Android so the JVM tests hold them. */
 object AppRules {
@@ -50,6 +72,14 @@ object AppRules {
     /** F42 (0.1.40): two Places are the same place window (the line or the saved id may differ): same source, point, name, pack entry. */
     fun sameSheetPlace(a: Place, b: Place): Boolean =
         a.source == b.source && a.point == b.point && a.name == b.name && a.packId == b.packId && a.searchId == b.searchId
+
+    /**
+     * Batch O3, fixed in 0.1.41: the sprite an edit of a window's [place] carries (the own-changes layer draws it): the
+     * map label's own [tappedIcon] only for the window that tap opened ([tapped], [sameSheetPlace]); any other window
+     * (the arrival's destination, a search result, a recent) its own [iconName].
+     */
+    fun sheetIcon(place: Place, iconName: String?, tapped: Place?, tappedIcon: String?): String? =
+        tappedIcon.takeIf { place.source == PlaceSource.MAP_POI && tapped != null && sameSheetPlace(place, tapped) } ?: iconName
 
     /** "42.13646, -80.08718": a point's line before its street is known (AppFlows.coordinates, pointText). */
     private val COORDINATES = Regex("""^-?\d{1,3}\.\d+, -?\d{1,3}\.\d+$""")
@@ -113,20 +143,22 @@ object AppRules {
      * start panel, which the overlay's start inset already keeps clear. [sheetPanel]: the place window's or
      * the results list's side panel (P7), which takes the start as the drive overlay's does, while the credit
      * row stays at the bottom; [safeLeft], [safeRight]: a navigation bar or a display cutout at the left or the
-     * right (P1), which fitted things keep clear of (physical sides, as EdgeInsetsDp is).
+     * right (P1), which fitted things keep clear of (physical sides, as EdgeInsetsDp is). [keyboard] (item 54b,
+     * rule S12): on its side the keyboard under the Add stop search's panel covers the map's lower part (upright
+     * the panel's reach, keyboard included, is [stopSheet]).
      */
     fun cameraInsets(
         overlay: EdgeInsetsDp, statusBarTop: Float, chromeBottom: Float, driving: Boolean, placeSheet: Float = 0f, topChrome: Float = 0f,
-        sheetPanel: Float = 0f, safeLeft: Float = 0f, safeRight: Float = 0f, stopSheet: Float = 0f,
+        sheetPanel: Float = 0f, safeLeft: Float = 0f, safeRight: Float = 0f, stopSheet: Float = 0f, keyboard: Float = 0f,
     ): EdgeInsetsDp = overlay.copy(
         top = max(max(overlay.top, statusBarTop), topChrome),
-        bottom = when {
+        bottom = max(when {
             overlay.start > 0f -> overlay.bottom                              // the drive overlay's side panel (also the stop overlay's)
             sheetPanel > 0f -> overlay.bottom + chromeBottom                  // P7: a browsing window in the panel
             stopSheet > 0f -> max(overlay.bottom, stopSheet) + chromeBottom   // item 51, upright, also while driving
             driving -> overlay.bottom
             else -> max(overlay.bottom, placeSheet) + chromeBottom
-        },
+        }, keyboard),
         start = max(max(overlay.start, sheetPanel), safeLeft),
         end = max(overlay.end, safeRight),
     )
@@ -139,20 +171,34 @@ object AppRules {
      * window is on its side (:ui:theme isSideLayout; null upright); [overlay]: the drive overlay's blocks;
      * [pickDp]: the pick bar's room (null: no map pick). Upright the row rides above the sheet or the
      * overlay's block (K1, 5.4 item 4); on its side the sheet is in the start panel, as the route sheet,
-     * and the row stays at the bottom beside it (riding up with it, it covered Map style).
+     * and the row stays at the bottom beside it (riding up with it, it covered Map style). 0.1.41 (item 54b):
+     * [keyboardDp], the keyboard while the Add stop panel shows (0 otherwise): on its side it covers the map's foot
+     * beside the panel, so the row stays above it (upright the panel's reach in [sheetDp] already holds it).
      */
-    fun bottomChrome(sheetDp: Float?, panelDp: Float?, overlay: EdgeInsetsDp, pickDp: Float?): BottomChrome {
+    fun bottomChrome(sheetDp: Float?, panelDp: Float?, overlay: EdgeInsetsDp, pickDp: Float?, keyboardDp: Float = 0f): BottomChrome {
         val inPanel = sheetDp != null && panelDp != null
         return BottomChrome(
             startDp = if (inPanel) max(overlay.start, panelDp) else overlay.start,
             bottomDp = when {
                 pickDp != null -> pickDp
-                sheetDp != null && !inPanel -> max(sheetDp, overlay.bottom)
-                else -> overlay.bottom
+                sheetDp != null && !inPanel -> max(max(sheetDp, overlay.bottom), keyboardDp)
+                else -> max(overlay.bottom, keyboardDp)
             },
             onSheet = pickDp == null && sheetDp != null && !inPanel,
         )
     }
+
+    /**
+     * W4: how high a bottom bar (R4's "Trip ended", P28's Back hint, the Undo offer, a plain message) sits over the
+     * navigation bar: [BAR_LIFT_DP] above the drive overlay's blocks ([overlayBottomDp]). 0.1.41 (item 54b): while the
+     * Add stop panel shows, above what it covers at the bottom ([addStopReachDp], from the window's bottom: upright the
+     * panel and the keyboard, on its side the keyboard; null: no panel), which holds the navigation bar ([navBarDp]).
+     */
+    fun barBottomDp(overlayBottomDp: Float, addStopReachDp: Float?, navBarDp: Float): Float =
+        (if (addStopReachDp == null) overlayBottomDp else max(overlayBottomDp, addStopReachDp - navBarDp)) + BAR_LIFT_DP
+
+    /** W4: a bottom bar's room over what is at the bottom (the credit row and the map buttons or the speed pair). */
+    const val BAR_LIFT_DP = 88f
 
     /**
      * P7 (0.1.40): my-location rides above a browsing window (K1); in a window too short for that (split
@@ -219,10 +265,11 @@ object AppRules {
      * stop is added on the map. The list: the places and where a new stop joins the trip (J: the first
      * point of StopLeg.lineAhead, else the vehicle); a row selected whose route is not there yet: J and
      * the place; its route there (the session's [preview] of that place): the leg into the stop
-     * (StopLeg.lineToStop) and the place. Null without stop results (the teardown ends the view).
+     * (StopLeg.lineToStop) and the place. Without stop results, item 54b: the route ahead while the Add stop search
+     * is typed in over the map ([typing], [addStopView]), else null (the view ends).
      */
-    fun stopViewPoints(results: ResultsUi?, preview: StopPreview?, trip: TripState): List<GeoPoint>? {
-        if (results?.stop == null) return null
+    fun stopViewPoints(results: ResultsUi?, preview: StopPreview?, trip: TripState, typing: List<GeoPoint>? = null): List<GeoPoint>? {
+        if (results?.stop == null) return typing
         val join = StopLeg.lineAhead(trip).firstOrNull() ?: trip.guidance?.vehicle?.point
         val place = results.selected?.let { results.places.getOrNull(it) }
             ?: return results.places.map { it.point } + listOfNotNull(join)
@@ -236,6 +283,91 @@ object AppRules {
      * over (then the preview and the camera's stop view end too). Null when nothing ended.
      */
     fun stopResultsEnded(old: Long?, now: Long?): StopEnd? = if (old != null && now != old) StopEnd(old, all = now == null) else null
+
+    /**
+     * Item 51 (rule K8), item 54b (plan AF-2): the camera's stop view: the stop results' points ([stopViewPoints]) with
+     * the preview's own padding, else the route ahead while typing ([typing]) with [ADD_STOP_VIEW_PADDING_DP], which
+     * leaves room for the fit in the map strip above the panel. Null: no stop view (empty points are none).
+     */
+    fun stopView(results: ResultsUi?, preview: StopPreview?, trip: TripState, typing: List<GeoPoint>?): StopView? {
+        if (results?.stop != null) return stopViewPoints(results, preview, trip)?.takeIf { it.isNotEmpty() }?.let { StopView(it, null) }
+        return typing?.takeIf { it.isNotEmpty() }?.let { StopView(it, ADD_STOP_VIEW_PADDING_DP) }
+    }
+
+    /**
+     * Item 54b (plan AF-6, AF-3): the one stop-view collector's next call. A view: [StopViewCall.Show] (typing, the
+     * results and typing again follow each other with no end between them, so the camera never goes back to the
+     * follow in between); none while [viewing]: [StopViewCall.End], with the route step shown on the route sheet
+     * ([step]: its point while it is the selected route's in PLANNING or CHOOSING, P21) to show again; else nothing.
+     */
+    fun stopViewCall(viewing: Boolean, view: StopView?, step: GeoPoint?): StopViewCall = when {
+        view != null -> StopViewCall.Show(view)
+        viewing -> StopViewCall.End(step)
+        else -> StopViewCall.None
+    }
+
+    /** Item 54b (rule S12): the Add stop search shows as a panel over the trip's map: an ADD_STOP search on top, its "View all" grid ([grid]) not open. */
+    fun addStopOverMap(top: Layer?, grid: Boolean): Boolean =
+        top is Layer.Search && top.mode == SearchMode.ADD_STOP && !top.forSave && !grid
+
+    /** Item 54b (open question 7): an arrival or the trip's end (ARRIVED, IDLE, RESUME_OFFERED) closes an Add stop search on [stack]. */
+    fun addStopEnds(phase: Phase, stack: List<Layer>): Boolean =
+        phase !in ADD_STOP_PHASES && stack.any { it is Layer.Search && it.mode == SearchMode.ADD_STOP }
+
+    /** The phases a stop can be added in (rule C8). */
+    private val ADD_STOP_PHASES = setOf(Phase.PLANNING, Phase.CHOOSING, Phase.GUIDING, Phase.REROUTING)
+
+    /**
+     * Item 54b (plan AF-4): the screen shown opens over the Add stop panel (the layer under it on [stack] is an
+     * ADD_STOP search, or the shown one is that search with its "View all" grid open, [grid]): it comes in at once,
+     * so the bare map never shows between the panel going and the screen sliding in. Back keeps its slide.
+     */
+    fun opensOverPanel(stack: List<Layer>, grid: Boolean): Boolean {
+        val top = stack.lastOrNull() ?: return false
+        fun addStop(l: Layer?) = l is Layer.Search && l.mode == SearchMode.ADD_STOP && !l.forSave
+        return (addStop(top) && grid) || (top !is Layer.Search && addStop(stack.getOrNull(stack.size - 2)))
+    }
+
+    /**
+     * Item 54b (rule S12): where the Add stop search's panel goes in a window [windowDp] tall, the keyboard [keyboardDp]
+     * high (0: down; the IME's bottom inset, which holds the navigation bar while it is up), under [aboveDp] (the drive
+     * overlay's top stack from the window's top: banner, chip or stop card; 0: none) or the status bar ([statusBarDp]).
+     * Upright: ADD_STOP_PANEL_SHARE of the room between them and the keyboard, at least [minDp] (the field and one row),
+     * the map above it; the whole room when the map would get less than ADD_STOP_MAP_MIN_DP. On its side ([side]): the
+     * whole room, in the start panel. A room under [minDp]: from under the status bar, over the top stack. Not measured: (0, 0).
+     */
+    fun addStopPanelPlace(windowDp: Float, keyboardDp: Float, aboveDp: Float, statusBarDp: Float, side: Boolean, minDp: Float): AddStopPanelPlace {
+        if (windowDp <= 0f) return AddStopPanelPlace(0f, 0f)
+        val bottom = max(windowDp - keyboardDp, 0f)
+        val room = bottom - max(aboveDp, statusBarDp) - SHEET_GAP_DP
+        if (room < minDp) return AddStopPanelPlace(min(statusBarDp, bottom), max(bottom - statusBarDp, 0f))
+        val height = if (side) room else max(room * ADD_STOP_PANEL_SHARE, minDp).let { if (room - it < ADD_STOP_MAP_MIN_DP) room else it }
+        return AddStopPanelPlace(bottom - height, height)
+    }
+
+    /**
+     * Item 54b (rule K8): what the camera looks at while the Add stop search is typed in over the trip's map: the route
+     * ahead the search looks along ([line], StopLeg.lineAhead, its first point where the stop joins), a point every
+     * [stepKm] up to [aheadKm] (AlongRoute.anchors), and the line's last point when it ends sooner. Null for no line.
+     */
+    fun addStopView(line: List<GeoPoint>, stepKm: Double, aheadKm: Double): List<GeoPoint>? {
+        if (line.isEmpty()) return null
+        val pts = AlongRoute.anchors(line, stepKm, aheadKm)
+        var km = 0.0
+        for (i in 1 until line.size) km += Geo.haversineKm(line[i - 1].lat, line[i - 1].lon, line[i].lat, line[i].lon)
+        return if (km <= aheadKm) pts + line.last() else pts
+    }
+
+    /** Item 54b: the Add stop panel's share of the room above the keyboard, upright (the map has the rest). */
+    const val ADD_STOP_PANEL_SHARE = 0.5f
+    /** Item 54b: the panel's least height (dp, times the font scale): the field, the line under it and one row. */
+    const val ADD_STOP_PANEL_MIN_DP = 140f
+    /** Item 54b: the least map strip above the panel upright (dp); less: the panel takes the room (the fit needs its padding and the credit row). */
+    const val ADD_STOP_MAP_MIN_DP = 160f
+    /** Item 54b: the route ahead's points for the camera while typing, this far apart (km). */
+    const val ADD_STOP_VIEW_STEP_KM = 1.0
+    /** Item 54b (plan AF-2): the typing view's fit padding on each side (dp), less than preview.padding_dp's 48 so the strip above the panel has room for it. */
+    const val ADD_STOP_VIEW_PADDING_DP = 16f
 
     /** P21: [step]'s index while it is a step of the selected route of a preview (PLANNING, CHOOSING); null otherwise. */
     fun shownStep(step: ShownStep?, trip: TripState): Int? {
@@ -298,6 +430,22 @@ object AppRules {
         val a = g.status as? GuidanceStatusUi.Arrived ?: return drive
         return if (a.saved == saved) drive else drive.copy(guidance = g.copy(status = a.copy(saved = saved)))
     }
+
+    /** 0.1.41 (docs/online-design.md 4.8): the arrival card with the app's one question [q] (the presenter never sets it). */
+    fun withArrivalQuestion(drive: DriveUi, q: ArrivalQuestionUi?): DriveUi {
+        val g = drive.guidance ?: return drive
+        val a = g.status as? GuidanceStatusUi.Arrived ?: return drive
+        return if (a.question == q) drive else drive.copy(guidance = g.copy(status = a.copy(question = q)))
+    }
+
+    /**
+     * 0.1.41 (4.8, plan AP-1): the arrival card is on screen: the app [resumed], no map pick ([picking]), no screen
+     * over the map ([layerOnTop]), no stop results ([stopShown]) or Add stop panel ([addStopShown]) in its place, no
+     * place window over it ([sheetShown]: the card raised opens the destination's window, drawn over the card). Only
+     * then does the arrival question count as seen (ArrivalAsker, AskedStore.noteShown).
+     */
+    fun arrivalDisplayed(resumed: Boolean, picking: Boolean, layerOnTop: Boolean, stopShown: Boolean, addStopShown: Boolean, sheetShown: Boolean): Boolean =
+        resumed && !picking && !layerOnTop && !stopShown && !addStopShown && !sheetShown
 
     /**
      * Play test P28: what the first Back says while a trip is driven, arrived or offered; the second within

@@ -11,6 +11,7 @@ import io.github.spysyweeb.beamline.api.model.SavedKind
 import io.github.spysyweeb.beamline.search.AddressInfo
 import io.github.spysyweeb.beamline.search.MultiSearchResponse
 import io.github.spysyweeb.beamline.search.PackResult
+import io.github.spysyweeb.beamline.search.PoiDetails
 import io.github.spysyweeb.beamline.search.RecentPlaces
 import io.github.spysyweeb.beamline.search.SearchResult
 import io.github.spysyweeb.beamline.search.awaitStoreWrites
@@ -823,6 +824,53 @@ class SearchFeatureTest {
         assertNull(f.placeSheet(mallPlace, gps, tripActive = false).address)
         val h = home()
         assertNull(f.placeSheet(h.toPlace(), gps, tripActive = false).address)
+    }
+
+    /**
+     * 0.1.41 (docs/online-design.md 4.8; plan OP-1, OP-5, AP-4): the window's details carry the pack entry's name, type
+     * and point as the pack has them. The user's own change wins for the name and the type (a rename, a new type), the
+     * pack's point stays (OSM's node is checked against it); a place the user added has no pack point.
+     */
+    @Test
+    fun aPlacesDetailsCarryItsNameAndType() {
+        val at = GeoPoint(42.12915, -80.08530)                 // 425 State Street, Erie
+        val subway = Place("Subway", at, PlaceSource.SEARCH, "425 State Street, Erie", "fast_food", 5L, "us-pa")
+        fake.details = mapOf(5L to PoiDetails("Mo-Su 08:00-22:00", null, null, osm = "n7570266250",
+            name = "Subway", type = "fast_food", lat = 42.12917, lon = -80.08528))
+        f.placeSheet(subway, gps, tripActive = false)
+        settle()
+        val poi = f.placeSheet(subway, gps, tripActive = false).poi!!
+        assertEquals("Subway", poi.name)
+        assertEquals("fast_food", poi.type)
+        assertEquals(42.12917, poi.lat)
+        assertEquals(-80.08528, poi.lon)
+        // renamed, another type: the user's name and type, the pack's point
+        f.ownPlaces = listOf(OwnPlaceUi("e1", "Subway Downtown", at, "cafe", "Cafe", oldName = "Subway"))
+        val own = f.placeSheet(subway, gps, tripActive = false)
+        assertEquals("Subway Downtown", own.title)
+        assertEquals("Subway Downtown", own.poi!!.name)
+        assertEquals("cafe", own.poi!!.type)
+        assertEquals(42.12917, own.poi!!.lat)
+        assertEquals(-80.08528, own.poi!!.lon)
+        assertEquals("n7570266250", own.poi!!.osm)
+        // only the hours changed (no name of its own, no type): the pack's name and type
+        f.ownPlaces = listOf(OwnPlaceUi("e2", "", at, null, null, oldName = "Subway", overrides = mapOf("opening_hours" to "Mo-Su 07:00-23:00")))
+        val hoursOnly = f.placeSheet(subway, gps, tripActive = false).poi!!
+        assertEquals("Mo-Su 07:00-23:00", hoursOnly.openingHours)
+        assertEquals("Subway", hoursOnly.name)
+        assertEquals("fast_food", hoursOnly.type)
+        assertEquals(42.12917, hoursOnly.lat)
+        // a place the user added (no pack POI): its own type, no pack point, and no pack name (the review of 0.1.41: an own
+        // change's name counts only as a rename, since an unrenamed edit's can be a saved place's label; the title has it)
+        val joes = GeoPoint(42.1300, -80.0840)
+        f.ownPlaces = listOf(OwnPlaceUi("a1", "Joe's Pizza", joes, "pizza", "Pizza", osm = "n77"))
+        val addedUi = f.placeSheet(Place("Joe's Pizza", joes, PlaceSource.MAP_POI), gps, tripActive = false)
+        assertEquals("Joe's Pizza", addedUi.title)
+        val added = addedUi.poi!!
+        assertNull(added.name)
+        assertEquals("pizza", added.type)
+        assertNull(added.lat)
+        assertNull(added.lon)
     }
 
     @Test

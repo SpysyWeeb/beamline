@@ -40,7 +40,26 @@ import io.github.spysyweeb.beamline.api.map.EdgeInsetsDp
 import io.github.spysyweeb.beamline.api.nav.NavIntent
 import io.github.spysyweeb.beamline.ui.theme.BeamlineTheme
 import io.github.spysyweeb.beamline.ui.theme.SHEET_HANDLE_TAG
+import androidx.compose.foundation.background
+import androidx.compose.foundation.layout.WindowInsets
+import androidx.compose.foundation.layout.safeDrawing
+import androidx.compose.foundation.layout.windowInsetsPadding
+import androidx.compose.ui.draw.clipToBounds
+import androidx.compose.ui.geometry.Offset
+import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.layout.boundsInWindow
+import androidx.compose.ui.platform.LocalWindowInfo
+import androidx.compose.ui.platform.testTag
+import androidx.compose.ui.test.SemanticsNodeInteraction
+import androidx.compose.ui.test.hasClickAction
+import androidx.compose.ui.test.hasScrollAction
+import androidx.compose.ui.test.onRoot
+import androidx.compose.ui.test.swipe
+import androidx.compose.ui.unit.DpRect
+import androidx.compose.ui.unit.DpSize
+import androidx.compose.ui.unit.height
 import org.junit.Assert.assertEquals
+import org.junit.Assert.assertFalse
 import org.junit.Assert.assertTrue
 import org.junit.Rule
 import org.junit.Test
@@ -556,6 +575,201 @@ class RouteSheetHeightsTest {
         assertEquals(0, compose.onAllNodes(hasTestTag(DriveTags.SAVE_DESTINATION)).fetchSemanticsNodes().size)
         compose.onNodeWithTag(DriveTags.DONE).assertIsDisplayed()
         compose.saveShotOf(DriveTags.ARRIVED_CARD, "arrived-saved-day")
+    }
+
+    /**
+     * 0.1.41 (docs/online-design.md 4.8, item 53g; plan AP-3, AP-10, AP-12): the arrival card's one question on its tonal
+     * panel above Done: its title, lines and buttons, each sending its answer; a question that adds a field has only its
+     * edit button and Not now. Done and Save are pinned at the card's foot: Done does not move when the question comes,
+     * not even while the card grows; on its side at 640 x 360 dp with font 1.3 a 7-line question leaves Done in view with
+     * no scroll, and a finger's drag scrolls the lines and buttons into view (it does not raise the card to the place's
+     * details); every line is reachable by a screen reader's scroll too. Once the part is at its end, a drag up opens the
+     * details as before (item 47).
+     */
+    @Test
+    fun arrivalCardAsksOneQuestion() {
+        var window by mutableStateOf(DpSize(360.dp, 640.dp))
+        var scale by mutableStateOf(1f)
+        var night by mutableStateOf(false)
+        var status by mutableStateOf(GuidanceStatusUi.Arrived("Erie Zoo", "On your right"))
+        compose.setContent { ArrivalScreen(window, scale, night, status) }
+        compose.waitForIdle()
+        fun done() = compose.onNodeWithTag(DriveTags.DONE).getUnclippedBoundsInRoot()
+        fun sameAs(before: DpRect, step: String) {
+            val now = done()
+            for ((name, a, b) in listOf(Triple("left", before.left, now.left), Triple("top", before.top, now.top), Triple("right", before.right, now.right), Triple("bottom", before.bottom, now.bottom))) {
+                assertEquals("$step: Done's $name", a.value, b.value, 0.5f)
+            }
+        }
+        fun answers() = events.filterIsInstance<DriveEvent.AnswerArrival>().map { it.answer }
+        val hours = ArrivalQuestionUi("Hours still right?", listOf("Mon–Fri 8 AM–6 PM"), yes = "Yes", edit = "Edit hours", notNow = "Not now")
+
+        // upright (360 x 640 dp), day: no question, nothing in its place
+        assertEquals(0, compose.onAllNodes(hasTestTag(DriveTags.ARRIVAL_QUESTION)).fetchSemanticsNodes().size)
+        val upright = done()
+        compose.saveShot("arrived-question-none-day")
+        // the question comes: Done stays where it was, frame by frame while the card grows (upward from its bottom edge)
+        compose.mainClock.autoAdvance = false
+        compose.runOnUiThread { status = status.copy(question = hours) }
+        repeat(8) { frame ->
+            compose.mainClock.advanceTimeByFrame()
+            sameAs(upright, "upright, frame $frame of the card's growth")
+        }
+        compose.mainClock.autoAdvance = true
+        compose.waitForIdle()
+        sameAs(upright, "upright, with the question")
+        compose.onNodeWithTag(DriveTags.ARRIVAL_QUESTION).assertIsDisplayed()
+        compose.onNodeWithText("Hours still right?").assertIsDisplayed()
+        compose.onNodeWithText("Mon–Fri 8 AM–6 PM").assertIsDisplayed()
+        compose.onNodeWithTag(DriveTags.ARRIVAL_YES).assertIsDisplayed().assertTextEquals("Yes")
+        compose.onNodeWithTag(DriveTags.ARRIVAL_EDIT).assertIsDisplayed().assertTextEquals("Edit hours")
+        compose.onNodeWithTag(DriveTags.ARRIVAL_NOT_NOW).assertIsDisplayed().assertTextEquals("Not now")
+        for (tag in listOf(DriveTags.ARRIVAL_YES, DriveTags.ARRIVAL_EDIT, DriveTags.ARRIVAL_NOT_NOW)) {
+            val h = compose.onNodeWithTag(tag).getUnclippedBoundsInRoot().height
+            assertTrue("$tag: $h high", h.value >= 47.5f)
+        }
+        compose.assertWhollyShown(DriveTags.DONE)
+        compose.assertWhollyShown(DriveTags.SAVE_DESTINATION)
+        compose.saveShot("arrived-question-day")
+        compose.runOnUiThread { night = true }
+        compose.saveShot("arrived-question-night")
+        compose.onNodeWithTag(DriveTags.ARRIVAL_YES).performClick()
+        compose.onNodeWithTag(DriveTags.ARRIVAL_EDIT).performClick()
+        compose.onNodeWithTag(DriveTags.ARRIVAL_NOT_NOW).performClick()
+        assertEquals(listOf(ArrivalAnswer.YES, ArrivalAnswer.EDIT, ArrivalAnswer.NOT_NOW), answers())
+        compose.runOnUiThread { status = status.copy(question = null) }
+        compose.waitForIdle()
+        sameAs(upright, "upright, the question gone")
+        compose.saveShot("arrived-question-none-night")
+
+        // a question that adds a field: only its edit button ("Add hours") and Not now, Done still where it was
+        val addHours = ArrivalQuestionUi("This place has no hours on the map. Add them?", emptyList(), yes = null, edit = "Add hours", notNow = "Not now")
+        compose.runOnUiThread { night = false; status = status.copy(question = addHours) }
+        compose.waitForIdle()
+        compose.onNodeWithText("This place has no hours on the map. Add them?").assertIsDisplayed()
+        assertEquals(0, compose.onAllNodes(hasTestTag(DriveTags.ARRIVAL_YES)).fetchSemanticsNodes().size)
+        val buttons = compose.onAllNodes(hasClickAction() and hasAnyAncestor(hasTestTag(DriveTags.ARRIVAL_QUESTION))).fetchSemanticsNodes()
+            .map { it.config[SemanticsProperties.Text].joinToString(" ") }
+        assertEquals(listOf("Add hours", "Not now"), buttons)
+        sameAs(upright, "upright, Add hours")
+        compose.saveShot("arrived-question-add-hours-day")
+        compose.onNodeWithTag(DriveTags.ARRIVAL_EDIT).assertTextEquals("Add hours").performClick()
+        assertEquals(ArrivalAnswer.EDIT, answers().last())
+
+        // on its side, 640 x 360 dp, font 1.3: Done in view, then a 7-line question that does not fit
+        compose.runOnUiThread { status = status.copy(question = null); window = DpSize(640.dp, 360.dp); scale = 1.3f }
+        compose.waitForIdle()
+        compose.assertWhollyShown(DriveTags.DONE)
+        val side = done()
+        compose.saveShot("land640-arrived-question-none-font130-day")
+        val week = listOf("Mon 8 AM–6 PM", "Tue 8 AM–6 PM", "Wed 8 AM–6 PM", "Thu 8 AM–8 PM", "Fri 8 AM–8 PM", "Sat 9 AM–1 PM", "Sun closed")
+        compose.runOnUiThread { status = status.copy(question = hours.copy(lines = week)) }
+        compose.waitForIdle()
+        // with no scroll: Done and Save whole and where Done was; the question's title in view, its end below the part's edge
+        compose.onNodeWithTag(DriveTags.DONE).assertIsDisplayed()
+        compose.assertWhollyShown(DriveTags.DONE)
+        compose.assertWhollyShown(DriveTags.SAVE_DESTINATION)
+        sameAs(side, "on its side, the 7-line question")
+        compose.onNodeWithText("Hours still right?").assertIsDisplayed()
+        assertFalse("the last line fits without a scroll: the test proves nothing", shownWhole(compose.onNodeWithText("Sun closed")))
+        assertFalse("Not now fits without a scroll: the test proves nothing", shownWhole(compose.onNodeWithTag(DriveTags.ARRIVAL_NOT_NOW)))
+        compose.saveShot("land640-arrived-question-font130-day")
+        // a finger's drag up scrolls the part: the lines and buttons come into view, the card is not raised to the details
+        var drags = 0
+        while (!shownWhole(compose.onNodeWithTag(DriveTags.ARRIVAL_NOT_NOW)) && drags < 8) {
+            dragUpOverTheCard()
+            drags++
+        }
+        assertTrue(events.toString(), DriveEvent.ShowDestination !in events)
+        assertTrue("Not now after $drags drags", shownWhole(compose.onNodeWithTag(DriveTags.ARRIVAL_NOT_NOW)))
+        assertTrue("the last line after $drags drags", shownWhole(compose.onNodeWithText("Sun closed")))
+        assertEquals(listOf(ArrivalAnswer.YES, ArrivalAnswer.EDIT, ArrivalAnswer.NOT_NOW, ArrivalAnswer.EDIT), answers())
+        compose.assertWhollyShown(DriveTags.DONE)
+        sameAs(side, "on its side, scrolled")
+        compose.saveShot("land640-arrived-question-scrolled-font130-day")
+        compose.runOnUiThread { night = true }
+        compose.saveShot("land640-arrived-question-scrolled-font130-night")
+        compose.onNodeWithTag(DriveTags.ARRIVAL_NOT_NOW).performClick()
+        assertEquals(ArrivalAnswer.NOT_NOW, answers().last())
+        // at the part's end a drag up raises the card again: the place's details (item 47). A drag that scrolled the part
+        // never raises it, so the first may still take the part's last few dp; the second starts at the end.
+        repeat(2) { dragUpOverTheCard() }
+        assertTrue(events.toString(), DriveEvent.ShowDestination in events)
+        assertEquals("Lowered", state())
+        // a screen reader's scroll reaches every line (back up to the title), without raising the card to the details
+        val raised = events.count { it == DriveEvent.ShowDestination }
+        for (line in week.reversed()) {
+            readerScrollTo(compose.onNodeWithText(line))
+            assertTrue("$line after a screen reader's scroll", shownWhole(compose.onNodeWithText(line)))
+        }
+        readerScrollTo(compose.onNodeWithText("Hours still right?"))
+        assertTrue("the title after a screen reader's scroll", shownWhole(compose.onNodeWithText("Hours still right?")))
+        assertEquals(events.toString(), raised, events.count { it == DriveEvent.ShowDestination })
+        compose.runOnUiThread { status = status.copy(question = null) }
+        compose.waitForIdle()
+        sameAs(side, "on its side, the question gone")
+        compose.saveShot("land640-arrived-question-none-font130-night")
+    }
+
+    /** A finger's slow drag up over the arrival card's scrolling part (from near Done up to under the handle), in the root's pixels. */
+    private fun dragUpOverTheCard() {
+        val card = compose.onNodeWithTag(DriveTags.ARRIVED_CARD).fetchSemanticsNode().boundsInRoot
+        val done = compose.onNodeWithTag(DriveTags.DONE).fetchSemanticsNode().boundsInRoot
+        val x = card.left + card.width * 0.9f
+        val part = done.top - card.top
+        compose.onRoot().performTouchInput { swipe(Offset(x, card.top + part * 0.85f), Offset(x, card.top + part * 0.3f), durationMillis = 600) }
+        compose.waitForIdle()
+    }
+
+    /**
+     * A screen reader's scroll of the arrival card's part to [node]: the part's ScrollBy action (what TalkBack's scroll
+     * uses), once, by the distance that brings the node whole into the part. Not performScrollTo, which repeats until the
+     * node shows and so hangs when the card swallows the scroll (0.1.40's card raised itself to the details instead).
+     */
+    private fun readerScrollTo(node: SemanticsNodeInteraction) {
+        compose.waitForIdle()
+        val part = compose.onNode(hasScrollAction() and hasAnyAncestor(hasTestTag(DriveTags.ARRIVED_CARD))).fetchSemanticsNode()
+        val view = part.boundsInRoot
+        val target = node.fetchSemanticsNode()
+        val top = target.positionInRoot.y
+        val bottom = top + target.size.height
+        val dy = when {
+            bottom > view.bottom -> bottom - view.bottom
+            top < view.top -> top - view.top
+            else -> 0f
+        }
+        compose.runOnUiThread { part.config[SemanticsActions.ScrollBy].action!!.invoke(0f, dy) }
+        compose.waitForIdle()
+    }
+
+    /** [node] is shown whole: its bounds clipped by every ancestor (the scrolling part, the window) are its own size. */
+    private fun shownWhole(node: SemanticsNodeInteraction): Boolean {
+        compose.waitForIdle()
+        val coordinates = node.fetchSemanticsNode().layoutInfo.coordinates
+        val shown = coordinates.boundsInWindow()
+        return shown.height >= coordinates.size.height - 1f && shown.width >= coordinates.size.width - 1f
+    }
+
+    /**
+     * The overlay with the arrival card in a [window] (no system bars) at [fontScale], on a plain land colour, tagged
+     * [SHOT_TAG]. A window wider than the emulator's screen (640 dp across an upright 411 dp phone) is drawn at a smaller
+     * pixel size: the same dp, so the same layout, and the whole window on screen.
+     */
+    @Composable
+    private fun ArrivalScreen(window: DpSize, fontScale: Float, night: Boolean, status: GuidanceStatusUi.Arrived) {
+        val base = LocalDensity.current
+        val screenDp = LocalWindowInfo.current.containerSize.width / base.density
+        val k = minOf(1f, (screenDp - 8f) / window.width.value)
+        val ui = DriveUi(guidance = GuidanceUi(banner = null, status = status, tripBar = TripBarUi("Arrive 3:36 PM", "0 min", "0 ft", null, false), showRecenter = false))
+        CompositionLocalProvider(LocalDensity provides Density(base.density * k, fontScale)) {
+            BeamlineTheme(night = night) {
+                Box(Modifier.fillMaxSize().windowInsetsPadding(WindowInsets.safeDrawing)) {
+                    Box(Modifier.size(window).clipToBounds().background(if (night) Color(0xFF1C242C) else Color(0xFFE7E5DF)).testTag(SHOT_TAG)) {
+                        DriveOverlayContent(ui, onEvent = { e -> events.add(e) }, onInsets = { insets = it }, safe = WindowInsets(0, 0, 0, 0))
+                    }
+                }
+            }
+        }
     }
 
     /** Audit F2, F3: below full height a problem shows with its buttons, and the middle height has Cancel. */

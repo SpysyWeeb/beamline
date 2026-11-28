@@ -954,7 +954,7 @@ internal class SearchController(
         }
     }
 
-    /** The place's values with the user's own on top: hours, phone and website set by the user, the type in words. */
+    /** The place's values with the user's own on top: hours, phone and website set by the user, the type in words, the name and type (0.1.41). */
     private fun ownDetails(o: OwnPlaceUi, pack: PoiDetails?): PoiDetails {
         fun v(key: String, packValue: String?) = if (key in o.overrides) o.overrides[key] else packValue
         return PoiDetails(
@@ -964,6 +964,13 @@ internal class SearchController(
             address = pack?.address,
             category = if (o.closed) Texts.CLOSED_PERMANENTLY else o.categoryLabel ?: pack?.category,
             osm = o.osm ?: pack?.osm,
+            // 0.1.41 (docs/online-design.md 4.8): the user's rename and type win; the point stays the pack entry's
+            // (OSM's node is checked against it; a place the user added has none). The name is the place's on the map
+            // (AP12): an own change's name only when it renamed the place, else the pack's (review: an edit's name
+            // is its outbox place name, which 0.1.40 took from a saved place's label)
+            name = o.name.takeIf { it.isNotBlank() && o.oldName != null && it != o.oldName } ?: pack?.name,
+            type = o.categoryCode ?: pack?.type,
+            lat = pack?.lat, lon = pack?.lon,
         )
     }
 

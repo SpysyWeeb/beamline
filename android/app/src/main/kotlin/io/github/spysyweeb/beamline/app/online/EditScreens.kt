@@ -153,7 +153,9 @@ fun EditPlaceScreen(
                     }
                     if (s.differentBusiness) Text(OnlineTexts.DIFFERENT_BUSINESS_TEXT, style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
                 }
-                if (!s.closed) FormFieldsView(s.f, withType = s.differentBusiness, nameLabel = if (s.differentBusiness) OnlineTexts.NEW_NAME else OnlineTexts.NAME) { typePicker = true }
+                // 0.1.41 (AP9): opened at a field once per form (a return from the summary or a reload does not move it again)
+                if (!s.closed) FormFieldsView(s.f, withType = s.differentBusiness, nameLabel = if (s.differentBusiness) OnlineTexts.NEW_NAME else OnlineTexts.NAME,
+                    focus = s.target.focus.takeIf { !s.focusUsed }, onFocused = { s.focusUsed = true }) { typePicker = true }
                 if (!s.differentBusiness) {
                     CheckRow(s.closed, s.canClose, OnlineTexts.CLOSED_PERMANENTLY, "edit-closed") { s.closed = !s.closed }
                     Text(if (s.canClose) OnlineTexts.CLOSED_TEXT else OnlineTexts.CLOSED_OFFLINE, style = MaterialTheme.typography.bodySmall,
@@ -169,12 +171,43 @@ fun EditPlaceScreen(
             }
             EditPhase.SUMMARY -> SummaryView(s.lines, if (s.hasChanges) OnlineTexts.summarySays(s.comment) else null, !s.hasChanges,
                 onBack = { s.backToForm() }, onUpload = onUpload, modifier = Modifier.weight(1f))
-            EditPhase.DONE -> Result(OnlineTexts.DONE, s.link, OnlineTexts.OPEN_CHANGE, onOpenLink, onClose)
-            EditPhase.WAITING -> Result(OnlineTexts.EDIT_WAITING, null, "", onOpenLink, onClose)
-            EditPhase.REFUSED -> Result(OnlineTexts.editRefused(s.status), null, "", onOpenLink, onClose)
+            EditPhase.DONE, EditPhase.WAITING, EditPhase.REFUSED, EditPhase.GONE ->
+                EditOutcome(s.phase, s.already, s.goneItem, s.link, s.status, onOpenLink, onDelete, onClose)
         }
     }
     if (typePicker) TypePickerDialog(s.f.type?.code, onPick = { s.f.type = it; typePicker = false }, onDismiss = { typePicker = false })
+}
+
+/**
+ * What came of an edit's Upload ([EditPhase.DONE], WAITING, REFUSED) and, since 0.1.41, the GONE screen (53a: the
+ * place was deleted from OSM; "Delete" when an item of it is in the outbox, [goneItem]) and the ALREADY result (OP-4:
+ * OSM already had every value, nothing was uploaded; its link is the place's page).
+ */
+@Composable
+internal fun EditOutcome(
+    phase: EditPhase, already: Boolean, goneItem: Boolean, link: String?, status: Int?,
+    onOpenLink: (String) -> Unit, onDelete: () -> Unit, onClose: () -> Unit,
+) {
+    when (phase) {
+        EditPhase.DONE -> if (already) Result(OnlineTexts.ALREADY_THERE, link, OnlineTexts.OPEN_NOTE, onOpenLink, onClose)
+            else Result(OnlineTexts.DONE, link, OnlineTexts.OPEN_CHANGE, onOpenLink, onClose)
+        EditPhase.WAITING -> Result(OnlineTexts.EDIT_WAITING, null, "", onOpenLink, onClose)
+        EditPhase.REFUSED -> Result(OnlineTexts.editRefused(status), null, "", onOpenLink, onClose)
+        EditPhase.GONE -> Gone(if (goneItem) OnlineTexts.EDIT_GONE_ITEM else OnlineTexts.EDIT_GONE, goneItem, onDelete, onClose)
+        else -> Unit
+    }
+}
+
+/** 0.1.41 (53a): the place is no longer on OSM: the text, then "Delete" (an item in the outbox only) and "Close". */
+@Composable
+private fun Gone(text: String, item: Boolean, onDelete: () -> Unit, onClose: () -> Unit) {
+    Column(Modifier.fillMaxWidth().padding(16.dp).testTag("edit-gone"), verticalArrangement = Arrangement.spacedBy(12.dp)) {
+        Text(text, style = MaterialTheme.typography.bodyLarge)
+        Row(horizontalArrangement = Arrangement.spacedBy(12.dp)) {
+            if (item) OutlinedButton(onClick = onDelete, modifier = Modifier.heightIn(min = 48.dp).testTag("edit-gone-delete")) { Text(OnlineTexts.DELETE) }
+            Button(onClick = onClose, modifier = Modifier.heightIn(min = 48.dp)) { Text(OnlineTexts.CLOSE) }
+        }
+    }
 }
 
 /**
@@ -234,7 +267,8 @@ fun AddPlaceScreen(
             }
             AddPhase.SUMMARY -> SummaryView(s.lines, OnlineTexts.summarySays(s.commentPreview()), false,
                 onBack = { s.backToForm() }, onUpload = onUpload, modifier = Modifier.weight(1f))
-            AddPhase.DONE -> Result(OnlineTexts.ADD_DONE, s.link, OnlineTexts.OPEN_ADDED, onOpenLink, onClose)
+            AddPhase.DONE -> if (s.already) Result(OnlineTexts.ALREADY_THERE, s.link, OnlineTexts.OPEN_NOTE, onOpenLink, onClose)
+                else Result(OnlineTexts.ADD_DONE, s.link, OnlineTexts.OPEN_ADDED, onOpenLink, onClose)
             AddPhase.WAITING -> Result(OnlineTexts.ADD_WAITING, null, "", onOpenLink, onClose)
             AddPhase.REFUSED -> Result(OnlineTexts.editRefused(s.status), null, "", onOpenLink, onClose)
         }
@@ -285,15 +319,50 @@ private fun HereBlock(s: AddSession) {
     }
 }
 
-/** The public-edit notice before the first upload (section 3): Upload or Not now. */
+/**
+ * 0.1.41 (53e, docs/online-design.md 4.5): the question before an edit goes ([UploadChecks.next]): PUBLIC, the
+ * public-edit notice (with what source=survey tells when [withSurvey]), Upload / Not now; ON_SITE, "Are you sure you
+ * checked this on-site?", Yes / Cancel; SURVEY, what source=survey tells, Upload / Not now. Back or a tap outside is
+ * the second answer. Tag `upload-ask`.
+ */
 @Composable
-fun EditNoticeDialog(onAnswer: (upload: Boolean) -> Unit) {
+fun UploadAskDialog(ask: UploadAsk, withSurvey: Boolean, onAnswer: (yes: Boolean) -> Unit) {
+    val (title, text) = when (ask) {
+        UploadAsk.PUBLIC -> OnlineTexts.EDIT_NOTICE_TITLE to (if (withSurvey) OnlineTexts.EDIT_NOTICE_TEXT + "\n\n" + OnlineTexts.SURVEY_TEXT else OnlineTexts.EDIT_NOTICE_TEXT)
+        UploadAsk.ON_SITE -> OnlineTexts.ON_SITE_TITLE to OnlineTexts.ON_SITE_TEXT
+        UploadAsk.SURVEY -> OnlineTexts.SURVEY_TITLE to OnlineTexts.SURVEY_TEXT
+    }
+    val yes = if (ask == UploadAsk.ON_SITE) OnlineTexts.YES else OnlineTexts.UPLOAD
+    val no = if (ask == UploadAsk.ON_SITE) OnlineTexts.CANCEL else OnlineTexts.NOT_NOW
     AlertDialog(
         onDismissRequest = { onAnswer(false) },
-        title = { Text(OnlineTexts.EDIT_NOTICE_TITLE) },
-        text = { Text(OnlineTexts.EDIT_NOTICE_TEXT) },
-        confirmButton = { TextButton(onClick = { onAnswer(true) }) { Text(OnlineTexts.UPLOAD) } },
-        dismissButton = { TextButton(onClick = { onAnswer(false) }) { Text(OnlineTexts.NOT_NOW) } },
+        modifier = Modifier.testTag("upload-ask"),
+        title = { Text(title) },
+        text = { Text(text, modifier = Modifier.verticalScroll(rememberScrollState())) },
+        confirmButton = { TextButton(onClick = { onAnswer(true) }, modifier = Modifier.testTag("upload-ask-yes")) { Text(yes) } },
+        dismissButton = { TextButton(onClick = { onAnswer(false) }, modifier = Modifier.testTag("upload-ask-no")) { Text(no) } },
+    )
+}
+
+/**
+ * 0.1.41 (53d): "Undo your change?" with what goes back ([lines], the undo's summary) and what the undo does; its
+ * "Undo" is the undo's Upload (N4: nothing goes without this tap). Tag `undo-ask`.
+ */
+@Composable
+fun UndoDialog(lines: List<String>, onAnswer: (undo: Boolean) -> Unit) {
+    AlertDialog(
+        onDismissRequest = { onAnswer(false) },
+        modifier = Modifier.testTag("undo-ask"),
+        title = { Text(OnlineTexts.UNDO_TITLE) },
+        text = {
+            Column(Modifier.verticalScroll(rememberScrollState()), verticalArrangement = Arrangement.spacedBy(6.dp)) {
+                lines.forEach { Text(it, style = MaterialTheme.typography.bodyLarge) }
+                Spacer(Modifier.size(6.dp))
+                Text(OnlineTexts.UNDO_TEXT, style = MaterialTheme.typography.bodyMedium)
+            }
+        },
+        confirmButton = { TextButton(onClick = { onAnswer(true) }, modifier = Modifier.testTag("undo-ask-yes")) { Text(OnlineTexts.UNDO) } },
+        dismissButton = { TextButton(onClick = { onAnswer(false) }) { Text(OnlineTexts.CANCEL) } },
     )
 }
 
@@ -364,7 +433,8 @@ fun SpeedLimitScreen(
             }
             SpeedPhase.SUMMARY -> SummaryView(s.lines, OnlineTexts.summarySays(SpeedLimits.comment(s.road?.name, s.mph ?: 0)), false,
                 onBack = { s.backToPick() }, onUpload = onUpload, modifier = Modifier.weight(1f))
-            SpeedPhase.DONE -> Result(OnlineTexts.SPEED_DONE, s.link, OnlineTexts.OPEN_CHANGE, onOpenLink, onClose)
+            SpeedPhase.DONE -> if (s.already) Result(OnlineTexts.ALREADY_THERE, s.link, OnlineTexts.OPEN_NOTE, onOpenLink, onClose)
+                else Result(OnlineTexts.SPEED_DONE, s.link, OnlineTexts.OPEN_CHANGE, onOpenLink, onClose)
             SpeedPhase.WAITING -> Result(OnlineTexts.EDIT_WAITING, null, "", onOpenLink, onClose)
             SpeedPhase.REFUSED -> Result(OnlineTexts.editRefused(s.status), null, "", onOpenLink, onClose)
         }

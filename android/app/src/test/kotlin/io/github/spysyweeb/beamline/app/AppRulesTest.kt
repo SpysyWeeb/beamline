@@ -17,6 +17,11 @@ import io.github.spysyweeb.beamline.feature.search.SearchContext
 import io.github.spysyweeb.beamline.feature.search.SearchMode
 import io.github.spysyweeb.beamline.app.ui.ShownStep
 import io.github.spysyweeb.beamline.app.ui.StopEnd
+import io.github.spysyweeb.beamline.app.ui.AddStopPanelPlace
+import io.github.spysyweeb.beamline.app.ui.Layer
+import io.github.spysyweeb.beamline.app.ui.StopView
+import io.github.spysyweeb.beamline.app.ui.StopViewCall
+import io.github.spysyweeb.beamline.feature.drive.ArrivalQuestionUi
 import io.github.spysyweeb.beamline.api.model.Bounds
 import io.github.spysyweeb.beamline.api.nav.END_UNDO_MS
 import io.github.spysyweeb.beamline.api.nav.ManeuverKind
@@ -437,5 +442,206 @@ class AppRulesTest {
         assertTrue(AppRules.driveDarkTop(g(null, GuidanceStatusUi.Rerouting)))
         assertTrue(AppRules.driveDarkTop(g(null, GuidanceStatusUi.RerouteFailed("No route found", canRetry = true))))
         assertFalse(AppRules.driveDarkTop(g(banner, GuidanceStatusUi.Arrived("Test Diner", null))))
+    }
+
+    // ------------------------------------------------------------------ 0.1.41 (track i)
+
+    @Test
+    fun `54b the Add stop panel - half the room above the keyboard upright, the start panel on its side, over the banner only without room`() {
+        // AF T5 (min 140 unless said)
+        assertEquals(AddStopPanelPlace(311.5f, 279.5f), AppRules.addStopPanelPlace(891f, 300f, 0f, 24f, side = false, 140f))      // planning, keyboard 300
+        assertEquals(AddStopPanelPlace(359.5f, 231.5f), AppRules.addStopPanelPlace(891f, 300f, 120f, 24f, false, 140f))            // guiding, banner to 120
+        assertEquals(AddStopPanelPlace(461.5f, 429.5f), AppRules.addStopPanelPlace(891f, 0f, 0f, 24f, false, 140f))                // keyboard down
+        assertEquals(AddStopPanelPlace(128f, 232f), AppRules.addStopPanelPlace(640f, 280f, 120f, 24f, false, 140f))                // a 640 dp phone: no strip, the whole room
+        assertEquals(AddStopPanelPlace(359.5f, 231.5f), AppRules.addStopPanelPlace(891f, 300f, 120f, 24f, false, 182f))            // font 1.3: half is still over the least height
+        // AF-6: where the least height matters (a taller top stack): at 1.3x the field and one row stay whole
+        assertEquals(AddStopPanelPlace(409f, 182f), AppRules.addStopPanelPlace(891f, 300f, 233f, 24f, false, 182f))
+        assertEquals(AddStopPanelPlace(416f, 175f), AppRules.addStopPanelPlace(891f, 300f, 233f, 24f, false, 140f))
+        assertEquals(AddStopPanelPlace(24f, 176f), AppRules.addStopPanelPlace(450f, 250f, 120f, 24f, false, 140f))                 // split screen: over the banner
+        assertEquals(AddStopPanelPlace(32f, 179f), AppRules.addStopPanelPlace(411f, 200f, 0f, 24f, side = true, 140f))             // on its side, planning
+        assertEquals(AddStopPanelPlace(24f, 187f), AppRules.addStopPanelPlace(411f, 200f, 120f, 24f, true, 140f))                  // on its side guiding: over the banner
+        assertEquals(AddStopPanelPlace(128f, 283f), AppRules.addStopPanelPlace(411f, 0f, 120f, 24f, true, 140f))                   // on its side guiding, keyboard down
+        assertEquals(AddStopPanelPlace(0f, 0f), AppRules.addStopPanelPlace(0f, 300f, 0f, 24f, false, 140f))                        // not measured
+        assertEquals(16f, AppRules.ADD_STOP_VIEW_PADDING_DP)
+    }
+
+    @Test
+    fun `54b while typing the camera looks along the route ahead, the stop results win`() {
+        // AF T6: a line north from (42.0, -80.0) every 0.01 degree to 42.9 (about 100 km)
+        val long = (0..90).map { GeoPoint(42.0 + it * 0.01, -80.0) }
+        val ahead = AppRules.addStopView(long, 1.0, 60.0)!!
+        assertEquals(61, ahead.size)
+        assertEquals(long[0], ahead.first())
+        assertEquals(42.5396, ahead.last().lat, 0.001)
+        // a line to 42.08 (about 8.9 km): a point every km and the line's end
+        val short = (0..8).map { GeoPoint(42.0 + it * 0.01, -80.0) }
+        val near = AppRules.addStopView(short, 1.0, 60.0)!!
+        assertEquals(10, near.size)
+        assertEquals(short.last(), near.last())
+        assertNull(AppRules.addStopView(emptyList(), 1.0, 60.0))
+        // with the CHOOSING trip of the item 51 test
+        val trip = TripState(phase = Phase.CHOOSING, stops = listOf(TripStop(dest)), choices = listOf(choice(1, listOf(start, mid, end), legEnds = listOf(2))), selectedChoiceId = 1)
+        val rows = listOf(ResultRowUi("r0", "fuel", "Stop A", null, null, null), ResultRowUi("r1", "fuel", "Stop B", null, null, null))
+        val list = ResultsUi("gas", rows, listOf(stopA, stopB), stop = StopResultsUi(7, working = false))
+        assertEquals(near, AppRules.stopViewPoints(null, null, trip, typing = near))
+        assertEquals(listOf(stopA.point, stopB.point, start), AppRules.stopViewPoints(list, null, trip, typing = near))
+        // the view and its padding: the typing view pads by 16 dp, the results by the preview's own (null)
+        assertEquals(StopView(near, AppRules.ADD_STOP_VIEW_PADDING_DP), AppRules.stopView(null, null, trip, typing = near))
+        assertEquals(StopView(listOf(stopA.point, stopB.point, start), null), AppRules.stopView(list, null, trip, typing = near))
+        assertNull(AppRules.stopView(null, null, trip, typing = null))
+        assertNull(AppRules.stopView(null, null, trip, typing = emptyList()))
+        assertNull(AppRules.stopView(list.copy(stop = null), null, trip, typing = null))
+    }
+
+    @Test
+    fun `54b the panel counts in the camera's insets, the keyboard on its side`() {
+        // AF T7: on its side the keyboard covers the map's lower part
+        assertEquals(EdgeInsetsDp(top = 24f, bottom = 200f, start = 400f), AppRules.cameraInsets(EdgeInsetsDp(start = 400f), 24f, 40f, driving = true, keyboard = 200f))
+        // upright guiding: stopSheet = the panel's reach (its height and the keyboard under it)
+        assertEquals(EdgeInsetsDp(top = 120f, bottom = 571.5f), AppRules.cameraInsets(EdgeInsetsDp(top = 120f), 24f, 40f, driving = true, stopSheet = 531.5f))
+        // AF-2: with the credit row left out, the panel's reach alone
+        assertEquals(EdgeInsetsDp(top = 120f, bottom = 531.5f), AppRules.cameraInsets(EdgeInsetsDp(top = 120f), 24f, 0f, driving = true, stopSheet = 531.5f))
+    }
+
+    @Test
+    fun `54b only the Add stop search shows over the map`() {
+        // AF T8
+        assertTrue(AppRules.addStopOverMap(Layer.Search(3, SearchMode.ADD_STOP, forSave = false), grid = false))
+        assertFalse(AppRules.addStopOverMap(Layer.Search(3, SearchMode.ADD_STOP, forSave = false), grid = true))
+        assertFalse(AppRules.addStopOverMap(Layer.Search(3, SearchMode.GO_TO, forSave = false), grid = false))
+        assertFalse(AppRules.addStopOverMap(Layer.Search(3, SearchMode.SET_START, forSave = false), grid = false))
+        assertFalse(AppRules.addStopOverMap(Layer.Search(3, SearchMode.SAVE, forSave = true), grid = false))
+        assertFalse(AppRules.addStopOverMap(Layer.SavedList, grid = false))
+        assertFalse(AppRules.addStopOverMap(null, grid = false))
+    }
+
+    @Test
+    fun `54b the stop view goes from typing to the results and back without ending`() {
+        // AF-6 and AF-3: what the one collector does with each view, as it folds them
+        val typing = StopView(listOf(GeoPoint(42.10, -80.10), GeoPoint(42.11, -80.10)), AppRules.ADD_STOP_VIEW_PADDING_DP)
+        val results = StopView(listOf(stopA.point, stopB.point, start), null)
+        val step = GeoPoint(42.13, -80.10)
+        fun run(views: List<StopView?>, step: GeoPoint?): List<StopViewCall> {
+            var viewing = false
+            return views.map { v ->
+                AppRules.stopViewCall(viewing, v, step).also { c ->
+                    when (c) {
+                        is StopViewCall.Show -> viewing = true
+                        is StopViewCall.End -> viewing = false
+                        StopViewCall.None -> Unit
+                    }
+                }
+            }
+        }
+        // typing -> results (Enter) -> typing again (Back from the list): three views, never an end between them
+        assertEquals(listOf(StopViewCall.Show(typing), StopViewCall.Show(results), StopViewCall.Show(typing)), run(listOf(typing, results, typing), null))
+        // the panel closed: the end, with a step shown in a route preview put back on the camera (AF-3)
+        assertEquals(listOf(StopViewCall.Show(typing), StopViewCall.End(reshow = step), StopViewCall.None), run(listOf(typing, null, null), step))
+        assertEquals(listOf(StopViewCall.Show(results), StopViewCall.End(reshow = null)), run(listOf(results, null), null))
+        // nothing shown before: nothing to end
+        assertEquals(listOf(StopViewCall.None), run(listOf(null), step))
+    }
+
+    @Test
+    fun `54b an arrival or the end closes the Add stop search`() {
+        val adding = listOf(Layer.Search(1, SearchMode.ADD_STOP, forSave = false))
+        for (ph in listOf(Phase.ARRIVED, Phase.IDLE, Phase.RESUME_OFFERED)) assertTrue(AppRules.addStopEnds(ph, adding), "$ph")
+        for (ph in listOf(Phase.PLANNING, Phase.CHOOSING, Phase.GUIDING, Phase.REROUTING)) assertFalse(AppRules.addStopEnds(ph, adding), "$ph")
+        // its Saved places over it too; another search is not closed
+        assertTrue(AppRules.addStopEnds(Phase.ARRIVED, adding + Layer.SavedList))
+        assertFalse(AppRules.addStopEnds(Phase.ARRIVED, listOf(Layer.Search(1, SearchMode.GO_TO, forSave = false))))
+        assertFalse(AppRules.addStopEnds(Phase.IDLE, emptyList()))
+    }
+
+    @Test
+    fun `54b Saved places and View all open over the panel at once`() {
+        // AF-4: the screen comes in at once (no slide over a bare map), and only over the panel
+        val panel = Layer.Search(1, SearchMode.ADD_STOP, forSave = false)
+        assertFalse(AppRules.opensOverPanel(listOf(panel), grid = false))               // the panel itself: no screen
+        assertTrue(AppRules.opensOverPanel(listOf(panel), grid = true))                 // its "View all" grid
+        assertTrue(AppRules.opensOverPanel(listOf(panel, Layer.SavedList), grid = false))
+        val goTo = Layer.Search(2, SearchMode.GO_TO, forSave = false)
+        assertFalse(AppRules.opensOverPanel(listOf(goTo), grid = true))
+        assertFalse(AppRules.opensOverPanel(listOf(goTo, Layer.SavedList), grid = false))
+        assertFalse(AppRules.opensOverPanel(listOf(Layer.Settings), grid = false))
+        assertFalse(AppRules.opensOverPanel(emptyList(), grid = false))
+    }
+
+    @Test
+    fun `53g the arrival question counts as seen only on screen`() {
+        // AP-1: resumed, no map pick, no screen, no stop results, no Add stop panel, no place window over the card
+        fun shown(resumed: Boolean = true, picking: Boolean = false, layerOnTop: Boolean = false, stopShown: Boolean = false,
+                  addStopShown: Boolean = false, sheetShown: Boolean = false) =
+            AppRules.arrivalDisplayed(resumed, picking, layerOnTop, stopShown, addStopShown, sheetShown)
+        assertTrue(shown())
+        assertFalse(shown(resumed = false))
+        assertFalse(shown(picking = true))
+        assertFalse(shown(layerOnTop = true))
+        assertFalse(shown(stopShown = true))
+        assertFalse(shown(addStopShown = true))
+        // review of 0.1.41: the card raised opens the destination's window, drawn over the card
+        assertFalse(shown(sheetShown = true))
+    }
+
+    @Test
+    fun `54b on its side with the keyboard up the credit row stays above the keyboard`() {
+        // review of 0.1.41: 891 x 411 dp, the Add stop panel in the start panel (its reach 387 dp, the keyboard
+        // 200 dp of it), the stop overlay's top-only insets: the row beside the panel, on the keyboard (it was at 0, under it)
+        assertEquals(BottomChrome(startDp = 400f, bottomDp = 200f), AppRules.bottomChrome(sheetDp = 387f, panelDp = 400f,
+            overlay = EdgeInsetsDp(top = 24f), pickDp = null, keyboardDp = 200f))
+        // guiding on its side: the overlay's panel start as before
+        assertEquals(BottomChrome(400f, 200f), AppRules.bottomChrome(387f, 400f, EdgeInsetsDp(start = 400f), null, keyboardDp = 200f))
+        // the keyboard down: at the bottom as before
+        assertEquals(BottomChrome(400f, 0f), AppRules.bottomChrome(387f, 400f, EdgeInsetsDp(top = 24f), null, keyboardDp = 0f))
+        // upright the panel's reach already holds the keyboard: unchanged
+        assertEquals(BottomChrome(0f, 620f, onSheet = true), AppRules.bottomChrome(620f, null, EdgeInsetsDp(top = 120f), null, keyboardDp = 300f))
+    }
+
+    @Test
+    fun `54b a bottom bar sits above the Add stop panel and the keyboard`() {
+        // review of 0.1.41: without the panel, 88 dp over the drive overlay's blocks as before
+        assertEquals(388f, AppRules.barBottomDp(overlayBottomDp = 300f, addStopReachDp = null, navBarDp = 48f))
+        assertEquals(88f, AppRules.barBottomDp(0f, null, 48f))
+        // upright, the stops editor's "Stop removed" Undo while the panel (320 dp) and the keyboard (300 dp, the
+        // navigation bar's 48 in it) show and the stop overlay reports top-only insets: above the panel, not behind the keyboard
+        assertEquals(660f, AppRules.barBottomDp(overlayBottomDp = 0f, addStopReachDp = 620f, navBarDp = 48f))
+        // the keyboard down: above the panel's top, not over its lower rows
+        assertEquals(360f, AppRules.barBottomDp(0f, 320f, 48f))
+        // on its side: above the keyboard beside the panel
+        assertEquals(240f, AppRules.barBottomDp(0f, 200f, 48f))
+        // on its side with the keyboard down: as without the panel
+        assertEquals(88f, AppRules.barBottomDp(0f, 0f, 48f))
+    }
+
+    @Test
+    fun `O3 an edit carries the tapped label's icon only for the window that tap opened`() {
+        // review of 0.1.41: a Sheetz label tapped while planning, then the arrival at the Subway (a map label
+        // earlier, now the destination): its Add phone edit carries the Subway's icon, not the fuel pump
+        val sheetz = Place("Sheetz", GeoPoint(42.1201, -80.0802), PlaceSource.MAP_POI)
+        val subway = Place("Subway", GeoPoint(42.1290, -80.0851), PlaceSource.MAP_POI)
+        assertEquals("fast_food", AppRules.sheetIcon(subway, "fast_food", tapped = sheetz, tappedIcon = "fuel"))
+        // the tapped window itself: the label's own icon (its line or saved id may differ)
+        assertEquals("fuel", AppRules.sheetIcon(sheetz, "shop", tapped = sheetz, tappedIcon = "fuel"))
+        assertEquals("fuel", AppRules.sheetIcon(sheetz.copy(savedId = "s1"), "shop", tapped = sheetz, tappedIcon = "fuel"))
+        // no tap yet, or a window that is not a map label
+        assertEquals("fast_food", AppRules.sheetIcon(subway, "fast_food", tapped = null, tappedIcon = null))
+        val found = Place("Sheetz", sheetz.point, PlaceSource.SEARCH, searchId = 7L)
+        assertEquals("shop", AppRules.sheetIcon(found, "shop", tapped = sheetz, tappedIcon = "fuel"))
+    }
+
+    @Test
+    fun arrivalQuestionGoesIntoTheCardOnly() {
+        // AP 10: the app's one question goes into the arrival card; any other drive UI is left as it is
+        val q = ArrivalQuestionUi("Hours still right?", listOf("Mon–Fri 8 AM–6 PM"), "Yes", "Edit hours", "Not now")
+        val bar = TripBarUi("Arrived", "", "", null, simulated = false)
+        val arrived = DriveUi(guidance = GuidanceUi(null, GuidanceStatusUi.Arrived("Made-up Cafe", "On the right"), bar, showRecenter = false))
+        val asked = AppRules.withArrivalQuestion(arrived, q)
+        assertEquals(GuidanceStatusUi.Arrived("Made-up Cafe", "On the right", question = q), asked.guidance!!.status)
+        assertTrue(asked === AppRules.withArrivalQuestion(asked, q))         // the same question: the same instance
+        assertEquals(arrived, AppRules.withArrivalQuestion(asked, null))     // gone again
+        assertTrue(arrived === AppRules.withArrivalQuestion(arrived, null))
+        val guiding = DriveUi(guidance = GuidanceUi(null, GuidanceStatusUi.OnRoute, bar, showRecenter = false))
+        assertTrue(guiding === AppRules.withArrivalQuestion(guiding, q))
+        assertTrue(DriveUi().let { it === AppRules.withArrivalQuestion(it, q) })   // planning, browsing
     }
 }

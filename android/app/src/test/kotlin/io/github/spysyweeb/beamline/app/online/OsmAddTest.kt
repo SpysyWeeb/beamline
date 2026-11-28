@@ -2,6 +2,7 @@ package io.github.spysyweeb.beamline.app.online
 
 import com.sun.net.httpserver.HttpServer
 import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.delay
 import kotlinx.coroutines.runBlocking
 import org.junit.jupiter.api.AfterEach
 import org.junit.jupiter.api.Assertions.assertEquals
@@ -185,6 +186,53 @@ class OsmAddTest {
         assertTrue(f.readText().contains("Joe's Pizza"), "kept in the outbox file (no_backup)")
         assertEquals("OutboxItem(state=WAITING)", again.byId("add1").toString(), "toString prints none of it (PV2)")
         assertEquals("AddData(3 tags)", a.toString())
+    }
+
+    // ---------------------------------------------------------------- 0.1.41 (docs/next-round.md item 53)
+
+    /** OP test 19 for a new place: source=survey only for one made at the place. */
+    @Test
+    fun aNewPlaceMadeAtThePlaceSaysSurvey() = runBlocking {
+        val store = OutboxStore(File(dir, OutboxStore.FILE_NAME))
+        val sender = OutboxSender(store, http, local, { true }, Dispatchers.IO) { OsmAccount("T0KEN", "Test Mapper") }
+        store.add(addItem().copy(atPlace = true))
+        assertEquals(1, sender.sendWaiting().sent)
+        assertTrue(seen.single { it.path == "/api/0.6/changeset/create" }.body.contains("<tag k=\"source\" v=\"survey\"/>"))
+        assertTrue(OutboxStore(File(dir, OutboxStore.FILE_NAME)).byId("add1")!!.atPlace, "kept with the item")
+    }
+
+    /** Plan OP-4: "My place replaced it" that OSM already has says so on the form; OP-2: its kind and point are kept. */
+    @Test
+    fun myPlaceReplacedItAlreadyThereSaysSo() = runBlocking {
+        map = """{"version":"0.6","elements":[{"type":"node","id":42,"lat":42.1,"lon":-80.1,"version":5,""" +
+            """"tags":{${tags42.entries.joinToString(",") { "\"${it.key}\":\"${it.value}\"" }}}}]}"""
+        val store = OutboxStore(File(dir, OutboxStore.FILE_NAME))
+        val sender = OutboxSender(store, http, local, { true }, Dispatchers.IO) { OsmAccount("T0KEN", "Test Mapper") }
+        val s = AddSession(42.1, -80.1, null, http, store, sender, this, Dispatchers.IO, packNear = { emptyList() })
+        s.load()
+        var n = 0
+        while (s.checking && n++ < 500) delay(10)
+        assertEquals(1, s.here.size)
+        s.f.type = PlaceTypes.byCode("pizza")
+        s.f.name = "Joe's Pizza"
+        s.choice = HereChoice.REPLACED
+        s.next { }
+        assertEquals(AddPhase.SUMMARY, s.phase)
+        // someone made the same change on OSM meanwhile
+        tags42 = PlaceEdits.apply(tags42, BusinessTags.replace(tags42, EditSession.newTags(s.f)))
+        val pending = s.pendingChanges
+        assertEquals("restaurant", pending["amenity"])
+        s.upload(atPlace = true)
+        n = 0
+        while (s.phase == AddPhase.UPLOADING && n++ < 500) delay(10)
+        assertEquals(AddPhase.DONE, s.phase)
+        assertTrue(s.already)
+        assertEquals("https://web.test/node/42", s.link)
+        assertTrue(seen.none { it.path == "/api/0.6/changeset/create" }, "nothing uploaded")
+        val item = store.items.value.single()
+        assertEquals(mapOf("shop" to "clothes"), item.edit!!.kind)
+        assertEquals(42.1, item.edit!!.nodeLat)
+        assertTrue(item.atPlace)
     }
 
     // ---------------------------------------------------------------- the O2 review's carry-overs

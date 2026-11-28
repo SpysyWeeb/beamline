@@ -100,6 +100,39 @@ class PoiDetailsPackTest {
         }
     }
 
+    /**
+     * 0.1.41 (docs/online-design.md 4.8; plan OP-5, AP-4): the details carry the entry's own name (its OSM name, for
+     * a public changeset comment), its type (the kinds the arrival question asks about) and its point in the pack
+     * (the move check of a confirmation or an offline edit), read in the same query as the rest. The Sheetz store
+     * near Erie (the one with hours, phone and address) against its row in the pack's `entry` table.
+     */
+    @Test
+    fun detailsCarryTheEntrysNameTypeAndPoint() {
+        val db = TestEnv.requireSearchDb()
+        val erie = TestEnv.points.getValue("erie")
+        val (id, det) = SearchEngine(db, null).use { eng ->
+            val r = eng.search("sheetz", erie.lat, erie.lon, 20).results.filter { it.kind == io.github.spysyweeb.beamline.search.SearchResult.Kind.POI }
+            val d = eng.poiDetails(r.map { it.id })
+            val one = r.first { d[it.id]?.hasContact == true && d[it.id]?.address != null }
+            one.id to d.getValue(one.id)
+        }
+        SqlDb.openReadOnly(db).use { sql ->
+            val row = sql.query("SELECT name, type, lat, lon FROM entry WHERE id = ?", listOf(id)).single()
+            assertEquals(row[0] as String, det.name)
+            assertTrue(det.name!!.contains("sheetz", ignoreCase = true))
+            assertEquals(row[1] as String?, det.type)
+            assertTrue(det.type != null, "the store's entry has a type")
+            val lat = (row[2] as Number).toDouble()
+            val lon = (row[3] as Number).toDouble()
+            val dy = (det.lat!! - lat) * 111_195.0
+            val dx = (det.lon!! - lon) * 111_195.0 * StrictMath.cos(Math.toRadians(lat))
+            assertTrue(StrictMath.sqrt(dx * dx + dy * dy) <= 1.0, "the entry's own point")
+        }
+        // PV2: none of it in the text a log could print
+        val s = det.toString()
+        for (secret in listOfNotNull(det.name, det.type, det.lat?.toString(), det.lon?.toString())) assertTrue(secret !in s)
+    }
+
     @Test
     fun postalAddressAndCategoryWords() {
         assertEquals("4662 West Ridge Road, Erie, PA 16506", SearchEngine.postalAddress("4662", "West Ridge Road", "Erie", "16506", "PA"))

@@ -691,7 +691,9 @@ while driving. The privacy rules follow; each names how it is checked.
   once sent their changeset and the local copy the place sheet shows until a pack has it; since batch
   O3 the places the user adds and the new businesses that replace old ones, which the search, the
   place sheet and the map's own-changes layer show from this file until an installed pack has them,
-  and nothing more is sent) and **the
+  and nothing more is sent; since 0.1.41 `no_backup/arrival-asked.json` beside it, the OSM objects of the places
+  where the user answered the arrival question with the day, 90 days, deleted when Contribute or online features go
+  off) and **the
   OSM account** (batch O2, `no_backup/osm-account.bin`: the access token and the user's OSM name,
   sealed with AES-GCM under an Android Keystore key, deleted by "Sign out"; the open sign-in's PKCE
   verifier likewise in `no_backup/osm-signin.bin` until its redirect) live beside the saved places
@@ -1757,9 +1759,10 @@ sealed interface SearchOutput {
  * CALL and WEBSITE (rule S10) last, never while driving: the app opens the dialer or the browser.
  * REPORT is never in [PlaceSheetUi.actions]: the sheet offers it by [PlaceSheetUi.canReport]
  * (docs/online-design.md 4.1, batch O1); EDIT_OSM neither, by [PlaceSheetUi.canEditOsm] (4.2, batch O2);
- * ADD_PLACE neither, by [PlaceSheetUi.canAddPlace] (4.3, batch O3).
+ * ADD_PLACE neither, by [PlaceSheetUi.canAddPlace] (4.3, batch O3); CONFIRM_HOURS and EDIT_HOURS neither, by
+ * [PlaceSheetUi.canCheckHours] (4.8, 0.1.41).
  */
-enum class PlaceAction { DIRECTIONS, ADD_STOP, OPEN_STATES, SAVE, EDIT, CALL, WEBSITE, REPORT, EDIT_OSM, ADD_PLACE }
+enum class PlaceAction { DIRECTIONS, ADD_STOP, OPEN_STATES, SAVE, EDIT, CALL, WEBSITE, REPORT, EDIT_OSM, ADD_PLACE, CONFIRM_HOURS, EDIT_HOURS }
 
 data class PlaceSheetUi(
     val place: Place,
@@ -1819,6 +1822,14 @@ data class PlaceSheetUi(
     val canAddPlace: Boolean = false,
     /** Item 47: the drive time on Directions ("6 min": "Directions · 6 min"); the app sets it from the session's estimate, null shows plain "Directions". */
     val driveTimeText: String? = null,
+    /**
+     * 0.1.41 (docs/online-design.md 4.8, item 53c): "Hours still right?" under the week at the details height, with
+     * "Yes" (Act(CONFIRM_HOURS): the hours confirmed in one tap) and "Edit hours" (Act(EDIT_HOURS): the edit form at
+     * its hours). The app sets it while the user stands at the place and may confirm its hours; false: not offered.
+     */
+    val canCheckHours: Boolean = false,
+    /** 0.1.41: the user confirmed these hours today: "Hours confirmed" with a check where the question was (the app sets it). */
+    val hoursChecked: Boolean = false,
 )
 ```
 

@@ -105,21 +105,126 @@ object OnlineTexts {
     fun where(lat: Double, lon: Double, placeName: String?): String =
         placeName ?: String.format(Locale.ROOT, "The point you pressed: %.5f, %.5f", lat, lon)
 
-    fun state(item: OutboxItem, sending: Boolean, signedIn: Boolean = true): String = when {
-        sending -> "Sending..."
-        item.isSpeed && !item.isEdit -> "Picked while driving: open it to check the road and send it"
-        item.state == OutboxState.WAITING && (item.isEdit || item.isAdd) && !signedIn -> "Waiting: sign in to OpenStreetMap to send it"
-        item.state == OutboxState.WAITING -> "Waiting to be sent"
-        item.state == OutboxState.SENT && item.isEdit -> "Uploaded · changeset ${item.edit?.changeset}"
-        item.state == OutboxState.SENT && item.isAdd -> "Added · node ${item.add?.node}"
-        item.state == OutboxState.REVIEW && item.isAdd -> "Something like it was added meanwhile: open it to look again"
-        item.state == OutboxState.SENT -> "Sent · note ${item.noteId}"
-        item.state == OutboxState.REVIEW -> "Changed on OpenStreetMap meanwhile: open it to look again"
-        else -> "Not accepted by OpenStreetMap (${item.status}). Change it or delete it."
+    fun state(item: OutboxItem, sending: Boolean, signedIn: Boolean = true): String {
+        val e = item.edit
+        return when {
+            sending -> "Sending..."
+            item.isSpeed && !item.isEdit -> "Picked while driving: open it to check the road and send it"
+            item.state == OutboxState.WAITING && (item.isEdit || item.isAdd) && !signedIn -> "Waiting: sign in to OpenStreetMap to send it"
+            item.state == OutboxState.WAITING -> "Waiting to be sent"
+            // 0.1.41 (53d): an undo's own words
+            e?.undoOf != null -> undoState(item, e)
+            // 0.1.41 (53a): nothing was uploaded, OSM already had it
+            item.state == OutboxState.SENT && e != null && e.changeset == null -> ALREADY_THERE
+            item.state == OutboxState.SENT && e != null && e.undone -> "Uploaded · changeset ${e.changeset} · undone"
+            item.state == OutboxState.SENT && item.isEdit -> "Uploaded · changeset ${e?.changeset}"
+            item.state == OutboxState.SENT && item.isAdd -> "Added · node ${item.add?.node}"
+            item.state == OutboxState.REVIEW && item.isAdd -> "Something like it was added meanwhile: open it to look again"
+            item.state == OutboxState.SENT -> "Sent · note ${item.noteId}"
+            // 0.1.41 (53a): deleted on OSM (REVIEW, or REFUSED by 0.1.40)
+            item.isEdit && item.status == 410 -> GONE_STATE
+            item.state == OutboxState.REVIEW -> "Changed on OpenStreetMap meanwhile: open it to look again"
+            else -> "Not accepted by OpenStreetMap (${item.status}). Change it or delete it."
+        }
     }
 
-    /** "Edit · Test Cafe" / the note's place line in My reports. */
-    fun kind(item: OutboxItem): String = if (item.isSpeed) "Speed limit" else if (item.isAdd) "New place" else if (item.isEdit) "Edit" else "Note"
+    /** 0.1.41 (53d): an undo's row once it went (or not). */
+    private fun undoState(item: OutboxItem, e: EditData): String = when {
+        item.state == OutboxState.REFUSED -> "Not accepted by OpenStreetMap (${item.status}). Delete it."
+        e.changeset != null && e.kept.isEmpty() -> "Undone · changeset ${e.changeset}"
+        e.changeset != null -> "Undone · changeset ${e.changeset} · left as changed since: " + e.kept.map { PlaceEdits.label(it) }.distinct().joinToString(", ")
+        item.status == 410 -> "Not undone: the place was deleted from OpenStreetMap"
+        e.kept.isNotEmpty() -> "Not undone: someone changed it on OpenStreetMap since"
+        else -> "Nothing to undo: OpenStreetMap has the earlier details again"
+    }
+
+    /** "Edit · Test Cafe" / the note's place line in My reports. 0.1.41: "Undo" (53d) and "Hours check" (53c). */
+    fun kind(item: OutboxItem): String = when {
+        item.edit?.undoOf != null -> "Undo"
+        item.edit?.confirm != null -> "Hours check"
+        item.isSpeed -> "Speed limit"
+        item.isAdd -> "New place"
+        item.isEdit -> "Edit"
+        else -> "Note"
+    }
+
+    // ---- 0.1.41 (docs/next-round.md item 53 a, c, d, e; docs/online-design.md 4.5): the OSM edit pipeline
+    // 53e
+    const val ON_SITE_TITLE = "Are you sure you checked this on-site?"
+    const val ON_SITE_TEXT = "Beamline has not seen this phone at the place in the last 10 minutes. Change only what you have checked there yourself."
+    const val YES = "Yes"
+    const val SURVEY_TITLE = "Your edit says you were here"
+    // the fixer's review: "made at the place" can also be a question at the place or an item made there (OP-6, AP-7)
+    const val SURVEY_TEXT = "You made this edit at the place, so Beamline marks it as checked on the spot (source=survey). " +
+        "That tells everyone who looks at the change that you were here at about that time. Your position itself is never sent."
+    // 53a
+    const val EDIT_MOVED = "This place was moved on OpenStreetMap. Check that it is still the place you mean, then upload again."
+    const val EDIT_GONE = "This place is no longer on OpenStreetMap: someone deleted it after your map was made. A map update takes it off your map."
+    const val EDIT_GONE_ITEM = "This place was deleted from OpenStreetMap after you made your edit, so the edit cannot go. You can delete it."
+    const val ALREADY_THERE = "Already on OpenStreetMap: nothing needed to change"
+    const val GONE_STATE = "Deleted from OpenStreetMap meanwhile: open it to delete your edit"
+    // 53d
+    const val UNDO_TITLE = "Undo your change?"
+    const val UNDO_TEXT = "Beamline uploads the details as they were before, as a new public change. Anything someone else has changed since stays as they made it."
+    /** [road]: the undo of a speed limit (the fixer's review: never "a place"). */
+    fun undoComment(name: String?, road: Boolean = false) = "Undid my change to ${name ?: if (road) "a road" else "a place"}"
+    const val UNDONE = "Undone on OpenStreetMap"
+    const val UNDONE_PART = "Undone, except what someone changed since. See My reports."
+    const val NOT_UNDONE = "Not undone: it was changed on OpenStreetMap since. See My reports."
+    const val UNDO_WAITING = "The undo waits in My reports and goes when you're online."
+    const val UNDO_SIGN_IN = "The undo waits in My reports: sign in to OpenStreetMap to send it."
+    const val UNDO_REFUSED = "OpenStreetMap did not accept the undo. See My reports."
+    const val UNDO_GONE = "Not undone: the place was deleted from OpenStreetMap."
+    const val NOTHING_TO_UNDO = "Nothing to undo: OpenStreetMap has the earlier details again."
+    // 53c (the pipeline's)
+    const val CONFIRM_CONFLICT = "OpenStreetMap has other hours for this place now than the ones you confirmed. They are below: " +
+        "change them to what the place shows, or delete your confirmation."
+    /** The fixer's review: a confirmation that came back with the hours as confirmed (the place closed, or is another kind now). */
+    const val CONFIRM_CHANGED = "This place changed on OpenStreetMap after you confirmed its hours. It is below as it is now: " +
+        "check it, or delete your confirmation."
+    const val CONFIRM_DONE = "Confirmed on OpenStreetMap. You can undo it in My reports."
+    const val CONFIRM_ALREADY = "OpenStreetMap already has these hours confirmed today."
+    const val CONFIRM_WAITING = "No connection: your confirmation waits in My reports and goes when you're online."
+    // the fixer's review: other hours, a move or a closing (OP-5, AP-4): the bar names no reason
+    const val CONFIRM_REVIEW = "This place changed on OpenStreetMap since your map was made: look again in My reports."
+    const val CONFIRM_REFUSED = "OpenStreetMap did not accept the confirmation. See My reports."
+    const val CONFIRM_SIGN_IN = "Sign in to OpenStreetMap in Settings to confirm the hours."
+
+    /** The bar after an undo went (or not), plan OP-7's order. [signedIn] false: it waits for the account. */
+    fun undoResult(i: OutboxItem?, signedIn: Boolean = true): String {
+        val e = i?.edit
+        return when {
+            (i == null || i.state == OutboxState.WAITING) && !signedIn -> UNDO_SIGN_IN
+            i == null || i.state == OutboxState.WAITING -> UNDO_WAITING
+            i.state == OutboxState.REFUSED -> UNDO_REFUSED
+            e?.changeset == null && i.status == 410 -> UNDO_GONE
+            e?.changeset == null && e?.kept.isNullOrEmpty() -> NOTHING_TO_UNDO
+            e.changeset == null -> NOT_UNDONE
+            e.kept.isNotEmpty() -> UNDONE_PART
+            else -> UNDONE
+        }
+    }
+
+    /** The bar after a confirmation went (or not). */
+    fun confirmResult(i: OutboxItem?): String = when {
+        i == null || i.state == OutboxState.WAITING -> CONFIRM_WAITING
+        i.state == OutboxState.REVIEW -> CONFIRM_REVIEW
+        i.state == OutboxState.REFUSED -> CONFIRM_REFUSED
+        i.edit?.changeset == null -> CONFIRM_ALREADY
+        else -> CONFIRM_DONE
+    }
+
+    // ---- 0.1.41 (docs/online-design.md 4.8): at a place, the arrival card's one question
+    const val ASK_HOURS = "This place has no hours on the map. Add them?"
+    const val HOURS_STILL_RIGHT = "Hours still right?"
+    const val ASK_PHONE = "This place has no phone number on the map. Add it?"
+    const val ASK_WEBSITE = "This place has no website on the map. Add it?"
+    const val ASK_PHONE_WEBSITE = "This place has no phone number or website on the map. Add them?"
+    const val ADD_HOURS = "Add hours"
+    const val ADD_PHONE = "Add phone"
+    const val ADD_WEBSITE = "Add website"
+    const val ADD_THEM = "Add them"
+    const val EDIT_HOURS = "Edit hours"
 
     // ---- item 32: the speed limit of a road (4.7)
     const val SPEED_TITLE = "Speed limit"
@@ -165,8 +270,9 @@ object OnlineTexts {
     const val EDIT_TITLE = "Edit on OpenStreetMap"
     const val EDIT_LOADING = "Reading the place from OpenStreetMap..."
     const val EDIT_CHANGED = "This place changed on OpenStreetMap since your map was made. The form shows its current values."
+    // 0.1.41 (53a): the check is tag by tag now
     const val EDIT_OFFLINE = "No connection: the form shows the values of your map. Before your edit goes, Beamline " +
-        "reads the place again, and if it changed meanwhile asks you to look again."
+        "reads the place again, and if someone changed the same details asks you to look again."
     const val EDIT_CONFLICT = "Someone changed this place on OpenStreetMap after you made your edit. Its new values are " +
         "below with your changes on them; check them and upload again."
     const val NOW_ON_OSM = "Now on OpenStreetMap"
@@ -476,6 +582,9 @@ fun NoteNoticeDialog(withName: Boolean = false, onAnswer: (send: Boolean) -> Uni
 /**
  * "My reports" (docs/online-design.md 4.5): the outbox, newest first. A waiting or refused note opens
  * in the form to be changed or deleted; a sent one keeps its number and a link to it on OSM.
+ * 0.1.41 (53d): a sent edit in [undoable] (the app's [Undo.offered], with the switch on and no trip guided)
+ * offers "Undo" ([onUndo]); its buttons wrap. An undo and a confirmation of hours are never opened into a
+ * form (a confirmation that came back, REVIEW, is): while one waits or was refused its row offers "Delete".
  */
 @Composable
 fun ReportsScreen(
@@ -489,6 +598,9 @@ fun ReportsScreen(
     onRemove: (OutboxItem) -> Unit,
     onSendNow: () -> Unit,
     onBack: () -> Unit,
+    /** 0.1.41 (53d): the ids of the sent edits that offer Undo now. */
+    undoable: Set<String> = emptySet(),
+    onUndo: (OutboxItem) -> Unit = {},
 ) {
     BackHandler(onBack = onBack)
     Surface(Modifier.fillMaxSize().testTag("reports"), color = MaterialTheme.colorScheme.background) {
@@ -504,10 +616,15 @@ fun ReportsScreen(
                 if (items.isEmpty()) Text(OnlineTexts.REPORTS_EMPTY, style = MaterialTheme.typography.bodyLarge, modifier = Modifier.padding(top = 12.dp))
                 items.forEach { i ->
                     val busy = sending == i.id
+                    val undo = i.edit?.undoOf != null
+                    val confirmation = i.edit?.confirm != null
+                    // 0.1.41: an undo, or a confirmation still to go, is no form to open
+                    val opens = i.editable && !busy && !undo && (!confirmation || i.state == OutboxState.REVIEW)
                     Column(
                         Modifier.fillMaxWidth().heightIn(min = 56.dp)
-                            .clickable(enabled = i.editable && !busy) { onOpen(i) }
-                            .padding(vertical = 10.dp),
+                            .clickable(enabled = opens) { onOpen(i) }
+                            .padding(vertical = 10.dp)
+                            .testTag("report-row-${i.id}"),
                         verticalArrangement = Arrangement.spacedBy(2.dp),
                     ) {
                         Text(i.text, style = MaterialTheme.typography.bodyLarge, maxLines = 3)
@@ -515,9 +632,19 @@ fun ReportsScreen(
                             color = MaterialTheme.colorScheme.onSurfaceVariant)
                         Text(OnlineTexts.state(i, busy, signedIn), style = MaterialTheme.typography.bodyMedium,
                             color = if (i.state == OutboxState.REFUSED || i.state == OutboxState.REVIEW) MaterialTheme.colorScheme.error else MaterialTheme.colorScheme.primary)
-                        if (i.state == OutboxState.SENT) Row(horizontalArrangement = Arrangement.spacedBy(4.dp)) {
-                            i.link?.let { link -> TextButton(onClick = { onOpenLink(link) }) { Text(OnlineTexts.OPEN_NOTE) } }
-                            TextButton(onClick = { onRemove(i) }) { Text(OnlineTexts.REMOVE) }
+                        // 0.1.41 (53d): three buttons do not fit 360 dp in one row: they wrap
+                        if (i.state == OutboxState.SENT) {
+                            @OptIn(androidx.compose.foundation.layout.ExperimentalLayoutApi::class)
+                            FlowRow(horizontalArrangement = Arrangement.spacedBy(4.dp)) {
+                                i.link?.let { link -> TextButton(onClick = { onOpenLink(link) }, modifier = Modifier.heightIn(min = 48.dp)) { Text(OnlineTexts.OPEN_NOTE) } }
+                                if (i.id in undoable) {
+                                    TextButton(onClick = { onUndo(i) }, modifier = Modifier.heightIn(min = 48.dp).testTag("undo-${i.id}")) { Text(OnlineTexts.UNDO) }
+                                }
+                                TextButton(onClick = { onRemove(i) }, modifier = Modifier.heightIn(min = 48.dp)) { Text(OnlineTexts.REMOVE) }
+                            }
+                        } else if (!busy && (undo || (confirmation && i.state != OutboxState.REVIEW))) {
+                            // before it goes an undo or a confirmation can be deleted (it opens no form)
+                            TextButton(onClick = { onRemove(i) }, modifier = Modifier.heightIn(min = 48.dp).testTag("delete-${i.id}")) { Text(OnlineTexts.DELETE) }
                         }
                     }
                     HorizontalDivider()

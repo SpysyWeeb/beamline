@@ -1,7 +1,17 @@
 package io.github.spysyweeb.beamline.app.ui
 
 import io.github.spysyweeb.beamline.app.online.AddSession
+import io.github.spysyweeb.beamline.app.online.ArrivalAsker
+import io.github.spysyweeb.beamline.app.online.ArrivalInput
+import io.github.spysyweeb.beamline.app.online.EditFocus
 import io.github.spysyweeb.beamline.app.online.EditSession
+import io.github.spysyweeb.beamline.app.online.HoursCheck
+import io.github.spysyweeb.beamline.app.online.HoursTarget
+import io.github.spysyweeb.beamline.app.online.PlaceQuestions
+import io.github.spysyweeb.beamline.app.online.Undo
+import io.github.spysyweeb.beamline.app.online.UploadAsk
+import io.github.spysyweeb.beamline.app.online.UploadChecks
+import io.github.spysyweeb.beamline.feature.drive.ArrivalAnswer
 import io.github.spysyweeb.beamline.app.online.NearbyPlace
 import io.github.spysyweeb.beamline.app.online.OnlineTexts
 import io.github.spysyweeb.beamline.feature.search.placeTypeIcon
@@ -56,12 +66,15 @@ import io.github.spysyweeb.beamline.search.MultiSearchResponse
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
 import kotlinx.coroutines.Job
+import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.combine
 import kotlinx.coroutines.flow.distinctUntilChanged
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withTimeoutOrNull
+import java.time.Instant
+import java.time.LocalDate
 import java.time.ZoneId
 import java.util.Locale
 
@@ -171,9 +184,8 @@ class AppFlows(private val g: AppGraph) {
     /** A new note waiting for the public-note notice's "Send" or "Not now" (docs/online-design.md section 3). */
     var notePending by mutableStateOf<OutboxItem?>(null)
 
-    /** Batch O2: the edit being made (Layer.EditPlace), and the public-edit notice waiting for its answer. */
+    /** Batch O2: the edit being made (Layer.EditPlace). */
     var edit by mutableStateOf<EditSession?>(null)
-    var editNoticeShown by mutableStateOf(false)
     /** Signed out, "Edit on OpenStreetMap" was tapped: the sign-in dialog for this place (answer 6). */
     var signInFor by mutableStateOf<EditTarget?>(null)
     /** The edit to open once the sign-in it waited for has come back. */
@@ -181,6 +193,8 @@ class AppFlows(private val g: AppGraph) {
 
     /** Batch O3: the sprite icon of the map label tapped last (its tile kind; poi_icons.json map_kinds). */
     private var tappedIcon: String? = null
+    /** The window that tap opened: only its edit carries [tappedIcon] (AppRules.sheetIcon). */
+    private var tappedPlace: Place? = null
 
     /** Batch O3: "Add a missing place" being made (Layer.AddPlace). */
     var add by mutableStateOf<AddSession?>(null)
@@ -324,6 +338,19 @@ class AppFlows(private val g: AppGraph) {
 
     private val fixMaxAgeMs = (SearchAppRules.bundled().fixMaxAgeS * 1000).toLong()
 
+    /** Item 54b (rule K8): the route ahead the camera looks along while an Add stop search is open; null: none. */
+    private val addStopView = MutableStateFlow<List<GeoPoint>?>(null)
+    private val aheadKm = SearchAppRules.bundled().alongAheadKm
+
+    /** Item 54b: the route ahead of the trip as it is now (AppRules.addStopView of StopLeg.lineAhead), taken when the search opens. */
+    private fun addStopViewNow(): List<GeoPoint>? =
+        AppRules.addStopView(StopLeg.lineAhead(g.session.state.value), AppRules.ADD_STOP_VIEW_STEP_KM, aheadKm)
+
+    /** Item 54b: the route ahead goes with the last Add stop search on the stack. */
+    private fun addStopClosed() {
+        if (stack.none { it is Layer.Search && it.mode == SearchMode.ADD_STOP }) addStopView.value = null
+    }
+
     init {
         // S11: the answers that come after Enter (the results, or the one match picked)
         g.scope.launch { g.search.later.collect { onSearchOutput(it) } }
@@ -340,6 +367,8 @@ class AppFlows(private val g: AppGraph) {
                 shownStep?.let { st -> if (!previewing || s.selectedChoiceId != st.choiceId) clearStep(recenter = false) }
                 // item 51: adding a stop belongs to a trip being planned or driven (an arrival or the end ends it)
                 if (r?.stop != null && s.phase !in STOP_PHASES) endStopFlow()
+                // item 54b (open question 7): an arrival or the trip's end closes the Add stop search too
+                if (AppRules.addStopEnds(s.phase, stack.toList())) closeSearchAndList()
                 // item 52 (K16): a place handed over by another app is a recent once the user drives to it
                 if (s.phase == Phase.GUIDING) linkRecent?.let { lr ->
                     linkRecent = null
@@ -363,10 +392,8 @@ class AppFlows(private val g: AppGraph) {
                 shownId = id
                 if (end != null) {
                     send(NavIntent.Detours(end.requestId, emptyList()))   // drops only that request (C8): never a newer one
-                    if (end.all) {
-                        send(NavIntent.PreviewStop(null))
-                        g.director.onStopView(emptyList())
-                    }
+                    // the camera's stop view ends in the stop-view collector below (item 54b: unless the route ahead takes over)
+                    if (end.all) send(NavIntent.PreviewStop(null))
                 }
             }
         }
@@ -379,11 +406,30 @@ class AppFlows(private val g: AppGraph) {
                 if (was != null && id == null && g.search.results.value?.stop?.requestId == was) send(NavIntent.Detours(was, emptyList()))
             }
         }
-        // item 51 (rule K8): the camera looks at the stop results, or at the way to the one looked at
+        // item 51 (rule K8), item 54b: the camera looks at the stop results, the way to the one looked at, or the route
+        // ahead while Add stop is typed in; this collector alone starts and ends the view (AppRules.stopViewCall:
+        // typing, the results and typing again follow each other with no end between them)
         g.scope.launch {
-            combine(g.search.results, g.session.state.map { it.stopPreview }.distinctUntilChanged()) { r, p -> AppRules.stopViewPoints(r, p, g.session.state.value) }
-                .distinctUntilChanged { a, b -> a?.toSet() == b?.toSet() }
-                .collect { pts -> if (pts != null) g.director.onStopView(pts) }
+            var viewing = false
+            combine(g.search.results, g.session.state.map { it.stopPreview }.distinctUntilChanged(), addStopView) { r, p, typing ->
+                AppRules.stopView(r, p, g.session.state.value, typing)
+            }.distinctUntilChanged { a, b -> a?.points?.toSet() == b?.points?.toSet() && a?.paddingDp == b?.paddingDp }
+                .collect { v ->
+                    // AF-3: a route step shown on the route sheet (P21) is shown again when adding a stop ends
+                    val step = shownStep?.takeIf { AppRules.shownStep(it, g.session.state.value) != null }?.point
+                    when (val c = AppRules.stopViewCall(viewing, v, step)) {
+                        is StopViewCall.Show -> {
+                            viewing = true
+                            g.director.onStopView(c.view.points, c.view.paddingDp)
+                        }
+                        is StopViewCall.End -> {
+                            viewing = false
+                            g.director.onStopView(emptyList())
+                            c.reshow?.let(g.director::onShowPlace)
+                        }
+                        StopViewCall.None -> Unit
+                    }
+                }
         }
         // S11b: other results, or none, start without "Search this area" (a selection keeps it)
         g.scope.launch {
@@ -447,6 +493,8 @@ class AppFlows(private val g: AppGraph) {
         openSession(mode, near, onePick)
         searchOwner = layer.id
         stack.add(layer)
+        // item 54b (rule K8): the camera looks along the route ahead the search looks along (taken as it opens)
+        if (mode == SearchMode.ADD_STOP) addStopView.value = addStopViewNow()
         // from the bar that holds the words of the results on the map: the search opens with them typed
         typed?.takeIf { it.isNotBlank() }?.let { g.search.onEvent(SearchEvent.QueryChanged(it)) }
     }
@@ -546,6 +594,7 @@ class AppFlows(private val g: AppGraph) {
     private fun popSearch() {
         val i = stack.indexOfLast { it is Layer.Search }
         if (i >= 0) stack.removeAt(i)
+        addStopClosed()
         reopenTopSearch()
     }
 
@@ -575,6 +624,7 @@ class AppFlows(private val g: AppGraph) {
     private fun closeSearchAndList() {
         val hadSearch = stack.any { it is Layer.Search }
         stack.removeAll { it is Layer.Search || it == Layer.SavedList }
+        addStopClosed()
         if (hadSearch) g.search.close()
     }
 
@@ -608,6 +658,8 @@ class AppFlows(private val g: AppGraph) {
         if (stop.instead) return endStopFlow()
         if (r.selected != null && r.places.size > 1) return onResultsEvent(ResultsEvent.Deselect)
         val typed = stop.typed
+        // item 54b: the camera goes from the results straight back to the route ahead (never the follow in between)
+        addStopView.value = addStopViewNow()
         endStopFlow()
         openSearch(SearchMode.ADD_STOP, typed = typed)
     }
@@ -819,6 +871,10 @@ class AppFlows(private val g: AppGraph) {
                 }
                 PlaceAction.EDIT_OSM -> if (ui.canEditOsm) editOnOsm(ui)
                 PlaceAction.ADD_PLACE -> if (ui.canAddPlace) addPlace(ui.place.point)
+                // 0.1.41 (docs/online-design.md 4.8, AP10): "Hours still right?" at the details height: Yes confirms in
+                // one tap; "Edit hours" opens the form at its hours, made at the place (its at-the-place test just passed)
+                PlaceAction.CONFIRM_HOURS -> if (ui.canCheckHours) PlaceQuestions.hoursTarget(ui, sheetIcon(ui))?.let(::confirmHours)
+                PlaceAction.EDIT_HOURS -> if (ui.canCheckHours) editOnOsm(ui, EditFocus.HOURS, atPlace = true)
             }
         }
     }
@@ -864,6 +920,8 @@ class AppFlows(private val g: AppGraph) {
         if (gesture == MapGesture.CameraMovedByUser && g.search.results.value != null) movedOverResults = true
         if (gesture == MapGesture.CameraMovedByUser) mapMovedByUser = true   // P6: S1b follows the user's own moves only
         creditUntilMs = 0L // the first touch of the map fades the credit (item 8)
+        // item 54b (rule S12): while the Add stop search is typed in over the map, pans and pinches move it (K8), taps do nothing
+        if (AppRules.addStopOverMap(stack.lastOrNull(), g.search.ui.value.allTypes != null)) return
         val picking = g.savedFeature.ui.value.mapPick != null
         // item 51: while the stop results show only their pins act: no window, no dropped pin over the stop window
         val stopResults = g.search.results.value?.stop != null
@@ -893,7 +951,9 @@ class AppFlows(private val g: AppGraph) {
                 gesture.poi != null -> {
                     // batch O3: the label's own icon, for the own-changes layer if the user edits it
                     tappedIcon = gesture.poi!!.kind.takeIf { it.isNotEmpty() }?.let { k -> MAP_KIND_ICONS[k] ?: k }
-                    showTapped(Place(gesture.poi!!.name, gesture.poi!!.point, PlaceSource.MAP_POI))
+                    val place = Place(gesture.poi!!.name, gesture.poi!!.point, PlaceSource.MAP_POI)
+                    tappedPlace = place
+                    showTapped(place)
                 }
                 else -> closeSheet()
             }
@@ -966,6 +1026,21 @@ class AppFlows(private val g: AppGraph) {
                 // P18: a pin destination still on its coordinates: the dialog shows and saves its street
                 if (AppRules.lacksStreet(place)) lookUpStreet(place.point) { g.savedFeature.streetFound(place.point, it) }
             }
+            // 0.1.41 (docs/online-design.md 4.8, AP7): the arrival's question answered; nothing more is asked this
+            // arrival; the answer, whatever it is, is the one thing kept on disk (AP6, plan AP-6: 90 days)
+            is DriveEvent.AnswerArrival -> {
+                val s = arrivalAsker.answer()
+                arrivalShown = null
+                val sheet = arrivalSheet
+                if (s != null) g.markAnswered(s.osm, LocalDate.now(ZoneId.systemDefault()))
+                if (s != null && sheet != null) when (e.answer) {
+                    ArrivalAnswer.YES -> if (s.ask == PlaceQuestions.Ask.CHECK_HOURS) {
+                        PlaceQuestions.hoursTarget(sheet, sheet.iconName, hours = s.hours)?.let(::confirmHours)
+                    }
+                    ArrivalAnswer.EDIT -> editOnOsm(sheet, PlaceQuestions.focusOf(s.ask), atPlace = true)
+                    ArrivalAnswer.NOT_NOW -> Unit
+                }
+            }
             DriveEvent.SearchForStop -> openSearch(SearchMode.ADD_STOP)
             DriveEvent.ChooseStart -> openSearch(SearchMode.SET_START)
             DriveEvent.AskPreciseLocation -> host?.requestPreciseLocation()
@@ -993,7 +1068,8 @@ class AppFlows(private val g: AppGraph) {
             OutboxItem(
                 id = java.util.UUID.randomUUID().toString(), lat = fix.lat, lon = fix.lon, text = OnlineTexts.speedPicked(mph),
                 placeName = g.session.state.value.guidance?.currentRoad, createdMs = System.currentTimeMillis(),
-                state = OutboxState.REVIEW, speedMph = mph,
+                // 53e: a limit picked while driving was picked at the road: made at the place
+                state = OutboxState.REVIEW, speedMph = mph, atPlace = true,
             ),
         )
         snackbar = OnlineTexts.SPEED_SAVED
@@ -1026,10 +1102,10 @@ class AppFlows(private val g: AppGraph) {
         pop(Layer.SpeedLimit)
     }
 
-    /** "Upload" on the speed limit's summary: the public-edit notice the first time (section 3). */
+    /** "Upload" on the speed limit's summary: 53e's asks first ([beginUpload]). */
     fun uploadSpeed() {
         val s = speed ?: return
-        if (!g.online.state.value.editNoticeSeen) editNoticeShown = true else s.upload()
+        beginUpload(g.onSite.madeAt(s)) { s.upload(it) }
     }
 
     /** R4: Undo on the "Trip ended" bar: the same trip again, re-planned from here (the session decides). */
@@ -1099,17 +1175,26 @@ class AppFlows(private val g: AppGraph) {
 
     // ---- batch O2: sign-in (4.4) and fixing a place (4.2)
 
-    /** "Edit on OpenStreetMap": a relation opens on openstreetmap.org; signed out, sign in or a note (answer 6). */
-    private fun editOnOsm(ui: PlaceSheetUi) {
+    /**
+     * Batch O3: the sprite of a window's place: the map label's own when that tap opened this window; the arrival's
+     * destination and any other window their own (review of 0.1.41: a label tapped before stayed on them).
+     */
+    private fun sheetIcon(ui: PlaceSheetUi): String? = AppRules.sheetIcon(ui.place, ui.iconName, tappedPlace, tappedIcon)
+
+    /**
+     * "Edit on OpenStreetMap": a relation opens on openstreetmap.org; signed out, sign in or a note (answer 6). 0.1.41:
+     * the target is [PlaceQuestions.editTarget]'s (the place's name on the map, never a saved place's label, plan AP-11
+     * and OP-1; the pack entry's point and node point, OP-5); [focus] the field the form opens at (4.8, AP9);
+     * [atPlace] the form was opened from a question at the place (53e, AP-7).
+     */
+    private fun editOnOsm(ui: PlaceSheetUi, focus: EditFocus? = null, atPlace: Boolean = false) {
         val osm = ui.osm ?: return
         val ref = OsmRef.parse(osm) ?: return
         if (ref.type == OsmType.RELATION) {
             host?.openOutside(PlaceAction.WEBSITE, g.osmServer.elementLink(ref))
             return
         }
-        val t = EditTarget(osm, ui.title, ui.place.point.lat, ui.place.point.lon, ui.title, ui.poi?.openingHours,
-            ui.poi?.phone, ui.poi?.website, packOsm = ui.poi?.osm ?: osm,
-            icon = tappedIcon.takeIf { ui.place.source == PlaceSource.MAP_POI } ?: ui.iconName)
+        val t = PlaceQuestions.editTarget(ui, sheetIcon(ui), focus, atPlace) ?: return
         if (g.accounts.account.value == null) signInFor = t else openEdit(t, null)
     }
 
@@ -1126,7 +1211,9 @@ class AppFlows(private val g: AppGraph) {
     /** An edit in My reports: opened again with the place read anew (REVIEW, WAITING or REFUSED). */
     fun openEditItem(item: OutboxItem) {
         val e = item.edit ?: return
-        openEdit(EditTarget(e.osm, item.placeName ?: e.osm, item.lat, item.lon, null, null, null, null), item.id)
+        // 0.1.41 (4.8): a confirmation in review opens the form at its hours
+        openEdit(EditTarget(e.osm, item.placeName ?: e.osm, item.lat, item.lon, null, null, null, null,
+            focus = EditFocus.HOURS.takeIf { e.confirm != null }), item.id)
     }
 
     fun closeEdit() {
@@ -1134,21 +1221,154 @@ class AppFlows(private val g: AppGraph) {
         pop(Layer.EditPlace)
     }
 
-    /** "Upload" on the summary: the public-edit notice the first time (section 3). */
+    /** "Upload" on the summary: 53e's asks first ([beginUpload]); a form opened from a question at the place counts as made there (AP-7). */
     fun uploadEdit() {
         val s = edit ?: return
-        if (!g.online.state.value.editNoticeSeen) editNoticeShown = true else s.upload()
+        beginUpload(g.onSite.madeAt(s)) { s.upload(it) }
     }
 
-    fun answerEditNotice(upload: Boolean) {
-        editNoticeShown = false
-        if (!upload) return
-        g.updateOnline { it.copy(editNoticeSeen = true) }
-        when (stack.lastOrNull()) {
-            Layer.AddPlace -> add?.upload()
-            Layer.SpeedLimit -> speed?.upload()
-            else -> edit?.upload()
+    // ---- 0.1.41, 53e (docs/online-design.md 4.2, 4.5 "Were you there?"): the asks before an upload
+
+    /** The question shown before an edit goes ([UploadChecks.next]), or null; [uploadAskSurvey]: the public notice also says what source=survey tells. */
+    var uploadAsk by mutableStateOf<UploadAsk?>(null)
+        private set
+    var uploadAskSurvey by mutableStateOf(false)
+        private set
+
+    /** An upload waiting for its asks: made at the place or not (decided at the tap), what goes then, the asks answered. */
+    private class PendingUpload(val atPlace: Boolean, val go: (Boolean) -> Unit) {
+        val answered = HashSet<UploadAsk>()
+    }
+    private var pendingUpload: PendingUpload? = null
+
+    /** Upload of an edit, a new place, a speed limit or a confirmation: the asks of [UploadChecks], then [go] with "made at the place". */
+    private fun beginUpload(atPlace: Boolean, go: (atPlace: Boolean) -> Unit) {
+        pendingUpload = PendingUpload(atPlace, go)
+        nextUploadAsk()
+    }
+
+    private fun nextUploadAsk() {
+        val p = pendingUpload ?: return
+        val s = g.online.state.value
+        val ask = UploadChecks.next(s.editNoticeSeen, s.surveyNoticeSeen, p.atPlace, p.answered)
+        uploadAskSurvey = ask == UploadAsk.PUBLIC && UploadChecks.publicWithSurvey(s.surveyNoticeSeen, p.atPlace)
+        uploadAsk = ask
+        if (ask == null) {
+            pendingUpload = null
+            p.go(p.atPlace)
         }
+    }
+
+    /** The answer to [uploadAsk]: the second answer (Not now, Cancel, Back) goes back to the summary; nothing kept, nothing sent. */
+    fun answerUpload(yes: Boolean) {
+        val p = pendingUpload ?: return
+        val ask = uploadAsk ?: return
+        if (!yes) {
+            pendingUpload = null
+            uploadAsk = null
+            uploadAskSurvey = false
+            return
+        }
+        p.answered += ask
+        when (ask) {
+            UploadAsk.PUBLIC -> {
+                val both = uploadAskSurvey
+                if (both) p.answered += UploadAsk.SURVEY
+                g.updateOnline { it.copy(editNoticeSeen = true, surveyNoticeSeen = it.surveyNoticeSeen || both) }
+            }
+            UploadAsk.SURVEY -> g.updateOnline { it.copy(surveyNoticeSeen = true) }
+            UploadAsk.ON_SITE -> Unit
+        }
+        nextUploadAsk()
+    }
+
+    /** OP 5.2: guiding or re-routing (ARRIVED is not: the arrival card asks there). */
+    private fun guiding(): Boolean = phase == Phase.GUIDING || phase == Phase.REROUTING
+
+    /**
+     * 53c (docs/online-design.md 4.5 "Still right?", 4.8): one tap confirms the hours OSM has (the place window or the
+     * arrival card; never while guiding). The question shows the hours it confirms, so it is the summary and the tap is
+     * the Upload (N4); the first-time notices and the on-site question come as for any edit (53e); Undo is in My
+     * reports for 12 hours (53d). Signed out: a line saying so, nothing kept.
+     */
+    fun confirmHours(t: HoursTarget) {
+        if (!g.online.state.value.osmAllowed || guiding()) return
+        if (g.accounts.account.value == null) {
+            snackbar = OnlineTexts.CONFIRM_SIGN_IN
+            return
+        }
+        if (!HoursCheck.due(t.hours, g.outbox.items.value, t.osm, t.packOsm, System.currentTimeMillis())) return   // a second tap
+        beginUpload(g.onSite.madeAt(t)) { atPlace ->
+            // a trip started, the switch went off or the same confirmation went meanwhile (the asks can take a while)
+            if (guiding() || !g.online.state.value.osmAllowed) return@beginUpload
+            if (!HoursCheck.due(t.hours, g.outbox.items.value, t.osm, t.packOsm, System.currentTimeMillis())) return@beginUpload
+            val item = HoursCheck.item(t, java.util.UUID.randomUUID().toString(), System.currentTimeMillis(), ZoneId.systemDefault(), atPlace)
+            g.outbox.add(item)
+            g.sendOutbox { snackbar = OnlineTexts.confirmResult(g.outbox.byId(item.id)) }
+        }
+    }
+
+    // ---- 0.1.41, 53d (docs/online-design.md 4.5 "Undo"): Undo after upload, from My reports
+
+    /** The sent edit whose Undo was tapped, waiting for the dialog's answer ([OnlineTexts.UNDO_TITLE]); null: none. */
+    var undoAsk by mutableStateOf<OutboxItem?>(null)
+        private set
+
+    /** My reports' Undo on a sent edit: the dialog with what goes back, while it is still offered. */
+    fun askUndo(item: OutboxItem) {
+        if (Undo.offered(item, g.outbox.items.value, System.currentTimeMillis())) undoAsk = item
+    }
+
+    /** The Undo dialog's answer: its Undo is the undo's Upload (N4); it goes through the outbox, never while guiding. */
+    fun answerUndo(yes: Boolean) {
+        val item = undoAsk ?: return
+        undoAsk = null
+        if (!yes || !g.online.state.value.osmAllowed || guiding()) return
+        val now = System.currentTimeMillis()
+        if (!Undo.offered(item, g.outbox.items.value, now)) return
+        val u = Undo.item(item, java.util.UUID.randomUUID().toString(), now) ?: return
+        g.outbox.add(u)
+        g.sendOutbox { snackbar = OnlineTexts.undoResult(g.outbox.byId(u.id), signedIn = g.accounts.account.value != null) }
+    }
+
+    // ---- 0.1.41 (docs/online-design.md 4.8, AP2-AP7): one question on arrival
+
+    private val arrivalAsker = ArrivalAsker()
+
+    /** The arrival card's question now (AppRoot puts it into the card, AppRules.withArrivalQuestion), or null. */
+    var arrivalShown by mutableStateOf<ArrivalAsker.Shown?>(null)
+        private set
+
+    /** The destination's window data the last tick used (its answer builds the edit or the confirmation from it). */
+    private var arrivalSheet: PlaceSheetUi? = null
+
+    /**
+     * AP2-AP6: about once a second while ARRIVED (AppRoot); [sheet]: the destination's window data, null until known;
+     * [displayed] (plan AP-1): the card is on screen now, so a question chosen counts as seen (in memory only, AP-6).
+     */
+    fun arrivalTick(sheet: PlaceSheetUi?, elapsedMs: Long, nowMs: Long, displayed: Boolean) {
+        val t = g.session.state.value
+        val osm = sheet?.osm
+        val today = Instant.ofEpochMilli(nowMs).atZone(ZoneId.systemDefault()).toLocalDate()
+        arrivalSheet = sheet
+        val input = ArrivalInput(
+            phase = t.phase, motion = t.guidance?.vehicle?.motion, simulated = t.guidance?.simulated == true,
+            allowed = g.online.state.value.osmAllowed && g.accounts.account.value != null,
+            atPlace = g.onSite.arrivedAt(sheet, elapsedMs),
+            facts = sheet?.let { PlaceQuestions.facts(it, ownClosed = g.ownChanges.value.any { c -> c.ui.closed && c.ui.osm == osm }) },
+            items = g.outbox.items.value, nowMs = nowMs,
+            askedRecently = osm != null && g.arrivalAsked.recent(osm, today),
+            displayed = displayed,
+        )
+        val next = arrivalAsker.update(input, elapsedMs) { first -> g.arrivalAsked.noteShown(first) }
+        if (next != arrivalShown) arrivalShown = next
+    }
+
+    /** The trip left ARRIVED: this arrival's question goes. */
+    fun arrivalEnded() {
+        arrivalAsker.reset()
+        arrivalShown = null
+        arrivalSheet = null
     }
 
     // ---- batch O3: add a missing place (4.3) and a new business in an old place (item 25 b)
@@ -1181,10 +1401,10 @@ class AppFlows(private val g: AppGraph) {
         pop(Layer.AddPlace)
     }
 
-    /** "Upload" on the add summary: the public-edit notice the first time (section 3). */
+    /** "Upload" on the add summary: 53e's asks first ([beginUpload]). */
     fun uploadAdd() {
         val s = add ?: return
-        if (!g.online.state.value.editNoticeSeen) editNoticeShown = true else s.upload()
+        beginUpload(g.onSite.madeAt(s)) { s.upload(it) }
     }
 
     /** "It's the same place" or "Edit that one instead": the edit form of [p] (a relation opens on openstreetmap.org). */
@@ -1454,7 +1674,7 @@ class AppFlows(private val g: AppGraph) {
     private fun linkBusy(): Boolean {
         val su = g.savedFeature.ui.value
         return HandoverRules.busy(stack.toList(), saveDialog = su.dialog != null, mapPick = su.mapPick != null,
-            publicNotice = notePending != null || editNoticeShown, saveSearch = g.search.ui.value.mode == SearchMode.SAVE)
+            publicNotice = notePending != null || uploadAsk != null || undoAsk != null, saveSearch = g.search.ui.value.mode == SearchMode.SAVE)
     }
 
     /** H4: the pending link opens now (AppRoot calls it when HandoverRules.ready); one that waited too long goes (K5). */

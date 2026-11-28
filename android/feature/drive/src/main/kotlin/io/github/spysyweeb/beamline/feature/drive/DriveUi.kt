@@ -129,9 +129,22 @@ sealed interface GuidanceStatusUi {
     /**
      * [awayText]: "Route ends 500 ft from the place" when the route ends more than 100 m from the place (a place tied to a street up to 300 m away).
      * [saved] (play test P31, audit F34): the destination is one of the saved places (the app sets it): Save reads "Saved" with a check.
+     * [question] (0.1.41, docs/online-design.md 4.8): the one question about the place once the car is parked there; the app
+     * sets it (the presenter never does) and the card shows it above Done, which stays in view.
      */
-    data class Arrived(val name: String, val sideText: String?, val awayText: String? = null, val saved: Boolean = false) : GuidanceStatusUi
+    data class Arrived(val name: String, val sideText: String?, val awayText: String? = null, val saved: Boolean = false, val question: ArrivalQuestionUi? = null) : GuidanceStatusUi
 }
+
+/**
+ * 0.1.41 (docs/online-design.md 4.8): the arrival card's one question. [title] ("Hours still right?", "This place has
+ * no hours on the map. Add them?"); [lines] under it (the hours it asks about: "Mon–Fri 8 AM–6 PM"); [yes] the
+ * one-tap answer ("Yes"; null: none); [edit] the button that opens the edit form at that field ("Edit hours", "Add
+ * hours"); [notNow] ("Not now"). Each answer is [DriveEvent.AnswerArrival].
+ */
+data class ArrivalQuestionUi(val title: String, val lines: List<String>, val yes: String?, val edit: String, val notNow: String)
+
+/** 0.1.41: the answers to [ArrivalQuestionUi]. */
+enum class ArrivalAnswer { YES, EDIT, NOT_NOW }
 
 data class TripBarUi(
     val arriveText: String,
@@ -212,6 +225,8 @@ sealed interface DriveEvent {
     data object ShowDestination : DriveEvent
     /** Item 47: the arrival card's Save: the save dialog for the destination. */
     data object SaveDestination : DriveEvent
+    /** 0.1.41 (docs/online-design.md 4.8): an answer to [GuidanceStatusUi.Arrived.question]. */
+    data class AnswerArrival(val answer: ArrivalAnswer) : DriveEvent
     /** Opens search in ADD_STOP mode; the place comes back as NavIntent.AddStop. */
     data object SearchForStop : DriveEvent
     /** Opens search in SET_START mode; the place comes back as NavIntent.SetOrigin. */

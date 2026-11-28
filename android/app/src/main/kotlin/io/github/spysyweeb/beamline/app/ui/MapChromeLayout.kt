@@ -13,11 +13,15 @@ import androidx.compose.foundation.layout.calculateEndPadding
 import androidx.compose.foundation.layout.calculateStartPadding
 import androidx.compose.foundation.layout.consumeWindowInsets
 import androidx.compose.foundation.layout.displayCutout
+import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.heightIn
+import androidx.compose.foundation.layout.ime
 import androidx.compose.foundation.layout.navigationBarsPadding
 import androidx.compose.foundation.layout.only
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.statusBars
 import androidx.compose.foundation.layout.systemBars
 import androidx.compose.foundation.layout.union
 import androidx.compose.foundation.layout.width
@@ -25,6 +29,11 @@ import androidx.compose.foundation.layout.windowInsetsPadding
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.ui.draw.clip
+import androidx.compose.ui.draw.shadow
+import androidx.compose.ui.platform.testTag
+import io.github.spysyweeb.beamline.ui.theme.SHEET_CORNER
 import androidx.compose.ui.layout.onGloballyPositioned
 import androidx.compose.ui.layout.onSizeChanged
 import androidx.compose.ui.layout.positionInRoot
@@ -169,3 +178,39 @@ internal fun MapSheetBox(
             .onSizeChanged { onHeight(with(density) { it.height.toDp() }) },
     ) { content() }
 }
+
+/**
+ * Item 54b (rule S12): the Add stop search as a panel over the trip's map: on the keyboard ([keyboard], padded and
+ * consumed, so the search's own imePadding adds nothing), [height] tall, across the width upright or [panel] wide at
+ * the start on its side (the end's bar or cutout consumed, as MapSheetBox), the status bar consumed (the search's
+ * statusBarsPadding adds nothing: the field is at the panel's top). The windows' top corners and shadow. Only the
+ * panel takes touches: above or beside it the map gets them.
+ */
+@Composable
+internal fun AddStopPanelBox(
+    panel: Dp?, safe: WindowInsets, height: Dp, modifier: Modifier = Modifier,
+    keyboard: WindowInsets = WindowInsets.ime, content: @Composable () -> Unit,
+) {
+    val shape = RoundedCornerShape(topStart = SHEET_CORNER, topEnd = SHEET_CORNER)
+    Box(
+        modifier
+            .windowInsetsPadding(keyboard.only(WindowInsetsSides.Bottom))
+            .then(if (panel != null) Modifier.width(panel).consumeWindowInsets(safe.only(WindowInsetsSides.End)) else Modifier.fillMaxWidth())
+            .height(height)
+            .shadow(8.dp, shape)
+            .clip(shape)
+            .consumeWindowInsets(WindowInsets.statusBars)
+            .testTag(ADD_STOP_PANEL_TAG),
+    ) { content() }
+}
+
+/** Item 54b: the Add stop panel's test tag. */
+internal const val ADD_STOP_PANEL_TAG = "add-stop-panel"
+
+/**
+ * Item 54b (plan AF-1): the stop overlay's place over the Add stop panel's map (DriveOverlay with stopWindowDp): the whole
+ * window; on its side with the keyboard up ([sideKeyboard]) it ends on the keyboard ([keyboardDp] high), so the speed
+ * pair, which sits at the overlay's foot there (the panel is in the start panel), stays above the keyboard.
+ */
+internal fun stopOverlayModifier(sideKeyboard: Boolean, keyboardDp: Float): Modifier =
+    if (sideKeyboard) Modifier.fillMaxSize().padding(bottom = keyboardDp.dp) else Modifier.fillMaxSize()

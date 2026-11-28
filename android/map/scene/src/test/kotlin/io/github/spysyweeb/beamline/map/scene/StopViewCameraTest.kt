@@ -18,7 +18,8 @@ import org.junit.jupiter.api.Test
 /**
  * Item 51, rule K8: adding a stop on the map. The camera looks top-down, north up at the stop results
  * and where they join the trip (guiding: with the car in the view), re-fits at most every 5 s when the
- * car leaves the middle of the view, and goes back to K2 or K3 when adding a stop ends.
+ * car leaves the middle of the view, and goes back to K2 or K3 when adding a stop ends. 0.1.41 (item 54b):
+ * no room for the fit leaves the camera, and the Add stop search's typing view fits with its own padding.
  */
 class StopViewCameraTest {
     private val clock = VirtualClock()
@@ -151,5 +152,45 @@ class StopViewCameraTest {
         cam.onStopView(pts)
         assertEquals(CameraMode.ARRIVED, mode)
         assertTrue(arrived === target)
+    }
+
+    @Test
+    fun `54b without room for the fit the stop view leaves the camera, and fits once there is room`() {
+        // a split screen 450 dp tall: the banner to 120 and a window of 300 leave 30 dp, less than the padding
+        cam.onViewport(411f, 450f, EdgeInsetsDp(top = 120f, bottom = 300f))
+        drive(Fx.ROUTE[1], 10_000)
+        cam.onStopView(pts)
+        assertEquals(CameraMode.GUIDE_OVERVIEW, mode)
+        assertNull(target)                           // today: a fit padded (top 168, bottom 348) taller than the view
+        // the view made taller: room again, the fit at once
+        cam.onViewport(411f, 891f, EdgeInsetsDp(top = 120f, bottom = 300f))
+        assertEquals(Bounds.around(pts + Fx.ROUTE[1]), target!!.fit)
+    }
+
+    /** 54b (AF-2): the Add stop search's typing view pads by its own 16 dp; the stop results keep preview.padding_dp (48). */
+    @Test
+    fun aTypingViewFitsWithItsOwnPadding() {
+        drive(Fx.ROUTE[1], 10_000)
+        cam.onStopView(pts, 16f)
+        assertEquals(CameraMode.GUIDE_OVERVIEW, mode)
+        assertEquals(CameraTarget(fit = Bounds.around(pts + Fx.ROUTE[1]), bearingDeg = 0.0, pitchDeg = 0.0,
+            padding = EdgeInsetsDp(top = 40f, bottom = 316f, start = 16f, end = 16f), animateMs = 800), target)   // today: 48 on each side
+        // kept with the view: other insets fit again with it
+        cam.onViewport(411f, 891f, EdgeInsetsDp(top = 120f, bottom = 300f))
+        assertEquals(EdgeInsetsDp(top = 136f, bottom = 316f, start = 16f, end = 16f), target!!.padding)
+        // the stop results (no padding given): 48 again
+        cam.onStopView(pts)
+        assertEquals(EdgeInsetsDp(top = 168f, bottom = 348f, start = 48f, end = 48f), target!!.padding)
+        // the room guard reads the view's own padding: an 80 dp strip holds the typing view's fit, not the results'
+        cam.onViewport(411f, 891f, EdgeInsetsDp(top = 24f, bottom = 787f))
+        assertNull(target)
+        cam.onStopView(pts, 16f)
+        assertEquals(EdgeInsetsDp(top = 40f, bottom = 803f, start = 16f, end = 16f), target!!.padding)
+        // choosing a route: the same padding
+        cam.onViewport(411f, 891f, insets)
+        cam.onTrip(Fx.choosing())
+        cam.onStopView(pts, 16f)
+        assertEquals(CameraTarget(fit = Bounds.around(pts), bearingDeg = 0.0, pitchDeg = 0.0,
+            padding = EdgeInsetsDp(top = 40f, bottom = 316f, start = 16f, end = 16f), animateMs = 800), target)
     }
 }

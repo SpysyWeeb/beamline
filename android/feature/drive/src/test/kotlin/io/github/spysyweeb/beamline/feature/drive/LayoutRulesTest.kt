@@ -1,5 +1,8 @@
 package io.github.spysyweeb.beamline.feature.drive
 
+import io.github.spysyweeb.beamline.api.nav.LaneArrow
+import io.github.spysyweeb.beamline.api.nav.LaneMark
+import io.github.spysyweeb.beamline.api.nav.ManeuverKind
 import org.junit.jupiter.api.Assertions.assertEquals
 import org.junit.jupiter.api.Assertions.assertNull
 import org.junit.jupiter.api.Assertions.assertTrue
@@ -138,5 +141,21 @@ class LayoutRulesTest {
         assertTrue(!newTripShown(before = listOf(1), now = listOf(1), hasRoutes = false))
         // the first sheet (nothing shown before) is new by itself
         assertTrue(!newTripShown(before = emptyList(), now = listOf(4), hasRoutes = false))
+    }
+
+    @Test
+    fun `54b - on its side under a stop window or the Add stop panel the banner leaves out its lanes`() {
+        // the play test of 0.1.41: on its side while guiding, the banner and its lane row left room for one result row
+        val lanes = listOf(LaneUi(setOf(LaneArrow.LEFT), LaneMark.BEST, LaneArrow.LEFT), LaneUi(setOf(LaneArrow.THROUGH), LaneMark.NOT_FOR_ROUTE, null))
+        val banner = BannerUi(ManeuverKind.LEFT, null, "100 ft", "Turn left", "onto Peach St", null, null, lanes,
+            laneNote = "Right lane goes straight: keep left for Peach St", laneDistanceM = 160.0)
+        val bare = bannerShown(banner, side = true, stopWindow = true)
+        assertNull(bare.lanes, "no lane row beside the stop window")
+        assertNull(bare.laneNote, "no lane note")
+        assertEquals(banner.copy(lanes = null, laneNote = null, laneDistanceM = null), bare, "the turn, its distance and its roads stay")
+        // upright, or on its side with no window or panel: the banner as it is
+        assertEquals(banner, bannerShown(banner, side = false, stopWindow = true))
+        assertEquals(banner, bannerShown(banner, side = true, stopWindow = false))
+        assertEquals(banner, bannerShown(banner, side = false, stopWindow = false))
     }
 }

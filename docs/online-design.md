@@ -5,6 +5,8 @@ Status: **agreed with the owner, 2026-11-20 (answers in section 8). Batch O1 is 
 0.1.11; docs/experiments/30-batch-o2.md); O3 too (2026-11-20, version 0.1.12;
 docs/experiments/31-batch-o3.md); O4 is not.**
 Written by the lead from docs/next-round.md items 6, 7 and 21 and the owner's answers.
+0.1.41 (docs/next-round.md item 53 a, c, d, e, g): 4.2's source rule changed by the owner; 4.5 gains changes checked
+tag by tag, Undo, Were you there? and the confirmation of a place's hours; 4.8 asks about a place where the user is.
 
 ## 1. What this is
 
@@ -45,16 +47,18 @@ As the owner set it (2026-11-16):
 - **Updating from an earlier version** shows the first-run choice once.
 - **"Offline only" is a promise.** With it, the app makes no request beyond the pack downloads the
   user starts, and a test proves it (section 7).
-- **While guiding** none of the online actions are offered: no report, no edit, no add. The buttons
-  come back when the trip ends.
+- **While guiding** none of the online actions are offered: no report, no edit, no add. The buttons come back when
+  the trip ends. At the end of a trip, arrived and parked at the destination, the arrival card may ask one question
+  about the place (0.1.41, 4.8).
 
 ## 3. What leaves the phone, and to whom
 
 | Feature | Sent | To | Never sent |
 |---|---|---|---|
 | Report a problem | the note's text, the point the user chose (not the phone's position), the app name | openstreetmap.org | anything else |
-| Fix details | the place's OSM id, its changed tags, a short comment ("Updated opening hours"), the app name, under the user's OSM name | openstreetmap.org | the phone's position |
-| Add a place | the new point (where the user put it), its tags, a comment, the app name, under the user's OSM name | openstreetmap.org | the phone's position |
+| Fix details | the place's OSM id, its changed tags, a short comment ("Updated opening hours"), the app name, under the user's OSM name; for an edit made at the place (0.1.41, 4.5), the changeset tag `source=survey`, which tells everyone the user was there at about that time | openstreetmap.org | the phone's position |
+| Confirm the hours (4.8) | the place's OSM id and one tag, `check_date:opening_hours` with the day; the comment "Confirmed the opening hours of <its name on the map>"; the app name, under the user's OSM name (`source=survey` when made at the place, 4.2) | openstreetmap.org | the phone's position; a saved place's own name |
+| Add a place | the new point (where the user put it), its tags, a comment, the app name, under the user's OSM name; for an edit made at the place (0.1.41, 4.5), the changeset tag `source=survey`, which tells everyone the user was there at about that time | openstreetmap.org | the phone's position |
 | Find places online | the typed text, and the state or a rough area (rounded to about 10 km) so the answer is local | the lookup service | the exact position, saved places |
 | All of them | | | saved places, Home and Work, recents, drive logs, the GPS track, any device identifier |
 
@@ -95,6 +99,9 @@ is public too, without a name.
 - **Where:** "Edit on OpenStreetMap" at the details height of a place sheet (batch G). It is offered
   only for places that come from OSM: the search packs keep each place's OSM type and id
   (`poi.osm`, for example `n25479855`), so no new pack build is needed.
+  *0.1.41 (4.8):* at the details height, while the user stands at the place, "Hours still right?" confirms the hours
+  in one tap ("Yes") or opens this form at its hours ("Edit hours"); the arrival card can open it at the hours, the
+  phone or the website.
 - **The form:**
   - **Name.**
   - **Opening hours:** a simple week editor that writes valid OSM hours ("Mo-Fr 08:00-18:00;
@@ -136,9 +143,10 @@ is public too, without a name.
      the pack had.
   2. If someone changed the place since the pack was built, the form shows the current values.
   3. Then a short summary: "Hours: Mo-Fr 08:00-18:00 → Mo-Fr 08:00-17:00". "Upload" sends it.
-- **The upload:** one changeset per edit, with a comment and `created_by=Beamline <version>` (no
-  `source` tag: the app cannot know the user stood at the place; owner, 2026-11-21). If OSM refuses because the place changed in the meantime, the app shows the new
-  values and asks again.
+- **The upload:** one changeset per edit, with a comment and `created_by=Beamline <version>`. An edit made at the place
+  also carries `source=survey`; any other edit carries no source (the owner, 2026-11-28, changing the decision of
+  2026-11-21; 4.5 "Were you there?"). If OSM refuses because the place changed in the meantime, the app reads it again
+  and checks the edit tag by tag (4.5).
 - **After:** a link to the change on openstreetmap.org, where it can be seen or reverted.
 
 ### 4.3 Add a missing place
@@ -194,6 +202,38 @@ is public too, without a name.
   for that item.
 - **Sending later:** a confirmed item that could not go out goes by itself when the connection is
   back and the app is open. There is no background service.
+- **Changed meanwhile, tag by tag** (0.1.41, item 53 a): each tag an edit changes keeps the value it had when the
+  edit was made. When the edit goes, the place is read again and the edit goes onto its newest version, unless one
+  of the edit's own tags now holds a value that is neither that one nor the edit's (a tag the edit adds or removes
+  counts), a place mapped as a point was moved more than 50 m since the form read it, or the place was deleted: only
+  then does it wait for the user ("Changed on OpenStreetMap meanwhile: open it to look again"; "Deleted from
+  OpenStreetMap meanwhile"). The tags the edit does not touch keep what others gave them; when OSM already has every
+  value, nothing is uploaded; a check date never conflicts and a later one stays. This holds for every edit:
+  details, Closed permanently, a different business (made again on the place as it is then), a speed limit and a
+  confirmation of hours. A new place has nothing to rebase. A closing or a different business goes only while the
+  place is still the same kind of place (its type tags as the form read them), and a closing also removes hours,
+  phone and website added meanwhile; `phone` and `contact:phone` (and the two website keys) count as one detail; an
+  hours change or removal also removes the hours' old check date.
+- **Undo** (item 53 d): for 12 hours after an edit went, My reports offers "Undo" on it. The question lists what
+  goes back; its "Undo" sends the reverse through the outbox as a new changeset ("Undid my change to <name>", no
+  source). A tag someone changed since stays as they made it; when that is every tag, nothing is uploaded and the
+  row says so. Before it goes, an edit (an undo too) can be deleted. A closing or a different business is undone
+  only while the place is still as the edit left it; otherwise nothing is uploaded.
+- **Were you there?** (item 53 e): while "Contribute to OpenStreetMap" is on, the app keeps where the phone was in
+  the last 10 minutes, from the positions it already reads for the map and the trip; in memory only: never written
+  to a file or a backup, never sent, never logged, gone when the app ends or the switch goes off; each position leaves
+  it at 10 minutes, also with the app in the background. At Upload, an edit
+  or a new place with none of them within about 80 m of its place asks "Are you sure you checked this on-site?"
+  (Yes / Cancel; Yes sends it without `source`); one with such a position is "made at the place" and its changeset
+  carries `source=survey`. That yes or no is kept with the outbox item, never a position, so an edit sent later
+  keeps it. Before the first such edit the app says what the tag tells: that the user was there at about that time.
+  An edit opened from a question at the place counts as made there; an item looked at again keeps it only when it
+  goes with the values it had.
+- **"Still right?"** (item 53 c): confirming a place's hours is an edit that writes only
+  `check_date:opening_hours=<today>` (wiki Key:check_date) and goes only while OSM still has the hours the user saw;
+  its changeset says "Confirmed the opening hours of <name>". It is one tap with no summary, because the question
+  shows the hours it confirms; the first-time notices and the on-site question come as for any edit, and Undo works
+  as for any edit. Asked again once the user's own check is a year old. Where and when it is asked: 4.8.
 - **Seeing your edits:** OSM data reaches Beamline only with the next state pack, so the app keeps
   the user's sent edits locally and shows them on the place sheets, marked "Your edit, waiting for
   the next map update". A pack that already contains the change replaces the local copy.
@@ -204,7 +244,9 @@ is public too, without a name.
   tag "Your edit · waiting for the map update"; a closed place is hidden on the map and shows "Closed
   permanently" in search and on its sheet; an added place can be routed to.
 - **Privacy:** the outbox and the local edits live with the saved places (`no_backup`, never logged,
-  never in a backup), under the same rules PV1 to PV8.
+  never in a backup), under the same rules PV1 to PV8. Since 0.1.41 `no_backup/arrival-asked.json` keeps the OSM
+  objects of the places where the user answered the arrival question, with the day, for 90 days (4.8), under the
+  same rules, and is deleted when Contribute or online features go off.
 
 ### 4.6 Testing without touching the real map
 
@@ -239,10 +281,70 @@ wrong one-way or a closed road is not a thing to change from a phone.
   call (for a pick made while driving that is where the phone was, which the user chose to report);
   on Upload, the way's new tag in one changeset with the comment "Set the speed limit of <road> to
   45 mph" and `created_by`. The changeset is public and shows which road the account edited and
-  when. No `source` tag (4.2).
-- **After:** the edit goes out and is checked for a change made meanwhile exactly as a place's edit
-  is (4.2, 4.5). It is not one of "your edits" on the map: a road's limit is no place, so nothing is
+  when. `source=survey` as 4.2 says: a limit picked while driving was picked at the road, so it counts as made there.
+- **After:** the edit goes out and is checked tag by tag exactly as a place's edit is (4.5), and can be undone for 12
+  hours. It is not one of "your edits" on the map: a road's limit is no place, so nothing is
   drawn or found for it, and the app's own speed sign changes with the next state pack.
+
+### 4.8 At a place: "Hours still right?" and one question on arrival (0.1.41, docs/next-round.md items 53c and 53g)
+
+Beamline asks about a place only where the user can see it, and only what the map lacks or what the user has not
+checked for a year. Everything that changes OSM goes through the outbox as any edit (4.5) and through 53e's
+questions before an upload (4.2).
+
+- **AP1 Two places, nothing else.** The place window's details height (the user standing at the place) and the
+  arrival card (arrived and parked at the destination). No notification, sound or dialog of its own. Both need
+  online features and "Contribute to OpenStreetMap" on (`osmAllowed`) and an OSM account signed in. Neither shows
+  while a trip is guided (GUIDING, REROUTING); the window's line also not in ARRIVED (the card has the question).
+- **AP2 At the place.** 53e's memory (`RecentPositions.near`: a fix of accuracy 50 m or better within 80 m of the
+  place's own point in the map pack, else the window's): for the window within the last 2 minutes ("standing near it
+  now"), for the arrival within the last 10 minutes (53e's own window: the car is there; a garage may have lost the
+  GPS). Both are inside 53e's test for "made at the place", so a tap there never meets "Are you sure you checked
+  this on-site?" (except in the one second a last fix can age out). No location permission, approximate location
+  only, a simulated drive (its positions never reach the memory): never at the place.
+- **AP3 Arrived and parked.** The trip is ARRIVED, the guidance is not simulated, and `Vehicle.motion` has been
+  STOPPED for 15 s with no MOVING since. Once parked, MOVING for 3 s in a row hides the question (a short GPS jump
+  does not); stopped 15 s again, the same question comes back. UNKNOWN (GPS lost) changes nothing.
+- **AP4 One question, in the owner's order.** Only for a place the app can edit (its OSM object a node or a way), of
+  a kind a visitor reads hours at (a business by `BusinessTags.isBusinessType`, not one of `NOT_ASKED`; a pack type
+  that is a raw tag is asked only for shop, craft, office and healthcare; fishing spots, disc golf courses and truck
+  scales are not asked), not closed by the user, with no edit of the user's for it waiting or in review:
+  1. no hours on the map, and the user did not remove them within the year: "This place has no hours on the map.
+     Add them?";
+  2. hours the app can read, and `HoursCheck.due` (no own check for a year): "Hours still right?" with the week;
+  3. no phone number or no website (each not changed by the user within the year; an ATM or a charger is asked
+     about hours only): "This place has no phone number on the map. Add it?", "This place has no website on the map.
+     Add it?" or "This place has no phone number or website on the map. Add them?".
+  Hours present but unreadable skip 1 and 2. The question chosen stays for the whole arrival.
+- **AP5 The user's own year.** The pipeline's `HoursCheck.due`: the newest of the user's own confirmations and hours
+  edits in the outbox (waiting or sent; not an undo, not undone; this OSM object or the same pack object), and the
+  hours of a place the user added, asked again 365 days after (`HoursCheck.AGAIN_AFTER_DAYS`). "Remove from this
+  list" in My reports forgets it.
+- **AP6 At most once in 90 days.** A place where the user answered the arrival question (Yes, the edit button or Not
+  now) is not asked again on arrival for 90 days; a question shown and not answered is not asked again until the app
+  is closed. The window's line is not limited.
+- **AP7 The answers.** "Yes" (to "Hours still right?" only) confirms the hours (AP8). "Edit hours", "Add hours", "Add
+  phone", "Add website" and "Add them" open the edit form at that field (AP9). "Not now" closes the question. Any
+  answer ends the question for this arrival; Done ends the trip as before.
+- **AP8 One tap, no summary.** The question shows the hours it confirms, and its one change on OSM is
+  `check_date:opening_hours=<today>`; no value the user sees changes. So the question is the summary and "Yes" is
+  the Upload (N4). Kept as for any edit: the public-edit and survey notices before the first one, the outbox, the
+  send only while OSM still has the hours the user saw (53a), the result line, and Undo in My reports for 12 hours
+  (53d). All of it is the pipeline's `AppFlows.confirmHours(HoursTarget)`.
+- **AP9 The form at the field.** The edit form opens with that field in view: the hours editor's heading, or the
+  phone or website field with the cursor in it and the keyboard up. The rest of the form is 4.2's.
+- **AP10 The window's line.** At the details height, under the week: "Hours still right?" with "Yes" and "Edit hours"
+  while AP1 and AP2 hold, the hours can be read, `HoursCheck.due` is true and no edit of the place is in review;
+  after "Yes", "Hours confirmed" with a check for the rest of that day.
+- **AP11 What leaves the phone.** Only what the user's tap uploads (section 3, the confirmation's row). The
+  questions read nothing from OSM and send nothing: they use the packs, the outbox and 53e's memory.
+- **AP12 Privacy.** Positions stay in 53e's memory. `no_backup/arrival-asked.json` keeps only the OSM object ids and
+  days of answered questions, at most 90 days old, deleted when Contribute or online features go off, under PV1-PV8
+  (never logged, never in a backup, never sent). A public changeset comment names the place by its name on the map,
+  never by a saved place's label.
+
+*Code:* `app/online/PlaceQuestions.kt` (`PlaceQuestions`, `ArrivalAsker`), `AskedStore.kt`; the pipeline's
+`HoursCheck` (the year rule, the confirmation item).
 
 ## 5. Finding places online (item 7)
 

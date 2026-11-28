@@ -124,6 +124,46 @@ class OwnPlacesTest {
         assertEquals(listOf("Subway Downtown", "Subway"), search("subway").map { it.title }, "a Subway far from the changed one stays")
     }
 
+    /**
+     * 0.1.41 review (privacy; docs/online-design.md 4.8 AP12, plan OP-1): the window's details name the place as the map
+     * does. A 0.1.40 edit made from a saved place's window kept the user's label ("Mom's") as its place name, which the
+     * app gives as the own change's name; the details' name is what a confirmation and the edit form take as the
+     * place's name on the map, so only a rename's name goes there, else the pack's. The title keeps the label (local).
+     */
+    @Test
+    fun anOwnChangeThatDidNotRenameNeverNamesThePlace() {
+        val at = GeoPoint(42.11950, -80.07210)           // a made-up shop in Erie, no name on OSM
+        // an hours edit sent by 0.1.40 from the saved place "Mom's": not a rename, its place name the label
+        f.ownPlaces = listOf(OwnPlaceUi("e1", "Mom's", at, "convenience", "Convenience store",
+            overrides = mapOf("opening_hours" to "Mo-Su 07:00-22:00"), osm = "n4242"))
+        f.open(SearchMode.GO_TO, SearchFeatureTest.gps)
+        assertEquals(listOf("own:e1"), search("mom").map { it.key })
+        val own = (f.onEvent(SearchEvent.RowTapped("own:e1")) as SearchOutput.Picked).place
+        f.placeSheet(own, SearchFeatureTest.gps, tripActive = false)
+        settle()
+        val sheet = f.placeSheet(own, SearchFeatureTest.gps, tripActive = false)
+        assertEquals("Mom's", sheet.title)
+        assertEquals("Mo-Su 07:00-22:00", sheet.poi!!.openingHours, "the user's hours stay on top")
+        assertNull(sheet.poi.name, "no pack entry here, and the label is no name on the map")
+        // a window of the pack's entry the change is matched to: the pack's name, never the label
+        fake.details = fake.details + (9L to PoiDetails("Mo-Su 08:00-21:00", null, null, osm = "n4242", name = "Convenience store",
+            type = "convenience", lat = at.lat, lon = at.lon))
+        val entry = Place("Mom's", at, PlaceSource.SEARCH, "Erie", "convenience", 9L, "us-pa")
+        f.placeSheet(entry, SearchFeatureTest.gps, tripActive = false)
+        settle()
+        val packed = f.placeSheet(entry, SearchFeatureTest.gps, tripActive = false)
+        assertEquals(Texts.OWN_TAG, packed.ownTag)
+        assertEquals("Convenience store", packed.poi!!.name)
+        assertEquals("Mo-Su 07:00-22:00", packed.poi.openingHours)
+        // closed, not renamed (its old name is its name): the pack's name too
+        f.ownPlaces = listOf(OwnPlaceUi("c1", "Mom's", at, null, null, oldName = "Mom's", closed = true, osm = "n4242"))
+        assertEquals("Convenience store", f.placeSheet(entry, SearchFeatureTest.gps, tripActive = false).poi!!.name)
+        // renamed (OSM's name is now the user's): the new name
+        f.ownPlaces = listOf(OwnPlaceUi("r1", "Corner Market", at, null, null, oldName = "Mom's", osm = "n4242"))
+        val renamed = f.placeSheet(Place("Corner Market", at, PlaceSource.MAP_POI), SearchFeatureTest.gps, tripActive = false)
+        assertEquals("Corner Market", renamed.poi!!.name)
+    }
+
     @Test
     fun viewAllShowsEveryTypeUnderHeadingsAndATapSearchesAsAChipDoes() = runTest(dispatcher) {
         val cats = listOf(

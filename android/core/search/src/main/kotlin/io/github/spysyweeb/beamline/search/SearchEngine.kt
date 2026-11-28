@@ -174,8 +174,11 @@ class SearchEngine(
      * Opening hours, phone and website of the POI entries [ids] (the pack's `poi` table, from
      * OpenStreetMap: `opening_hours`, `phone` or `contact:phone`, `website` or `contact:website`;
      * batch B, docs/architecture.md S10), with the postal address and the category in words (batch G,
-     * the place sheet's details height) and the OSM object (batch O2, "Edit on OpenStreetMap"). Ids
-     * that are not POIs, and POIs with none of these, are left out. Not part of [search]: its answers (and the conformance reference) stay as they are.
+     * the place sheet's details height) and the OSM object (batch O2, "Edit on OpenStreetMap"). Since 0.1.41 also
+     * the entry's own name, type and point (docs/online-design.md 4.8: a public comment names the place as OSM has
+     * it, the arrival question asks only about some kinds, a confirmation checks that OSM's node has not moved), read
+     * in the same query; they never decide whether a POI is listed. Ids that are not POIs, and POIs with none of
+     * these, are left out. Not part of [search]: its answers (and the conformance reference) stay as they are.
      */
     fun poiDetails(ids: Collection<Long>): Map<Long, PoiDetails> {
         val list = ids.filter { it > 0 }.distinct()
@@ -186,7 +189,7 @@ class SearchEngine(
             val chunk = list.subList(i, minOf(i + 900, list.size))
             for (r in db.query(
                 "SELECT p.entry_id, p.opening_hours, p.phone, p.website, p.addr_housenumber, p.addr_street, p.addr_city, p.addr_postcode, " +
-                    "e.type, c.label, p.osm FROM poi p JOIN entry e ON e.id = p.entry_id LEFT JOIN category c ON c.code = e.type " +
+                    "e.type, c.label, p.osm, e.name, e.lat, e.lon FROM poi p JOIN entry e ON e.id = p.entry_id LEFT JOIN category c ON c.code = e.type " +
                     "WHERE p.entry_id IN (${chunk.joinToString(",") { "?" }})",
                 chunk,
             )) {
@@ -195,6 +198,8 @@ class SearchEngine(
                     address = postalAddress(clean(r[4]), clean(r[5]), clean(r[6]), clean(r[7]), state),
                     category = clean(r[9]) ?: categoryWords(clean(r[8])),
                     osm = clean(r[10]),
+                    name = clean(r[11]), type = clean(r[8]),
+                    lat = (r[12] as? Number)?.toDouble(), lon = (r[13] as? Number)?.toDouble(),
                 )
                 if (d.hasContact || d.address != null || d.category != null || d.osm != null) out[r[0] as Long] = d
             }

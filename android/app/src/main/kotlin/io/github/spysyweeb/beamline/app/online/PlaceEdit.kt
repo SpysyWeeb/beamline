@@ -41,6 +41,8 @@ data class OsmElement(
     val lat: Double?,
     val lon: Double?,
     val nodes: List<Long>,
+    /** The fixer's review: the changeset of this version (OSM's JSON has it); null when not known. */
+    val changeset: Long? = null,
 ) {
     override fun toString(): String = "OsmElement($ref v$version)"
 
@@ -58,6 +60,7 @@ data class OsmElement(
                 (e["lat"] as? JsonPrimitive)?.doubleOrNull,
                 (e["lon"] as? JsonPrimitive)?.doubleOrNull,
                 (e["nodes"] as? JsonArray)?.map { (it as JsonPrimitive).longOrNull!! } ?: emptyList(),
+                (e["changeset"] as? JsonPrimitive)?.longOrNull,
             )
         } catch (_: Exception) {
             null
@@ -143,9 +146,9 @@ object PlaceEdits {
     /** The keys that make a place a business or a public place; a closed one keeps them under `disused:`. */
     val MAIN_KEYS = listOf("amenity", "shop", "craft", "office", "leisure", "tourism", "healthcare", "club")
 
-    /** Removed from a closed place: the hours, phone and website, as the design says. */
+    /** Removed from a closed place: the hours (0.1.41, AP-5: and their check date), phone and website, as the design says. */
     val CLOSED_REMOVED = listOf("opening_hours", "opening_hours:office", "opening_hours:drive_through", "opening_hours:kitchen",
-        "phone", "contact:phone", "website", "contact:website")
+        HOURS_CHECK_DATE, "phone", "contact:phone", "website", "contact:website")
 
     /** "Closed permanently" can be offered: the place has a main key ([MAIN_KEYS]). */
     fun canClose(tags: Map<String, String>): Boolean = MAIN_KEYS.any { it in tags }
@@ -165,7 +168,8 @@ object PlaceEdits {
     /**
      * The changes from [base] (the tags the form started from) to the form's [form] values. A blank
      * name keeps the old one (a place is never left without its name by mistake); a blank hours, phone
-     * or website removes that tag.
+     * or website removes that tag. 0.1.41 (AP-5): a change or removal of the hours also removes their old
+     * check date (`check_date:opening_hours`), which no longer says anything about them; it shows on the summary.
      */
     fun changes(base: Map<String, String>, form: EditFields, closed: Boolean): Map<String, String?> {
         if (closed) return closedChanges(base)
@@ -178,6 +182,7 @@ object PlaceEdits {
             if (v != base[k]) out[k] = v
         }
         field("opening_hours", "opening_hours", form.hours)
+        if ("opening_hours" in out && HOURS_CHECK_DATE in base) out[HOURS_CHECK_DATE] = null
         form.moreKey?.let { k -> if (MoreHours.ofKey(k) != null) field(k, k, form.moreHours) }
         field("phone", "contact:phone", form.phone)
         field("website", "contact:website", form.website)
@@ -207,6 +212,14 @@ object PlaceEdits {
                 (if (removed.isEmpty()) emptyList() else listOf("Removed: " + removed.joinToString(", "))) +
                 listOf("The name stays, so mappers see what was there.")
         }
+        return tagLines(base, changes)
+    }
+
+    /**
+     * One line a changed tag, in the summary's words ("Hours: Mon–Fri 8 AM–5 PM → Mon–Fri 8 AM–6 PM"); 0.1.41 (53d):
+     * also the lines of an undo, whatever tags it puts back ("disused:shop: bakery → (none)").
+     */
+    fun tagLines(base: Map<String, String>, changes: Map<String, String?>): List<String> {
         fun shown(k: String, v: String?): String = when {
             v == null -> NONE
             k == "opening_hours" || MoreHours.ofKey(k) != null -> WeekHours.of(v)?.plain() ?: v
@@ -218,7 +231,8 @@ object PlaceEdits {
     /** The changeset's comment (4.2: "Updated opening hours"). */
     fun comment(changes: Map<String, String?>): String {
         if (changes.keys.any { it.startsWith("disused:") }) return "Marked a place as closed permanently"
-        val what = changes.keys.map { label(it).lowercase() }.distinct()
+        // 0.1.41 (AP-5): the old check date an hours change takes with it is no change of its own to name
+        val what = changes.keys.filterNot { EditPlans.isCheckDate(it) }.map { label(it).lowercase() }.distinct()
         return "Updated " + when (what.size) {
             0 -> "a place"
             1 -> what[0]
@@ -226,23 +240,22 @@ object PlaceEdits {
         }
     }
 
-    /** The changeset's tags (4.2): the comment, `created_by=Beamline <version>`. No `source`: the app cannot know that the user stood at the place (owner, 2026-11-21). */
-    fun changesetTags(comment: String, version: String): Map<String, String> =
-        linkedMapOf("comment" to comment, "created_by" to "Beamline $version")
-
     /**
-     * Whether the place changed on OSM since the edit was made, so it waits for the user to look
-     * again instead of overwriting (4.5): with a [baseVersion] (the form read the place from OSM) any
-     * newer version; without one (the form showed the pack's values, offline) any of the edited keys
-     * whose value is no longer the one the form started from ([base]).
+     * The changeset's tags (4.2): the comment, `created_by=Beamline <version>`, and since 0.1.41 `source=survey` for an
+     * edit made at the place ([survey], 53e; the owner, 2026-11-28, changing the decision of 2026-11-21); any other
+     * edit, an undo and a note carry no source.
      */
-    fun changedMeanwhile(current: OsmElement, baseVersion: Int?, base: Map<String, String>, changes: Map<String, String?>): Boolean =
-        if (baseVersion != null) current.version != baseVersion
-        else changes.keys.any { current.tags[it] != base[it] }
+    fun changesetTags(comment: String, version: String, survey: Boolean = false): Map<String, String> =
+        linkedMapOf("comment" to comment, "created_by" to "Beamline $version").also { if (survey) it["source"] = "survey" }
+
+    /** 0.1.41 (53c, AP-5): the hours' check date (wiki Key:check_date). */
+    const val HOURS_CHECK_DATE = "check_date:opening_hours"
 
     fun label(key: String): String = when (key) {
         "name" -> "Name"
         "opening_hours" -> "Hours"
+        HOURS_CHECK_DATE -> "Hours checked"
+        SpeedLimits.KEY -> "Speed limit"
         MoreHours.OFFICE.key -> MoreHours.OFFICE.label
         MoreHours.DRIVE_THROUGH.key -> MoreHours.DRIVE_THROUGH.label
         MoreHours.KITCHEN.key -> MoreHours.KITCHEN.label

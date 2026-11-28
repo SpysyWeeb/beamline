@@ -5,6 +5,7 @@ import android.net.ConnectivityManager
 import android.net.Network
 import io.github.spysyweeb.beamline.app.online.OnlineSettings
 import io.github.spysyweeb.beamline.app.online.OsmRef
+import io.github.spysyweeb.beamline.app.online.OsmType
 import io.github.spysyweeb.beamline.app.online.OsmServer
 import io.github.spysyweeb.beamline.app.online.PlaceEdits
 import kotlinx.serialization.json.JsonObject
@@ -430,6 +431,12 @@ class MainActivity : ComponentActivity(), Host {
                         val e = osm.element(OsmRef.parse(str("ref"))!!)
                         osm.deleteTestNode(account.token, cs, e)
                         Log.i(TAG, "test extras: osm test object ${e.ref} deleted") // log-ok: the id of a test object on the OSM test server
+                    } else if (str("op") == "move") {
+                        // 0.1.41 (53a): a test node moved ({"op":"move","ref":"n123","lat":..,"lon":..}), for the moved-far check
+                        val e = osm.element(OsmRef.parse(str("ref"))!!)
+                        require(e.ref.type == OsmType.NODE) { "a node" }
+                        val v = osm.putElement(account.token, e.copy(lat = str("lat")!!.toDouble(), lon = str("lon")!!.toDouble()), cs)
+                        Log.i(TAG, "test extras: osm test object ${e.ref} moved, now version $v") // log-ok: the id and version of a test object on the OSM test server
                     } else {
                         val ref = OsmRef.parse(str("ref"))!!
                         val e = osm.element(ref)
@@ -464,7 +471,8 @@ class MainActivity : ComponentActivity(), Host {
         // server; `--es osm_test <base64 JSON>` makes or changes such a test object with the signed-in
         // test account ({"op":"create","map":"n25479855","lat":..,"lon":..,"tags":{..}} or
         // {"op":"set","ref":"n123","tags":{"k":"v" or null}}; item 32: {"op":"create_way","points":[[lat,lon],..],"tags":{..}}
-        // makes a short test road). Test builds talk only to the test server.
+        // makes a short test road; 0.1.41: {"op":"move","ref":"n123","lat":..,"lon":..} moves a test node). Test builds talk
+        // only to the test server.
         intent.getStringExtra(EXTRA_OSM_MAP)?.let(::osmTestMap)
         intent.getStringExtra(EXTRA_OSM_TEST)?.let { osmTestObject(it) }
         intent.getStringExtra(EXTRA_UNITS)?.let { u ->

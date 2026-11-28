@@ -825,6 +825,9 @@ internal fun placeActionIcon(a: PlaceAction): ImageVector? = when (a) {
     PlaceAction.WEBSITE -> BeamlineIcons.Globe
     PlaceAction.REPORT -> BeamlineIcons.Flag
     PlaceAction.ADD_STOP, PlaceAction.ADD_PLACE -> BeamlineIcons.Add
+    // 0.1.41 (4.8): the window's "Hours still right?" line
+    PlaceAction.CONFIRM_HOURS -> BeamlineIcons.Check
+    PlaceAction.EDIT_HOURS -> BeamlineIcons.Pencil
     else -> null
 }
 
@@ -840,6 +843,8 @@ internal fun placeActionLabel(a: PlaceAction, driveTime: String? = null): String
     PlaceAction.REPORT -> Texts.REPORT
     PlaceAction.EDIT_OSM -> Texts.EDIT_OSM
     PlaceAction.ADD_PLACE -> Texts.ADD_PLACE
+    PlaceAction.CONFIRM_HOURS -> Texts.HOURS_YES
+    PlaceAction.EDIT_HOURS -> Texts.HOURS_EDIT
 }
 
 /** Test tag of the buttons a place shows at peek (item 47). */
@@ -889,6 +894,10 @@ private fun PlaceDetails(ui: PlaceSheetUi, night: Boolean, onEvent: (PlaceSheetE
         val hours = ui.hours
         if (hours != null && hours.week.isNotEmpty()) DetailRow(BeamlineIcons.Clock, Texts.HOURS, p) {
             HoursWeek(hours, night, Modifier.padding(start = 0.dp, top = 12.dp))
+            // 0.1.41 (docs/online-design.md 4.8, AP10): at the place, the week just read confirmed in one tap or edited;
+            // confirmed today, said so where the question was
+            if (ui.hoursChecked) HoursConfirmed(p)
+            else if (ui.canCheckHours) HoursStillRight(night, onEvent)
         }
         if (ui.phones.isNotEmpty()) DetailRow(BeamlineIcons.Phone, Texts.PHONE, p) {
             ui.phones.forEachIndexed { i, c ->
@@ -926,6 +935,41 @@ private fun PlaceDetails(ui: PlaceSheetUi, night: Boolean, onEvent: (PlaceSheetE
 }
 
 private const val COPIED_NOTE_MS = 2_000L
+
+/**
+ * 0.1.41 (docs/online-design.md 4.8, AP10): "Hours still right?" under the week, with "Yes" (Act(CONFIRM_HOURS): the
+ * hours confirmed in one tap) and "Edit hours" (Act(EDIT_HOURS): the edit form at its hours), both secondary
+ * (Directions stays the one primary). The second pill goes under the first when both do not fit (large text, a
+ * narrow window), never cut. Named apart from the app's HoursCheck (the pipeline).
+ */
+@Composable
+private fun HoursStillRight(night: Boolean, onEvent: (PlaceSheetEvent) -> Unit) {
+    val p = palette(night)
+    Column(Modifier.fillMaxWidth().padding(top = 12.dp).testTag(PLACE_HOURS_CHECK_TAG)) {
+        Text(Texts.HOURS_STILL_RIGHT, color = p.panelText, fontSize = 16.sp, fontWeight = FontWeight.Medium)
+        FlowRow(
+            horizontalArrangement = Arrangement.spacedBy(8.dp), verticalArrangement = Arrangement.spacedBy(8.dp),
+            modifier = Modifier.padding(top = 8.dp),
+        ) {
+            for (a in listOf(PlaceAction.CONFIRM_HOURS, PlaceAction.EDIT_HOURS)) {
+                PillButton(placeActionLabel(a), night, primary = false, icon = placeActionIcon(a)) { onEvent(PlaceSheetEvent.Act(a)) }
+            }
+        }
+    }
+}
+
+/** 0.1.41 (AP10): "Hours confirmed" with a check, where the question was, for the rest of the day (the app says when). */
+@Composable
+private fun HoursConfirmed(p: Palette) {
+    Row(
+        Modifier.padding(top = 12.dp).heightIn(min = 32.dp).semantics(mergeDescendants = true) {}.testTag(PLACE_HOURS_CONFIRMED_TAG),
+        verticalAlignment = Alignment.CenterVertically,
+    ) {
+        Icon(BeamlineIcons.Check, contentDescription = null, tint = p.accent, modifier = Modifier.size(18.dp))
+        Spacer(Modifier.width(6.dp))
+        Text(Texts.HOURS_CONFIRMED, color = p.panelText, fontSize = 15.sp)
+    }
+}
 
 /** Item 47: one row of the details: its outline icon (named [label], a heading for screen readers), then [content]. */
 @Composable
@@ -972,6 +1016,9 @@ internal const val PLACE_DETAILS_TAG = "place-details"
 internal const val PLACE_REPORT_TAG = "place-report"
 internal const val PLACE_EDIT_OSM_TAG = "place-edit-osm"
 internal const val PLACE_OWN_TAG = "place-own-tag"
+/** 0.1.41 (4.8): the details height's "Hours still right?" line, and its "Hours confirmed". */
+internal const val PLACE_HOURS_CHECK_TAG = "place-hours-check"
+internal const val PLACE_HOURS_CONFIRMED_TAG = "place-hours-confirmed"
 
 /** Test tag of the place sheet. */
 internal const val PLACE_SHEET_TAG = "place-sheet"

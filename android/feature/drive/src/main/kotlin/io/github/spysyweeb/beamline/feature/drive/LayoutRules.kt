@@ -89,3 +89,12 @@ internal fun newTripShown(before: List<Int>, now: List<Int>, hasRoutes: Boolean)
 /** Item 45: a lane row becomes the strip when a lane is wrong for the route and another is right (a choice to make). */
 internal fun laneChoice(lanes: List<LaneUi>): Boolean =
     lanes.any { it.mark == LaneMark.NOT_FOR_ROUTE } && lanes.any { it.mark != LaneMark.NOT_FOR_ROUTE }
+
+/**
+ * Item 54b (the play test of 0.1.41): the banner as the overlay draws it. On its side ([side]) while the stop results'
+ * window or the Add stop search's panel is in the start panel under it ([stopWindow], `DriveOverlay(stopWindowDp)`),
+ * the banner leaves out its lane row and the lane note under it (rules B5, D9, D9b): with them only the field and one
+ * row fitted under the banner. Upright, and once the window or the panel goes, the banner as it is.
+ */
+internal fun bannerShown(banner: BannerUi, side: Boolean, stopWindow: Boolean): BannerUi =
+    if (side && stopWindow) banner.copy(lanes = null, laneNote = null, laneDistanceM = null) else banner

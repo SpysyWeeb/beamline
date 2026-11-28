@@ -53,8 +53,13 @@ object OwnChanges {
     }
 
     fun of(items: List<OutboxItem>, packs: List<PackInfo>, iconOf: (String) -> String?): List<OwnChange> {
-        // a road's speed limit (item 32) is not a place: nothing of it is drawn, found or shown on a sheet
-        val sent = items.filter { it.state == OutboxState.SENT && (it.add != null || it.edit != null) && it.edit?.road != true }
+        // a road's speed limit (item 32) is not a place: nothing of it is drawn, found or shown on a sheet; 0.1.41 (53c, 53d):
+        // an undo is no change to show, an undone edit no longer the user's value (the pack's is right again), and a
+        // confirmation of hours changes nothing the map shows
+        val sent = items.filter {
+            it.state == OutboxState.SENT && (it.add != null || it.edit != null) && it.edit?.road != true &&
+                it.edit?.undoOf == null && it.edit?.undone != true && it.edit?.confirm == null
+        }
             .filter { !inPack(GeoPoint(it.lat, it.lon), it.sentMs ?: it.createdMs, packs) }
             .sortedBy { it.createdMs }
         val out = ArrayList<OwnChange>()

@@ -65,6 +65,9 @@ class AddSession(
         private set
     var status by mutableStateOf<Int?>(null)
         private set
+    /** 0.1.41 (OP-4): "My place replaced it" went and OpenStreetMap already had every value: nothing was uploaded. */
+    var already by mutableStateOf(false)
+        private set
 
     private var places: List<NearbyPlace> = emptyList()
     private var decided: Set<String> = emptySet()
@@ -175,29 +178,50 @@ class AddSession(
         return if (o?.osm != null) OnlineTexts.replaceComment(o.name ?: o.typeWords ?: "a place", tags) else OnlineTexts.addComment(type, tags["name"])
     }
 
-    /** "Upload": into the outbox and sent at once when it can be (4.5). */
-    fun upload() {
+    /** 0.1.41 (53e, OP-6): the outbox item looked at again, as it is now (its [OutboxItem.atPlace]); null for a new place. */
+    val stored: OutboxItem? get() = itemId?.let { outbox.byId(it) }
+
+    /** 0.1.41 (53e, OP-6): what the summary's Upload would put in the outbox: a new place's tags, or the changes onto the place here. */
+    val pendingChanges: Map<String, String?>
+        get() {
+            if (f.type == null) return emptyMap()
+            val tags = EditSession.newTags(f)
+            val o = onto
+            return if (o?.osm != null) BusinessTags.replace(o.tags.ifEmpty { packTags(o) }, tags) else tags
+        }
+
+    /**
+     * "Upload": into the outbox and sent at once when it can be (4.5). 0.1.41: [atPlace] (53e, decided at the tap) is
+     * kept with the item; "My place replaced it" on a place read from OSM keeps its kind tags (OP-2) and, for a node,
+     * its point (53a's move check).
+     */
+    fun upload(atPlace: Boolean = false) {
         val type = f.type ?: return
         val tags = EditSession.newTags(f)
         val o = onto
         val item = if (o?.osm != null) {
             val base = o.tags.ifEmpty { packTags(o) }
             val changes = BusinessTags.replace(base, tags)
+            val node = o.fromOsm && OsmRef.parse(o.osm)?.type == OsmType.NODE
             OutboxItem(
                 id = id, lat = o.lat, lon = o.lon, text = lines.joinToString("\n"), placeName = o.name ?: o.typeWords,
                 createdMs = now(),
                 edit = EditData(
                     o.osm, o.version, changes.keys.mapNotNull { k -> base[k]?.let { k to it } }.toMap(), changes,
                     OnlineTexts.replaceComment(o.name ?: o.typeWords ?: "a place", tags), replaceWith = tags, packOsm = o.packOsm ?: o.osm,
+                    nodeLat = o.lat.takeIf { node }, nodeLon = o.lon.takeIf { node },
+                    kind = if (o.fromOsm) EditPlans.kindOf(base) else null,
                 ),
+                atPlace = atPlace,
             )
         } else {
             OutboxItem(
                 id = id, lat = lat, lon = lon, text = lines.joinToString("\n"), placeName = tags["name"] ?: type.label, createdMs = now(),
-                add = AddData(type.code, tags, OnlineTexts.addComment(type, tags["name"]), decided),
+                add = AddData(type.code, tags, OnlineTexts.addComment(type, tags["name"]), decided), atPlace = atPlace,
             )
         }
         outbox.add(item)
+        already = false
         phase = AddPhase.UPLOADING
         scope.launch {
             sender.sendWaiting()
@@ -205,6 +229,7 @@ class AddSession(
             when (now?.state) {
                 OutboxState.SENT -> {
                     link = now.link
+                    already = now.edit != null && now.edit.changeset == null
                     phase = AddPhase.DONE
                 }
                 OutboxState.REVIEW -> {

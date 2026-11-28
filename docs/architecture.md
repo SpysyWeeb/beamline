@@ -1515,7 +1515,7 @@ class CameraDirector(rules: CameraRules, clock: Clock) {
     fun onTrip(trip: TripState): Unit = TODO("track M")
     fun onPuck(puck: PuckState?): Unit = TODO("track M")
     fun onGesture(gesture: MapGesture): Unit = TODO("track M")
-    /** K1/K1a: my-location: not following -> following north up -> following turned by the phone's compass -> following north up. */
+    /** K1/K1a: my-location: not following -> following north up -> following turned by the phone's compass -> following north up; after a tapped place ended following (K1b), that following as it was. */
     fun onMyLocation(): Unit = TODO("track M")
     fun onRecenter(): Unit = TODO("track M")
     fun onOverview(): Unit = TODO("track M")
@@ -1530,12 +1530,13 @@ class CameraDirector(rules: CameraRules, clock: Clock) {
     /** The picked place's sheet closed or another place replaced it, or the results on the map closed: the camera stays where it is (K1, S11). */
     fun onPlaceLeft(): Unit = TODO("track M")
     /**
-     * K1b (P8): a place tapped on the map whose sheet opened (a POI label, a saved place's marker, a
-     * dropped pin). On a browsing map that is not following, the camera stays while the place's pin is
-     * wholly in the area the insets leave free; once it is not (the sheet raised over it, the search
-     * bar over it at the tap) the camera centres it there at the map's zoom and bearing and keeps it
-     * there like a picked place, until a gesture, my-location, another place or [onPlaceLeft]. While
-     * following, or while a trip exists, nothing changes.
+     * K1b (P8, item 54a): a place tapped on the map whose sheet opened (a POI label, a saved place's marker, a
+     * dropped pin). While browsing it wins over following: following ends where the map is (its bearing and
+     * zoom kept, the compass no longer leading) and the next [onMyLocation] gives that following back. The
+     * camera stays while the place's pin is wholly in the area the insets leave free; once it is not (the sheet
+     * raised over it, the search bar over it at the tap, a glide ending) the camera centres it there at the
+     * map's zoom and bearing and keeps it there like a picked place, until a gesture, my-location, another
+     * place or [onPlaceLeft]. While a trip exists, nothing changes.
      */
     fun onPlaceTapped(point: GeoPoint): Unit = TODO("track M")
     /**
@@ -1551,12 +1552,14 @@ class CameraDirector(rules: CameraRules, clock: Clock) {
     fun onShowPlaceAfterRoute(point: GeoPoint): Unit = TODO("track M")
     /**
      * Item 51 (rule K8): adding a stop on the map. While a route is chosen or guided the camera looks
-     * top-down, north up at [points] (the stop results and where they join the trip, or the way to the
-     * stop looked at) in the area the insets leave free; guiding, the vehicle is kept in the view (a new
-     * fit when it nears the edge) and guidance does not follow meanwhile. Empty [points]: adding a stop
-     * ended, back to K2 or K3. Ignored in other phases.
+     * top-down, north up at [points] (the stop results and where they join the trip, the way to the
+     * stop looked at, or, item 54b, the route ahead the Add stop search looks along while it is typed in)
+     * in the area the insets leave free, [paddingDp] on each side (null: preview.padding_dp; item 54b's
+     * typing view passes a smaller one); guiding, the vehicle is kept in the view (a new fit when it nears
+     * the edge) and guidance does not follow meanwhile. No room in that area for the fit: the camera stays.
+     * Empty [points]: adding a stop ended, back to K2 or K3. Ignored in other phases.
      */
-    fun onStopView(points: List<GeoPoint>): Unit = TODO("track M")
+    fun onStopView(points: List<GeoPoint>, paddingDp: Float? = null): Unit = TODO("track M")
     fun tick(): Unit = TODO("track M")
     /** K1a: the map's bearing when the camera stopped (browsing keeps a user's own turn). */
     fun onMapBearing(deg: Double): Unit = TODO("track M")
@@ -1933,9 +1936,10 @@ sealed interface SearchOutput {
  * CALL and WEBSITE (rule S10) last, never while driving: the app opens the dialer or the browser.
  * REPORT is never in [PlaceSheetUi.actions]: the sheet offers it by [PlaceSheetUi.canReport]
  * (docs/online-design.md 4.1, batch O1); EDIT_OSM neither, by [PlaceSheetUi.canEditOsm] (4.2, batch O2);
- * ADD_PLACE neither, by [PlaceSheetUi.canAddPlace] (4.3, batch O3).
+ * ADD_PLACE neither, by [PlaceSheetUi.canAddPlace] (4.3, batch O3); CONFIRM_HOURS and EDIT_HOURS neither, by
+ * [PlaceSheetUi.canCheckHours] (4.8, 0.1.41).
  */
-enum class PlaceAction { DIRECTIONS, ADD_STOP, OPEN_STATES, SAVE, EDIT, CALL, WEBSITE, REPORT, EDIT_OSM, ADD_PLACE }
+enum class PlaceAction { DIRECTIONS, ADD_STOP, OPEN_STATES, SAVE, EDIT, CALL, WEBSITE, REPORT, EDIT_OSM, ADD_PLACE, CONFIRM_HOURS, EDIT_HOURS }
 
 data class PlaceSheetUi(
     val place: Place,
@@ -1995,6 +1999,14 @@ data class PlaceSheetUi(
     val canAddPlace: Boolean = false,
     /** Item 47: the drive time on Directions ("6 min": "Directions · 6 min"); the app sets it from the session's estimate, null shows plain "Directions". */
     val driveTimeText: String? = null,
+    /**
+     * 0.1.41 (docs/online-design.md 4.8, item 53c): "Hours still right?" under the week at the details height, with
+     * "Yes" (Act(CONFIRM_HOURS): the hours confirmed in one tap) and "Edit hours" (Act(EDIT_HOURS): the edit form at
+     * its hours). The app sets it while the user stands at the place and may confirm its hours; false: not offered.
+     */
+    val canCheckHours: Boolean = false,
+    /** 0.1.41: the user confirmed these hours today: "Hours confirmed" with a check where the question was (the app sets it). */
+    val hoursChecked: Boolean = false,
 )
 
 /**
@@ -2318,9 +2330,22 @@ sealed interface GuidanceStatusUi {
     /**
      * [awayText]: "Route ends 500 ft from the place" when the route ends more than 100 m from the place (a place tied to a street up to 300 m away).
      * [saved] (play test P31, audit F34): the destination is one of the saved places (the app sets it): Save reads "Saved" with a check.
+     * [question] (0.1.41, docs/online-design.md 4.8): the one question about the place once the car is parked there; the app
+     * sets it (the presenter never does) and the card shows it above Done, which stays in view.
      */
-    data class Arrived(val name: String, val sideText: String?, val awayText: String? = null, val saved: Boolean = false) : GuidanceStatusUi
+    data class Arrived(val name: String, val sideText: String?, val awayText: String? = null, val saved: Boolean = false, val question: ArrivalQuestionUi? = null) : GuidanceStatusUi
 }
+
+/**
+ * 0.1.41 (docs/online-design.md 4.8): the arrival card's one question. [title] ("Hours still right?", "This place has
+ * no hours on the map. Add them?"); [lines] under it (the hours it asks about: "Mon–Fri 8 AM–6 PM"); [yes] the
+ * one-tap answer ("Yes"; null: none); [edit] the button that opens the edit form at that field ("Edit hours", "Add
+ * hours"); [notNow] ("Not now"). Each answer is [DriveEvent.AnswerArrival].
+ */
+data class ArrivalQuestionUi(val title: String, val lines: List<String>, val yes: String?, val edit: String, val notNow: String)
+
+/** 0.1.41: the answers to [ArrivalQuestionUi]. */
+enum class ArrivalAnswer { YES, EDIT, NOT_NOW }
 
 data class TripBarUi(
     val arriveText: String,
@@ -2401,6 +2426,8 @@ sealed interface DriveEvent {
     data object ShowDestination : DriveEvent
     /** Item 47: the arrival card's Save: the save dialog for the destination. */
     data object SaveDestination : DriveEvent
+    /** 0.1.41 (docs/online-design.md 4.8): an answer to [GuidanceStatusUi.Arrived.question]. */
+    data class AnswerArrival(val answer: ArrivalAnswer) : DriveEvent
     /** Opens search in ADD_STOP mode; the place comes back as NavIntent.AddStop. */
     data object SearchForStop : DriveEvent
     /** Opens search in SET_START mode; the place comes back as NavIntent.SetOrigin. */
@@ -2463,9 +2490,10 @@ import io.github.spysyweeb.beamline.api.map.EdgeInsetsDp
 /**
  * Banner at the top, sheets and the trip bar at the bottom; reports the space it covers so the camera can pad.
  * [creditShown]: the map credit's short line is showing at the bottom start (rule D8 keeps the speed pair above it).
- * [stopWindowDp]: item 51 (rule S12), the stop results' window is this high at the bottom (0 on its side, where it
- * is in the start panel): only the top (banner, status chip, stop card) and the speed pair above the window are
- * drawn; no trip bar, sheets, map buttons, road label or stops editor. Null: everything, as always.
+ * [stopWindowDp]: item 51 (rule S12), the stop results' window, or since 0.1.41 (item 54b) the Add stop search's
+ * panel with the keyboard under it, is this high at the bottom (0 on its side, where it is in the start panel):
+ * only the top (banner, status chip, stop card) and the speed pair above it are drawn; no trip bar, sheets, map
+ * buttons, road label or stops editor. Null: everything, as always.
  * [onTopStack]: where the top stack ends (the banner block, and the chip or stop card under it), in dp from the
  * overlay's top, 0 without one; in both layouts (play test P7: on its side the app's windows share the start
  * panel with the banner and keep under it).
@@ -3468,7 +3496,9 @@ Every rule id below needs at least one JVM test in `:nav:session` (N's definitio
   maneuvers); D shows the card for `stop_card_s` (8 s, through `EventCards`).
 - **A3** Destination: phase ARRIVED, event `Arrived`, `trip.json` deleted.
   ARRIVED ends on Done or when a deciding fix is more than `leave_m` (300 m) from the destination;
-  then IDLE: the pack-change hold is released and position collection stops.
+  then IDLE: the pack-change hold is released and position collection stops. While ARRIVED the app may show one
+  question about the place in the arrival card once the car has stood still for 15 s (0.1.41,
+  `docs/online-design.md` 4.8, AP3); the session does not change for it.
 - **C1** Stops can be added, removed and moved in PLANNING, CHOOSING, GUIDING and REROUTING;
   reached stops cannot be changed. Whatever stop ends up last is the destination: moving the
   destination up makes the stop before it the destination (`canMoveDown` is false on the last
@@ -3570,7 +3600,8 @@ Every rule id below needs at least one JVM test in `:nav:session` (N's definitio
 
 - **K1** BROWSE: top-down (pitch 0), north up, never moved by the app except: my-location →
   BROWSE_FOLLOW (centre on the puck, zoom `follow_zoom`, today's z9.99 cap outside the states kept),
-  until a user gesture → BROWSE; a cold start with location allowed (and turned on) begins in
+  until a user gesture → BROWSE, or a place tapped on the map (K1b, 0.1.41: the next my-location gives that following
+  back); a cold start with location allowed (and turned on) begins in
   BROWSE_FOLLOW too, from the last known position, and moves when the first fix comes; a place
   picked from a search result, a saved place, a recent or a sheet (`CameraDirector.onShowPlace`;
   not a place tapped on the map, which is on screen already: K1b) → BROWSE centred on it at
@@ -3612,7 +3643,8 @@ Every rule id below needs at least one JVM test in `:nav:session` (N's definitio
   one speed); a turn in place takes 250 ms plus 1.6 ms a degree, at most 550 ms
   (`Director.TURN_*`), and the follow updates and compass readings wait for it (before, each 1 Hz fix
   re-timed it past a second). A drag ends the following
-  and the compass turn (the map stays as it is); a two-finger turn ends only the compass turn.
+  and the compass turn (the map stays as it is); a two-finger turn ends only the compass turn. A place tapped on the
+  map ends both too (K1b, 0.1.41), and the next my-location press gives back the following it ended, as it was.
   Otherwise a small red mark on the button's rim always points to north (since 0.1.29). The button's look is
   option A of the owner's choice (2026-11-24): a bold crosshair, blue with a dot while following, a
   lighter night panel with a thin outline. The map
@@ -3622,20 +3654,24 @@ Every rule id below needs at least one JVM test in `:nav:session` (N's definitio
   north up. The constants are `Director`'s COMPASS_STEP_DEG and `CompassFilter`'s.
 - **K1b** A place tapped on the map (a POI label, a saved place's marker, a dropped pin;
   `CameraDirector.onPlaceTapped`; P8 of the 0.1.39 play test, 0.1.40) is on screen already: the camera
-  does not go to it. On a browsing map that is not following, the camera stays while the place's pin
-  (28 x 38 dp, its tip at the point, 8 dp to spare) lies wholly in the area the insets leave free. Once
-  it does not (the sheet raised, or opened over a place low on the screen; at the tap, just under the
-  search bar; the camera coming to rest after a move begun before the tap), the camera centres the pin
-  there at the zoom and bearing the map has, and keeps it there at every height like a picked place,
-  until a gesture, my-location, another place, the results or the sheet closing (`onPlaceLeft`; the
-  results ending while the window stays open do not end it). Where the camera is comes from the map at
-  each rest and each tap (`onCameraAt`: the point at the view's middle, the zoom, the bearing;
-  `Director.pinInView`, Web Mercator, top-down). No room for the pin in the free area (a bottom sheet
-  on its side, a split screen): the camera stays. While following (K1, K1a) a tap changes nothing: the
-  follow keeps the user in view. While a place sheet is open and the search pill shows, the camera's
-  top inset is the search bar's bottom edge (`AppRules.cameraTopChrome`; the pill's whole block while
-  results show, S11), so a tapped or a picked place keeps clear of the bar. Nothing while a trip
-  exists.
+  does not go to it. While browsing it wins over following (0.1.41, docs/next-round.md item 54a; the owner,
+  2026-11-27: "the tapped place wins"): a tap while following (K1, K1a) ends the following and the compass
+  turn where the map is, its bearing and zoom kept, as a drag does; the next my-location press gives back
+  that following as it was (north up, or turned by the phone's compass when it was and it gives a heading),
+  without K1a's north-up-first step, unless the map was moved or turned by hand, or a picked place or the
+  results were shown, in between; closing the window leaves the map where it is. The camera stays while the
+  place's pin (28 x 38 dp, its tip at the point, 8 dp to spare) lies wholly in the area the insets leave
+  free. Once it does not (the sheet raised, or opened over a place low on the screen; at the tap, just under
+  the search bar; the camera coming to rest after a move begun before the tap, a follow's glide included),
+  the camera centres the pin there at the zoom and bearing the map has, and keeps it there at every height
+  like a picked place, until a gesture, my-location, another place, the results or the sheet closing
+  (`onPlaceLeft`; the results ending while the window stays open do not end it). Where the camera is comes
+  from the map at each rest and each tap (`onCameraAt`: the point at the view's middle, the zoom, the
+  bearing; `Director.pinInView`, Web Mercator, top-down). No room for the pin in the free area (a bottom
+  sheet on its side, a split screen): the camera stays. While a place sheet is open and the search pill
+  shows, the camera's top inset is the search bar's bottom edge (`AppRules.cameraTopChrome`; the pill's
+  whole block while results show, S11), so a tapped or a picked place keeps clear of the bar. Nothing while a
+  trip exists.
 - **K2** PLANNING/CHOOSING → PREVIEW: top-down, north up, fit all choices' bounds plus the origin and
   stops, padded by `padding_dp` plus the overlay insets.
 - **K2a** A route closed before it started (PLANNING or CHOOSING to IDLE: Cancel, Back; P50 of the
@@ -3701,10 +3737,17 @@ Every rule id below needs at least one JVM test in `:nav:session` (N's definitio
 - **K8** Adding a stop (item 51): while the stop results or a stop's card show, in PLANNING, CHOOSING,
   GUIDING and REROUTING, the camera fits top-down, north up the places with J, or J and the way to the stop
   looked at (`CameraDirector.onStopView`), above the results window (in the insets also while driving;
-  beside it on its side). Guiding, the vehicle is always in the fit: the camera fits again when the vehicle
+  beside it on its side). While the Add stop search is typed in over the trip's map (item 54b, 0.1.41, S12) it
+  fits the route ahead that the search looks along: from J, a point every km (`AppRules.ADD_STOP_VIEW_STEP_KM`) up
+  to `along_route.ahead_km` (60) and the line's end when it is nearer, taken as the search opens; the stop
+  results' points take over at Enter, and Back from them gives the route ahead back, never the follow in between;
+  the typing view pads by `AppRules.ADD_STOP_VIEW_PADDING_DP` (16 dp) and the credit row is left out of its
+  insets. Guiding, the vehicle is always in the fit: the camera fits again when the vehicle
   leaves the middle 80 % of the box, at most every 5 s; the mode is GUIDE_OVERVIEW without its K5 timer; a
   gesture leaves the camera where the user put it (no GUIDE_FREE) for K4's `recenter_after_s`, then the fit
-  with the vehicle comes back; the end of adding a stop goes back to GUIDE_FOLLOW (K3) or the K2 fit.
+  with the vehicle comes back; the end of adding a stop goes back to GUIDE_FOLLOW (K3) or the K2 fit. When the area
+  the insets leave free, less `preview.padding_dp` on each side, has no height or width (a short window with the
+  panel or the window over most of it), the camera stays until there is room again (0.1.41).
 - **Saved-place markers** (rules SP40-SP46 of `docs/architecture-saved-places.md` 2.8;
   `camera.json` `saved_places`, read by `SavedMarkerRules`): Home and Work from zoom 10, the others
   from zoom 12, at 1.25 times the sprite size, upright also in the tilted view; above the labels and
@@ -3892,7 +3935,15 @@ Every rule id below needs at least one JVM test in `:nav:session` (N's definitio
 - **S12** Adding a stop on the map (item 51, 0.1.40; the owner: "'Add a stop during a trip' should show the
   map so the user knows where the stop is, and on the list, it should be sorted by what takes the least
   amount of time to route to, like a '+2 min'"). The Add stop search opens with the keyboard up (P26) and
-  "Along your route": places are looked for around a point every `along_route.sample_km` (10) along the
+  "Along your route", since 0.1.41 as a panel over the trip's map (item 54b; the owner, 2026-11-27: "the trip's
+  route map stays in view above the field while typing"): upright on the keyboard, half the room between the drive
+  overlay's top stack (banner, chip or stop card; else the status bar) and the keyboard, at least the field and one
+  row, the map above it (the whole room when the map would get less than 160 dp); on its side in the start panel
+  from under the top stack to the keyboard, the map beside it; with less room under the top stack than the field
+  and one row, from under the status bar, over the banner. The map shows the route and the vehicle, framed on the
+  route ahead (K8), no pins; the drive overlay keeps its top and the speed pair as over the stop results; my-location
+  and a place window under it are not drawn; map taps do nothing. "View all" and Saved places open over the whole
+  screen. An arrival or the trip's end closes it. Along your route: places are looked for around a point every `along_route.sample_km` (10) along the
   trip's route ahead from J, up to `ahead_km` (60); a category's or a brand's answer keeps those within
   `corridor_km` (3) of the route, the `max_results` (20) nearest it, in order along it (none that close:
   the `nearest_when_none_within` (5) nearest it, "None close to your route. Nearest shown."); a name's the
@@ -3908,11 +3959,13 @@ Every rule id below needs at least one JVM test in `:nav:session` (N's definitio
   4:33 PM", **Add stop**; only that button adds the stop (C1, C3); it is disabled only for a stop too many
   (another preview problem shows "Could not work out the route with this stop." and adding still re-plans
   as C3). The card's "+N min" is written back to its row. Back: card, list (a one-place result: straight to
-  the search), the Add stop search with its words, the trip; the window's X (list and card) ends it. While
+  the search), the Add stop search with its words, the trip; the window's X (list and card) ends it. A step
+  shown on the route sheet (P21) is shown again when adding a stop ends; a panned preview gets its fit back. While
   the window shows, map taps other than its pins do nothing. The drive overlay keeps only its top (banner,
   status chip, stop card) and the speed pair above the window (`DriveOverlay(stopWindowDp)`, D8); the trip
   bar, map buttons, road label, route sheet and stops editor come back as they were. On its side the window
-  is in the start panel. A POI tapped on the map during a trip keeps its sheet's direct "Add stop".
+  is in the start panel, and while it or the Add stop panel is there the banner leaves out its lane row and lane
+  note (B5, D9; the play test of 0.1.41: with them only the field and one row fitted under it). A POI tapped on the map during a trip keeps its sheet's direct "Add stop".
   A place handed over by another app during a trip (H7) opens as one such card without a list: no back arrow, Back
   and the X end it, and "Go here instead" under Add stop makes it the destination the S7 way.
 
@@ -3932,6 +3985,10 @@ Every rule id below needs at least one JVM test in `:nav:session` (N's definitio
   destination's place (2.11 "Every request" 2; `DrivePresenter.DESTINATION_AWAY_OVER_M`; P4 of the
   0.1.39 play test, 0.1.40); Save is a link, "Saved" with a check once the destination is a saved place
   (the app sets `Arrived.saved`; play test P31, audit F34); its handle's raise is "Show place details".
+  `GuidanceStatusUi.Arrived.question` is set by the app (`AppRules.withArrivalQuestion`), never by the presenter;
+  the card shows it above Done (0.1.41, `docs/online-design.md` 4.8): Arrived, the name, the side, the away line and
+  the question scroll in the card's upper part, which scrolls before a drag raises the card; Done and Save stay
+  pinned at the card's foot, and Done does not move while the card grows or shrinks.
 - **D3** Trip bar: arrival clock = now + `remainingS`; remaining time and distance; next stop
   "Stop *n* · distance" when a stop is not the destination; "Simulated" badge when simulated.
   Outside the installed maps (O8) the bar says "No route from here" instead of the old route's times
@@ -4004,8 +4061,8 @@ Every rule id below needs at least one JVM test in `:nav:session` (N's definitio
   buttons: in a window too short for it between the top stack (banner, chip, stop card) and the
   bottom block (split screen, about 390 dp tall) the pair is left out while there is no room and
   comes back when there is (batch B). GPS speed often reads a few mph below a car's speedometer, which is built to read
-  high. While the stop results of S12 show, it sits above their window (`DriveOverlay(stopWindowDp)`)
-  and is left out by the same room rule. The overlay reports where the top stack ends (`onTopStack`);
+  high. While the stop results of S12 show, it sits above their window (`DriveOverlay(stopWindowDp)`) or, since
+  0.1.41, above the Add stop panel (on its side above the keyboard), and is left out by the same room rule. The overlay reports where the top stack ends (`onTopStack`);
   the app keeps its browsing windows under it (play test P7).
 - **D10** Every bottom sheet's heights (batch F; the owner, 2026-11-18, docs/next-round.md item 15).
   The results list (S11), the route sheet and the place sheet (S7) share one frame (`:ui:theme`
@@ -4239,7 +4296,9 @@ includes it. Downloads have their own foreground service (type `dataSync`, G's).
   - **N3 what.** `OsmHttp`: only the requests the OSM API defines for the features built (batch O1:
     `POST /api/0.6/notes.json`, a note's text and point in the body; batch O2: the sign-in's token
     and revoke requests, the user's name, and an edit's read of the place, changeset create, element
-    upload and changeset close; batch O3: OSM's map of a small box around a pressed point, about 120 m
+    upload and changeset close (0.1.41: the same requests carry a confirmation of a place's hours and the undo of
+    an edit; a changeset's tags are `comment`, `created_by` and, for an edit made at the place only,
+    `source=survey`); batch O3: OSM's map of a small box around a pressed point, about 120 m
     across, for the duplicate check, and a new node at the pressed point; the table of
     `docs/architecture-downloads.md` 4.1),
     `User-Agent: Beamline/<version>`, with an account `Authorization: Bearer <token>` (the token
@@ -4278,7 +4337,11 @@ includes it. Downloads have their own foreground service (type `dataSync`, G's).
     `no_backup/osm-outbox.json`; since batch O2 also the user's edits and, once sent, the local
     copy shown on the place sheet) and the OSM account (batch O2, `no_backup/osm-account.bin`, the
     token and the user's name sealed with an Android Keystore key) live beside the saved places
-    under the same rules PV1-PV8.
+    under the same rules PV1-PV8. The phone's positions of the last 10 minutes (0.1.41, `RecentPositions`,
+    docs/online-design.md 4.5) live only in memory: never written to a file, a backup or a log, never sent; an outbox
+    item keeps only the yes or no "made at the place". Since 0.1.41 also `no_backup/arrival-asked.json` (the OSM
+    objects of the places where the user answered the arrival question, each with its day, for 90 days; deleted when
+    Contribute or online features go off; `docs/online-design.md` 4.8).
   - **PV2 never in a log.** No log line, exception message, `toString()` or crash text holds a saved
     place's name, place name, subtitle or coordinates. `Place`, `SavedPlace` and `SavedMarker` print
     no name or point (2.1, 2.5). `:core:search`, `:feature:search`, `:map:scene` and `:app`'s `online/` package (the OSM outbox) have no log call
@@ -4807,7 +4870,7 @@ runs only its own modules' tasks, as above, is not affected.
    shows the credit as OpenStreetMap's attribution guidelines allow (docs/next-round.md item 8): one
    short line "© OpenStreetMap" (only while OpenStreetMap data is drawn; the overview's sources are
    public domain), small, in the bottom start corner above the trip bar or the sheet (on its side beside the
-   side panel); it fades after
+   side panel; above the Add stop panel upright, above the keyboard beside it on its side, item 54b); it fades after
    five seconds or at the first touch of the map and is shown again when the map appears, when the
    app comes back and at each change between browsing, a route preview, guiding and ARRIVED; during
    the whole route preview it stays; while guiding it shows only those first seconds, then nothing.
@@ -4821,7 +4884,8 @@ runs only its own modules' tasks, as above, is not affected.
    come one at a time, in the order: the End bar ("Trip ended" with Undo, R4), the Back hint ("Press Back
    again to leave Beamline.", play test P28), an Undo bar ("Stop removed", "Mom's removed": play tests
    P10, P58; in the open stops editor its own note line instead), a plain snackbar; on its side they
-   centre in the map beside the side panel; a long line wraps beside its action, 12 dp from the map's sides. The top of the
+   centre in the map beside the side panel; while the Add stop panel shows (item 54b) they sit above it, on its
+   side above the keyboard (`AppRules.barBottomDp`); a long line wraps beside its action, 12 dp from the map's sides. The top of the
    map as rule S8 says (`docs/architecture-saved-places.md` SP1-SP3): the search pill with the
    Settings button beside it while no trip exists (a States button stood under it until 0.1.14),
    the top row and the bottom row (credit, my-location) clear of the status bar, a navigation bar on either
@@ -5007,6 +5071,8 @@ runs only its own modules' tasks, as above, is not affected.
 | 6.86 | Named beaches and other natural places a driver heads to are searchable (owner, 2026-11-18; batch F) | Search build only (`packbuilder/search`, no app code): new categories beach (`natural=beach`, `leisure=beach_resort`), waterfall (`natural=waterfall`, `waterway=waterfall`), cave (`natural=cave_entrance`) and peak (`natural=peak`), each with its words; `natural=*` / `waterway=*` objects are kept only for these values (no woods, water, springs, cliffs); two derived keys: "No. N" also keyed as "N" ("Beach no.1" -> "beach 1"), and a natural place inside named parks also keyed "<park> <label>" / "<park> <name>" ("presque isle beach"); icons from the existing sprite (waterfall uses viewpoint, cave uses attraction). PA and OH search parts rebuilt; packs `pack_version` 202611200917 | "Beach 10" found nothing: `natural=beach` was dropped by the extract. The `leisure=park` "Beach 1" to "Beach 4" are four parks near Lake Harmony, in the index all along; Presque Isle's beaches are all `natural=beach`. Derived keys rank as `exact_alt`, so no engine change and no new ranking rule |
 | 6.87 | The place sheet's details height (owner, 2026-11-20; batch G) | S10, D10: a third height of the place sheet with the week, every number and web address written out (tap opens as Call / Website, long press copies), the address and the category; a saved place looked up by its own name; a search id read only while its entry is still the place | The owner wants the hours of every day and the number and website spelled out; ids move when a pack is rebuilt (Erie Zoo 433934 -> 435720 between the 11-16 and 11-20 Pennsylvania builds), so an old recent could have shown another place's hours |
 | 6.88 | The place itself as the last end (owner, 2026-11-20, after batch G; batch H) | 2.11 "Every request" 5, 7: every list of ends of a tied place ends with the place itself, untied (its own point, no stop tie), so the nearest street has to pass the check against it (at most 90 s slower, no more U-turns); the place never wins with an alley or a drive-through lane in its last 300 m (its tail asked when it would win; then the nearest street, unless that finds no way) | docs/next-round.md, the owner's answers after batch G: batch E2 kept the nearest street with no check, so a plain place whose address street is out of reach could end 191 m away with a U-turn (Ulta Beauty as an address); the alley guard keeps C1's "no alleys unless there is no other way"; measured in docs/experiments/29-batch-h.md |
+| 6.93 | At a place (0.1.41; docs/online-design.md 4.8; docs/next-round.md items 53c, 53g) | The window's details height offers "Hours still right?" (Yes: one tap through `confirmHours`, no summary; Edit hours: the form at its hours) while the phone stood within 80 m in the last 2 minutes; the arrival card asks one question once the car has stood 15 s at the destination (ARRIVED, not simulated): no hours, then "Hours still right?", then no phone or website; businesses only; nothing while the user's edit of the place waits; the places answered, 90 days (`no_backup/arrival-asked.json`, answers only; a question only shown is remembered in memory); signed in and Contribute on; never while guiding | A question where the user can see the answer, asked once and rarely, is a contribution and not a nag; the question shows what it confirms, so it is its own summary, and 53d's Undo stays |
+| 6.92 | The OSM edit pipeline, 0.1.41 (docs/next-round.md item 53 a, c, d, e; docs/online-design.md 4.2, 4.5) | Edits checked tag by tag at send time (`EditPlans`): onto the newest version unless one of the edit's tags holds a third value, a node moved more than 50 m, or the place was deleted (410: REVIEW); a 409 read again once; values OSM has are not uploaded again; check dates never conflict; closings and replacements as one unit; a confirmation or an undo names the place as OSM has it at send time. Undo for 12 h from My reports (`Undo`, the sent tags kept as `sent_before`/`sent_after`; a tag changed since left alone). The last 10 minutes of fixes in memory only (`RecentPositions` behind `OnSite`, its one door, which answers only yes or no; fed from `SharedPositionSource.latest` while OSM contributions are allowed; a fix leaves at 10 minutes, asked or not); "made at the place" (80 m) decided at Upload and kept as `at_place`; else "Are you sure you checked this on-site?"; `source=survey` only when made at the place, with a first-time notice. A confirmation of hours (`HoursCheck`) writes `check_date:opening_hours` only. | The owner's choices of 2026-11-27/28; StreetComplete's ideas, none of its code |
 | 6.91 | Online batch O3 (docs/online-design.md 4.3, 4.5; docs/next-round.md items 24-27; the O2 review) | "Add a missing place" on a dropped pin (hidden while a trip is driven or the switch is off; signed out: sign in or a note "Missing place: ..."): a type from the search's categories (`PlaceTypes.ADDABLE`, tags checked against categories.json), name, hours, phone, website. The spot check: the pack's POIs within 60 m at once and OSM's map of a 120 m box (`GET /api/0.6/map.json`); duplicates (same name within 50 m, same type and a similar name within 50 m, an unnamed type within 25 m) offer "Edit that one instead"; a business within 30 m or in the same building outline gives "Already on the map here" with "My place replaced it" / "Both are here" / "It's the same place"; an address alone gets the tags. One changeset ("Added <type> <name>", `created_by`, `source=survey`) with one node at the pressed point; the outbox runs the duplicate check again at send time. "This is now a different business" in the edit form: the old business's own tags go, address and building stay (`BusinessTags`), made again at send time. The friendlier form: times picked with Material 3's time picker in the phone's 12/24-hour setting, day groups, split days, Open 24 hours, "(next day)", the public holidays line, the sheet's own week as the preview, "Changed" with Undo, the discard question, phone and website checked, the OSM text in a fold-out; the writer still reads its text back with the hours parser. Your changes on your map at once: sent additions, edits, replacements and closings shown in search, on the place sheet ("Your edit · waiting for the map update") and on the map (an own layer copying the style's POI layer; the old label hidden by the tiles' feature id, (type << 44) \| OSM id) until an installed pack's OSM data is of a later day; a closed place is hidden on the map and "Closed permanently" in search and on its sheet. "View all" place types (the pack's `category` table, grouped), the same grid as the type picker. | docs/experiments/31-batch-o3.md |
 | 6.90 | Online batch O2 (docs/online-design.md 4.1, 4.2, 4.4, 4.5; the owner's answers 2, 4, 6) | OSM sign-in by OAuth 2 with PKCE (S256) in the browser; the redirect `io.github.spysyweeb.beamline://oauth` is accepted only for the sign-in this app started (its state, once, within 15 min); the token and the user's name sealed with AES-GCM under an Android Keystore key in `no_backup/osm-account.bin`; sign-out deletes it and asks OSM to revoke it when online. Client ids in the build (the live one only in the plain release). Notes: "Post with my OSM name", checked to start with when signed in; signed out at send time the note goes anonymously. "Edit on OpenStreetMap" for a node or way of the pack's `poi.osm` (a relation opens on openstreetmap.org): name, a week editor checked with the app's hours parser (anything it cannot express read-only), phone, website, "Closed permanently" (main keys amenity, shop, craft, office, leisure, tourism, healthcare, club to `disused:`; opening_hours, phone, contact:phone, website, contact:website removed; name kept; OSM wiki Key:disused:). The place is read before the form; the summary; one changeset (comment, `created_by=Beamline <version>`, `source=survey`), the element at the version read, close. Edits go through the outbox: right after the summary the element read is uploaded (OSM's 409 brings the form back with the new values); an edit that waited is read again and, if the place changed, waits for the user (REVIEW). Sent edits stay in the outbox and show on the place sheet ("Your edit, waiting for the next map update") until an installed pack has the values. Test objects only by a test extra of test builds. | docs/experiments/30-batch-o2.md |
 | 6.89 | Online as a choice, batch O1 (owner, 2026-11-16 and 2026-11-20; docs/online-design.md) | The first-run step after the notice ("Offline only" / "Allow online features", equal, neither selected; shown once after an update too); Settings "Online features" (main switch turns every feature on, each turns off alone; "Contribute to OpenStreetMap"; "My reports"); network rule N1-N5 per service (`OsmHttp`, OSM test server in test builds, openstreetmap.org only in the plain release, refused while the switch is off); the outbox (`no_backup/osm-outbox.json`, PV1-PV8; sent when the app is open, no background service; keeps the note's number and link); "Report a problem" (a dropped pin's "Report a problem here", a place's details height; at the pressed point or the place's point, never the phone's position; anonymous; the first-send public notice; hidden while a trip is driven and while the switch is off); every note ends with "via Beamline" | "Offline only" stays a promise proved by per-app accounting; online features never leak saved places or the position (docs/online-design.md section 3); report docs/experiments/29-batch-h.md |
