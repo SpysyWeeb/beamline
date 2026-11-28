@@ -1065,6 +1065,21 @@ not break across two lines in the banner; the results view shows at most the 20 
     splitting a way where the limit changes (the app changes tags only); photos on notes (StreetComplete
     runs its own photo server); GPS traces; statistics and achievements; its walking questions.
 
+54. **After 0.1.40's emulator replay** (the owner's answers, 2026-11-27, after the replay of the play
+    test on 0.1.40):
+    a. **A tapped place wins over following** (P8). While the map follows the car, a place tapped on the
+       map today keeps the follow (rule K1b), so at the sheet's full height the place can slide off the
+       top. The owner: the tapped place wins. The tap ends following and keeps the place in view above
+       the sheet; the location button brings following back.
+    b. **The map while typing in Add a stop** (item 51). The Add stop search opens full screen with the
+       keyboard up, and the route map with the pins comes only with a chip, Enter or a row; the typing
+       suggestions show distances, and "+N min" comes after Enter. Two testers expected the map while
+       typing. The owner: next batch, the trip's route map stays in view above the field while typing.
+    c. **The stop preview keeps its close view** (rule K8): it frames the leg into the stop, not the
+       whole new route (the owner, as built).
+    Seen in the replay, not decided: the result pins all look the same and bunch where most places are;
+    numbered or labelled pins would be a new design.
+
 ## Later (not the next round)
 
 - **Linking Beamline to the real vehicle through the comma 3X** (owner, 2026-11-16). The driving
