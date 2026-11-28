@@ -1034,12 +1034,16 @@ not break across two lines in the banner; the results view shows at most the 20 
     comes into Beamline (MIT); its ideas and OSM's tagging conventions do. Usable as they are, with their
     notices: osm-opening-hours (MIT), osmfeatures (Apache-2.0), iD's id-tagging-schema (ISC), the Name
     Suggestion Index (BSD-3; a separate data licence not confirmed), countrymetadata (CC0);
-    countryboundaries is LGPL-3.0. The owner chose these, as the next batch after 0.1.40:
+    countryboundaries is LGPL-3.0. The owner chose these, as the next batch after 0.1.40; on 2026-11-28
+    the owner narrowed the batch to a place's hours, phone and website plus item 54's app fixes ("We can
+    drop Speed-limit sign changes. and Brand and type suggestions ... We can keep the app fixes, 'Were you
+    there?' check, and One quick question when you arrive"): the batch is a, c, d, e, g (reshaped) and
+    item 54 a and b; b and f are dropped.
     a. **Conflicts per field.** Today any change on OSM after an edit sends the whole edit back for
        review (`OutboxSender`, REVIEW). As StreetComplete does (`StringMapEntryChange.conflictsWith`): each
        changed tag keeps its old value; the edit goes onto the newest version unless someone changed one
        of the same tags to a different value; only then does it come back to the user.
-    b. **A posted limit says so.** The speed-limit fix (online-design.md 4.7) also writes
+    b. *(Dropped by the owner, 2026-11-28.)* **A posted limit says so.** The speed-limit fix (online-design.md 4.7) also writes
        `maxspeed:type=sign`, and offers the yellow advisory sign (`maxspeed:advisory` with
        `maxspeed:type:advisory=sign`), as StreetComplete's AddMaxSpeed does in the United States. A road
        that already uses `source:maxspeed` keeps that key instead.
@@ -1054,13 +1058,15 @@ not break across two lines in the banner; the results view shows at most the 20 
        the decision of 2026-11-21 (online-design.md 4.2): the changeset of an edit made at the place
        carries `source=survey`; any other edit carries no source. The first time, the app says that this
        tells everyone the user was there at that time.
-    f. **Brand and type suggestions** for "Add a missing place" and "This is now a different business":
+    f. *(Dropped by the owner, 2026-11-28.)* **Brand and type suggestions** for "Add a missing place" and "This is now a different business":
        osmfeatures with iD's presets and the Name Suggestion Index, trimmed to the United States (typing
        "Sheetz" gives the gas station's type and brand tags); and the fuller list of the old business's
        tags removed on a replacement (StreetComplete's `removePlaceRelatedTags`).
-    g. **One question on arrival.** Arrived and parked at a place that lacks something a driver cares
-       about (parking fee or access, EV charging, self-service fuel), at most one quick question with
-       large answers and "Not now"; never while guiding.
+    g. **One question on arrival** (reshaped 2026-11-28 to the batch's focus). Arrived and parked at a
+       place whose hours, phone or website OpenStreetMap does not have, at most one quick question
+       ("This place has no hours on the map. Add them?") that opens the edit form at that field, with
+       "Not now"; never while guiding. (First outline: parking fee or access, EV charging, self-service
+       fuel.)
     Not chosen or not fitting: a check for an existing note before posting one (offered, not chosen);
     splitting a way where the limit changes (the app changes tags only); photos on notes (StreetComplete
     runs its own photo server); GPS traces; statistics and achievements; its walking questions.
