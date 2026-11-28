@@ -1080,6 +1080,9 @@ data class GuidanceRules(
     val startFarFromRouteM: Double,         // reroute.start_far_from_route_m
     val arriveWithinM: Double,              // arrival.within_m
     val arrivePassedM: Double,              // arrival.passed_m
+    val arriveReachM: Double,               // arrival.reach_m
+    val arriveReachRouteM: Double,          // arrival.reach_route_m
+    val arriveReachOffRouteMaxMps: Double,  // arrival.reach_off_route_max_mps
     val arriveLeaveM: Double,               // arrival.leave_m
     val stopCardS: Double,                  // arrival.stop_card_s
     val distanceHoldM: Double,              // banner.distance_hold_m
@@ -3256,7 +3259,8 @@ the phone test, not a measurement.
                 "rejoin_fixes": 3, "wrong_way_deg": 120, "wrong_way_min_speed_mps": 3},
   "reroute": {"min_interval_s": 10, "retry_s": 15, "max_attempts": 5, "heading_min_speed_mps": 2,
               "origin_radius_m": 60, "start_far_from_route_m": 200},
-  "arrival": {"within_m": 30, "passed_m": 40, "leave_m": 300, "stop_card_s": 8},
+  "arrival": {"within_m": 30, "passed_m": 40, "reach_m": 50, "reach_route_m": 200, "reach_off_route_max_mps": 10,
+              "leave_m": 300, "stop_card_s": 8},
   "banner": {"distance_hold_m": 30, "lanes_within_m": {"highway": 1609.344, "other": 482.8032}},
   "motion": {"stopped_below_mps": 0.5, "stopped_after_s": 1.0, "moving_above_mps": 1.0},
   "planning": {"origin_max_age_s": 30, "origin_max_accuracy_m": 100, "wait_for_fix_s": 15,
@@ -3360,7 +3364,8 @@ Every rule id below needs at least one JVM test in `:nav:session` (N's definitio
   `past_m` beyond the new *U*** (after a tunnel that hid two turns, the first fix shows the right
   banner). Arrivals passed in a gap are handled the same way (A1). Dead reckoning never advances.
   While `offRouteSuspected` or in REROUTING, *U* does not advance at all (no forced advance, no
-  arrival): the car is not on the route the banner describes.
+  arrival by A1): the car is not on the route the banner describes. A4's straight-line reach still
+  arrives there, and then moves *U* past the stop as A2 does.
 - **B3** Live distance *d* = `toManeuverM` (minus the dead-reckoned metres in WEAK). Shown
   distance *s*: on each update, *s* = *d* if *d* ≤ *s*, or if *d* > *s* + `distance_hold_m` (30 m);
   otherwise *s* stays. *s* is reset to *d* when *U* changes. Text = `UnitFormatter.distance(s)`, so
@@ -3458,7 +3463,8 @@ Every rule id below needs at least one JVM test in `:nav:session` (N's definitio
 - **O2** A deciding fix is **off** when lateral > *T*, or when the speed ≥ `wrong_way_min_speed_mps`
   and the course differs from the route bearing at the snapped point by more than `wrong_way_deg`
   (120°). It is **on** when lateral ≤ *T* and not wrong-way. Usable fixes that are not deciding
-  neither count nor reset. While at least one off fix is counted, `offRouteSuspected` = true and the
+  neither count nor reset, nor does a fix within `arrival.reach_m` of the end of the stop reached
+  last on this route, until the first fix farther from it (A4, 0.1.42). While at least one off fix is counted, `offRouteSuspected` = true and the
   vehicle is drawn at the raw fix with the GPS course.
 - **O3** Off-route is confirmed by `confirm_fixes` (3) consecutive off fixes spanning at least
   `confirm_s` (4 s); at 1 fix per second that is the fifth off fix. An on fix resets the count.
@@ -3490,15 +3496,50 @@ Every rule id below needs at least one JVM test in `:nav:session` (N's definitio
 - **A1** Arrived at the end of leg *L* when *U* is that leg's arrival maneuver and either a
   deciding fix has *s* ≤ `arrival.within_m` (30 m), or a deciding fix snaps more than
   `passed_m` (40 m) past it (also when that happens inside B2's catch-up loop), or the follower
-  reports `complete` on the last leg.
+  reports `complete` on the last leg; or as A4 says (a straight line to the leg's end).
 - **A2** Intermediate stop: the stop is marked reached, `trip.json` is saved, event
   `StopReached`, guidance continues on the next leg (*U* moves past the arrival and the departure
   maneuvers); D shows the card for `stop_card_s` (8 s, through `EventCards`).
 - **A3** Destination: phase ARRIVED, event `Arrived`, `trip.json` deleted.
   ARRIVED ends on Done or when a deciding fix is more than `leave_m` (300 m) from the destination;
   then IDLE: the pack-change hold is released and position collection stops. While ARRIVED the app may show one
-  question about the place in the arrival card once the car has stood still for 15 s (0.1.41,
-  `docs/online-design.md` 4.8, AP3); the session does not change for it.
+  question about the place in the arrival card once the car has stood still for 15 s at the stop (0.1.41,
+  `docs/online-design.md` 4.8, AP3: within 30 m of the route's end or off the route's line since 0.1.42); the
+  session does not change for it.
+- **A4** Reached in a straight line (docs/next-round.md item 56, 0.1.42; the owner, 2026-11-28: "Simply
+  getting close enough to the location should count as arriving, but not so much focused on the
+  location's pin, but the road that the route ends at"). The end of the leg being driven (the first
+  leg of the guided route not reached: stops are reached in order) is reached when a usable fix is
+  within `arrival.reach_m` (50 m), in a straight line, of the point that leg's route ends at: the
+  stop's road, lot or door point the route was planned to (2.11), not the place's own pin. A fix
+  poorer than a deciding one (31-50 m) counts only when the usable fix before it was within reach
+  too (one multipath jump never arrives). On the route (GUIDING, not `offRouteSuspected`) it counts
+  only while the leg's end is at most `reach_route_m` (200 m) ahead along the route from the
+  snapped position, so the other carriageway of a road the route passes the end on first does not
+  arrive (the C6 trip's leg to a stop on I-90 passes 25 m from its end with 4.4 km to drive; the
+  review counted 17 of 494 recorded legs that pass within 50 m of their end with more than 200 m to
+  go). Off the route
+  (`offRouteSuspected` or REROUTING) it counts only at `reach_off_route_max_mps` (10 m/s, 36 km/h)
+  or slower: a car turning into a lot or a driveway or along its aisles is well below that, one on
+  a highway's other carriageway, a ramp or a town street beside the end is above it. So a car
+  pulled into a lot beside the end, one parked at the curb short of it, GPS poor by buildings and a
+  re-route that the lot started all arrive. It is an extra way to arrive; A1's along-route rules
+  stay. Then A2 or A3 as for A1: an intermediate stop is reached (*U* moves past all the maneuvers
+  up to the next leg's departure, however many are still ahead, also while off the line; in
+  REROUTING the re-route running or waiting, asked for the stop just reached, is dropped and asked
+  again without it); afterwards a fix within `reach_m` of that stop's end neither counts as off the
+  route nor resets the count (O2), so a car still standing short of the stop, whose next leg starts
+  at it, is not re-routed, until the first fix farther away (a later pass by it is judged as
+  anywhere). The last leg's end gives ARRIVED, and ARRIVED ends the off-route count
+  (`offRouteSuspected` false). A stop skipped: off the route and STOPPED (M2) within reach of the
+  destination's end, once some fix since Start (or Resume) was more than `leave_m` (300 m) from it,
+  the trip ends ARRIVED there, the skipped stops left unreached (not a round trip's driveway at its
+  start, not a slow pass by the destination on the way to a stop beyond it). On the route the
+  arrival comes about 50 m before the end instead of 30: a car waiting at a red light 40 m before
+  the end arrives (accepted by the owner's rule; the arrival question waits for the car to stand at
+  the stop, AP3). Not on a dead-reckoned tick (G3), so not in a GPS gap; nor in a simulated drive,
+  whose car drives the route's line to its end and keeps A1 (the golden trace unchanged).
+  `reach_m` 0 turns it off; it must be below `leave_m`, `reach_route_m` at least `reach_m`.
 - **C1** Stops can be added, removed and moved in PLANNING, CHOOSING, GUIDING and REROUTING;
   reached stops cannot be changed. Whatever stop ends up last is the destination: moving the
   destination up makes the stop before it the destination (`canMoveDown` is false on the last
@@ -4528,7 +4569,7 @@ golden trace `android/routing/testdata/nav/exit24.json` (inputs: the route recor
 simulation script; outputs per fix: phase, *U*, shown distance, chip, lanes shown, gps, motion,
 vehicle point) usable by a later Python port and by A.
 Done when: JVM tests pass for the exit 24 drive against the golden trace and for each rule group
-of section 3 (at least one test per rule id: G1-G6, B1-B8, O1-O9, A1-A3, C1-C7, P1-P5, M1-M3,
+of section 3 (at least one test per rule id: G1-G6, B1-B8, O1-O9, A1-A4, C1-C7, P1-P5, M1-M3,
 R1-R3) with a recorded-answer engine and the test follower, on a virtual clock; the planner tests
 include Shortest × Avoid tolls with `has_toll` false, and the two end cases giving a route with the
 fallback warning, not NO_ROUTE (a destination on the Turnpike with Avoid tolls; on I-90 with Avoid

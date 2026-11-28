@@ -64,7 +64,7 @@ class StateChangesTest {
         backgroundScope.launch(UnconfinedTestDispatcher(testScheduler)) {
             h.session.events.collect { if (it is TripEvent.Arrived) arrivedSeenWith += h.session.state.value.phase }
         }
-        h.fixOnly(m(4) - 40.0)
+        h.fixOnly(m(4) - 60.0)                                  // beyond A4's 50 m
         assertEquals(Phase.GUIDING, h.phase())
         val before = seen.size
         h.fixOnly(m(4) - 20.0)

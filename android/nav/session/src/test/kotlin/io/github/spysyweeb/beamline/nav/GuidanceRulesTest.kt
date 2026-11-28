@@ -22,7 +22,7 @@ class GuidanceRulesTest {
             wrongWayDeg = 120.0, wrongWayMinSpeedMps = 3.0,
             rerouteMinIntervalS = 10.0, rerouteRetryS = 15.0, rerouteMaxAttempts = 5, rerouteHeadingMinSpeedMps = 2.0,
             rerouteOriginRadiusM = 60, startFarFromRouteM = 200.0,
-            arriveWithinM = 30.0, arrivePassedM = 40.0, arriveLeaveM = 300.0, stopCardS = 8.0,
+            arriveWithinM = 30.0, arrivePassedM = 40.0, arriveReachM = 50.0, arriveReachRouteM = 200.0, arriveReachOffRouteMaxMps = 10.0, arriveLeaveM = 300.0, stopCardS = 8.0,
             distanceHoldM = 30.0, lanesWithinHighwayM = 1609.344, lanesWithinOtherM = 482.8032,
             stoppedBelowMps = 0.5, stoppedAfterS = 1.0, movingAboveMps = 1.0,
             originMaxAgeS = 30.0, originMaxAccuracyM = 100.0, waitForFixS = 15.0, planCoalesceMs = 300, maxStops = 9, problemHoldS = 8.0,
@@ -62,5 +62,8 @@ class GuidanceRulesTest {
         refused(text.replace("\"past_m\": 40", "\"past_m\": 5"), "advance.past_m must be above exit_m")
         refused(text.replace("\"min_speed_mps\": 2.0", "\"min_speed_mps\": -1"), "dead_reckoning.min_speed_mps must be a number of at least 0")
         refused(text.replace("\"other\": 482.8032", "\"lanes_other\": 482.8032"), "banner.lanes_within_m needs exactly highway and other")
+        refused(text.replace("\"reach_m\": 50", "\"reach_m\": 300"), "arrival.reach_m must be below leave_m")
+        refused(text.replace("\"reach_m\": 50, ", ""), "missing in arrival: [reach_m]")
+        refused(text.replace("\"reach_route_m\": 200", "\"reach_route_m\": 20"), "arrival.reach_route_m must be at least reach_m")
     }
 }

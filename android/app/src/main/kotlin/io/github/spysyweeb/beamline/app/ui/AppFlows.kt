@@ -1359,6 +1359,8 @@ class AppFlows(private val g: AppGraph) {
             items = g.outbox.items.value, nowMs = nowMs,
             askedRecently = osm != null && g.arrivalAsked.recent(osm, today),
             displayed = displayed,
+            // item 56's review: at the stop, not waiting on the road short of the route's end (A4 arrives up to 50 m early)
+            atStop = t.guidance?.let { PlaceQuestions.atStop(it.vehicle?.point, it.route.geometry) } == true,
         )
         val next = arrivalAsker.update(input, elapsedMs) { first -> g.arrivalAsked.noteShown(first) }
         if (next != arrivalShown) arrivalShown = next

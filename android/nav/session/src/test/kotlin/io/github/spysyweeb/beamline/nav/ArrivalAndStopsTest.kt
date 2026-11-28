@@ -24,8 +24,11 @@ import org.junit.jupiter.api.Assertions.assertNull
 import org.junit.jupiter.api.Assertions.assertTrue
 import org.junit.jupiter.api.Test
 
-/** Rules A1-A3 (arrival) and C1-C7 (stops, changes, route type), docs/architecture.md 3.4, on the exit 24 trip. */
+/** Rules A1-A3 (arrival) and C1-C7 (stops, changes, route type), docs/architecture.md 3.4, on the exit 24 trip (A4: ArrivalReachTest). */
 class ArrivalAndStopsTest {
+
+    /** A1 alone: A4's straight-line reach turned off (arrival.reach_m 0), so A1's own distances decide. */
+    private val a1Only = GuidanceRules.bundled().withoutLead().copy(arriveReachM = 0.0)
 
     private fun Harness.toLastStretch() {
         drive(4100.0, m(1) + 15.0, stepM = 20.0)
@@ -48,7 +51,7 @@ class ArrivalAndStopsTest {
     }
 
     @Test
-    fun `A1 arrived when U is the arrival and the shown distance is within 30 m`() = sessionTest { h ->
+    fun `A1 arrived when U is the arrival and the shown distance is within 30 m`() = sessionTest(rules = a1Only) { h ->
         h.guideExit24()
         h.toLastStretch()
         h.at(m(4) - 40.0)
@@ -92,9 +95,9 @@ class ArrivalAndStopsTest {
         h.guideWithPeachStop()
         h.drive(4100.0, m(1) + 15.0, stepM = 20.0)
         h.drive(m(2) - 30.0, m(2) + 15.0, stepM = 15.0)
-        h.drive(m(2) + 60.0, m(2) + 110.0, stepM = 25.0)
-        assertTrue(h.eventsOf(TripEvent.StopReached::class.java).isEmpty(), "40 m before the stop")
-        h.at(m(2) + 125.0, speed = 5f)                     // 25 m before the stop: within arrival.within_m
+        h.drive(m(2) + 60.0, m(2) + 85.0, stepM = 25.0)
+        assertTrue(h.eventsOf(TripEvent.StopReached::class.java).isEmpty(), "65 m before the stop")
+        h.at(m(2) + 125.0, speed = 5f)                     // 25 m before the stop: within arrival.within_m and reach_m
         assertEquals(listOf(TripEvent.StopReached(0, "Peach St stop")), h.eventsOf(TripEvent.StopReached::class.java))
         assertTrue(h.state.stops[0].reached)
         assertFalse(h.state.stops[1].reached)
@@ -109,7 +112,7 @@ class ArrivalAndStopsTest {
     }
 
     @Test
-    fun `A2 a stop the follower passed on one fix (entry and exit at once) is reached, U goes on to the next leg`() = sessionTest { h ->
+    fun `A2 a stop the follower passed on one fix (entry and exit at once) is reached, U goes on to the next leg`() = sessionTest(rules = a1Only) { h ->
         h.guideWithPeachStop()
         h.drive(4100.0, m(1) + 15.0, stepM = 20.0)
         h.drive(m(2) - 30.0, m(2) + 15.0, stepM = 15.0)
@@ -250,7 +253,7 @@ class ArrivalAndStopsTest {
         h.guideWithPeachStop()
         h.drive(4100.0, m(1) + 15.0, stepM = 20.0)
         h.drive(m(2) - 30.0, m(2) + 15.0, stepM = 15.0)
-        h.drive(m(2) + 60.0, m(2) + 110.0, stepM = 25.0)
+        h.drive(m(2) + 60.0, m(2) + 85.0, stepM = 25.0)        // 65 m before the Peach St stop: not reached yet
         h.routingGate.gated = true
         h.send(NavIntent.AddStop(downsStop))                    // before the destination
         assertTrue(h.state.replanning)

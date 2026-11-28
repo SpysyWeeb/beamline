@@ -31,7 +31,7 @@ internal object GuidanceRulesFile {
             "wrong_way_min_speed_mps"),
         "reroute" to setOf("min_interval_s", "retry_s", "max_attempts", "heading_min_speed_mps", "origin_radius_m",
             "start_far_from_route_m"),
-        "arrival" to setOf("within_m", "passed_m", "leave_m", "stop_card_s"),
+        "arrival" to setOf("within_m", "passed_m", "reach_m", "reach_route_m", "reach_off_route_max_mps", "leave_m", "stop_card_s"),
         "banner" to setOf("distance_hold_m", "lanes_within_m"),
         "motion" to setOf("stopped_below_mps", "stopped_after_s", "moving_above_mps"),
         "planning" to setOf("origin_max_age_s", "origin_max_accuracy_m", "wait_for_fix_s", "coalesce_ms", "max_stops",
@@ -147,6 +147,9 @@ internal object GuidanceRulesFile {
             startFarFromRouteM = num("reroute", "start_far_from_route_m"),
             arriveWithinM = num("arrival", "within_m"),
             arrivePassedM = num("arrival", "passed_m"),
+            arriveReachM = num("arrival", "reach_m"),
+            arriveReachRouteM = num("arrival", "reach_route_m"),
+            arriveReachOffRouteMaxMps = num("arrival", "reach_off_route_max_mps"),
             arriveLeaveM = num("arrival", "leave_m"),
             stopCardS = num("arrival", "stop_card_s"),
             distanceHoldM = num("banner", "distance_hold_m"),
@@ -206,6 +209,8 @@ internal object GuidanceRulesFile {
         if (r.offRouteBaseM <= 0.0) add("off_route.base_m must be above 0 (O1)")
         if (r.rerouteMaxAttempts < 1) add("reroute.max_attempts must be at least 1 (O7)")
         if (r.arriveWithinM >= r.arriveLeaveM) add("arrival.within_m must be below leave_m (A3)")
+        if (r.arriveReachM >= r.arriveLeaveM) add("arrival.reach_m must be below leave_m (A3, A4: an arrival would end at once)")
+        if (r.arriveReachRouteM < r.arriveReachM) add("arrival.reach_route_m must be at least reach_m (A4: a car on the route within reach is no farther along it)")
         if (r.maxStops < 1 || r.maxStops > MAX_STOPS_LIMIT) add("planning.max_stops must be 1..$MAX_STOPS_LIMIT (C1: the origin and the stops fit StopOrderer's 10 points)")
         if (r.resumeRefreshS <= 0.0 || r.resumeRefreshS >= r.resumeMaxAgeS) add("resume.refresh_s must be above 0 and below max_age_s (R1, R2)")
         if (r.tickS > r.weakAfterS) add("tick_s above gps.weak_after_s: WEAK would start between ticks (G3)")

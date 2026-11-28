@@ -305,6 +305,11 @@ questions before an upload (4.2).
 - **AP3 Arrived and parked.** The trip is ARRIVED, the guidance is not simulated, and `Vehicle.motion` has been
   STOPPED for 15 s with no MOVING since. Once parked, MOVING for 3 s in a row hides the question (a short GPS jump
   does not); stopped 15 s again, the same question comes back. UNKNOWN (GPS lost) changes nothing.
+  The 15 s count only while the car stands at the stop (docs/next-round.md item 56's review, 0.1.42, phone safety:
+  rule A4 arrives up to 50 m before the route's end, so ARRIVED alone can be a car waiting at a red light short of
+  it): within 30 m of the route's end, or more than 15 m from the route's line in its last 1 km (a lot, a driveway, a
+  parking place off the road; `PlaceQuestions.atStop` on `Guidance.route.geometry` and the vehicle's point). Standing on the road
+  short of the end starts the count again; a question already shown stays through a GPS jump off the spot.
 - **AP4 One question, in the owner's order.** Only for a place the app can edit (its OSM object a node or a way), of
   a kind a visitor reads hours at (a business by `BusinessTags.isBusinessType`, not one of `NOT_ASKED`; a pack type
   that is a raw tag is asked only for shop, craft, office and healthcare; fishing spots, disc golf courses and truck

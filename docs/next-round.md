@@ -1180,6 +1180,47 @@ not break across two lines in the banner; the results view shows at most the 20 
     municipality typed, the whole address step 6.7 ms at the median against 1.3 ms before (the tail, about 110 ms
     at p90, is the typed-town lookup's own, as before; it is not run when the engine located the house there).
 
+56. **Arrived at the destination, but the app did not say so** (the owner, 2026-11-28, on 0.1.41: "I noticed
+    that I can arrive at my destination, but it still doesn't show that I arrived. Is there a certain distance
+    I need to get to for it to be marked as arrived?"). Until now an arrival (rules A1-A3) needed GUIDING, a
+    deciding fix (accuracy 30 m or better) and the car within 30 m along the route of the route's end (or 40 m
+    past it), so it failed for a car parked elsewhere in the lot or more than 30 m short, for one that pulled
+    off the route into a lot or driveway the route does not use (off route confirmed: REROUTING, where nothing
+    arrives, and the new route from the parked car ended tens of metres away), and for GPS poorer than 30 m by
+    buildings. A first design (a stop counted as parked after some seconds off the road or a minute standing,
+    no re-route near the stop) was dropped by the owner the same day: "I think it can be simpler than that.
+    Simply getting close enough to the location should count as arriving, but not so much focused on the
+    location's pin, but the road that the route ends at."
+    *Built in 0.1.42* (rule A4, `guidance.json` `arrival.reach_m` 50, `reach_route_m` 200,
+    `reach_off_route_max_mps` 10): the end of the leg being driven is reached when a usable fix is within 50 m, in a
+    straight line, of the point that leg's route ends at (the road, lot or door point, not the place's pin); in
+    GUIDING and in REROUTING, on every leg: an intermediate stop is reached as before (A2), the last leg's end gives
+    ARRIVED (A3: the arrival card and the camera's arrival view go on from there unchanged). A1's 30 m along the
+    route and 40 m past stay. The re-route near the end is left as it was: the reach arrives in REROUTING too (the
+    JVM test of a lot beside the end goes through REROUTING and arrives). Accepted with it: on the route the
+    arrival comes about 50 m before the end instead of 30, so a car waiting at a red light 40 m before the end
+    arrives. Not in a simulated drive (its car drives the line to the end; the golden trace is unchanged) and not
+    on a dead-reckoned tick in a GPS gap.
+    The review of A4 (2026-11-28, an independent reader; all fixed in 0.1.42 with a JVM test each that failed
+    first): (1) a leg that passes within 50 m of its own end before reaching it (the C6 trip's leg to a stop on
+    I-90 passes 25 m from it on the other carriageway, 4.4 km before) reached it there; now on the route the reach
+    counts only within 200 m of the end along the route, off the route only at 10 m/s or slower. (2) A stop
+    reached 36-50 m short re-routed the car still standing short of it (its next leg starts at the stop); a fix
+    within 50 m of the stop just reached no longer counts as off the route. (3) Phone safety: the arrival question
+    (item 53g, AP3) could show at a red light short of the end after an early arrival; its 15 s now count only
+    while the car stands within 30 m of the route's end or more than 15 m off the route's line. (4) One poor fix
+    (31-50 m, a multipath jump) within reach while the car was 120 m back arrived and deleted `trip.json`; such a
+    fix now counts only after a usable fix within reach. (5) A stop reached with four or more maneuvers still
+    ahead left *U* on its departure; the session now moves past all of them. (6) The re-route asked again after a
+    stop reached in REROUTING has a test holding the old answer; the arrival ends the off-route count. (7) A
+    skipped stop blocked the arrival (REROUTING back to it from the destination's lot); off the route and slow
+    within reach of the destination's end, the trip now ends ARRIVED, the skipped stop left unreached.
+    The reviewer's second reading (2026-11-28; fixed in 0.1.42, tests failing first): a skipped stop ends the trip
+    only when the car is stopped there and some fix since Start was more than 300 m from the destination's end
+    (a round trip standing in its driveway at the start, or a slow pass by the destination on the way to a stop
+    beyond it, ended the trip); the spot of the stop reached short stops hiding an off-route car at the first
+    fix farther than 50 m from it; the arrival question's check of the route's line looks at its last 1 km only.
+
 ## Later (not the next round)
 
 - **Linking Beamline to the real vehicle through the comma 3X** (owner, 2026-11-16). The driving

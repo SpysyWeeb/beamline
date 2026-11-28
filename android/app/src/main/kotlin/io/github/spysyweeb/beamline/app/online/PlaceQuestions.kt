@@ -26,6 +26,15 @@ object PlaceQuestions {
     const val ARRIVAL_TICK_MS = 1_000L
     /** AP6: an answered arrival question is not asked again for this many days. */
     const val ASKED_DAYS = 90L
+    /**
+     * Item 56's review (phone safety): the session arrives up to 50 m before the route's end (rule A4), so ARRIVED alone
+     * can be a car waiting at a red light short of it. The car stands at the stop when it is within this of the route's
+     * end, or more than [OFF_LINE_M] from the route's line (a lot, a driveway, a parking place off the road).
+     */
+    const val AT_END_M = 30.0
+    const val OFF_LINE_M = 15.0
+    /** [atStop] looks at the route's line only this far back from its end (a car at the stop is near the end). */
+    const val LINE_BACK_M = 1_000.0
     private const val YEAR_MS = HoursCheck.AGAIN_AFTER_DAYS * 86_400_000L
 
     val HOURS_KEYS = setOf(HoursCheck.KEY)
@@ -250,6 +259,44 @@ object PlaceQuestions {
         Ask.ADD_PHONE_AND_WEBSITE -> ArrivalQuestionUi(OnlineTexts.ASK_PHONE_WEBSITE, emptyList(), null, OnlineTexts.ADD_THEM, OnlineTexts.NOT_NOW)
     }
 
+    /**
+     * Item 56's review: the car at [car] stands at the stop of the route [line] (the whole route, its end last): within
+     * [AT_END_M] of the end, or farther than [OFF_LINE_M] from every stretch of the line's last [LINE_BACK_M]. No
+     * position or no line: no. Once a second on the main thread: an index loop back from the end, ending at the
+     * first stretch near the car.
+     */
+    fun atStop(car: GeoPoint?, line: List<GeoPoint>): Boolean {
+        if (car == null || line.isEmpty()) return false
+        val end = line.last()
+        if (SpotCheck.metres(car.lat, car.lon, end.lat, end.lon) <= AT_END_M) return true
+        var back = 0.0
+        var i = line.lastIndex
+        while (i > 0 && back <= LINE_BACK_M) {
+            val a = line[i - 1]
+            val b = line[i]
+            if (toSegmentM(car, a, b) <= OFF_LINE_M) return false
+            back += SpotCheck.metres(a.lat, a.lon, b.lat, b.lon)
+            i--
+        }
+        return true
+    }
+
+    /** Metres from [p] to the stretch [a]-[b] (flat earth around [p]: stretches of a route are short). */
+    private fun toSegmentM(p: GeoPoint, a: GeoPoint, b: GeoPoint): Double {
+        val kx = 111_195.0 * kotlin.math.cos(Math.toRadians(p.lat))
+        val ax = (a.lon - p.lon) * kx
+        val ay = (a.lat - p.lat) * 111_195.0
+        val bx = (b.lon - p.lon) * kx
+        val by = (b.lat - p.lat) * 111_195.0
+        val dx = bx - ax
+        val dy = by - ay
+        val len2 = dx * dx + dy * dy
+        val t = if (len2 == 0.0) 0.0 else (-(ax * dx + ay * dy) / len2).coerceIn(0.0, 1.0)
+        val x = ax + t * dx
+        val y = ay + t * dy
+        return kotlin.math.sqrt(x * x + y * y)
+    }
+
     /** AP9: the field the edit button opens the form at. */
     fun focusOf(a: Ask): EditFocus = when (a) {
         Ask.ADD_HOURS, Ask.CHECK_HOURS -> EditFocus.HOURS
@@ -275,6 +322,8 @@ data class ArrivalInput(
     val askedRecently: Boolean,
     /** AP-1: the card is on screen now (the app resumed, no picker, layer, stop card or Add stop search over it). */
     val displayed: Boolean = true,
+    /** Item 56's review: the car stands at the stop, not on the road short of the route's end ([PlaceQuestions.atStop]). */
+    val atStop: Boolean,
 ) {
     override fun toString(): String = "ArrivalInput($phase)"
 }
@@ -307,7 +356,13 @@ class ArrivalAsker(private val parkedMs: Long = PlaceQuestions.PARKED_MS, privat
             return null
         }
         when (i.motion) {
-            Motion.STOPPED -> {
+            // item 56's review: standing on the road short of the route's end (a red light after an early arrival) is not
+            // parked; the 15 s count only at the stop (a question already chosen stays through a GPS jump off the spot)
+            Motion.STOPPED -> if (!i.atStop && chosen == null) {
+                movingSince = null
+                stoppedSince = null
+                parked = false
+            } else {
                 movingSince = null
                 val s = stoppedSince ?: elapsedMs.also { stoppedSince = it }
                 if (elapsedMs - s >= parkedMs) parked = true

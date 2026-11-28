@@ -213,6 +213,15 @@ internal class SessionCore(
 
         /** Legs whose end was reached on this route (A1, A2): a stop is reached once. */
         val reachedLegs = HashSet<Int>()
+
+        /** A4: the point each leg's route ends at (the stop's road, lot or door point the route was planned to, not its pin). */
+        val legEnds: List<LatLon> = route.legs.indices.map { geo.pointAt(geo.legEndAlong(it)) }
+
+        /** A4: the leg being driven, the first one not reached (stops are reached in order); null when all are. */
+        fun legNow(): Int? = route.legs.indices.firstOrNull { it !in reachedLegs }
+
+        /** A4 (review 2): the end of the intermediate leg reached last on this route; near it a fix is neither off nor on (O2). */
+        var reachedEnd: LatLon? = null
     }
 
     private var guided: Guided? = null
@@ -286,6 +295,8 @@ internal class SessionCore(
 
     // arrival, resume, problem hold
     private var destination: LatLon? = null
+    /** A4 (a skipped stop): some fix since Start (or Resume) was more than arrival.leave_m from the destination's end. */
+    private var awayFromEnd = false
     private var lastSaveMs = 0L
     private var problemClearAt: Long? = null
     private var estimateJob: Job? = null
@@ -1445,6 +1456,7 @@ internal class SessionCore(
         outsideWaiting = false
         fixWaiting = false
         problemClearAt = null
+        awayFromEnd = false
     }
 
     private fun startCollecting(sim: Simulation?) {
@@ -1580,7 +1592,12 @@ internal class SessionCore(
         val course = fix.bearingDeg?.toDouble()
         val wrongWay = v >= rules.wrongWayMinSpeedMps && course != null && p.routeBearingDeg != null &&
             RouteGeometry.angleDiff(course, p.routeBearingDeg!!) > rules.wrongWayDeg
-        if (deciding) {
+        // A4 (review 2): within reach_m of the stop just reached the car is where the trip sent it (a stop reached short
+        // of its point, whose next leg starts there): such a fix neither counts as off nor resets the count
+        val reachedEnd = g.reachedEnd
+        val atReachedEnd = reachedEnd != null && Geo.distanceM(raw, reachedEnd) <= rules.arriveReachM
+        if (reachedEnd != null && !atReachedEnd) g.reachedEnd = null // once away from it, a later pass by it is judged as anywhere
+        if (deciding && !atReachedEnd) {
             val off = p.lateralM > threshold || wrongWay
             if (off) {
                 if (offCount == 0) offFirstMs = fix.elapsedMs
@@ -1610,6 +1627,54 @@ internal class SessionCore(
         // O4: a re-route asked before there was any usable fix (Reroute right after Start) is asked with this one
         if (st.phase == Phase.REROUTING && fixWaiting && rerouteJob == null && changeJob == null) {
             requestReroute(user = true)
+        }
+
+        // A4 (item 56): the end of the leg being driven reached in a straight line, by a usable fix, on the route or off it,
+        // in GUIDING or REROUTING (a lot beside the end, a car parked short of it, poor GPS by buildings, a re-route the lot
+        // started). A simulated drive keeps A1: its car drives the route's line to the end.
+        if (simulation == null && rules.arriveReachM > 0.0) {
+            val onRoute = st.phase == Phase.GUIDING && !suspected
+            val slow = speedMps?.let { it <= rules.arriveReachOffRouteMaxMps } == true
+            val carAlongNow = g.geo.alongOf(p.shapeIndex, p.snapped)
+            val prev = prevUsable?.let { LatLon(it.lat, it.lon) }
+            fun reaches(leg: Int): Boolean {
+                val end = g.legEnds[leg]
+                if (Geo.distanceM(raw, end) > rules.arriveReachM) return false
+                // review 4: a fix poorer than a deciding one counts only after a usable fix within reach too (one multipath jump never arrives)
+                if (!deciding && (prev == null || Geo.distanceM(prev, end) > rules.arriveReachM)) return false
+                // review 1: on the route only within reach_route_m of the end along it (not from the other carriageway that
+                // passes the end first); off it only when slow (not a pass on another road, a ramp beside the lot)
+                return if (onRoute) g.geo.legEndAlong(leg) - carAlongNow <= rules.arriveReachRouteM else slow
+            }
+            val leg = g.legNow()
+            val last = g.route.legs.lastIndex
+            if (!awayFromEnd && Geo.distanceM(raw, g.legEnds[last]) > rules.arriveLeaveM) awayFromEnd = true
+            val target = when {
+                leg == null -> null
+                reaches(leg) -> leg
+                // review 7: a stop skipped: off the route and stopped at the destination's end, after having been away from it
+                // (more than leave_m since Start: not a round trip's driveway at its start, not a pass by the destination on
+                // the way to a stop beyond it), the trip ends there; the skipped stops stay unreached
+                leg < last && !onRoute && awayFromEnd && motion == Motion.STOPPED && reaches(last) -> last
+                else -> null
+            }
+            val a = target?.let { l -> g.arrivals.firstOrNull { g.geo.maneuverLeg[it] == l } }
+            if (a != null) {
+                val rerouting = st.phase == Phase.REROUTING
+                p = arriveAt(g, a, p) ?: run { afterFix?.invoke(fix, st); return }
+                if (rerouting && changeJob == null) {
+                    // the re-route running or waiting was asked for the stop just reached: ask again without it
+                    rerouteSeq++
+                    rerouteJob?.cancel()
+                    rerouteJob = null
+                    rerouteAt = null
+                    requestReroute(user = true)
+                } else if (st.phase == Phase.GUIDING && suspected) {
+                    // off the line the banner below holds still (B2): it shows the next leg now, as A1 does
+                    shownStep = p.stepIndex
+                    updateBanner(g, (p.stepIndex + 1).coerceAtMost(g.geo.maneuverCount - 1), max(0.0, p.toManeuverM), deciding)
+                }
+            }
         }
 
         val guiding = st.phase == Phase.GUIDING && !suspected
@@ -1771,7 +1836,7 @@ internal class SessionCore(
     }
 
     /**
-     * A1-A3: the arrival maneuver [u] reached. An intermediate stop is marked reached, trip.json
+     * A1-A4: the arrival maneuver [u] reached. An intermediate stop is marked reached, trip.json
      * saved, StopReached emitted and the follower moved past the arrival and the departure (A2);
      * the destination ends guidance in ARRIVED (A3: returns null).
      */
@@ -1785,6 +1850,9 @@ internal class SessionCore(
         if (leg >= g.route.legs.lastIndex || stops.none { !it.reached }) {
             val name = (stops.getOrNull(stopIndex) ?: stops.lastOrNull())?.place?.name ?: ""
             clearTrip()
+            // A4 (review 6): off the route no more: the arrival ends the count (offRouteSuspected false in ARRIVED)
+            offCount = 0
+            onCount = 0
             rerouteJob?.cancel()
             rerouteJob = null
             changeJob?.cancel()
@@ -1805,9 +1873,11 @@ internal class SessionCore(
         st = st.copy(stops = stops, revision = st.revision + 1)
         saveTrip()
         if (stopIndex >= 0) emit(TripEvent.StopReached(stopIndex, stops[stopIndex].place.name))
+        g.reachedEnd = g.legEnds[leg]
         var p = p0
         var guard = 0
-        while (p.stepIndex < u + 1 && guard++ < 4) p = g.follower.advance()
+        // past the arrival and the departure; A4 can reach a stop with several maneuvers still ahead (into the lot, its aisles)
+        while (p.stepIndex < u + 1 && guard++ <= g.geo.maneuverCount) p = g.follower.advance()
         // a change asked before this stop was reached would route back to it: ask it again from here (C3)
         if (changeJob != null) changeDuringGuidance(st.stops, st.routeType, st.options, changeReason ?: ReplaceReason.STOPS_CHANGED)
         return p

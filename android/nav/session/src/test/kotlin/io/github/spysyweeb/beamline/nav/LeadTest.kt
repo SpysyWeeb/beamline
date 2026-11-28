@@ -72,9 +72,9 @@ class LeadTest {
         h.drive(m(2) - 30.0, m(2) + 15.0, stepM = 15.0)
         h.drive(m(3) - 30.0, m(3) + 15.0, stepM = 15.0)
         assertEquals(4, h.state.u)
-        h.at(m(4) - 40.0)
+        h.at(m(4) - 60.0, speed = 40f)                          // fast: a lead of 40 m (1 s of glide, no extra_s here)
         assertTrue(h.state.vehicleAlong() > m(4) - 30.0, "the arrow is within 30 m of the end")
-        assertEquals(Phase.GUIDING, h.phase(), "but the car is 40 m away")
+        assertEquals(Phase.GUIDING, h.phase(), "but the car is 60 m away (beyond A1's 30 m and A4's 50 m)")
         h.at(m(4) - 25.0)
         assertEquals(Phase.ARRIVED, h.phase())
     }

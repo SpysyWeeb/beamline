@@ -1,10 +1,13 @@
 package io.github.spysyweeb.beamline.app.online
 
+import io.github.spysyweeb.beamline.api.model.GeoPoint
 import io.github.spysyweeb.beamline.api.nav.Motion
 import io.github.spysyweeb.beamline.api.nav.Phase
 import org.junit.jupiter.api.Assertions.assertEquals
+import org.junit.jupiter.api.Assertions.assertFalse
 import org.junit.jupiter.api.Assertions.assertNull
 import org.junit.jupiter.api.Assertions.assertSame
+import org.junit.jupiter.api.Assertions.assertTrue
 import org.junit.jupiter.api.Test
 
 /** 0.1.41 (docs/online-design.md 4.8, AP3-AP7; plan AP-1): one arrival's one question, parked 15 s, seen once. */
@@ -14,8 +17,38 @@ class ArrivalAskerTest {
 
     private fun input(
         phase: Phase = Phase.ARRIVED, motion: Motion? = Motion.STOPPED, simulated: Boolean = false, allowed: Boolean = true, atPlace: Boolean = true,
-        facts: PlaceQuestions.PlaceFacts? = noHours, askedRecently: Boolean = false, displayed: Boolean = true,
-    ) = ArrivalInput(phase, motion, simulated, allowed, atPlace, facts, emptyList(), now, askedRecently, displayed)
+        facts: PlaceQuestions.PlaceFacts? = noHours, askedRecently: Boolean = false, displayed: Boolean = true, atStop: Boolean = true,
+    ) = ArrivalInput(phase, motion, simulated, allowed, atPlace, facts, emptyList(), now, askedRecently, displayed, atStop)
+
+    /**
+     * Item 56's review (phone safety): A4 arrives up to 50 m before the route's end, so a car can be ARRIVED while it
+     * waits at a red light short of it. Standing there is not parked: no question until it stands at the stop.
+     */
+    @Test
+    fun notAskedWhileStandingOnTheRoadShortOfTheEnd() {
+        val a = ArrivalAsker()
+        for (t in 0..30_000L step 1_000L) assertNull(a.update(input(atStop = false), t), "a red light 40 m short, $t ms")
+        assertNull(a.update(input(), 31_000), "parked at the end: counted from now")
+        assertNull(a.update(input(), 45_000), "14 s")
+        assertEquals(PlaceQuestions.Ask.ADD_HOURS, a.update(input(), 46_000)?.ask, "15 s at the stop")
+        assertTrue(a.update(input(atStop = false), 47_000) != null, "once shown, a GPS jump off the spot keeps it")
+    }
+
+    /** Line: 200 m due east along a parallel at 42.05 N; its end at the east. */
+    private val line = (0..8).map { GeoPoint(42.05, -80.08 + it * 25.0 / (111_195.0 * Math.cos(Math.toRadians(42.05)))) }
+    private fun along(m: Double, northM: Double = 0.0) =
+        GeoPoint(42.05 + northM / 111_195.0, -80.08 + m / (111_195.0 * Math.cos(Math.toRadians(42.05))))
+
+    @Test
+    fun atTheStopIsNearTheRouteEndOrOffTheRouteLine() {
+        assertFalse(PlaceQuestions.atStop(along(160.0), line), "on the line 40 m before the end")
+        assertFalse(PlaceQuestions.atStop(along(160.0, northM = 10.0), line), "10 m beside the line: a wide road")
+        assertTrue(PlaceQuestions.atStop(along(175.0), line), "25 m before the end")
+        assertTrue(PlaceQuestions.atStop(along(210.0, northM = 5.0), line), "just past the end")
+        assertTrue(PlaceQuestions.atStop(along(140.0, northM = 20.0), line), "a lot 20 m beside the road")
+        assertFalse(PlaceQuestions.atStop(null, line), "no position")
+        assertFalse(PlaceQuestions.atStop(along(175.0), emptyList()), "no route")
+    }
 
     @Test
     fun parkedForFifteenSecondsThenAskedOnce() {

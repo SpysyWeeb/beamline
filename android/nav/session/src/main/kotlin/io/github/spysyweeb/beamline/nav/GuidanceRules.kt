@@ -34,6 +34,9 @@ data class GuidanceRules(
     val startFarFromRouteM: Double,         // reroute.start_far_from_route_m
     val arriveWithinM: Double,              // arrival.within_m
     val arrivePassedM: Double,              // arrival.passed_m
+    val arriveReachM: Double,               // arrival.reach_m
+    val arriveReachRouteM: Double,          // arrival.reach_route_m
+    val arriveReachOffRouteMaxMps: Double,  // arrival.reach_off_route_max_mps
     val arriveLeaveM: Double,               // arrival.leave_m
     val stopCardS: Double,                  // arrival.stop_card_s
     val distanceHoldM: Double,              // banner.distance_hold_m

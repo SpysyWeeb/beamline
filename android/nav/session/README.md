@@ -126,6 +126,7 @@ test and is listed in `data/gradle/<key>/build/nav/session/missing-requests.json
 | `BannerRulesSessionTest` | B1-B8 |
 | `OffRouteTest` | O1-O9 (O4 also for a slow car: radius without heading, and a Reroute before the first fix; O8 also counts the engine calls of a car standing where no road is found) |
 | `ArrivalAndStopsTest` | A1-A3, C1-C7 (with a stop reached while a change waits, a failed second change, process death and Resume keeping Shortest; C6 tells a changed order) |
+| `ArrivalReachTest` | A4 (item 56): a lot beside the end (after the re-route it started), parked 45 m short, 60 m short not, a red light 40 m before (arrives), two 45 m fixes (one alone or a lone jump does not), a re-route near the end, an intermediate stop passed off the route and one reached in REROUTING (the held answer dropped), the simulated drive keeping A1; the review: the C6 trip's other carriageway, a fast pass off the route, standing short of a stop reached, four maneuvers ahead, a skipped stop |
 | `StopDetoursTest`, `StopLegTest` | C8 (item 51): the detour matrices' points, formula, chunks, a newer or empty request, what drops them, R4, the previews before and while guiding; `StopLeg` |
 | `PlanningAndResumeTest` | P1-P5, R1-R3 (R2 also with a wall clock that stepped back; a simulated drive offered and resumed as one, P27), `trip.json` with saved places |
 | `SimulationScriptsTest` | the named scripts (`wrongturn`, `gaps`, `tunnel`, `jitter`, `drift`) and the OSRM step check (2 and 3 legs: one step per maneuver, same kind, length and place) |

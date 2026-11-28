@@ -316,7 +316,7 @@ class OnSiteTest {
             fun tick(elapsedMs: Long): ArrivalAsker.Shown? = asker.update(
                 ArrivalInput(Phase.ARRIVED, Motion.STOPPED, simulated = false, allowed = true, atPlace = onSite.arrivedAt(bakery, elapsedMs),
                     facts = PlaceQuestions.facts(bakery, ownClosed = false), items = store.items.value, nowMs = 1_795_878_000_000L,
-                    askedRecently = asked.recent("n43", LocalDate.of(2026, 11, 28))),
+                    askedRecently = asked.recent("n43", LocalDate.of(2026, 11, 28)), atStop = true),
                 elapsedMs,
             ) { osm -> asked.noteShown(osm) }
             assertNull(tick(5_000))
